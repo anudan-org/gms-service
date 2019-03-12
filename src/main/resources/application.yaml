@@ -1,0 +1,20 @@
+spring:
+  profiles:
+    active: qa
+---
+
+spring:
+  profiles: qa
+  datasource:
+    url: jdbc:postgresql://localhost:5432/gms
+    username: lazybird
+    password:
+  jpa:
+    show-sql: true
+    database: postgresql
+    hibernate:
+      jdbc:
+        lob:
+          non_contextual_creation: true
+
+---
