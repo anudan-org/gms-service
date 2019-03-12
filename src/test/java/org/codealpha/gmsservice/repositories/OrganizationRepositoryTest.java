@@ -56,4 +56,6 @@ class OrganizationRepositoryTest {
 		assertEquals(foundOrganization.get().getUpdatedAt(), now);
 
 	}
+
+
 }
