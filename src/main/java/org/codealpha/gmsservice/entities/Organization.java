@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.entities;
 import java.time.LocalDateTime;
 import java.util.List;
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -10,26 +11,33 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
+import javax.persistence.Table;
 
 
 /**
  * @author Developer <developer@enstratify.io>
  **/
 @Entity
+@Table(name = "organizations")
 public class Organization {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private Long id;
 
+	@Column(name = "name")
 	private String name;
 
+	@Column(name = "created_at")
 	private LocalDateTime createdAt;
 
+	@Column(name = "created_by")
 	private String createdBy;
 
+	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 
+	@Column(name = "updated_by")
 	private String updatedBy;
 
 	@OneToMany(mappedBy = "organization",fetch = FetchType.EAGER,cascade = CascadeType.ALL)
