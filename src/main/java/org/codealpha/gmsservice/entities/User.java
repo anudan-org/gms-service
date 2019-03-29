@@ -7,11 +7,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 
 /**
  * @author Developer <developer@enstratify.com>
  **/
 @Entity
+@Table(name = "users")
 public class User {
 
 	@Id

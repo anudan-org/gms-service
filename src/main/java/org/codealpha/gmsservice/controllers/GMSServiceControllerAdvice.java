@@ -28,6 +28,7 @@ public class GMSServiceControllerAdvice {
 	@ExceptionHandler(value = Exception.class)
 	@ResponseStatus(code = INTERNAL_SERVER_ERROR)
 	public ResponseEntity<APIError> internalServerHandler(Exception e, HttpServletRequest request) {
+		e.printStackTrace();
 		return new ResponseEntity<>(new APIError(INTERNAL_SERVER_ERROR.value(), e.getMessage()),
 				INTERNAL_SERVER_ERROR);
 	}

@@ -1,57 +1,53 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.DiscriminatorColumn;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
 import javax.persistence.Table;
-import javax.persistence.Transient;
-
 
 /**
- * @author Developer <developer@enstratify.io>
+ * @author Developer <developer@enstratify.com>
  **/
 @Entity
-@Table(name = "organizations")
-@Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "organization_type")
-public abstract class Organization {
+@Table(name = "rfps")
+public class Rfp {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
-	protected Long id;
+	private Long id;
 
-	@Column(name = "name")
-	protected String name;
+	@JsonIgnore
+	@ManyToOne
+	@JoinColumn(name = "granter_id")
+	private Granter granter;
 
-	@Column(name = "code")
-	protected String code;
+	@Column(name = "title")
+	private String title;
+
+	@Column(name = "description")
+	private String description;
 
 	@Column(name = "created_at")
-	protected LocalDateTime createdAt;
+	private LocalDateTime createdAt;
 
 	@Column(name = "created_by")
-	protected String createdBy;
+	private String createdBy;
 
 	@Column(name = "updated_at")
-	protected LocalDateTime updatedAt;
+	private LocalDateTime updatedAt;
 
 	@Column(name = "updated_by")
-	protected String updatedBy;
-
-//	@Column(name = "organization_type")
-//	private String organizationType;
+	private String updatedBy;
 
 	public Long getId() {
 		return id;
@@ -61,12 +57,28 @@ public abstract class Organization {
 		this.id = id;
 	}
 
-	public String getName() {
-		return name;
+	public Granter getGranter() {
+		return granter;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setGranter(Granter granter) {
+		this.granter = granter;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	public LocalDateTime getCreatedAt() {
@@ -100,19 +112,4 @@ public abstract class Organization {
 	public void setUpdatedBy(String updatedBy) {
 		this.updatedBy = updatedBy;
 	}
-
-	public String getCode() {
-		return code;
-	}
-
-	public void setCode(String code) {
-		this.code = code;
-	}
-
-	@Transient
-	public String getType() {
-		return this.getClass().getAnnotation(DiscriminatorValue.class).value();
-	}
-
-
 }
