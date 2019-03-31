@@ -7,7 +7,7 @@ spring:
   profiles: qa
   datasource:
     url: jdbc:postgresql://localhost:5432/gms
-    username: apple
+    username: postgres
     password:
   jpa:
     show-sql: true
