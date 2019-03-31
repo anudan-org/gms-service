@@ -31,14 +31,16 @@ public class TokenAuthenticationService {
   }
 
   static void addAuthentication(HttpServletResponse res, String auth,
-      JsonNode userNode) throws IOException {
-    String JWT = Jwts.builder().setSubject(auth)
+      JsonNode userNode, String tenant) throws IOException {
+    String JWT = Jwts.builder().setSubject(auth+"^"+tenant)
         .setExpiration(new Date(System.currentTimeMillis() + EXPIRATIONTIME))
         .signWith(SignatureAlgorithm.HS512, SECRET).compact();
     res.addHeader(HEADER_STRING, TOKEN_PREFIX + " " + JWT);
     res.addIntHeader(HEADER_EXPIRES_IN, EXPIRATIONTIME);
+    res.setHeader("X-TENANT-CODE",tenant);
+    res.setHeader("Access-Control-Allow-Headers","Authorization, x-xsrf-token, Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, " +
+        "Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, X-TENANT-CODE, ACCESS_TOKEN");
     ObjectMapper mapper = new ObjectMapper();
-    ((ObjectNode) userNode).put("access-token", JWT);
     res.getWriter().write(mapper.writeValueAsString(userNode));
 
   }

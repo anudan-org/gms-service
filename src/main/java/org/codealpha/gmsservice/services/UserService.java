@@ -20,4 +20,12 @@ public class UserService {
     }
     return user;
   }
+
+  public User getUserByEmailAndTenant(String email,String tenant){
+    User user = userRepository.findByEmailId(email);
+    if(user==null){
+      throw new UserNotFoundException("Username not found");
+    }
+    return user;
+  }
 }

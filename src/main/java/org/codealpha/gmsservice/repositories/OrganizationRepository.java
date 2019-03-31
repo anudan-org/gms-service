@@ -12,5 +12,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface OrganizationRepository extends CrudRepository<Organization, Long> {
 
-
+public Organization findByCode(String code);
 }

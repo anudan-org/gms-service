@@ -5,6 +5,7 @@ public class AccountCredentials {
   private String username;
   private String password;
   private String role;
+  private String tenant;
 
   public String getUsername() {
     return username;
@@ -30,4 +31,11 @@ public class AccountCredentials {
     this.role = role;
   }
 
+  public String getTenant() {
+    return tenant;
+  }
+
+  public void setTenant(String tenant) {
+    this.tenant = tenant;
+  }
 }

@@ -1,7 +1,10 @@
 package org.codealpha.gmsservice.security;
 
 import java.util.ArrayList;
+import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
+import org.codealpha.gmsservice.exceptions.InvalidTenantException;
+import org.codealpha.gmsservice.services.OrganizationService;
 import org.codealpha.gmsservice.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -16,6 +19,8 @@ public class AuthProvider implements AuthenticationProvider {
 
   @Autowired
   private UserService userService;
+  @Autowired
+  private OrganizationService organizationService;
 
 
   @Override
@@ -23,7 +28,13 @@ public class AuthProvider implements AuthenticationProvider {
     String role = authentication.getAuthorities().iterator().next().getAuthority();
     String username = authentication.getName();
     String password = authentication.getCredentials().toString();
+    String tenantCode = (String)authentication.getDetails();
+    authentication.getDetails();
     if ("USER".equalsIgnoreCase(role.toUpperCase())) {
+      Organization org = organizationService.fingOrganizationByCode(tenantCode);
+      if(org==null){
+        throw new BadCredentialsException("Invalid tenant code "+ tenantCode);
+      }
       User user = userService.getUserByEmail(username);
 
       if (password.equalsIgnoreCase(user.getPassword())

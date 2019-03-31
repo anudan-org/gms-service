@@ -12,8 +12,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.codealpha.gmsservice.entities.User;
+import org.codealpha.gmsservice.exceptions.InvalidHeadersException;
 import org.codealpha.gmsservice.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -36,7 +38,10 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
 
   @Override
   public Authentication attemptAuthentication(HttpServletRequest request,
-      HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
+      HttpServletResponse response) throws  AuthenticationException, IOException, ServletException {
+
+
+
     AccountCredentials creds =
         new ObjectMapper().readValue(request.getInputStream(), AccountCredentials.class);
     Collection<GrantedAuthority> authorities = new ArrayList<>();
@@ -48,8 +53,11 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
         return creds.getRole();
       }
     });
-    return getAuthenticationManager().authenticate(new UsernamePasswordAuthenticationToken(
-        creds.getUsername(), creds.getPassword(), authorities));
+
+    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+        creds.getUsername(), creds.getPassword(), authorities);
+    authToken.setDetails(request.getHeader("X-TENANT-CODE"));
+    return getAuthenticationManager().authenticate(authToken);
   }
 
   @Override
@@ -64,8 +72,9 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
 
     JsonNode userNode = mapper.readTree(userJSON);
 
+    String tenant = req.getHeader("X-TENANT-CODE");
 
-    TokenAuthenticationService.addAuthentication(res, auth.getName(),userNode);
+    TokenAuthenticationService.addAuthentication(res, auth.getName(),userNode,tenant);
 
   }
 }

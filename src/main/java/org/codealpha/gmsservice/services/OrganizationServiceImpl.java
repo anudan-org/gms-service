@@ -26,4 +26,8 @@ public class OrganizationServiceImpl implements OrganizationService {
 		//TODO - Replace with specific exception
 		throw new ResourceNotFoundException("Organization with id [" + organizationId + "] not found.");
 	}
+
+	public Organization fingOrganizationByCode(String code){
+		return repository.findByCode(code);
+	}
 }

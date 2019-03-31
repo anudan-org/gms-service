@@ -8,5 +8,6 @@ import org.codealpha.gmsservice.entities.Organization;
 public interface OrganizationService {
 
 	Organization get(Long organizationId);
+	public Organization fingOrganizationByCode(String code);
 
 }

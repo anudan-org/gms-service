@@ -40,6 +40,7 @@ public class ApplicationController {
 
 				config.setLogoUrl(url.concat("/images/")
 						.concat(config.getLogoUrl()));
+				config.setTenantCode(org.getCode());
 			}else{
 				config = new UIConfig();
 				config.setLogoUrl(url.concat("/images/anudan.png"));
