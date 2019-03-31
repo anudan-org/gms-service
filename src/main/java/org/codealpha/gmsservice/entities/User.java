@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
 import java.time.LocalDateTime;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -24,20 +25,28 @@ public class User {
 	@JoinColumn(name = "organizationId")
 	private Organization organization;
 
+	@Column
 	private String firstName;
 
+	@Column
 	private String lastName;
 
+	@Column
 	private String emailId;
 
+	@Column
 	private String password;
 
+	@Column
 	private LocalDateTime createdAt;
 
+	@Column
 	private String createdBy;
 
+	@Column
 	private LocalDateTime updatedAt;
 
+	@Column
 	private String updatedBy;
 
 	public Long getId() {
