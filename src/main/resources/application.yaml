@@ -7,7 +7,7 @@ spring:
   profiles: qa
   datasource:
     url: jdbc:postgresql://localhost:5432/gms
-    username: postgres
+    username: apple
     password:
   jpa:
     show-sql: true
@@ -18,6 +18,17 @@ spring:
           non_contextual_creation: true
   jackson:
     default-property-inclusion: non_null
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ranjit.victor@enstratify.com
+    password: enstratify123$
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 server:
   servlet:
     context-path: /api
