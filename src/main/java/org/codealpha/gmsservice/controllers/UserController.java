@@ -59,7 +59,7 @@ public class UserController {
     String host = urlComponents.getHost();
     int port = urlComponents.getPort();
 
-    String verificationLink = scheme+"://"+host+":"+port+"/grantee/verification?emailId="+user.getEmailId()+"&code="+RandomStringUtils.randomAlphanumeric(127);
+    String verificationLink = scheme+"://"+host+(port!=-1?":"+port:"")+"/grantee/verification?emailId="+user.getEmailId()+"&code="+RandomStringUtils.randomAlphanumeric(127);
 
     System.out.println(verificationLink);
     commonEmailSevice.sendMail(user.getEmailId(),"Anudan.org - Verification Link",verificationLink);
