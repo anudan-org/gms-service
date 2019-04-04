@@ -5,6 +5,7 @@ import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.models.UIConfig;
 import org.codealpha.gmsservice.services.GranterConfigurationService;
 import org.codealpha.gmsservice.services.OrganizationResolver;
+import org.codealpha.gmsservice.services.OrganizationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +22,9 @@ public class ApplicationController {
 
 	@Autowired
 	private OrganizationResolver organizationResolver;
+
+	@Autowired
+  private OrganizationService organizationService;
 
 	@Autowired
 	private GranterConfigurationService service;
@@ -47,9 +51,11 @@ public class ApplicationController {
 				config.setNavbarColor("#e3f2fd");
 			}
 		} else {
+		  Organization org = organizationService.getPlatformOrg();
 			config = new UIConfig();
 			config.setLogoUrl(url.concat("/images/anudan.png"));
 			config.setNavbarColor("#e3f2fd");
+			config.setTenantCode(org.getCode());
 		}
 		return config;
 	}

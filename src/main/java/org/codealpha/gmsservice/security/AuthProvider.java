@@ -3,7 +3,6 @@ package org.codealpha.gmsservice.security;
 import java.util.ArrayList;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.exceptions.InvalidTenantException;
 import org.codealpha.gmsservice.services.OrganizationService;
 import org.codealpha.gmsservice.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,19 +30,22 @@ public class AuthProvider implements AuthenticationProvider {
     String tenantCode = (String)authentication.getDetails();
     authentication.getDetails();
     if ("USER".equalsIgnoreCase(role.toUpperCase())) {
-      Organization org = organizationService.fingOrganizationByCode(tenantCode);
+      Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
       if(org==null){
         throw new BadCredentialsException("Invalid tenant code "+ tenantCode);
       }
       User user = userService.getUserByEmail(username);
 
-      if (password.equalsIgnoreCase(user.getPassword())
-          && username.equalsIgnoreCase(user.getEmailId())) {
+      if(user!=null) {
 
-        return new UsernamePasswordAuthenticationToken(username, password, new ArrayList());
-      } else {
-        //TODO - Read messages from a resource bundle
-        throw new BadCredentialsException("User Name and password does not match.");
+        if (password.equalsIgnoreCase(user.getPassword())
+            && username.equalsIgnoreCase(user.getEmailId())) {
+
+          return new UsernamePasswordAuthenticationToken(username, password, new ArrayList());
+        } else {
+          //TODO - Read messages from a resource bundle
+          throw new BadCredentialsException("User Name and password does not match.");
+        }
       }
     }
 

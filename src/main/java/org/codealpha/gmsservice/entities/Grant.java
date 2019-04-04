@@ -27,6 +27,11 @@ public class Grant {
 	@JoinColumn(name = "organization_id")
 	private Organization organization;
 
+	@JsonIgnore
+	@ManyToOne
+	@JoinColumn(name = "grantor_org_id")
+	private Organization grantorOrganization;
+
 	@Column(name = "name")
 	private String name;
 
@@ -107,5 +112,13 @@ public class Grant {
 
 	public void setUpdatedBy(String updatedBy) {
 		this.updatedBy = updatedBy;
+	}
+
+	public Organization getGrantorOrganization() {
+		return grantorOrganization;
+	}
+
+	public void setGrantorOrganization(Organization grantorOrganization) {
+		this.grantorOrganization = grantorOrganization;
 	}
 }

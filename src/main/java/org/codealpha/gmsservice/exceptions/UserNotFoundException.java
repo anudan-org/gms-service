@@ -1,13 +1,9 @@
 package org.codealpha.gmsservice.exceptions;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
+@ResponseStatus(value = HttpStatus.NOT_FOUND)
 public class UserNotFoundException extends RuntimeException {
 
-  private static Logger logger = LoggerFactory.getLogger(UserNotFoundException.class);
-  public UserNotFoundException(String username_not_found) {
-
-    logger.error(username_not_found,this.getCause());
-  }
 }

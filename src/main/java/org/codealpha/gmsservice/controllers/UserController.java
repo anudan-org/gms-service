@@ -1,21 +1,25 @@
 package org.codealpha.gmsservice.controllers;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.codealpha.gmsservice.entities.Grantee;
+import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.repositories.UserRepository;
+import org.codealpha.gmsservice.models.Dashboard;
 import org.codealpha.gmsservice.services.CommonEmailSevice;
+import org.codealpha.gmsservice.services.GranteeService;
 import org.codealpha.gmsservice.services.OrganizationService;
+import org.codealpha.gmsservice.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,20 +33,21 @@ import org.springframework.web.util.UriComponents;
 @RequestMapping("/users")
 public class UserController {
 
-  @Autowired
-  private UserRepository repository;
+
   @Autowired
   private OrganizationService organizationService;
   @Autowired
   private CommonEmailSevice commonEmailSevice;
+  @Autowired
+  private UserService userService;
+  @Autowired
+  private GranteeService granteeService;
 
   @GetMapping(value = "/{id}")
-  public User get(@PathVariable(name = "id") Long id) {
-    Optional<User> user = repository.findById(id);
-    if (user.isPresent()) {
-      return user.get();
-    }
-    return null;
+  public User get(@PathVariable(name = "id") Long id,@RequestHeader("X-TENANT-CODE") String tenantCode) {
+    User user = userService.getUserById(id);
+
+    return user;
   }
 
   @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -51,7 +56,7 @@ public class UserController {
     user.setCreatedAt(LocalDateTime.now());
     user.setCreatedBy("Api");
     user.setPassword(user.getPassword());
-    user = repository.save(user);
+    user = userService.save(user);
 
     UriComponents urlComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
 
@@ -72,5 +77,20 @@ public class UserController {
       @RequestParam("code") String code) {
     return HttpStatus.OK;
   }
+
+  @GetMapping("/{id}/dashboard")
+  public ResponseEntity<Dashboard> getDashbaord(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("id") Long userId){
+    User user = userService.getUserById(userId);
+    Organization userOrg = user.getOrganization();
+    Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+    switch (userOrg.getType()){
+      case "GRANTEE":
+        List<Grant> grants = granteeService.getGrantsOfGranteeForGrantor(userOrg.getId(),tenantOrg);
+        return new ResponseEntity<>(new Dashboard().build(grants),HttpStatus.OK);
+    }
+
+    return new ResponseEntity<>(null,HttpStatus.OK);
+  }
+
 
 }

@@ -29,7 +29,7 @@ import javax.persistence.Transient;
 public abstract class Organization {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	protected Long id;
 
 	@Column(name = "name")
@@ -50,8 +50,8 @@ public abstract class Organization {
 	@Column(name = "updated_by")
 	protected String updatedBy;
 
-//	@Column(name = "organization_type")
-//	private String organizationType;
+	@Column(name = "organization_type")
+	private String organizationType;
 
 	public Long getId() {
 		return id;
