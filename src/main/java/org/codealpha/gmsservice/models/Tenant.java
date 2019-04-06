@@ -7,20 +7,20 @@ import org.codealpha.gmsservice.entities.Grant;
 public class Tenant {
 
   private String name;
-  private List<Grant> grants;
+  private List<GrantVO> grants;
 
   public Tenant() {
   }
 
-  public Tenant(List<Grant> grants) {
+  public Tenant(List<GrantVO> grants) {
     this.grants = grants;
   }
 
-  public List<Grant> getGrants() {
+  public List<GrantVO> getGrants() {
     return grants;
   }
 
-  public void setGrants(List<Grant> grants) {
+  public void setGrants(List<GrantVO> grants) {
     this.grants = grants;
   }
 

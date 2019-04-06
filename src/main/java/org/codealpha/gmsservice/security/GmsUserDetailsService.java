@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.security;
 
+import org.codealpha.gmsservice.constants.KPIStatus;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -17,9 +17,9 @@ logging:
 spring:
   profiles: qa
   datasource:
-    url: jdbc:postgresql://localhost:5432/gms
+    url: jdbc:postgresql://139.59.2.193:5432/gms
     username: postgres
-    password:
+    password: password
   jpa:
     show-sql: true
     database: postgresql
