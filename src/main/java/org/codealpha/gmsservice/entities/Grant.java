@@ -27,7 +27,7 @@ import org.codealpha.gmsservice.constants.GrantSubStatus;
 public class Grant extends BaseEntity{
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@JsonIgnore
@@ -45,6 +45,18 @@ public class Grant extends BaseEntity{
 
 	@Column(name = "description")
 	private String description;
+
+	@Column
+	private Date createdAt;
+
+	@Column
+	private String createdBy;
+
+	@Column
+	private Date updatedAt;
+
+	@Column
+	private String updatedBy;
 
 	@Column
 	@Enumerated(EnumType.STRING)

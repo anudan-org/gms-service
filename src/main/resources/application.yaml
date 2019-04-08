@@ -17,9 +17,11 @@ logging:
 spring:
   profiles: qa
   datasource:
-    url: jdbc:postgresql://139.59.2.193:5432/gms
+    url: jdbc:postgresql://localhost:5432/gms
     username: postgres
-    password: password
+    password:
+    initialization-mode: always
+    platform: pg
   jpa:
     show-sql: true
     database: postgresql
@@ -27,6 +29,7 @@ spring:
       jdbc:
         lob:
           non_contextual_creation: true
+      ddl-auto: create
   jackson:
     default-property-inclusion: non_null
   mail:
