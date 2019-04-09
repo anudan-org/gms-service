@@ -8,6 +8,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
@@ -48,6 +50,10 @@ public class User {
 
 	@Column
 	private String updatedBy;
+
+	@OneToOne
+	@JoinColumn(referencedColumnName = "id")
+	private Role role;
 
 	public Long getId() {
 		return id;
@@ -127,5 +133,13 @@ public class User {
 
 	public void setUpdatedBy(String updatedBy) {
 		this.updatedBy = updatedBy;
+	}
+
+	public Role getRole() {
+		return role;
+	}
+
+	public void setRole(Role role) {
+		this.role = role;
 	}
 }

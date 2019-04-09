@@ -1,29 +1,26 @@
-package org.codealpha.gmsservice.models;
+package org.codealpha.gmsservice.services;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.services.GrantService;
-import org.codealpha.gmsservice.services.GranteeService;
+import org.codealpha.gmsservice.models.GrantVO;
+import org.codealpha.gmsservice.models.Tenant;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
-public class Dashboard {
+@Service
+public class DashboardService {
 
   private User user;
 
   @Autowired
-  private GrantService grantService;
+  private WorkflowPermissionService workflowPermissionService;
 
   List<Tenant> tenants;
 
 
-  public Dashboard build(User user, List<Grant> grants) {
+  public DashboardService build(User user, List<Grant> grants) {
     this.user=user;
     List<String> tenantNames = new ArrayList<>();
     for (Grant grant : grants) {
@@ -46,7 +43,7 @@ public class Dashboard {
       for (Tenant tenant : tenants) {
         if (tenant.getName().equalsIgnoreCase(grant.getGrantorOrganization().getCode())) {
           List<GrantVO> grantList = tenant.getGrants();
-          grantList.add(new GrantVO().build(grant));
+          grantList.add(new GrantVO().build(grant,workflowPermissionService.getGrantFlowPermissions(grant.getGrantorOrganization().getId(),user.getRole().getId()),workflowPermissionService.getGrantActionPermissions(grant.getGrantorOrganization().getId(),user.getRole().getId())));
           tenant.setGrants(grantList);
         }
       }

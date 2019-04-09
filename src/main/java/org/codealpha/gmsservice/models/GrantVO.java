@@ -10,6 +10,8 @@ import org.codealpha.gmsservice.constants.GrantSubStatus;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.GrantKpi;
 import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.entities.WorkFlowPermission;
+import org.codealpha.gmsservice.entities.WorkflowActionPermission;
 import org.springframework.beans.BeanUtils;
 
 public class GrantVO {
@@ -28,6 +30,8 @@ public class GrantVO {
   private Date startDate;
   private Date endDate;
   private List<GrantKpi> kpis;
+  private List<WorkFlowPermission> flowAuthority;
+  private WorkflowActionPermission actionAuthority;
   private List<String> alerts;
   private List<String> notifications;
 
@@ -159,7 +163,26 @@ public class GrantVO {
     this.kpis = kpis;
   }
 
-  public GrantVO build(Grant grant){
+  public List<WorkFlowPermission> getFlowAuthority() {
+    return flowAuthority;
+  }
+
+  public void setFlowAuthority(
+      List<WorkFlowPermission> permissions) {
+    this.flowAuthority = permissions;
+  }
+
+  public WorkflowActionPermission getActionAuthority() {
+    return actionAuthority;
+  }
+
+  public void setActionAuthority(
+      WorkflowActionPermission actionAuthority) {
+    this.actionAuthority = actionAuthority;
+  }
+
+  public GrantVO build(Grant grant, List<WorkFlowPermission> grantWorkflowPermissions,
+      WorkflowActionPermission grantActionPermissions){
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
     GrantVO vo = new GrantVO();
     for(PropertyDescriptor descriptor:propertyDescriptors){
@@ -174,8 +197,11 @@ public class GrantVO {
         } catch (InvocationTargetException e) {
           e.printStackTrace();
         }
+        vo.setFlowAuthority(grantWorkflowPermissions);
+        vo.setActionAuthority(grantActionPermissions);
       }
     }
+
     return vo;
   }
 }

@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -32,6 +33,10 @@ public class Granter extends Organization {
 
 	@OneToMany(mappedBy = "granter", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 	private List<Rfp> rfps;
+
+	@OneToMany(mappedBy = "granter")
+	@JsonIgnore
+	private List<Workflow> workflows;
 
 	@Override
 	public Long getId() {

@@ -6,9 +6,10 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.models.Dashboard;
+import org.codealpha.gmsservice.services.DashboardService;
 import org.codealpha.gmsservice.services.CommonEmailSevice;
 import org.codealpha.gmsservice.services.GranteeService;
+import org.codealpha.gmsservice.services.GranterService;
 import org.codealpha.gmsservice.services.OrganizationService;
 import org.codealpha.gmsservice.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,11 @@ public class UserController {
   private UserService userService;
   @Autowired
   private GranteeService granteeService;
+  @Autowired
+  private GranterService granterService;
+
+  @Autowired
+  private DashboardService dashboardService;
 
   @GetMapping(value = "/{id}")
   public User get(@PathVariable(name = "id") Long id,@RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -79,14 +85,18 @@ public class UserController {
   }
 
   @GetMapping("/{id}/dashboard")
-  public ResponseEntity<Dashboard> getDashbaord(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("id") Long userId){
+  public ResponseEntity<DashboardService> getDashbaord(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("id") Long userId){
     User user = userService.getUserById(userId);
     Organization userOrg = user.getOrganization();
     Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+    List<Grant> grants = null;
     switch (userOrg.getType()){
       case "GRANTEE":
-        List<Grant> grants = granteeService.getGrantsOfGranteeForGrantor(userOrg.getId(),tenantOrg);
-        return new ResponseEntity<>(new Dashboard().build(user,grants),HttpStatus.OK);
+        grants = granteeService.getGrantsOfGranteeForGrantor(userOrg.getId(),tenantOrg);
+        return new ResponseEntity<>(dashboardService.build(user,grants),HttpStatus.OK);
+      case "GRANTER":
+        grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(),tenantOrg);
+        return new ResponseEntity<>(dashboardService.build(user,grants),HttpStatus.OK);
     }
 
     return new ResponseEntity<>(null,HttpStatus.OK);
