@@ -19,9 +19,9 @@ INSERT INTO public.organizations (organization_type, code, created_at, created_b
 VALUES ('PLATFORM', 'ANUDAN', '2019-04-08 03:02:02.431000', 'System', 'Anudan', null, null);
 
 -- Granters
-INSERT into public.granters (id, host_url, image_name, navbar_color
+INSERT into public.granters (id, host_url, image_name, navbar_color,navbar_text_color
 )
-values (2, 'ihf', 'india_health_fund.png', '#459890');
+values (2, 'ihf', 'indian_health_fund.png', '#459890', '#fff');
 
 
 -- Grantees

@@ -25,6 +25,7 @@ public class GranterConfigurationServiceImpl implements GranterConfigurationServ
 		if (granter.isPresent()){
 			config.setLogoUrl(granter.get().getImageName());
 			config.setNavbarColor(granter.get().getNavbarColor());
+			config.setNavbarTextColor(granter.get().getNavbarTextColor());
 		}
 		return config;
 	}

@@ -31,6 +31,9 @@ public class Granter extends Organization {
 	@Column(name = "navbar_color")
 	private String navbarColor;
 
+	@Column
+	private String navbarTextColor;
+
 	@OneToMany(mappedBy = "granter", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 	private List<Rfp> rfps;
 
@@ -78,6 +81,14 @@ public class Granter extends Organization {
 
 	public void setRfps(List<Rfp> rfps) {
 		this.rfps = rfps;
+	}
+
+	public String getNavbarTextColor() {
+		return navbarTextColor;
+	}
+
+	public void setNavbarTextColor(String navbarTextColor) {
+		this.navbarTextColor = navbarTextColor;
 	}
 
 	@Override

@@ -11,6 +11,8 @@ public class UIConfig {
 
 	private String tenantCode;
 
+	private String navbarTextColor;
+
 	public String getLogoUrl() {
 		return logoUrl;
 	}
@@ -33,5 +35,13 @@ public class UIConfig {
 
 	public void setTenantCode(String tenantCode) {
 		this.tenantCode = tenantCode;
+	}
+
+	public String getNavbarTextColor() {
+		return navbarTextColor;
+	}
+
+	public void setNavbarTextColor(String navbarTextColor) {
+		this.navbarTextColor = navbarTextColor;
 	}
 }
