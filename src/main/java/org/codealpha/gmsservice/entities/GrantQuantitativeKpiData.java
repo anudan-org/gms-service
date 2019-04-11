@@ -11,6 +11,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import org.codealpha.gmsservice.constants.KPIStatus;
 
 @Entity
@@ -28,8 +29,10 @@ public class GrantQuantitativeKpiData extends BaseEntity {
   @JoinColumn(referencedColumnName = "id")
   private GrantKpi grantKpi;
   @Column
-  @Enumerated(EnumType.STRING)
-  private KPIStatus status;
+  private String statusName;
+  @OneToOne
+  @JoinColumn(referencedColumnName = "id")
+  private WorkflowStatus status;
   @Column
   private Date submitByDate;
   @Column
@@ -69,12 +72,12 @@ public class GrantQuantitativeKpiData extends BaseEntity {
     this.grantKpi = grantKpi;
   }
 
-  public KPIStatus getStatus() {
-    return status;
+  public String getStatusName() {
+    return statusName;
   }
 
-  public void setStatus(KPIStatus status) {
-    this.status = status;
+  public void setStatusName(String status) {
+    this.statusName = status;
   }
 
   public Date getSubmitByDate() {
@@ -91,5 +94,14 @@ public class GrantQuantitativeKpiData extends BaseEntity {
 
   public void setSubmittedOnDate(Date submittedOnDate) {
     this.submittedOnDate = submittedOnDate;
+  }
+
+
+  public WorkflowStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(WorkflowStatus status) {
+    this.status = status;
   }
 }

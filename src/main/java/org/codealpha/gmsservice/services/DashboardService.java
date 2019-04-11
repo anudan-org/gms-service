@@ -2,6 +2,7 @@ package org.codealpha.gmsservice.services;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.models.GrantVO;
@@ -16,12 +17,15 @@ public class DashboardService {
 
   @Autowired
   private WorkflowPermissionService workflowPermissionService;
+  @Autowired
+  private AppConfigService appConfigService;
+
 
   List<Tenant> tenants;
 
 
   public DashboardService build(User user, List<Grant> grants) {
-    this.user=user;
+    this.user = user;
     List<String> tenantNames = new ArrayList<>();
     for (Grant grant : grants) {
       grant.getKpis();
@@ -43,7 +47,9 @@ public class DashboardService {
       for (Tenant tenant : tenants) {
         if (tenant.getName().equalsIgnoreCase(grant.getGrantorOrganization().getCode())) {
           List<GrantVO> grantList = tenant.getGrants();
-          grantList.add(new GrantVO().build(grant,workflowPermissionService.getGrantFlowPermissions(grant.getGrantorOrganization().getId(),user.getRole().getId()),workflowPermissionService.getGrantActionPermissions(grant.getGrantorOrganization().getId(),user.getRole().getId())));
+          GrantVO grantVO = new GrantVO().build(grant, workflowPermissionService, user,appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+              AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
+          grantList.add(grantVO);
           tenant.setGrants(grantList);
         }
       }

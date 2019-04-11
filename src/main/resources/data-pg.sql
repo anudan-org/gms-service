@@ -66,6 +66,9 @@ VALUES ('2019-04-08 03:00:16.545000', 'System', 'anudan-admin@ihf.com', 'Anudan'
 insert into public.workflows (name, granter_id, created_at, created_by, updated_at,
                               updated_by, object)
 VALUES ('IHF - Grants Workflow', 2, now(), 'System', null, null, 'GRANT');
+insert into public.workflows (name, granter_id, created_at, created_by, updated_at,
+                              updated_by, object)
+VALUES ('IHF - KPIs Workflow', 2, now(), 'System', null, null, 'KPI');
 
 
 -- Workflow Statuses
@@ -77,7 +80,25 @@ insert into public.workflow_statuses(created_at, created_by, name, terminal, upd
 values (now(), 'System', 'ONGOING', false, null, null, 1);
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
                                      workflow_id)
-values (now(), 'System', 'CLOSED', false, null, null, 1);
+values (now(), 'System', 'CLOSED', true, null, null, 1);
+insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
+                                     workflow_id)
+values (now(), 'System', 'NOT SUBMITTED', false, null, null, 2);
+insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
+                                     workflow_id)
+values (now(), 'System', 'READY TO SUBMIT', false, null, null, 2);
+insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
+                                     workflow_id)
+values (now(), 'System', 'SUBMITTED', false, null, null, 2);
+insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
+                                     workflow_id)
+values (now(), 'System', 'PENDING REVIEW', false, null, null, 2);
+insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
+                                     workflow_id)
+values (now(), 'System', 'MODIFICATIONS REQUESTED', false, null, null, 2);
+insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
+                                     workflow_id)
+values (now(), 'System', 'ACCEPTED', true, null, null, 2);
 
 -- Workflow Status Transitions
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
@@ -92,7 +113,30 @@ insert into public.workflow_status_transitions(action, created_at, created_by, u
                                                updated_by, from_state_id, to_state_id, role_id,
                                                workflow_id)
 values ('Close', now(), 'System', null, null, 2, 3, 2, 1);
-
+insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
+                                               updated_by, from_state_id, to_state_id, role_id,
+                                               workflow_id)
+values ('Ready to Submit', now(), 'System', null, null, 4, 5, 4, 2);
+insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
+                                               updated_by, from_state_id, to_state_id, role_id,
+                                               workflow_id)
+values ('Submit', now(), 'System', null, null, 5, 6, 4, 2);
+insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
+                                               updated_by, from_state_id, to_state_id, role_id,
+                                               workflow_id)
+values ('Review', now(), 'System', null, null, 6, 7, 2, 2);
+insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
+                                               updated_by, from_state_id, to_state_id, role_id,
+                                               workflow_id)
+values ('Request Modifications', now(), 'System', null, null, 7, 8, 2, 2);
+insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
+                                               updated_by, from_state_id, to_state_id, role_id,
+                                               workflow_id)
+values ('Submit Modications', now(), 'System', null, null, 8, 6, 4, 2);
+insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
+                                               updated_by, from_state_id, to_state_id, role_id,
+                                               workflow_id)
+values ('Accept', now(), 'System', null, null, 7, 9, 2, 2);
 -- Workflow State Permissions
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
                                         updated_by, role_id, workflow_status_id)
@@ -136,33 +180,33 @@ VALUES (now(), 'System',
         'HMS 03.03 Ancient thoughts praises most attractions.', null, null, 1);
 
 -- Quantitative KPIs
-insert into public.grant_quantitative_kpi_data (actuals, goal, status, submit_by_date,
-                                                submitted_on_date, grant_kpi_id)
-values (0, 100, 'NOT_SUBMITTED', '2019-04-30', NULL, 1);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status, submit_by_date,
-                                                submitted_on_date, grant_kpi_id)
-values (0, 100, 'NOT_SUBMITTED', '2019-07-31', NULL, 1);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status, submit_by_date,
-                                                submitted_on_date, grant_kpi_id)
-values (0, 100, 'NOT_SUBMITTED', '2019-10-31', NULL, 1);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status, submit_by_date,
-                                                submitted_on_date, grant_kpi_id)
-values (0, 100, 'NOT_SUBMITTED', '2020-01-31', NULL, 1);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status, submit_by_date,
-                                                submitted_on_date, grant_kpi_id)
-values (0, 100, 'NOT_SUBMITTED', '2019-04-30', NULL, 2);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status, submit_by_date,
-                                                submitted_on_date, grant_kpi_id)
-values (0, 100, 'NOT_SUBMITTED', '2019-07-31', NULL, 2);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status, submit_by_date,
-                                                submitted_on_date, grant_kpi_id)
-values (0, 100, 'NOT_SUBMITTED', '2019-10-31', NULL, 2);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status, submit_by_date,
-                                                submitted_on_date, grant_kpi_id)
-values (0, 100, 'NOT_SUBMITTED', '2020-01-31', NULL, 2);
-insert into grant_qualitative_kpi_data (actuals, goal, status, submit_by_date,
-                                        submitted_on_date, grant_kpi_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2019-04-30',null,3);
-insert into grant_qualitative_kpi_data (actuals, goal, status, submit_by_date,
-                                        submitted_on_date, grant_kpi_id)
-VALUES ('','Scrape me wave, ye rainy anchor.','NOT_SUBMITTED','2019-04-30',null,3);
+insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
+                                                submitted_on_date, grant_kpi_id,status_id)
+values (0, 100, 'NOT SUBMITTED', '2019-04-30', NULL, 1,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
+                                                submitted_on_date, grant_kpi_id,status_id)
+values (0, 100, 'NOT SUBMITTED', '2019-07-31', NULL, 1,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
+                                                submitted_on_date, grant_kpi_id,status_id)
+values (0, 100, 'NOT SUBMITTED', '2019-10-31', NULL, 1,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
+                                                submitted_on_date, grant_kpi_id,status_id)
+values (0, 100, 'NOT SUBMITTED', '2020-01-31', NULL, 1,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
+                                                submitted_on_date, grant_kpi_id,status_id)
+values (0, 100, 'NOT SUBMITTED', '2019-04-30', NULL, 2,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
+                                                submitted_on_date, grant_kpi_id,status_id)
+values (0, 100, 'NOT SUBMITTED', '2019-07-31', NULL, 2,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
+                                                submitted_on_date, grant_kpi_id,status_id)
+values (0, 100, 'NOT SUBMITTED', '2019-10-31', NULL, 2,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
+                                                submitted_on_date, grant_kpi_id,status_id)
+values (0, 100, 'NOT SUBMITTED', '2020-01-31', NULL, 2,4);
+insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
+                                        submitted_on_date, grant_kpi_id,status_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2019-04-30',null,3,4);
+insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
+                                        submitted_on_date, grant_kpi_id,status_id)
+VALUES ('','Scrape me wave, ye rainy anchor.','NOT SUBMITTED','2019-04-30',null,3,4);

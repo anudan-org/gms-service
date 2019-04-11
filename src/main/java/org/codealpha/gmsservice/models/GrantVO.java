@@ -3,16 +3,21 @@ package org.codealpha.gmsservice.models;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.constants.GrantSubStatus;
+import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.GrantKpi;
+import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
 import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.WorkFlowPermission;
 import org.codealpha.gmsservice.entities.WorkflowActionPermission;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
+import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.springframework.beans.BeanUtils;
 
 public class GrantVO {
@@ -31,7 +36,7 @@ public class GrantVO {
   private GrantSubStatus substatus;
   private Date startDate;
   private Date endDate;
-  private List<GrantKpi> kpis;
+  private List<GrantKpiVO> kpis;
   private List<WorkFlowPermission> flowAuthority;
   private WorkflowActionPermission actionAuthority;
   private List<String> alerts;
@@ -157,11 +162,11 @@ public class GrantVO {
     this.notifications = notifications;
   }
 
-  public List<GrantKpi> getKpis() {
+  public List<GrantKpiVO> getKpis() {
     return kpis;
   }
 
-  public void setKpis(List<GrantKpi> kpis) {
+  public void setKpis(List<GrantKpiVO> kpis) {
     this.kpis = kpis;
   }
 
@@ -191,27 +196,44 @@ public class GrantVO {
     this.status = status;
   }
 
-  public GrantVO build(Grant grant, List<WorkFlowPermission> grantWorkflowPermissions,
-      WorkflowActionPermission grantActionPermissions){
+  public GrantVO build(Grant grant,
+      WorkflowPermissionService workflowPermissionService,
+      User user, AppConfig submissionWindow) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
     GrantVO vo = new GrantVO();
-    for(PropertyDescriptor descriptor:propertyDescriptors){
-      if(!descriptor.getName().equalsIgnoreCase("class")) {
+    List<GrantKpiVO> grantKpiVOList = null;
+    for (PropertyDescriptor descriptor : propertyDescriptors) {
+      if (!descriptor.getName().equalsIgnoreCase("class")) {
         try {
           Object value = descriptor.getReadMethod().invoke(grant);
           PropertyDescriptor voPd = BeanUtils
               .getPropertyDescriptor(vo.getClass(), descriptor.getName());
-          voPd.getWriteMethod().invoke(vo, value);
+          if(voPd.getName().equalsIgnoreCase("kpis")){
+            grantKpiVOList = new ArrayList<>();
+            for(GrantKpi kpi :(List<GrantKpi>)value){
+              GrantKpiVO kpiVO = new GrantKpiVO().build(kpi,workflowPermissionService,user,submissionWindow);
+              grantKpiVOList.add(kpiVO);
+            }
+            vo.setKpis(grantKpiVOList);
+            System.out.println("KPIS called");
+          }else {
+            voPd.getWriteMethod().invoke(vo, value);
+          }
         } catch (IllegalAccessException e) {
           e.printStackTrace();
         } catch (InvocationTargetException e) {
           e.printStackTrace();
         }
-        vo.setFlowAuthority(grantWorkflowPermissions);
-        vo.setActionAuthority(grantActionPermissions);
       }
     }
+    vo.setFlowAuthority(workflowPermissionService
+        .getGrantFlowPermissions(vo.grantorOrganization.getId(), user.getRole().getId()));
+    vo.setActionAuthority(workflowPermissionService
+        .getGrantActionPermissions(vo.getGrantorOrganization().getId(),
+            user.getRole().getId()));
 
     return vo;
   }
+
+
 }

@@ -14,6 +14,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KPIStatus;
 import org.codealpha.gmsservice.constants.KpiType;
@@ -58,6 +59,7 @@ public class GrantKpi {
 
   @OneToMany(mappedBy = "grantKpi")
   @LazyCollection(LazyCollectionOption.FALSE)
+  @OrderBy("submitByDate asc")
   List<GrantQuantitativeKpiData> qunatitativeKpis;
 
   @OneToMany(mappedBy = "grantKpi")

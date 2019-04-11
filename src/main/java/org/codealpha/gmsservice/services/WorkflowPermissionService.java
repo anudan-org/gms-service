@@ -22,6 +22,11 @@ public class WorkflowPermissionService {
     return workflowPermissionRepository.getPermissionsForGrantFlow(granterOrgId, userRoleId);
   }
 
+  public List<WorkFlowPermission> getKPIFlowPermissions(Long granterOrgId, Long userRoleId) {
+
+    return workflowPermissionRepository.getPermissionsForKPIFlow(granterOrgId, userRoleId);
+  }
+
   public WorkflowActionPermission getGrantActionPermissions(Long granterOrgId, Long userRoleId) {
 
     return workflowActionPermissionRepository.getActionPermissionsForGrant(granterOrgId, userRoleId);
