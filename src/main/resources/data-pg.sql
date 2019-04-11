@@ -67,6 +67,7 @@ insert into public.workflows (name, granter_id, created_at, created_by, updated_
                               updated_by, object)
 VALUES ('IHF - Grants Workflow', 2, now(), 'System', null, null, 'GRANT');
 
+
 -- Workflow Statuses
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
                                      workflow_id)
@@ -87,11 +88,21 @@ insert into public.workflow_status_transitions(action, created_at, created_by, u
                                                updated_by, from_state_id, to_state_id, role_id,
                                                workflow_id)
 values ('Onboard', now(), 'System', null, null, 1, 2, 3, 1);
+insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
+                                               updated_by, from_state_id, to_state_id, role_id,
+                                               workflow_id)
+values ('Close', now(), 'System', null, null, 2, 3, 2, 1);
 
 -- Workflow State Permissions
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
                                         updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'MANAGE', null, null, 2, 1);
+insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
+                                        updated_by, role_id, workflow_status_id)
+VALUES (now(), 'System', 'VIEW', null, null, 4, 2);
+insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
+                                        updated_by, role_id, workflow_status_id)
+VALUES (now(), 'System', 'VIEW', null, null, 2, 2);
 
 -- Grants
 insert into public.grants (organization_id, name, description, created_at, created_by, updated_at,
@@ -99,7 +110,7 @@ insert into public.grants (organization_id, name, description, created_at, creat
                            status_id)
 VALUES (1, 'IHF - Malaria Quest',
         'A placeholder in programming code may also be used to indicate where specific code needs to be added, but the programmer has not yet written the code.',
-        now(), 'System', null, null, 2, 'DRAFT', null, '2019-02-01', '2020-01-31', 1);
+        now(), 'System', null, null, 2, 'ONGOING', null, '2019-02-01', '2020-01-31', 2);
 
 -- Grant KPIs
 insert into public.grant_kpis (created_at, created_by, description, periodicity_unit,
