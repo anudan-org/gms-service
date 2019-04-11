@@ -14,12 +14,12 @@ public class GranteeService {
   @Autowired
   private GrantRepository grantRepository;
 
-  public List<Grant> getGrantsOfGranteeForGrantor(Long granteeOrgId, Organization tenantOrg){
+  public List<Grant> getGrantsOfGranteeForGrantor(Long granteeOrgId, Organization tenantOrg, Long userRoleId){
     List<Grant> allGrants = new ArrayList<>();
 
     if("GRANTER".equalsIgnoreCase(tenantOrg.getType())){
       allGrants
-          .addAll(grantRepository.findGrantsOfGranteeForTenantOrg(granteeOrgId, tenantOrg.getId()));
+          .addAll(grantRepository.findGrantsOfGranteeForTenantOrg(granteeOrgId, tenantOrg.getId(),userRoleId));
     }else if("PLATFORM".equalsIgnoreCase(tenantOrg.getType())){
       allGrants.addAll(grantRepository.findAllGrantsOfGrantee(granteeOrgId));
     }

@@ -12,6 +12,7 @@ import org.codealpha.gmsservice.entities.GrantKpi;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.WorkFlowPermission;
 import org.codealpha.gmsservice.entities.WorkflowActionPermission;
+import org.codealpha.gmsservice.entities.WorkflowStatus;
 import org.springframework.beans.BeanUtils;
 
 public class GrantVO {
@@ -25,7 +26,8 @@ public class GrantVO {
   private String createdBy;
   private LocalDateTime updatedAt;
   private String updatedBy;
-  private GrantStatus status;
+  private WorkflowStatus status;
+  private GrantStatus statusName;
   private GrantSubStatus substatus;
   private Date startDate;
   private Date endDate;
@@ -107,12 +109,12 @@ public class GrantVO {
     this.updatedBy = updatedBy;
   }
 
-  public GrantStatus getStatus() {
-    return status;
+  public GrantStatus getStatusName() {
+    return statusName;
   }
 
-  public void setStatus(GrantStatus status) {
-    this.status = status;
+  public void setStatusName(GrantStatus status) {
+    this.statusName = status;
   }
 
   public GrantSubStatus getSubstatus() {
@@ -179,6 +181,14 @@ public class GrantVO {
   public void setActionAuthority(
       WorkflowActionPermission actionAuthority) {
     this.actionAuthority = actionAuthority;
+  }
+
+  public WorkflowStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(WorkflowStatus status) {
+    this.status = status;
   }
 
   public GrantVO build(Grant grant, List<WorkFlowPermission> grantWorkflowPermissions,

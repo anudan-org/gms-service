@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.constants;
 
 public enum Frequency {
+  ONCE("ONCE"),
   MONTHLY("MONTHLY"),
   QUARTERLY("QUARTERLY"),
   YEARLY("YEARLY");

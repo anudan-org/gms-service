@@ -15,6 +15,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.constants.GrantSubStatus;
@@ -58,9 +59,13 @@ public class Grant extends BaseEntity{
 	@Column
 	private String updatedBy;
 
+	@OneToOne
+	@JoinColumn(referencedColumnName = "id")
+	private WorkflowStatus status;
+
 	@Column
 	@Enumerated(EnumType.STRING)
-	private GrantStatus status;
+	private GrantStatus statusName;
 
 	@Column
 	@Enumerated(EnumType.STRING)
@@ -116,12 +121,12 @@ public class Grant extends BaseEntity{
 		this.grantorOrganization = grantorOrganization;
 	}
 
-	public GrantStatus getStatus() {
-		return status;
+	public GrantStatus getStatusName() {
+		return statusName;
 	}
 
-	public void setStatus(GrantStatus status) {
-		this.status = status;
+	public void setStatusName(GrantStatus status) {
+		this.statusName = status;
 	}
 
 	public GrantSubStatus getSubstatus() {
@@ -154,5 +159,13 @@ public class Grant extends BaseEntity{
 
 	public void setKpis(List<GrantKpi> kpis) {
 		this.kpis = kpis;
+	}
+
+	public WorkflowStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(WorkflowStatus status) {
+		this.status = status;
 	}
 }

@@ -10,8 +10,8 @@ import org.springframework.data.repository.CrudRepository;
  **/
 public interface GrantRepository extends CrudRepository<Grant, Long> {
 
-  @Query(value = "select A.* from grants A inner join organizations B on A.grantor_org_id=B.id where B.id=?2 and A.organization_id=?1",nativeQuery = true)
-  public List<Grant> findGrantsOfGranteeForTenantOrg(Long granteeOrgId, Long grantorOrgId);
+  @Query(value = "select A.* from grants A inner join organizations B on A.grantor_org_id = B.id inner join workflows w on B.id = w.granter_id inner join workflow_statuses ws on w.id = ws.workflow_id inner join workflow_state_permissions wsp on ws.id = wsp.workflow_status_id where B.id =?2 and A.organization_id =?1 and wsp.role_id=?3 and A.status_id = ws.id",nativeQuery = true)
+  public List<Grant> findGrantsOfGranteeForTenantOrg(Long granteeOrgId, Long grantorOrgId,Long roleId);
 
   @Query(value = "select A.* from grants A where A.grantor_org_id=?1",nativeQuery = true)
   public List<Grant> findGrantsOfGranter(Long grantorOrgId);

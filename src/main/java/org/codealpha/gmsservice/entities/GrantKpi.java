@@ -17,6 +17,8 @@ import javax.persistence.OneToMany;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KPIStatus;
 import org.codealpha.gmsservice.constants.KpiType;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 @Entity(name = "grant_kpis")
 public class GrantKpi {
@@ -54,8 +56,13 @@ public class GrantKpi {
   @JsonIgnore
   private Grant grant;
 
-  @OneToMany(mappedBy = "grantKpi",fetch = FetchType.EAGER)
+  @OneToMany(mappedBy = "grantKpi")
+  @LazyCollection(LazyCollectionOption.FALSE)
   List<GrantQuantitativeKpiData> qunatitativeKpis;
+
+  @OneToMany(mappedBy = "grantKpi")
+  @LazyCollection(LazyCollectionOption.FALSE)
+  List<GrantQualitativeKpiData> qualitativeKpis;
 
   public Long getId() {
     return id;
@@ -168,5 +175,14 @@ public class GrantKpi {
   public void setQunatitativeKpis(
       List<GrantQuantitativeKpiData> qunatitativeKpis) {
     this.qunatitativeKpis = qunatitativeKpis;
+  }
+
+  public List<GrantQualitativeKpiData> getQualitativeKpis() {
+    return qualitativeKpis;
+  }
+
+  public void setQualitativeKpis(
+      List<GrantQualitativeKpiData> qualitativeKpis) {
+    this.qualitativeKpis = qualitativeKpis;
   }
 }

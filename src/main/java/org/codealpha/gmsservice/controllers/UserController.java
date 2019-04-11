@@ -92,7 +92,7 @@ public class UserController {
     List<Grant> grants = null;
     switch (userOrg.getType()){
       case "GRANTEE":
-        grants = granteeService.getGrantsOfGranteeForGrantor(userOrg.getId(),tenantOrg);
+        grants = granteeService.getGrantsOfGranteeForGrantor(userOrg.getId(),tenantOrg,user.getRole().getId());
         return new ResponseEntity<>(dashboardService.build(user,grants),HttpStatus.OK);
       case "GRANTER":
         grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(),tenantOrg);
