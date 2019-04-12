@@ -76,10 +76,6 @@ public class GrantQualitativeKpiData extends BaseEntity {
     return statusName;
   }
 
-  public void setStatus(String status) {
-    this.statusName = status;
-  }
-
   public Date getSubmitByDate() {
     return submitByDate;
   }

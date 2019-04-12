@@ -148,10 +148,10 @@ public class GrantQualitativeKpiDataVO extends BaseEntity {
             .plusDays(1)) && today.isAfter(new DateTime(grantQualitativeKpiData.getSubmitByDate())
         .minusDays(Integer.valueOf(submissionWindow.getConfigValue()))) && !workflowPermissionService.getKPIFlowPermissions(
         grantQualitativeKpiData.getGrantKpi().getGrant().getGrantorOrganization().getId(),
-        user.getRole().getId()).isEmpty()) {
+        user.getRole().getId(),grantQualitativeKpiData.getStatus().getId()).isEmpty()) {
       vo.setFlowAuthority(workflowPermissionService.getKPIFlowPermissions(
           grantQualitativeKpiData.getGrantKpi().getGrant().getGrantorOrganization().getId(),
-          user.getRole().getId()));
+          user.getRole().getId(),grantQualitativeKpiData.getStatus().getId()));
     }
 
     return vo;
