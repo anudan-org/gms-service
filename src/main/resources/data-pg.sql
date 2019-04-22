@@ -6,7 +6,8 @@ VALUES ('KPI_REMINDER_NOTIFICATION_DAYS', '30'),
 -- Organizations
 INSERT INTO public.organizations (organization_type, code, created_at, created_by, name, updated_at,
                                   updated_by)
-VALUES ('GRANTEE', 'IIH', '2019-04-08 03:02:02.431000', 'System', 'INNOVATORS IN HEALTH', null, null);
+VALUES ('GRANTEE', 'IIH', '2019-04-08 03:02:02.431000', 'System', 'INNOVATORS IN HEALTH', null,
+        null);
 INSERT INTO public.organizations (organization_type, code, created_at, created_by, name, updated_at,
                                   updated_by)
 VALUES ('GRANTER', 'IHF', '2019-04-08 03:02:02.431000', 'System', 'India Health Fund', null, null);
@@ -68,7 +69,7 @@ insert into public.workflows (name, granter_id, created_at, created_by, updated_
 VALUES ('IHF - Grants Workflow', 2, now(), 'System', null, null, 'GRANT');
 insert into public.workflows (name, granter_id, created_at, created_by, updated_at,
                               updated_by, object)
-VALUES ('IHF - KPIs Workflow', 2, now(), 'System', null, null, 'KPI');
+VALUES ('IHF - KPI Submissions Workflow', 2, now(), 'System', null, null, 'SUBMISSION');
 
 
 -- Workflow Statuses
@@ -83,7 +84,7 @@ insert into public.workflow_statuses(created_at, created_by, name, terminal, upd
 values (now(), 'System', 'CLOSED', true, null, null, 1);
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
                                      workflow_id)
-values (now(), 'System', 'NOT SUBMITTED', false, null, null, 2);
+values (now(), 'System', 'NOT_SUBMITTED', false, null, null, 2);
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
                                      workflow_id)
 values (now(), 'System', 'SUBMITTED', false, null, null, 2);
@@ -139,8 +140,9 @@ VALUES (now(), 'System', 'VIEW', null, null, 2, 2);
 -- Grants
 insert into public.grants (organization_id, name, description, created_at, created_by, updated_at,
                            updated_by, grantor_org_id, status_name, substatus, start_date, end_date,
-                           status_id)
-VALUES (1, 'Improving Outcomes for Rural TB Patients in Private Care via Pharmacist Referrals and Community Health Workers (Health-IIH-20170104; (HEA/000/TEDT/036) )',
+                           grant_status_id)
+VALUES (1,
+        'Improving Outcomes for Rural TB Patients in Private Care via Pharmacist Referrals and Community Health Workers (Health-IIH-20170104; (HEA/000/TEDT/036) )',
         'A placeholder in programming code may also be used to indicate where specific code needs to be added, but the programmer has not yet written the code.',
         now(), 'System', null, null, 2, 'ONGOING', null, '2019-02-01', '2020-01-31', 2);
 
@@ -158,7 +160,8 @@ insert into public.grant_kpis (created_at, created_by, description, periodicity_
 VALUES (now(), 'System',
         'TBs.03.01.06 - No. of private providers (pharmacists/phys icians/diagnostic centers) approached',
         'QUARTERLY', 'QUANTITATIVE', 12, true, 'NOT_SUBMITTED',
-        'TBs.03.01.06 - No. of private providers (pharmacists/phys icians/diagnostic centers) approached', null, null, 1);
+        'TBs.03.01.06 - No. of private providers (pharmacists/phys icians/diagnostic centers) approached',
+        null, null, 1);
 insert into public.grant_kpis (created_at, created_by, description, periodicity_unit,
                                kpi_type, periodicity, is_scheduled, status, title, updated_at,
                                updated_by, grant_id)
@@ -186,123 +189,255 @@ insert into public.grant_kpis (created_at, created_by, description, periodicity_
 VALUES (now(), 'System',
         'Any deviations from the plan, if yes, mention them and reasons for the same?',
         'QUARTERLY', 'QUALITATIVE', 12, true, 'NOT_SUBMITTED',
-        'Any deviations from the plan, if yes, mention them and reasons for the same?', null, null, 1);
+        'Any deviations from the plan, if yes, mention them and reasons for the same?', null, null,
+        1);
 insert into public.grant_kpis (created_at, created_by, description, periodicity_unit,
                                kpi_type, periodicity, is_scheduled, status, title, updated_at,
                                updated_by, grant_id)
 VALUES (now(), 'System',
         'What changes were visible on the ground and amongest stake holders as a consequence of the project activities in this reporting period?',
         'QUARTERLY', 'QUALITATIVE', 12, true, 'NOT_SUBMITTED',
-        'What changes were visible on the ground and amongest stake holders as a consequence of the project activities in this reporting period?', null, null, 1);
+        'What changes were visible on the ground and amongest stake holders as a consequence of the project activities in this reporting period?',
+        null, null, 1);
 insert into public.grant_kpis (created_at, created_by, description, periodicity_unit,
                                kpi_type, periodicity, is_scheduled, status, title, updated_at,
                                updated_by, grant_id)
-VALUES (now(), 'System',
-        '
-What were the learnings in this period?',
-        'QUARTERLY', 'QUALITATIVE', 12, true, 'NOT_SUBMITTED',
-        '
-What were the learnings in this period?', null, null, 1);
+VALUES (now(), 'System', 'What were the learnings in this period?', 'QUARTERLY', 'QUALITATIVE', 12,
+        true, 'NOT_SUBMITTED', 'What were the learnings in this period?', null, null, 1);
 
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-04-30', null, null, null, 1, 4,'Quarter 1 [Jan 2019 - Mar 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-07-31', null, null, null, 1, 4,'Quarter 2 [Apr 2019 - Jun 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-10-31', null, null, null, 1, 4,'Quarter 3 [Jul 2019 - Sep 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2020-01-31', null, null, null, 1, 4,'Quarter 4 [Oct 2019 - Dec 2019]');
+--
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-04-30', null, null, null, 2, 4,'Quarter 1 [Jan 2019 - Mar 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-07-31', null, null, null, 2, 4,'Quarter 2 [Apr 2019 - Jun 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-10-31', null, null, null, 2, 4,'Quarter 3 [Jul 2019 - Sep 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2020-01-31', null, null, null, 2, 4,'Quarter 4 [Oct 2019 - Dec 2019]');
+--
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-04-30', null, null, null, 3, 4,'Quarter 1 [Jan 2019 - Mar 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-07-31', null, null, null, 3, 4,'Quarter 2 [Apr 2019 - Jun 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-10-31', null, null, null, 3, 4,'Quarter 3 [Jul 2019 - Sep 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2020-01-31', null, null, null, 3, 4,'Quarter 4 [Oct 2019 - Dec 2019]');
+--
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-04-30', null, null, null, 4, 4,'Quarter 1 [Jan 2019 - Mar 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-07-31', null, null, null, 4, 4,'Quarter 2 [Apr 2019 - Jun 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-10-31', null, null, null, 4, 4,'Quarter 3 [Jul 2019 - Sep 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2020-01-31', null, null, null, 4, 4,'Quarter 4 [Oct 2019 - Dec 2019]');
+--
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-04-30', null, null, null, 5, 4,'Quarter 1 [Jan 2019 - Mar 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-07-31', null, null, null, 5, 4,'Quarter 2 [Apr 2019 - Jun 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-10-31', null, null, null, 5, 4,'Quarter 3 [Jul 2019 - Sep 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2020-01-31', null, null, null, 5, 4,'Quarter 4 [Oct 2019 - Dec 2019]');
+--
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-04-30', null, null, null, 6, 4,'Quarter 1 [Jan 2019 - Mar 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-07-31', null, null, null, 6, 4,'Quarter 2 [Apr 2019 - Jun 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-10-31', null, null, null, 6, 4,'Quarter 3 [Jul 2019 - Sep 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2020-01-31', null, null, null, 6, 4,'Quarter 4 [Oct 2019 - Dec 2019]');
+--
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-04-30', null, null, null, 7, 4,'Quarter 1 [Jan 2019 - Mar 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-07-31', null, null, null, 7, 4,'Quarter 2 [Apr 2019 - Jun 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-10-31', null, null, null, 7, 4,'Quarter 3 [Jul 2019 - Sep 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2020-01-31', null, null, null, 7, 4,'Quarter 4 [Oct 2019 - Dec 2019]');
+--
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-04-30', null, null, null, 8, 4,'Quarter 1 [Jan 2019 - Mar 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-07-31', null, null, null, 8, 4,'Quarter 2 [Apr 2019 - Jun 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2019-10-31', null, null, null, 8, 4,'Quarter 3 [Jul 2019 - Sep 2019]');
+insert into kpi_submission (created_at, created_by, status_name, submit_by_date, submitted_on,
+                            updated_at, updated_by, grant_kpi_id, submission_status_id,title)
+values (now(), 'System', 'NOT_SUBMITTED', '2020-01-31', null, null, null, 8, 4,'Quarter 4 [Oct 2019 - Dec 2019]');
 -- Quantitative KPIs
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-04-30', NULL, 1,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-07-31', NULL, 1,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-10-31', NULL, 1,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2020-01-31', NULL, 1,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-04-30', NULL, 2,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-07-31', NULL, 2,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-10-31', NULL, 2,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2020-01-31', NULL, 2,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 1);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 2);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 3);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 4);
 --
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-04-30', NULL, 3,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-07-31', NULL, 3,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-10-31', NULL, 3,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2020-01-31', NULL, 3,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 5);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 6);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 7);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 8);
 --
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-04-30', NULL, 4,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-07-31', NULL, 4,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-10-31', NULL, 4,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2020-01-31', NULL, 4,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 9);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 10);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 11);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 12);
 --
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-04-30', NULL, 5,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-07-31', NULL, 5,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2019-10-31', NULL, 5,4);
-insert into public.grant_quantitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                                submitted_on_date, grant_kpi_id,status_id)
-values (0, 100, 'NOT SUBMITTED', '2020-01-31', NULL, 5,4);
-insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                        submitted_on_date, grant_kpi_id,status_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2019-04-30',null,6,4);
-insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                        submitted_on_date, grant_kpi_id,status_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2019-07-31',null,6,4);
-insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                        submitted_on_date, grant_kpi_id,status_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2019-10-31',null,6,4);
-insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                        submitted_on_date, grant_kpi_id,status_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2020-01-31',null,6,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 13);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 14);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 15);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 16);
+--
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 17);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 18);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 19);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 20);
+--
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES (null,'Eleatess sunt plasmators de magnum parma.',21);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES (null,'Eleatess sunt plasmators de magnum parma.',22);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES (null,'Eleatess sunt plasmators de magnum parma.',23);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES (null,'Eleatess sunt plasmators de magnum parma.',24);
+--
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES (null,'Eleatess sunt plasmators de magnum parma.',25);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES (null,'Eleatess sunt plasmators de magnum parma.',26);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES (null,'Eleatess sunt plasmators de magnum parma.',27);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES (null,'Eleatess sunt plasmators de magnum parma.',28);
+--
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES (null,'Eleatess sunt plasmators de magnum parma.',29);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES (null,'Eleatess sunt plasmators de magnum parma.',30);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES (null,'Eleatess sunt plasmators de magnum parma.',31);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES (null,'Eleatess sunt plasmators de magnum parma.',32);
+/*insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2019-04-30', NULL, 2,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2019-07-31', NULL, 2,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2019-10-31', NULL, 2,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2020-01-31', NULL, 2,4);
+--
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2019-04-30', NULL, 3,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2019-07-31', NULL, 3,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2019-10-31', NULL, 3,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2020-01-31', NULL, 3,4);
+--
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2019-04-30', NULL, 4,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2019-07-31', NULL, 4,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2019-10-31', NULL, 4,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2020-01-31', NULL, 4,4);
+--
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2019-04-30', NULL, 5,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2019-07-31', NULL, 5,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2019-10-31', NULL, 5,4);
+insert into public.grant_quantitative_kpi_data (actuals, goal, kpi_submission_id)
+values (0, 100, 'NOT_SUBMITTED', '2020-01-31', NULL, 5,4);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2019-04-30',null,6,4);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2019-07-31',null,6,4);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2019-10-31',null,6,4);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2020-01-31',null,6,4);
 
-insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                        submitted_on_date, grant_kpi_id,status_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2019-04-30',null,7,4);
-insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                        submitted_on_date, grant_kpi_id,status_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2019-07-31',null,7,4);
-insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                        submitted_on_date, grant_kpi_id,status_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2019-10-31',null,7,4);
-insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                        submitted_on_date, grant_kpi_id,status_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2020-01-31',null,7,4);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2019-04-30',null,7,4);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2019-07-31',null,7,4);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2019-10-31',null,7,4);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2020-01-31',null,7,4);
 
-insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                        submitted_on_date, grant_kpi_id,status_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2019-04-30',null,8,4);
-insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                        submitted_on_date, grant_kpi_id,status_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2019-07-31',null,8,4);
-insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                        submitted_on_date, grant_kpi_id,status_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2019-10-31',null,8,4);
-insert into grant_qualitative_kpi_data (actuals, goal, status_name, submit_by_date,
-                                        submitted_on_date, grant_kpi_id,status_id)
-VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT SUBMITTED','2020-01-31',null,8,4);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2019-04-30',null,8,4);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2019-07-31',null,8,4);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2019-10-31',null,8,4);
+insert into grant_qualitative_kpi_data (actuals, goal, kpi_submission_id)
+VALUES ('','Eleatess sunt plasmators de magnum parma.','NOT_SUBMITTED','2020-01-31',null,8,4);*/

@@ -58,13 +58,9 @@ public class GrantKpi {
   private Grant grant;
 
   @OneToMany(mappedBy = "grantKpi")
-  @LazyCollection(LazyCollectionOption.FALSE)
   @OrderBy("submitByDate asc")
-  List<GrantQuantitativeKpiData> qunatitativeKpis;
+  List<KpiSubmission> submissions;
 
-  @OneToMany(mappedBy = "grantKpi")
-  @LazyCollection(LazyCollectionOption.FALSE)
-  List<GrantQualitativeKpiData> qualitativeKpis;
 
   public Long getId() {
     return id;
@@ -170,21 +166,11 @@ public class GrantKpi {
     this.grant = grant;
   }
 
-  public List<GrantQuantitativeKpiData> getQunatitativeKpis() {
-    return qunatitativeKpis;
+  public List<KpiSubmission> getSubmissions() {
+    return submissions;
   }
 
-  public void setQunatitativeKpis(
-      List<GrantQuantitativeKpiData> qunatitativeKpis) {
-    this.qunatitativeKpis = qunatitativeKpis;
-  }
-
-  public List<GrantQualitativeKpiData> getQualitativeKpis() {
-    return qualitativeKpis;
-  }
-
-  public void setQualitativeKpis(
-      List<GrantQualitativeKpiData> qualitativeKpis) {
-    this.qualitativeKpis = qualitativeKpis;
+  public void setSubmissions(List<KpiSubmission> submissions) {
+    this.submissions = submissions;
   }
 }

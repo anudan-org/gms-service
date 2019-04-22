@@ -2,17 +2,26 @@ package org.codealpha.gmsservice.models;
 
 public class KpiSubmissionData {
 
-  private Long id;
+  private Long submissionId;
+  private Long kpiDataId;
   private String type;
   private String value;
   private Long toStatusId;
 
-  public Long getId() {
-    return id;
+  public Long getSubmissionId() {
+    return submissionId;
   }
 
-  public void setId(Long id) {
-    this.id = id;
+  public void setSubmissionId(Long submissionId) {
+    this.submissionId = submissionId;
+  }
+
+  public Long getKpiDataId() {
+    return kpiDataId;
+  }
+
+  public void setKpiDataId(Long kpiDataId) {
+    this.kpiDataId = kpiDataId;
   }
 
   public String getType() {

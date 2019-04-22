@@ -12,6 +12,7 @@ import org.codealpha.gmsservice.services.GranteeService;
 import org.codealpha.gmsservice.services.GranterService;
 import org.codealpha.gmsservice.services.OrganizationService;
 import org.codealpha.gmsservice.services.UserService;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -59,7 +60,7 @@ public class UserController {
   @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
   public User create(@RequestBody User user) {
     //BCryptPasswordEncoder a  = new BCryptPasswordEncoder
-    user.setCreatedAt(LocalDateTime.now());
+    user.setCreatedAt(DateTime.now().toDate());
     user.setCreatedBy("Api");
     user.setPassword(user.getPassword());
     user = userService.save(user);

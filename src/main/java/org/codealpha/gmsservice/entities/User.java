@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -40,13 +41,13 @@ public class User {
 	private String password;
 
 	@Column
-	private LocalDateTime createdAt;
+	private Date createdAt;
 
 	@Column
 	private String createdBy;
 
 	@Column
-	private LocalDateTime updatedAt;
+	private Date updatedAt;
 
 	@Column
 	private String updatedBy;
@@ -103,11 +104,11 @@ public class User {
 		this.password = password;
 	}
 
-	public LocalDateTime getCreatedAt() {
+	public Date getCreatedAt() {
 		return createdAt;
 	}
 
-	public void setCreatedAt(LocalDateTime createdAt) {
+	public void setCreatedAt(Date createdAt) {
 		this.createdAt = createdAt;
 	}
 
@@ -119,11 +120,11 @@ public class User {
 		this.createdBy = createdBy;
 	}
 
-	public LocalDateTime getUpdatedAt() {
+	public Date getUpdatedAt() {
 		return updatedAt;
 	}
 
-	public void setUpdatedAt(LocalDateTime updatedAt) {
+	public void setUpdatedAt(Date updatedAt) {
 		this.updatedAt = updatedAt;
 	}
 

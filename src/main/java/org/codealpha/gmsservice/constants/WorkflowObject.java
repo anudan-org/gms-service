@@ -4,7 +4,7 @@ public enum WorkflowObject {
 
   GRANT("GRANT"),
   APPLICATION("APPLICATION"),
-  KPI("KPI");
+  SUBMISSION("SUBMISSION");
 
   private String val;
 

@@ -20,6 +20,7 @@ import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.GrantKpi;
 import org.codealpha.gmsservice.entities.GrantQualitativeKpiData;
 import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
+import org.codealpha.gmsservice.entities.KpiSubmission;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.hibernate.annotations.LazyCollection;
@@ -40,9 +41,10 @@ public class GrantKpiVO {
   private String createdBy;
   private Date updatedAt;
   private String updatedBy;
+  @JsonIgnore
   private Grant grant;
-  List<GrantQuantitativeKpiDataVO> qunatitativeKpis;
-  List<GrantQualitativeKpiDataVO> qualitativeKpis;
+  List<KpiSubmissionVO> submissions;
+
 
   public Long getId() {
     return id;
@@ -148,30 +150,19 @@ public class GrantKpiVO {
     this.grant = grant;
   }
 
-  public List<GrantQuantitativeKpiDataVO> getQunatitativeKpis() {
-    return qunatitativeKpis;
+  public List<KpiSubmissionVO> getSubmissions() {
+    return submissions;
   }
 
-  public void setQunatitativeKpis(
-      List<GrantQuantitativeKpiDataVO> qunatitativeKpis) {
-    this.qunatitativeKpis = qunatitativeKpis;
-  }
-
-  public List<GrantQualitativeKpiDataVO> getQualitativeKpis() {
-    return qualitativeKpis;
-  }
-
-  public void setQualitativeKpis(
-      List<GrantQualitativeKpiDataVO> qualitativeKpis) {
-    this.qualitativeKpis = qualitativeKpis;
+  public void setSubmissions(List<KpiSubmissionVO> submissions) {
+    this.submissions = submissions;
   }
 
   public GrantKpiVO build(GrantKpi kpi, WorkflowPermissionService workflowPermissionService,
       User user, AppConfig submissionWindow) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(kpi.getClass());
     GrantKpiVO vo = new GrantKpiVO();
-    List<GrantQuantitativeKpiDataVO> quantitativeKpiDataList=null;
-    List<GrantQualitativeKpiDataVO> qualitativeKpiDataList=null;
+    List<KpiSubmissionVO> submissionVOList=null;
     for (PropertyDescriptor descriptor : propertyDescriptors) {
       if (!descriptor.getName().equalsIgnoreCase("class")) {
         try {
@@ -179,24 +170,17 @@ public class GrantKpiVO {
           PropertyDescriptor voPd = BeanUtils
               .getPropertyDescriptor(vo.getClass(), descriptor.getName());
 
-          if (voPd.getName().equalsIgnoreCase("qunatitativeKpis")) {
-            quantitativeKpiDataList = new ArrayList<>();
-            for (GrantQuantitativeKpiData grantQuantitativeKpiData : kpi.getQunatitativeKpis()) {
-              GrantQuantitativeKpiDataVO quantitativeKpiDataVO = new GrantQuantitativeKpiDataVO()
-                  .build(grantQuantitativeKpiData, workflowPermissionService,user,submissionWindow);
-              quantitativeKpiDataList.add(quantitativeKpiDataVO);
+          if (voPd.getName().equalsIgnoreCase("submissions")) {
+            submissionVOList = new ArrayList<>();
+            for(KpiSubmission submission: kpi.getSubmissions()) {
+                KpiSubmissionVO submissionVO = new KpiSubmissionVO()
+                    .build(submission, workflowPermissionService, user,
+                        submissionWindow);
+                submissionVOList.add(submissionVO);
             }
-            vo.setQunatitativeKpis(quantitativeKpiDataList);
 
-          } else if (voPd.getName().equalsIgnoreCase("qualitativeKpis")) {
+            vo.setSubmissions(submissionVOList);
 
-            qualitativeKpiDataList = new ArrayList<>();
-            for (GrantQualitativeKpiData grantQualitativeKpiData : kpi.getQualitativeKpis()) {
-              GrantQualitativeKpiDataVO qualitativeKpiDataVO =  new GrantQualitativeKpiDataVO()
-                  .build(grantQualitativeKpiData, workflowPermissionService,user,submissionWindow);
-              qualitativeKpiDataList.add(qualitativeKpiDataVO);
-            }
-            vo.setQualitativeKpis(qualitativeKpiDataList);
           } else {
             voPd.getWriteMethod().invoke(vo, value);
           }

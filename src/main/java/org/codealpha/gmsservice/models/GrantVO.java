@@ -31,7 +31,7 @@ public class GrantVO {
   private String createdBy;
   private LocalDateTime updatedAt;
   private String updatedBy;
-  private WorkflowStatus status;
+  private WorkflowStatus grantStatus;
   private GrantStatus statusName;
   private GrantSubStatus substatus;
   private Date startDate;
@@ -188,12 +188,12 @@ public class GrantVO {
     this.actionAuthority = actionAuthority;
   }
 
-  public WorkflowStatus getStatus() {
-    return status;
+  public WorkflowStatus getGrantStatus() {
+    return grantStatus;
   }
 
-  public void setStatus(WorkflowStatus status) {
-    this.status = status;
+  public void setGrantStatus(WorkflowStatus status) {
+    this.grantStatus = status;
   }
 
   public GrantVO build(Grant grant,

@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
@@ -8,6 +9,7 @@ import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.BaseEntity;
 import org.codealpha.gmsservice.entities.GrantKpi;
 import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
+import org.codealpha.gmsservice.entities.KpiSubmission;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.WorkFlowPermission;
 import org.codealpha.gmsservice.entities.WorkflowActionPermission;
@@ -23,13 +25,8 @@ public class GrantQuantitativeKpiDataVO extends BaseEntity {
   private Long id;
   private Integer goal;
   private Integer actuals;
-  private GrantKpi grantKpi;
-  private String statusName;
-  private WorkflowStatus status;
-  private Date submitByDate;
-  private Date submittedOnDate;
-  private List<WorkFlowPermission> flowAuthority;
-  private WorkflowActionPermission actionAuthority;
+  @JsonIgnore
+  private KpiSubmission kpiSubmission;
 
   @Override
   public Long getId() {
@@ -57,62 +54,12 @@ public class GrantQuantitativeKpiDataVO extends BaseEntity {
     this.actuals = actuals;
   }
 
-  public GrantKpi getGrantKpi() {
-    return grantKpi;
+  public KpiSubmission getKpiSubmission() {
+    return kpiSubmission;
   }
 
-  public void setGrantKpi(GrantKpi grantKpi) {
-    this.grantKpi = grantKpi;
-  }
-
-  public String getStatusName() {
-    return statusName;
-  }
-
-  public void setStatusName(String statusName) {
-    this.statusName = statusName;
-  }
-
-  public WorkflowStatus getStatus() {
-    return status;
-  }
-
-  public void setStatus(WorkflowStatus status) {
-    this.status = status;
-  }
-
-  public Date getSubmitByDate() {
-    return submitByDate;
-  }
-
-  public void setSubmitByDate(Date submitByDate) {
-    this.submitByDate = submitByDate;
-  }
-
-  public Date getSubmittedOnDate() {
-    return submittedOnDate;
-  }
-
-  public void setSubmittedOnDate(Date submittedOnDate) {
-    this.submittedOnDate = submittedOnDate;
-  }
-
-  public List<WorkFlowPermission> getFlowAuthority() {
-    return flowAuthority;
-  }
-
-  public void setFlowAuthority(
-      List<WorkFlowPermission> flowAuthority) {
-    this.flowAuthority = flowAuthority;
-  }
-
-  public WorkflowActionPermission getActionAuthority() {
-    return actionAuthority;
-  }
-
-  public void setActionAuthority(
-      WorkflowActionPermission actionAuthority) {
-    this.actionAuthority = actionAuthority;
+  public void setKpiSubmission(KpiSubmission kpiSubmission) {
+    this.kpiSubmission = kpiSubmission;
   }
 
   public GrantQuantitativeKpiDataVO build(GrantQuantitativeKpiData grantQuantitativeKpiData,
@@ -137,19 +84,6 @@ public class GrantQuantitativeKpiDataVO extends BaseEntity {
         }
       }
     }
-
-    DateTime today = DateTime.now();
-    if (today.isBefore(
-        new DateTime(grantQuantitativeKpiData.getSubmitByDate()).withTimeAtStartOfDay()
-            .plusDays(1)) && today.isAfter(new DateTime(grantQuantitativeKpiData.getSubmitByDate())
-        .minusDays(Integer.valueOf(submissionWindow.getConfigValue()))) && !workflowPermissionService.getKPIFlowPermissions(
-        grantQuantitativeKpiData.getGrantKpi().getGrant().getGrantorOrganization().getId(),
-        user.getRole().getId(),grantQuantitativeKpiData.getStatus().getId()).isEmpty()) {
-      vo.setFlowAuthority(workflowPermissionService.getKPIFlowPermissions(
-          grantQuantitativeKpiData.getGrantKpi().getGrant().getGrantorOrganization().getId(),
-          user.getRole().getId(),grantQuantitativeKpiData.getStatus().getId()));
-    }
-
     return vo;
   }
 }

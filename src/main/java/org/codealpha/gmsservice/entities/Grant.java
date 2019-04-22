@@ -61,7 +61,7 @@ public class Grant extends BaseEntity{
 
 	@OneToOne
 	@JoinColumn(referencedColumnName = "id")
-	private WorkflowStatus status;
+	private WorkflowStatus grantStatus;
 
 	@Column
 	@Enumerated(EnumType.STRING)
@@ -161,11 +161,11 @@ public class Grant extends BaseEntity{
 		this.kpis = kpis;
 	}
 
-	public WorkflowStatus getStatus() {
-		return status;
+	public WorkflowStatus getGrantStatus() {
+		return grantStatus;
 	}
 
-	public void setStatus(WorkflowStatus status) {
-		this.status = status;
+	public void setGrantStatus(WorkflowStatus status) {
+		this.grantStatus = status;
 	}
 }
