@@ -60,6 +60,10 @@ INSERT INTO public.users (created_at, created_by, email_id, first_name, last_nam
                           updated_at, updated_by, organization_id, role_id)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'vineet_prasani@email.com', 'Vineet', 'Prasani',
         'password', null, null, 1, 4);
+INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
+                          updated_at, updated_by, organization_id, role_id)
+VALUES ('2019-04-08 03:00:16.545000', 'System', 'manasi.arora@gmail.com', 'Manasi', 'Grantee',
+        'password', null, null, 1, 4);
 
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
                           updated_at, updated_by, organization_id, role_id)
@@ -68,6 +72,11 @@ VALUES ('2019-04-08 03:00:16.545000', 'System', 'ranjitvictor@gmail.com', 'IHF',
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
                           updated_at, updated_by, organization_id, role_id)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'vineet.prasani@gmail.com', 'Vineet', 'Prasani',
+        'password',
+        null, null, 2, 2);
+INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
+                          updated_at, updated_by, organization_id, role_id)
+VALUES ('2019-04-08 03:00:16.545000', 'System', 'manasi.arora@enstratify.com', 'Manasi', 'PL',
         'password',
         null, null, 2, 2);
 
