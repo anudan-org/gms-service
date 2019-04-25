@@ -32,4 +32,11 @@ public class WorkflowActionPermission {
     return permissionsString.split(",");
   }
 
+  public String getPermissionsString() {
+    return permissionsString;
+  }
+
+  public void setPermissions(String[] permissions) {
+    this.permissions = permissions;
+  }
 }

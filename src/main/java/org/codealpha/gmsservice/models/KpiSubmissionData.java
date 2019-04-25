@@ -1,5 +1,7 @@
 package org.codealpha.gmsservice.models;
 
+import org.springframework.web.multipart.MultipartFile;
+
 public class KpiSubmissionData {
 
   private Long submissionId;
@@ -7,6 +9,8 @@ public class KpiSubmissionData {
   private String type;
   private String value;
   private Long toStatusId;
+  private String fileName;
+  private String fileType;
 
   public Long getSubmissionId() {
     return submissionId;
@@ -46,5 +50,21 @@ public class KpiSubmissionData {
 
   public void setToStatusId(Long toStatusId) {
     this.toStatusId = toStatusId;
+  }
+
+  public String getFileName() {
+    return fileName;
+  }
+
+  public void setFileName(String fileName) {
+    this.fileName = fileName;
+  }
+
+  public String getFileType() {
+    return fileType;
+  }
+
+  public void setFileType(String fileType) {
+    this.fileType = fileType;
   }
 }

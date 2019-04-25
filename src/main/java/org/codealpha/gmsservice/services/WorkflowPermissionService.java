@@ -22,14 +22,19 @@ public class WorkflowPermissionService {
     return workflowPermissionRepository.getPermissionsForGrantFlow(granterOrgId, userRoleId);
   }
 
-  public List<WorkFlowPermission> getKPIFlowPermissions(Long granterOrgId, Long userRoleId, Long statusId) {
+  public List<WorkFlowPermission> getSubmissionFlowPermissions(Long granterOrgId, Long userRoleId, Long statusId) {
 
-    return workflowPermissionRepository.getPermissionsForKPIFlow(granterOrgId, userRoleId, statusId);
+    return workflowPermissionRepository.getPermissionsForSubmissionFlow(granterOrgId, userRoleId, statusId);
   }
 
   public WorkflowActionPermission getGrantActionPermissions(Long granterOrgId, Long userRoleId) {
 
     return workflowActionPermissionRepository.getActionPermissionsForGrant(granterOrgId, userRoleId);
+  }
+
+  public WorkflowActionPermission getSubmissionActionPermission(Long granterOrgId, Long userRoleId) {
+
+    return workflowActionPermissionRepository.getActionPermissionsForSubmission(granterOrgId, userRoleId);
   }
 
 

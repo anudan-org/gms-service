@@ -2,29 +2,18 @@ package org.codealpha.gmsservice.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import javax.persistence.Column;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KPIStatus;
 import org.codealpha.gmsservice.constants.KpiType;
 import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.GrantKpi;
-import org.codealpha.gmsservice.entities.GrantQualitativeKpiData;
-import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
-import org.codealpha.gmsservice.entities.KpiSubmission;
+import org.codealpha.gmsservice.entities.Submission;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
 import org.springframework.beans.BeanUtils;
 
 public class GrantKpiVO {
@@ -162,7 +151,7 @@ public class GrantKpiVO {
       User user, AppConfig submissionWindow) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(kpi.getClass());
     GrantKpiVO vo = new GrantKpiVO();
-    List<KpiSubmissionVO> submissionVOList=null;
+    /*List<SubmissionVO> submissionVOList=null;
     for (PropertyDescriptor descriptor : propertyDescriptors) {
       if (!descriptor.getName().equalsIgnoreCase("class")) {
         try {
@@ -172,7 +161,7 @@ public class GrantKpiVO {
 
           if (voPd.getName().equalsIgnoreCase("submissions")) {
             submissionVOList = new ArrayList<>();
-            for(KpiSubmission submission: kpi.getSubmissions()) {
+            for(Submission submission: kpi.getSubmissions()) {
                 KpiSubmissionVO submissionVO = new KpiSubmissionVO()
                     .build(submission, workflowPermissionService, user,
                         submissionWindow);
@@ -190,7 +179,7 @@ public class GrantKpiVO {
           e.printStackTrace();
         }
       }
-    }
+    }*/
     return vo;
   }
 }

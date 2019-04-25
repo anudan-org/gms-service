@@ -7,7 +7,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -18,8 +17,6 @@ import javax.persistence.OrderBy;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KPIStatus;
 import org.codealpha.gmsservice.constants.KpiType;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
 
 @Entity(name = "grant_kpis")
 public class GrantKpi {
@@ -40,9 +37,6 @@ public class GrantKpi {
   private Frequency frequency;
   @Column
   @Enumerated(EnumType.STRING)
-  private KPIStatus status;
-  @Column
-  @Enumerated(EnumType.STRING)
   private KpiType kpiType;
   @Column
   private Date createdAt;
@@ -57,9 +51,6 @@ public class GrantKpi {
   @JsonIgnore
   private Grant grant;
 
-  @OneToMany(mappedBy = "grantKpi")
-  @OrderBy("submitByDate asc")
-  List<KpiSubmission> submissions;
 
 
   public Long getId() {
@@ -110,14 +101,6 @@ public class GrantKpi {
     this.frequency = frequency;
   }
 
-  public KPIStatus getStatus() {
-    return status;
-  }
-
-  public void setStatus(KPIStatus status) {
-    this.status = status;
-  }
-
   public KpiType getKpiType() {
     return kpiType;
   }
@@ -166,11 +149,4 @@ public class GrantKpi {
     this.grant = grant;
   }
 
-  public List<KpiSubmission> getSubmissions() {
-    return submissions;
-  }
-
-  public void setSubmissions(List<KpiSubmission> submissions) {
-    this.submissions = submissions;
-  }
 }

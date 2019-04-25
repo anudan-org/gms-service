@@ -16,9 +16,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.constants.GrantSubStatus;
+import org.springframework.core.annotation.Order;
 
 /**
  * @author Developer <developer@enstratify.com>
@@ -67,9 +69,9 @@ public class Grant extends BaseEntity{
 	@Enumerated(EnumType.STRING)
 	private GrantStatus statusName;
 
-	@Column
-	@Enumerated(EnumType.STRING)
-	private GrantSubStatus substatus;
+	@OneToOne
+	@JoinColumn(referencedColumnName = "id")
+	private WorkflowStatus substatus;
 
 	@Column
 	private Date startDate;
@@ -77,8 +79,9 @@ public class Grant extends BaseEntity{
 	@Column
 	private Date endDate;
 
-	@OneToMany(mappedBy = "grant",fetch = FetchType.EAGER)
-	private List<GrantKpi> kpis;
+	@OneToMany(mappedBy = "grant",fetch = FetchType.LAZY)
+	@OrderBy("submitBy ASC")
+	private List<Submission> submissions;
 
 	public Long getId() {
 		return id;
@@ -129,11 +132,11 @@ public class Grant extends BaseEntity{
 		this.statusName = status;
 	}
 
-	public GrantSubStatus getSubstatus() {
+	public WorkflowStatus getSubstatus() {
 		return substatus;
 	}
 
-	public void setSubstatus(GrantSubStatus substatus) {
+	public void setSubstatus(WorkflowStatus substatus) {
 		this.substatus = substatus;
 	}
 
@@ -153,12 +156,12 @@ public class Grant extends BaseEntity{
     this.endDate = endDate;
   }
 
-	public List<GrantKpi> getKpis() {
-		return kpis;
+	public List<Submission> getSubmissions() {
+		return submissions;
 	}
 
-	public void setKpis(List<GrantKpi> kpis) {
-		this.kpis = kpis;
+	public void setSubmissions(List<Submission> submissions) {
+		this.submissions = submissions;
 	}
 
 	public WorkflowStatus getGrantStatus() {

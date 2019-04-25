@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.services;
 
+import java.util.List;
 import javax.xml.ws.ServiceMode;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
@@ -35,4 +36,7 @@ public class UserService {
     return userRepository.save(user);
   }
 
+  public List<User> usersToNotifyOnSubmissionStateChangeTo(Long toStateId){
+    return userRepository.usersToNotifyOnSubmissionSateChangeTo(toStateId);
+  }
 }

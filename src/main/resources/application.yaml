@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: prod
+    active: qa
   jpa:
     properties:
       hibernate:
@@ -16,6 +16,7 @@ logging:
 
 spring:
   profiles: qa
+  upload-file-location: /Users/apple/storage/
   datasource:
     url: jdbc:postgresql://localhost:5432/anudan
     username: apple

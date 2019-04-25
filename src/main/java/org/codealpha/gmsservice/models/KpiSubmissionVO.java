@@ -2,24 +2,14 @@ package org.codealpha.gmsservice.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.GrantKpi;
-import org.codealpha.gmsservice.entities.GrantQualitativeKpiData;
-import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
-import org.codealpha.gmsservice.entities.KpiSubmission;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.WorkFlowPermission;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
-import org.joda.time.DateTime;
 import org.springframework.beans.BeanUtils;
 
 public class KpiSubmissionVO {
@@ -155,10 +145,10 @@ public class KpiSubmissionVO {
     this.title = title;
   }
 
-  public KpiSubmissionVO build(KpiSubmission submission, WorkflowPermissionService workflowPermissionService, User user, AppConfig submissionWindow) {
+  /*public KpiSubmissionVO build(QuantitativeKpiSubmission submission, WorkflowPermissionService workflowPermissionService, User user, AppConfig submissionWindow) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(submission.getClass());
     KpiSubmissionVO vo = new KpiSubmissionVO();
-    List<GrantQuantitativeKpiDataVO> quantitativeKpiDataList=null;
+    /*List<GrantQuantitativeKpiDataVO> quantitativeKpiDataList=null;
     List<GrantQualitativeKpiDataVO> qualitativeKpiDataList=null;
     for (PropertyDescriptor descriptor : propertyDescriptors) {
       if (!descriptor.getName().equalsIgnoreCase("class")) {
@@ -216,5 +206,5 @@ public class KpiSubmissionVO {
           user.getRole().getId(), submission.getSubmissionStatus().getId()));
     }
     return vo;
-  }
+  }*/
 }

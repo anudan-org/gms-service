@@ -3,21 +3,11 @@ package org.codealpha.gmsservice.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Date;
-import java.util.List;
 import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.BaseEntity;
-import org.codealpha.gmsservice.entities.GrantKpi;
 import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
-import org.codealpha.gmsservice.entities.KpiSubmission;
 import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.entities.WorkFlowPermission;
-import org.codealpha.gmsservice.entities.WorkflowActionPermission;
-import org.codealpha.gmsservice.entities.WorkflowStatus;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
-import org.joda.time.DateTime;
-import org.joda.time.Days;
-import org.joda.time.Hours;
 import org.springframework.beans.BeanUtils;
 
 public class GrantQuantitativeKpiDataVO extends BaseEntity {
@@ -25,8 +15,6 @@ public class GrantQuantitativeKpiDataVO extends BaseEntity {
   private Long id;
   private Integer goal;
   private Integer actuals;
-  @JsonIgnore
-  private KpiSubmission kpiSubmission;
 
   @Override
   public Long getId() {
@@ -54,13 +42,6 @@ public class GrantQuantitativeKpiDataVO extends BaseEntity {
     this.actuals = actuals;
   }
 
-  public KpiSubmission getKpiSubmission() {
-    return kpiSubmission;
-  }
-
-  public void setKpiSubmission(KpiSubmission kpiSubmission) {
-    this.kpiSubmission = kpiSubmission;
-  }
 
   public GrantQuantitativeKpiDataVO build(GrantQuantitativeKpiData grantQuantitativeKpiData,
       WorkflowPermissionService workflowPermissionService,

@@ -10,15 +10,17 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
 @Entity
-public class GrantQuantitativeKpiData extends BaseEntity {
+public class GrantDocumentKpiData extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
   @Column
-  private Integer goal;
+  private String goal;
   @Column(nullable = true)
-  private Integer actuals;
+  private String actuals;
+  @Column(nullable = true)
+  private String type;
 
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
@@ -39,15 +41,11 @@ public class GrantQuantitativeKpiData extends BaseEntity {
     this.id = id;
   }
 
-  public int getGoal() {
+  public String getGoal() {
     return goal;
   }
 
-  public void setGoal(int goal) {
-    this.goal = goal;
-  }
-
-  public void setGoal(Integer goal) {
+  public void setGoal(String goal) {
     this.goal = goal;
   }
 
@@ -67,11 +65,19 @@ public class GrantQuantitativeKpiData extends BaseEntity {
     this.grantKpi = grantKpi;
   }
 
-  public Integer getActuals() {
+  public String getActuals() {
     return actuals;
   }
 
-  public void setActuals(Integer actuals) {
+  public void setActuals(String actuals) {
     this.actuals = actuals;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
   }
 }

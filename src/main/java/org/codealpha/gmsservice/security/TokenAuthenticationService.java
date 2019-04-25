@@ -39,7 +39,7 @@ public class TokenAuthenticationService {
     res.addIntHeader(HEADER_EXPIRES_IN, EXPIRATIONTIME);
     res.setHeader("X-TENANT-CODE",tenant);
     res.setHeader("Access-Control-Allow-Headers","Authorization, x-xsrf-token, Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, " +
-        "Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, X-TENANT-CODE, ACCESS_TOKEN");
+        "Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, X-TENANT-CODE, ACCESS_TOKEN, X-USER-ID");
     ObjectMapper mapper = new ObjectMapper();
     res.getWriter().write(mapper.writeValueAsString(userNode));
 

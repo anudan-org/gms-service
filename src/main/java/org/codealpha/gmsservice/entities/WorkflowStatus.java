@@ -21,6 +21,8 @@ public class WorkflowStatus {
   private Long id;
   @Column
   private String name;
+  @Column(nullable = true)
+  String displayName;
   @Column
   private Boolean terminal;
   @ManyToOne
@@ -111,5 +113,13 @@ public class WorkflowStatus {
   public void setStatePermissions(
       List<WorkflowStatePermission> statePermissions) {
     this.statePermissions = statePermissions;
+  }
+
+  public String getDisplayName() {
+    return displayName;
+  }
+
+  public void setDisplayName(String displayName) {
+    this.displayName = displayName;
   }
 }

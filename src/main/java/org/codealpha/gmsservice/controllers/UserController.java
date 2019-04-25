@@ -2,10 +2,12 @@ package org.codealpha.gmsservice.controllers;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import javax.xml.ws.Response;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
+import org.codealpha.gmsservice.models.ErrorMessage;
 import org.codealpha.gmsservice.services.DashboardService;
 import org.codealpha.gmsservice.services.CommonEmailSevice;
 import org.codealpha.gmsservice.services.GranteeService;
@@ -51,7 +53,8 @@ public class UserController {
   private DashboardService dashboardService;
 
   @GetMapping(value = "/{id}")
-  public User get(@PathVariable(name = "id") Long id,@RequestHeader("X-TENANT-CODE") String tenantCode) {
+  public User get(@PathVariable(name = "id") Long id,
+      @RequestHeader("X-TENANT-CODE") String tenantCode) {
     User user = userService.getUserById(id);
 
     return user;
@@ -71,10 +74,13 @@ public class UserController {
     String host = urlComponents.getHost();
     int port = urlComponents.getPort();
 
-    String verificationLink = scheme+"://"+host+(port!=-1?":"+port:"")+"/grantee/verification?emailId="+user.getEmailId()+"&code="+RandomStringUtils.randomAlphanumeric(127);
+    String verificationLink =
+        scheme + "://" + host + (port != -1 ? ":" + port : "") + "/grantee/verification?emailId="
+            + user.getEmailId() + "&code=" + RandomStringUtils.randomAlphanumeric(127);
 
     System.out.println(verificationLink);
-    commonEmailSevice.sendMail(user.getEmailId(),"Anudan.org - Verification Link",verificationLink);
+    commonEmailSevice
+        .sendMail(user.getEmailId(), "Anudan.org - Verification Link", verificationLink);
     return user;
   }
 
@@ -86,22 +92,42 @@ public class UserController {
   }
 
   @GetMapping("/{id}/dashboard")
-  public ResponseEntity<DashboardService> getDashbaord(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("id") Long userId){
+  public ResponseEntity<DashboardService> getDashbaord(
+      @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("id") Long userId) {
     User user = userService.getUserById(userId);
     Organization userOrg = user.getOrganization();
     Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
     List<Grant> grants = null;
-    switch (userOrg.getType()){
+    switch (userOrg.getType()) {
       case "GRANTEE":
-        grants = granteeService.getGrantsOfGranteeForGrantor(userOrg.getId(),tenantOrg,user.getRole().getId());
-        return new ResponseEntity<>(dashboardService.build(user,grants),HttpStatus.OK);
+        grants = granteeService
+            .getGrantsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getRole().getId());
+        return new ResponseEntity<>(dashboardService.build(user, grants), HttpStatus.OK);
       case "GRANTER":
-        grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(),tenantOrg);
-        return new ResponseEntity<>(dashboardService.build(user,grants),HttpStatus.OK);
+        grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg);
+        return new ResponseEntity<>(dashboardService.build(user, grants), HttpStatus.OK);
     }
 
-    return new ResponseEntity<>(null,HttpStatus.OK);
+    return new ResponseEntity<>(null, HttpStatus.OK);
   }
 
+  @PostMapping("/{id}/validate-pwd")
+  public ResponseEntity<ErrorMessage> validatePassword(@PathVariable("id") Long userId,
+      @RequestBody String pwd) {
+    User user = userService.getUserById(userId);
+    if (user.getPassword().equalsIgnoreCase(pwd)) {
+      return new ResponseEntity<>(new ErrorMessage(true,""), HttpStatus.OK);
+    } else {
+      return new ResponseEntity<>(new ErrorMessage(false,"You have entered an invalid previous password"), HttpStatus.OK);
+    }
+  }
 
+  @PostMapping("/{id}/pwd")
+  public ResponseEntity<User> changePassword(@PathVariable("id") Long userId,
+      @RequestBody String pwd) {
+    User user = userService.getUserById(userId);
+    user.setPassword(pwd);
+    user = userService.save(user);
+    return new ResponseEntity<>(user, HttpStatus.OK);
+  }
 }

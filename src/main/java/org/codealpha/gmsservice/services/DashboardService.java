@@ -28,7 +28,6 @@ public class DashboardService {
     this.user = user;
     List<String> tenantNames = new ArrayList<>();
     for (Grant grant : grants) {
-      grant.getKpis();
       if (!tenantNames.contains(grant.getGrantorOrganization().getCode())) {
         tenantNames.add(grant.getGrantorOrganization().getCode());
       }
@@ -47,9 +46,11 @@ public class DashboardService {
       for (Tenant tenant : tenants) {
         if (tenant.getName().equalsIgnoreCase(grant.getGrantorOrganization().getCode())) {
           List<GrantVO> grantList = tenant.getGrants();
-          GrantVO grantVO = new GrantVO().build(grant, workflowPermissionService, user,appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-              AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
-          grantList.add(grantVO);
+
+          GrantVO grantVO = new GrantVO();
+          grantList.add(grantVO.build(grant, workflowPermissionService, user, appConfigService
+              .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                  AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS)));
           tenant.setGrants(grantList);
         }
       }

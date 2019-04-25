@@ -9,6 +9,7 @@ import org.codealpha.gmsservice.services.GranterConfigurationService;
 import org.codealpha.gmsservice.services.OrganizationResolver;
 import org.codealpha.gmsservice.services.OrganizationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
@@ -37,6 +38,9 @@ public class ApplicationController {
 
   @Autowired
   private ResourceLoader resourceLoader;
+
+  @Value("${spring.upload-file-location}")
+  private String uploadLocation;
 
   @GetMapping(value = {"/config/{host}", "/config"})
   public UIConfig config(@PathVariable(name = "host", required = false) String host,
