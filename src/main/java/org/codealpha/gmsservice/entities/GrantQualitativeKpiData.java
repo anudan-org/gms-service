@@ -19,6 +19,8 @@ public class GrantQualitativeKpiData extends BaseEntity {
   private String goal;
   @Column(nullable = true)
   private String actuals;
+  @Column(nullable = true)
+  private String note;
 
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
@@ -69,5 +71,13 @@ public class GrantQualitativeKpiData extends BaseEntity {
 
   public void setActuals(String actuals) {
     this.actuals = actuals;
+  }
+
+  public String getNote() {
+    return note;
+  }
+
+  public void setNote(String note) {
+    this.note = note;
   }
 }

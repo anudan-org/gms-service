@@ -11,6 +11,7 @@ public class KpiSubmissionData {
   private Long toStatusId;
   private String fileName;
   private String fileType;
+  private String note;
 
   public Long getSubmissionId() {
     return submissionId;
@@ -66,5 +67,13 @@ public class KpiSubmissionData {
 
   public void setFileType(String fileType) {
     this.fileType = fileType;
+  }
+
+  public String getNote() {
+    return note;
+  }
+
+  public void setNote(String note) {
+    this.note = note;
   }
 }

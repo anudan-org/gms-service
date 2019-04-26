@@ -22,6 +22,9 @@ public class GrantDocumentKpiData extends BaseEntity {
   @Column(nullable = true)
   private String type;
 
+  @Column(nullable = true)
+  private String note;
+
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   @JsonIgnore
@@ -79,5 +82,13 @@ public class GrantDocumentKpiData extends BaseEntity {
 
   public void setType(String type) {
     this.type = type;
+  }
+
+  public String getNote() {
+    return note;
+  }
+
+  public void setNote(String note) {
+    this.note = note;
   }
 }

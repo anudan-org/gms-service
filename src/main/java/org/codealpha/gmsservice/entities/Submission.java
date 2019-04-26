@@ -41,12 +41,15 @@ public class Submission {
   private WorkflowStatus submissionStatus;
 
   @OneToMany(mappedBy = "submission")
+  @OrderBy("id ASC")
   private List<GrantQuantitativeKpiData> quantitiaveKpisubmissions;
 
   @OneToMany(mappedBy = "submission")
+  @OrderBy("id ASC")
   private List<GrantQualitativeKpiData> qualitativeKpiSubmissions;
 
   @OneToMany(mappedBy = "submission")
+  @OrderBy("id ASC")
   private List<GrantDocumentKpiData> documentKpiSubmissions;
 
   @Column

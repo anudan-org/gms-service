@@ -76,6 +76,9 @@ public class GrantController {
           quantitativeKpiData.setActuals(Integer.valueOf(data.getValue()));
           quantitativeKpiData.setUpdatedAt(DateTime.now().toDate());
           quantitativeKpiData.setUpdatedBy(user.getEmailId());
+          if(data.getNote()!=null || !data.getNote().trim().equalsIgnoreCase("")){
+            quantitativeKpiData.setNote(data.getNote());
+          }
           //quantitativeKpiData.setStatusName(workflowStatusService.findById(data.getToStatusId()).getName());
           quantitativeDataService.saveData(quantitativeKpiData);
           break;
@@ -85,6 +88,9 @@ public class GrantController {
           qualitativeKpiData.setActuals(data.getValue());
           qualitativeKpiData.setCreatedAt(DateTime.now().toDate());
           qualitativeKpiData.setUpdatedBy(user.getEmailId());
+          if(data.getNote()!=null || !data.getNote().trim().equalsIgnoreCase("")){
+            qualitativeKpiData.setNote(data.getNote());
+          }
           qualitativeDataService.saveData(qualitativeKpiData);
           break;
         case "DOCUMENT":
@@ -111,6 +117,9 @@ public class GrantController {
 
           documentKpiData.setUpdatedAt(DateTime.now().toDate());
           documentKpiData.setUpdatedBy(user.getEmailId());
+          if(data.getNote()!=null || !data.getNote().trim().equalsIgnoreCase("")){
+            documentKpiData.setNote(data.getNote());
+          }
           grantDocumentDataService.saveDocumentKpi(documentKpiData);
           break;
       }
