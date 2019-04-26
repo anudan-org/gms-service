@@ -8,6 +8,7 @@ import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.models.ErrorMessage;
+import org.codealpha.gmsservice.models.UserVO;
 import org.codealpha.gmsservice.services.DashboardService;
 import org.codealpha.gmsservice.services.CommonEmailSevice;
 import org.codealpha.gmsservice.services.GranteeService;
@@ -22,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -82,6 +84,24 @@ public class UserController {
     commonEmailSevice
         .sendMail(user.getEmailId(), "Anudan.org - Verification Link", verificationLink);
     return user;
+  }
+
+  @PutMapping(value = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+  public User update(@RequestBody UserVO user) {
+    //BCryptPasswordEncoder a  = new BCryptPasswordEncoder
+    User savedUser = userService.getUserById(user.getId());
+    savedUser.setFirstName(user.getFirstName());
+    savedUser.setLastName(user.getLastName());
+
+
+
+    Organization userOrg = savedUser.getOrganization();
+    userOrg.setName(user.getOrganization().getName());
+
+    userOrg = organizationService.save(userOrg);
+    savedUser.setOrganization(userOrg);
+    savedUser = userService.save(savedUser);
+    return savedUser;
   }
 
 

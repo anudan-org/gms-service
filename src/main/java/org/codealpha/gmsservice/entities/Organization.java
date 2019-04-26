@@ -53,6 +53,9 @@ public abstract class Organization {
 	@Column(name = "organization_type")
 	private String organizationType;
 
+	public Organization() {
+	}
+
 	public Long getId() {
 		return id;
 	}

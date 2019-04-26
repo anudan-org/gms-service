@@ -34,5 +34,9 @@ public class OrganizationService {
 		return repository.findByOrganizationTypeEquals("PLATFORM");
 	}
 
+	public Organization save(Organization organization){
+		return repository.save(organization);
+	}
+
 
 }

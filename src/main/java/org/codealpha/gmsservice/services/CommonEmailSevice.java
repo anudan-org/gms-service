@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,6 +15,7 @@ public class CommonEmailSevice {
   private JavaMailSender mailSender;
 
 
+  @Async("threadPoolTaskExecutor")
   public void sendMail(String to, String subject, String messageText){
 
     SimpleMailMessage message = new SimpleMailMessage();
