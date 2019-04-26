@@ -5,6 +5,7 @@ import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.Rfp;
 import org.codealpha.gmsservice.repositories.GranterRepository;
 import org.codealpha.gmsservice.repositories.RfpRepository;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,7 +31,7 @@ public class GranterController {
 	public void create(@RequestBody Granter granter) {
 
 		System.out.println("Create Granter");
-		granter.setCreatedAt(LocalDateTime.now());
+		granter.setCreatedAt(DateTime.now().toDate());
 		granter.setCreatedBy("Admin");
 		granter = granterRepository.save(granter);
 

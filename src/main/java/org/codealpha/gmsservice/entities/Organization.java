@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -32,25 +33,25 @@ public abstract class Organization {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	protected Long id;
 
-	@Column(name = "name")
+	@Column(name = "name",nullable = true)
 	protected String name;
 
-	@Column(name = "code")
+	@Column(name = "code",nullable = true)
 	protected String code;
 
 	@Column(name = "created_at")
-	protected LocalDateTime createdAt;
+	protected Date createdAt;
 
 	@Column(name = "created_by")
 	protected String createdBy;
 
-	@Column(name = "updated_at")
+	@Column(name = "updated_at",nullable = true)
 	protected LocalDateTime updatedAt;
 
-	@Column(name = "updated_by")
+	@Column(name = "updated_by",nullable = true)
 	protected String updatedBy;
 
-	@Column(name = "organization_type")
+	@Column(name = "organization_type",insertable = false,updatable = false)
 	private String organizationType;
 
 	public Organization() {
@@ -72,11 +73,11 @@ public abstract class Organization {
 		this.name = name;
 	}
 
-	public LocalDateTime getCreatedAt() {
+	public Date getCreatedAt() {
 		return createdAt;
 	}
 
-	public void setCreatedAt(LocalDateTime createdAt) {
+	public void setCreatedAt(Date createdAt) {
 		this.createdAt = createdAt;
 	}
 
@@ -110,6 +111,14 @@ public abstract class Organization {
 
 	public void setCode(String code) {
 		this.code = code;
+	}
+
+	public String getOrganizationType() {
+		return organizationType;
+	}
+
+	public void setOrganizationType(String organizationType) {
+		this.organizationType = organizationType;
 	}
 
 	@Transient

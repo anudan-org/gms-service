@@ -2,10 +2,13 @@ package org.codealpha.gmsservice.controllers;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import javax.transaction.Transactional;
 import javax.xml.ws.Response;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.codealpha.gmsservice.entities.Grant;
+import org.codealpha.gmsservice.entities.Grantee;
 import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.entities.Role;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.models.ErrorMessage;
 import org.codealpha.gmsservice.models.UserVO;
@@ -14,6 +17,7 @@ import org.codealpha.gmsservice.services.CommonEmailSevice;
 import org.codealpha.gmsservice.services.GranteeService;
 import org.codealpha.gmsservice.services.GranterService;
 import org.codealpha.gmsservice.services.OrganizationService;
+import org.codealpha.gmsservice.services.RoleService;
 import org.codealpha.gmsservice.services.UserService;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +54,8 @@ public class UserController {
   private GranteeService granteeService;
   @Autowired
   private GranterService granterService;
-
+  @Autowired
+  private RoleService roleService;
   @Autowired
   private DashboardService dashboardService;
 
@@ -63,12 +68,36 @@ public class UserController {
   }
 
   @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-  public User create(@RequestBody User user) {
+  @Transactional
+  public User create(@RequestBody UserVO user) {
+
+    User newUser = new User();
+
     //BCryptPasswordEncoder a  = new BCryptPasswordEncoder
-    user.setCreatedAt(DateTime.now().toDate());
-    user.setCreatedBy("Api");
-    user.setPassword(user.getPassword());
-    user = userService.save(user);
+    newUser.setCreatedAt(DateTime.now().toDate());
+    newUser.setCreatedBy("Api");
+    newUser.setEmailId(user.getEmailId());
+    Organization newGranteeOrg = new Grantee();
+    newGranteeOrg.setOrganizationType("GRANTEE");
+    newGranteeOrg.setCreatedAt(DateTime.now().toDate());
+    newGranteeOrg.setCreatedBy("System");
+    newGranteeOrg.setName("To be set");
+
+    newGranteeOrg = organizationService.save(newGranteeOrg);
+    newUser.setOrganization(newGranteeOrg);
+    newUser.setPassword(user.getPassword());
+
+    Role newRole = new Role();
+    newRole.setName("Admin");
+    newRole.setOrganization(newGranteeOrg);
+    newRole.setCreatedAt(DateTime.now().toDate());
+    newRole.setCreatedBy("System");
+
+    newRole = roleService.saveRole(newRole);
+    newUser.setRole(newRole);
+    newUser.setFirstName("To be set");
+    newUser.setLastName("To be set");
+    newUser = userService.save(newUser);
 
     UriComponents urlComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
 
@@ -83,7 +112,7 @@ public class UserController {
     System.out.println(verificationLink);
     commonEmailSevice
         .sendMail(user.getEmailId(), "Anudan.org - Verification Link", verificationLink);
-    return user;
+    return newUser;
   }
 
   @PutMapping(value = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
