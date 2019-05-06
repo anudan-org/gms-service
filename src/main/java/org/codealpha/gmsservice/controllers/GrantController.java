@@ -3,24 +3,30 @@ package org.codealpha.gmsservice.controllers;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import javax.transaction.Transactional;
 import org.codealpha.gmsservice.constants.AppConfiguration;
+import org.codealpha.gmsservice.entities.DocKpiDataDocument;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.GrantDocumentKpiData;
 import org.codealpha.gmsservice.entities.GrantQualitativeKpiData;
 import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
+import org.codealpha.gmsservice.entities.QuantitativeKpiNotes;
 import org.codealpha.gmsservice.entities.Submission;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.models.GrantVO;
 import org.codealpha.gmsservice.models.KpiSubmissionData;
+import org.codealpha.gmsservice.models.UploadFile;
 import org.codealpha.gmsservice.services.AppConfigService;
 import org.codealpha.gmsservice.services.CommonEmailSevice;
+import org.codealpha.gmsservice.services.DocKpiDataDocumentService;
 import org.codealpha.gmsservice.services.GrantDocumentDataService;
 import org.codealpha.gmsservice.services.GrantQualitativeDataService;
 import org.codealpha.gmsservice.services.GrantQuantitativeDataService;
 import org.codealpha.gmsservice.services.GrantService;
+import org.codealpha.gmsservice.services.QuantitativeKpiNotesService;
 import org.codealpha.gmsservice.services.SubmissionService;
 import org.codealpha.gmsservice.services.UserService;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
@@ -56,6 +62,11 @@ public class GrantController {
   private SubmissionService submissionService;
   @Autowired
   private GrantDocumentDataService grantDocumentDataService;
+  @Autowired
+  private QuantitativeKpiNotesService quantitativeKpiNotesService;
+  @Autowired
+  private DocKpiDataDocumentService docKpiDataDocumentService;
+
   @Value("${spring.upload-file-location}")
   private String uploadLocation;
 
@@ -76,11 +87,20 @@ public class GrantController {
           quantitativeKpiData.setActuals(Integer.valueOf(data.getValue()));
           quantitativeKpiData.setUpdatedAt(DateTime.now().toDate());
           quantitativeKpiData.setUpdatedBy(user.getEmailId());
-          if(data.getNote()!=null || !data.getNote().trim().equalsIgnoreCase("")){
-            quantitativeKpiData.setNote(data.getNote());
-          }
+
           //quantitativeKpiData.setStatusName(workflowStatusService.findById(data.getToStatusId()).getName());
-          quantitativeDataService.saveData(quantitativeKpiData);
+          quantitativeKpiData = quantitativeDataService.saveData(quantitativeKpiData);
+          if(data.getNotes()!=null){
+            for(String note : data.getNotes()) {
+              QuantitativeKpiNotes kpiNote = new QuantitativeKpiNotes();
+              kpiNote.setMessage(note);
+              kpiNote.setPostedBy(user);
+              kpiNote.setPostedOn(DateTime.now().toDate());
+              kpiNote.setKpiData(quantitativeKpiData);
+              kpiNote = quantitativeKpiNotesService.saveQuantitativeKpiNotes(kpiNote);
+              quantitativeKpiData.getNotesHistory().add(kpiNote);
+            }
+          }
           break;
         case "QUALITATIVE":
           GrantQualitativeKpiData qualitativeKpiData = qualitativeDataService
@@ -88,38 +108,52 @@ public class GrantController {
           qualitativeKpiData.setActuals(data.getValue());
           qualitativeKpiData.setCreatedAt(DateTime.now().toDate());
           qualitativeKpiData.setUpdatedBy(user.getEmailId());
-          if(data.getNote()!=null || !data.getNote().trim().equalsIgnoreCase("")){
-            qualitativeKpiData.setNote(data.getNote());
-          }
+
           qualitativeDataService.saveData(qualitativeKpiData);
           break;
         case "DOCUMENT":
           GrantDocumentKpiData documentKpiData = grantDocumentDataService
               .findById(data.getKpiDataId());
-          if (documentKpiData.getActuals() != null && (data.getFileName() == null || data
-              .getFileName().equalsIgnoreCase(""))) {
-            documentKpiData.setActuals(documentKpiData.getActuals());
-          } else {
-            String fileName = uploadLocation + data.getFileName();
-            documentKpiData.setActuals(data.getFileName());
-            try {
-              FileOutputStream fileOutputStream = new FileOutputStream(fileName);
-              byte[] dataBytes = Base64.getDecoder().decode(data.getValue());
-              fileOutputStream.write(dataBytes);
-              fileOutputStream.close();
-            } catch (FileNotFoundException e) {
-              e.printStackTrace();
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
-            documentKpiData.setType(data.getFileType());
-          }
 
-          documentKpiData.setUpdatedAt(DateTime.now().toDate());
-          documentKpiData.setUpdatedBy(user.getEmailId());
-          if(data.getNote()!=null || !data.getNote().trim().equalsIgnoreCase("")){
-            documentKpiData.setNote(data.getNote());
+          List<DocKpiDataDocument> docKpiDataDocuments = documentKpiData.getSubmissionDocs();
+          List<DocKpiDataDocument> docs = new ArrayList<>();
+
+          if (documentKpiData.getActuals() != null && (data.getFiles() == null || data
+              .getFiles().isEmpty())) {
+            // documentKpiData.setActuals(documentKpiData.getActuals());
+          } else {
+            for(UploadFile uploadedFile: data.getFiles()){
+              String fileName = uploadLocation + uploadedFile.getFileName();
+              DocKpiDataDocument docKpiDataDocument = new DocKpiDataDocument();
+              docKpiDataDocument.setFileName(uploadedFile.getFileName());
+              if(docKpiDataDocuments.contains(docKpiDataDocument)){
+                docKpiDataDocument = docKpiDataDocuments.get(docKpiDataDocuments.indexOf(docKpiDataDocument));
+                docKpiDataDocument.setVersion(docKpiDataDocument.getVersion()+1);
+              }else{
+                docKpiDataDocument.setFileType(uploadedFile.getFileType());
+                docKpiDataDocument.setDocKpiData(documentKpiData);
+              }
+
+              try {
+                FileOutputStream fileOutputStream = new FileOutputStream(fileName);
+                byte[] dataBytes = Base64.getDecoder().decode(uploadedFile.getValue());
+                fileOutputStream.write(dataBytes);
+                fileOutputStream.close();
+              } catch (FileNotFoundException e) {
+                e.printStackTrace();
+              } catch (IOException e) {
+                e.printStackTrace();
+              }
+
+              docKpiDataDocument = docKpiDataDocumentService.saveKpiDoc(docKpiDataDocument);
+              docs.add(docKpiDataDocument);
+            }
+
+            // documentKpiData.setActuals(data.getFileName());
+
+            // documentKpiData.setType(data.getFileType());
           }
+          documentKpiData.setSubmissionDocs(docs);
           grantDocumentDataService.saveDocumentKpi(documentKpiData);
           break;
       }

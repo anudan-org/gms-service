@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -8,6 +9,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 
 @Entity
 public class GrantDocumentKpiData extends BaseEntity {
@@ -33,6 +35,9 @@ public class GrantDocumentKpiData extends BaseEntity {
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   private GrantKpi grantKpi;
+
+  @OneToMany(mappedBy = "docKpiData")
+  List<DocKpiDataDocument> submissionDocs;
 
   @Override
   public Long getId() {
@@ -91,4 +96,15 @@ public class GrantDocumentKpiData extends BaseEntity {
   public void setNote(String note) {
     this.note = note;
   }
+
+  public List<DocKpiDataDocument> getSubmissionDocs() {
+    return submissionDocs;
+  }
+
+  public void setSubmissionDocs(
+      List<DocKpiDataDocument> submissionDocs) {
+    this.submissionDocs = submissionDocs;
+  }
+
+
 }

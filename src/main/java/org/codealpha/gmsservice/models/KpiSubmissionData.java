@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.models;
 
+import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 public class KpiSubmissionData {
@@ -11,7 +12,8 @@ public class KpiSubmissionData {
   private Long toStatusId;
   private String fileName;
   private String fileType;
-  private String note;
+  private String[] notes;
+  private List<UploadFile> files;
 
   public Long getSubmissionId() {
     return submissionId;
@@ -69,11 +71,19 @@ public class KpiSubmissionData {
     this.fileType = fileType;
   }
 
-  public String getNote() {
-    return note;
+  public String[] getNotes() {
+    return notes;
   }
 
-  public void setNote(String note) {
-    this.note = note;
+  public void setNotes(String[] notes) {
+    this.notes = notes;
+  }
+
+  public List<UploadFile> getFiles() {
+    return files;
+  }
+
+  public void setFiles(List<UploadFile> files) {
+    this.files = files;
   }
 }

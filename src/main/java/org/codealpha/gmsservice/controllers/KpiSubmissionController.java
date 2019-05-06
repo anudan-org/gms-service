@@ -2,7 +2,9 @@ package org.codealpha.gmsservice.controllers;
 
 import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
+import org.codealpha.gmsservice.entities.DocKpiDataDocument;
 import org.codealpha.gmsservice.entities.GrantDocumentKpiData;
+import org.codealpha.gmsservice.services.DocKpiDataDocumentService;
 import org.codealpha.gmsservice.services.GrantDocumentDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,18 +25,22 @@ public class KpiSubmissionController {
   private ResourceLoader resourceLoader;
   @Autowired
   private GrantDocumentDataService grantDocumentDataService;
+  @Autowired
+  private DocKpiDataDocumentService docKpiDataDocumentService;
+
   @Value("${spring.upload-file-location}")
   private String uploadLocation;
 
-  @GetMapping("/file")
+  @GetMapping("/file/{fileId}")
   public void getFile(@PathVariable("submissionId") Long submissionId,
-      @PathVariable("kpiId") Long kpiId,
+      @PathVariable("kpiId") Long kpiId,@PathVariable("fileId") Long fileId,
       HttpServletResponse servletResponse) {
 
-    GrantDocumentKpiData documentKpiData = grantDocumentDataService.findByKpiIdAndSubmissionId(kpiId,submissionId);
+    //GrantDocumentKpiData documentKpiData = grantDocumentDataService.findByKpiIdAndSubmissionId(kpiId,submissionId);
+    DocKpiDataDocument doc = docKpiDataDocumentService.getById(fileId);
 
-    Resource file = resourceLoader.getResource("file:"+uploadLocation + documentKpiData.getActuals());
-    switch (documentKpiData.getType()){
+    Resource file = resourceLoader.getResource("file:"+uploadLocation + doc.getFileName());
+    switch (doc.getFileType()){
       case "png":
         servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
         break;
