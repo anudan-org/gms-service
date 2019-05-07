@@ -1,13 +1,16 @@
 package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 
 @Entity
 public class GrantQualitativeKpiData extends BaseEntity {
@@ -30,6 +33,9 @@ public class GrantQualitativeKpiData extends BaseEntity {
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   private GrantKpi grantKpi;
+
+  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY)
+  private List<QualitativeKpiNotes> notesHistory;
 
   @Override
   public Long getId() {
@@ -79,5 +85,14 @@ public class GrantQualitativeKpiData extends BaseEntity {
 
   public void setNote(String note) {
     this.note = note;
+  }
+
+  public List<QualitativeKpiNotes> getNotesHistory() {
+    return notesHistory;
+  }
+
+  public void setNotesHistory(
+      List<QualitativeKpiNotes> notesHistory) {
+    this.notesHistory = notesHistory;
   }
 }

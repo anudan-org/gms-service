@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -38,6 +39,9 @@ public class GrantDocumentKpiData extends BaseEntity {
 
   @OneToMany(mappedBy = "docKpiData")
   List<DocKpiDataDocument> submissionDocs;
+
+  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY)
+  private List<DocumentKpiNotes> notesHistory;
 
   @Override
   public Long getId() {
@@ -106,5 +110,12 @@ public class GrantDocumentKpiData extends BaseEntity {
     this.submissionDocs = submissionDocs;
   }
 
+  public List<DocumentKpiNotes> getNotesHistory() {
+    return notesHistory;
+  }
 
+  public void setNotesHistory(
+      List<DocumentKpiNotes> notesHistory) {
+    this.notesHistory = notesHistory;
+  }
 }

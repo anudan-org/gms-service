@@ -9,10 +9,12 @@ import java.util.List;
 import javax.transaction.Transactional;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.DocKpiDataDocument;
+import org.codealpha.gmsservice.entities.DocumentKpiNotes;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.GrantDocumentKpiData;
 import org.codealpha.gmsservice.entities.GrantQualitativeKpiData;
 import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
+import org.codealpha.gmsservice.entities.QualitativeKpiNotes;
 import org.codealpha.gmsservice.entities.QuantitativeKpiNotes;
 import org.codealpha.gmsservice.entities.Submission;
 import org.codealpha.gmsservice.entities.User;
@@ -22,10 +24,12 @@ import org.codealpha.gmsservice.models.UploadFile;
 import org.codealpha.gmsservice.services.AppConfigService;
 import org.codealpha.gmsservice.services.CommonEmailSevice;
 import org.codealpha.gmsservice.services.DocKpiDataDocumentService;
+import org.codealpha.gmsservice.services.DocumentKpiNotesService;
 import org.codealpha.gmsservice.services.GrantDocumentDataService;
 import org.codealpha.gmsservice.services.GrantQualitativeDataService;
 import org.codealpha.gmsservice.services.GrantQuantitativeDataService;
 import org.codealpha.gmsservice.services.GrantService;
+import org.codealpha.gmsservice.services.QualitativeKpiNotesService;
 import org.codealpha.gmsservice.services.QuantitativeKpiNotesService;
 import org.codealpha.gmsservice.services.SubmissionService;
 import org.codealpha.gmsservice.services.UserService;
@@ -64,6 +68,10 @@ public class GrantController {
   private GrantDocumentDataService grantDocumentDataService;
   @Autowired
   private QuantitativeKpiNotesService quantitativeKpiNotesService;
+  @Autowired
+  private QualitativeKpiNotesService qualitativeKpiNotesService;
+  @Autowired
+  private DocumentKpiNotesService documentKpiNotesService;
   @Autowired
   private DocKpiDataDocumentService docKpiDataDocumentService;
 
@@ -110,6 +118,17 @@ public class GrantController {
           qualitativeKpiData.setUpdatedBy(user.getEmailId());
 
           qualitativeDataService.saveData(qualitativeKpiData);
+          if(data.getNotes()!=null){
+            for(String note : data.getNotes()) {
+              QualitativeKpiNotes kpiNote = new QualitativeKpiNotes();
+              kpiNote.setMessage(note);
+              kpiNote.setPostedBy(user);
+              kpiNote.setPostedOn(DateTime.now().toDate());
+              kpiNote.setKpiData(qualitativeKpiData);
+              kpiNote = qualitativeKpiNotesService.saveQualitativeKpiNotes(kpiNote);
+              qualitativeKpiData.getNotesHistory().add(kpiNote);
+            }
+          }
           break;
         case "DOCUMENT":
           GrantDocumentKpiData documentKpiData = grantDocumentDataService
@@ -122,14 +141,15 @@ public class GrantController {
               .getFiles().isEmpty())) {
             // documentKpiData.setActuals(documentKpiData.getActuals());
           } else {
-            for(UploadFile uploadedFile: data.getFiles()){
+            for (UploadFile uploadedFile : data.getFiles()) {
               String fileName = uploadLocation + uploadedFile.getFileName();
               DocKpiDataDocument docKpiDataDocument = new DocKpiDataDocument();
               docKpiDataDocument.setFileName(uploadedFile.getFileName());
-              if(docKpiDataDocuments.contains(docKpiDataDocument)){
-                docKpiDataDocument = docKpiDataDocuments.get(docKpiDataDocuments.indexOf(docKpiDataDocument));
-                docKpiDataDocument.setVersion(docKpiDataDocument.getVersion()+1);
-              }else{
+              if (docKpiDataDocuments.contains(docKpiDataDocument)) {
+                docKpiDataDocument = docKpiDataDocuments
+                    .get(docKpiDataDocuments.indexOf(docKpiDataDocument));
+                docKpiDataDocument.setVersion(docKpiDataDocument.getVersion() + 1);
+              } else {
                 docKpiDataDocument.setFileType(uploadedFile.getFileType());
                 docKpiDataDocument.setDocKpiData(documentKpiData);
               }
@@ -149,10 +169,18 @@ public class GrantController {
               docs.add(docKpiDataDocument);
             }
 
-            // documentKpiData.setActuals(data.getFileName());
-
-            // documentKpiData.setType(data.getFileType());
           }
+          if (data.getNotes() != null) {
+          for (String note : data.getNotes()) {
+            DocumentKpiNotes kpiNote = new DocumentKpiNotes();
+            kpiNote.setMessage(note);
+            kpiNote.setPostedBy(user);
+            kpiNote.setPostedOn(DateTime.now().toDate());
+            kpiNote.setKpiData(documentKpiData);
+            kpiNote = documentKpiNotesService.saveDocumentKpiNotes(kpiNote);
+            documentKpiData.getNotesHistory().add(kpiNote);
+          }
+        }
           documentKpiData.setSubmissionDocs(docs);
           grantDocumentDataService.saveDocumentKpi(documentKpiData);
           break;
