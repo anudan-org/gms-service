@@ -28,6 +28,7 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
 
   @Autowired
   private UserRepository userRepository;
+  AccountCredentials creds;
 
   public JWTLoginFilter(String url, AuthenticationManager authManager,
       UserRepository userRepository) {
@@ -42,7 +43,7 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
 
 
 
-    AccountCredentials creds =
+    creds =
         new ObjectMapper().readValue(request.getInputStream(), AccountCredentials.class);
     Collection<GrantedAuthority> authorities = new ArrayList<>();
     authorities.add(new GrantedAuthority() {
@@ -50,7 +51,7 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
       @Override
       public String getAuthority() {
         // TODO Auto-generated method stub
-        return creds.getRole();
+        return creds.getProvider();
       }
     });
 

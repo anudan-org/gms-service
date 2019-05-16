@@ -21,6 +21,8 @@ public class WorkFlowPermission {
   private String toName;
   @Column
   private String action;
+  @Column
+  private Boolean noteRequired;
 
 
   public Long getId() {
@@ -71,5 +73,11 @@ public class WorkFlowPermission {
     this.action = action;
   }
 
+  public boolean isNoteRequired() {
+    return noteRequired;
+  }
 
+  public void setNoteRequired(boolean noteRequired) {
+    this.noteRequired = noteRequired;
+  }
 }

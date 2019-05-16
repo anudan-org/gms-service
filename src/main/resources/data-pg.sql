@@ -121,39 +121,39 @@ values (now(), 'System', 'ACCEPTED', true, null, null, 2, 'Accepted');
 -- Workflow Status Transitions
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
-                                               workflow_id)
-values ('Onboard', now(), 'System', null, null, 1, 2, 2, 1);
+                                               workflow_id,note_required)
+values ('Onboard', now(), 'System', null, null, 1, 2, 2, 1,false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
-                                               workflow_id)
-values ('Onboard', now(), 'System', null, null, 1, 2, 3, 1);
+                                               workflow_id,note_required)
+values ('Onboard', now(), 'System', null, null, 1, 2, 3, 1,false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
-                                               workflow_id)
-values ('Close', now(), 'System', null, null, 2, 3, 2, 1);
+                                               workflow_id,note_required)
+values ('Close', now(), 'System', null, null, 2, 3, 2, 1,false);
 
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
-                                               workflow_id)
-values ('Submit', now(), 'System', null, null, 4, 5, 4, 2);
+                                               workflow_id,note_required)
+values ('Submit', now(), 'System', null, null, 4, 5, 4, 2,false);
 
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
-                                               workflow_id)
-values ('Save Draft', now(), 'System', null, null, 4, 4, 4, 2);
+                                               workflow_id,note_required)
+values ('Save Draft', now(), 'System', null, null, 4, 4, 4, 2,false);
 
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
-                                               workflow_id)
-values ('Request Modifications', now(), 'System', null, null, 5, 6, 2, 2);
+                                               workflow_id,note_required)
+values ('Request Modifications', now(), 'System', null, null, 5, 6, 2, 2,true);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
-                                               workflow_id)
-values ('Submit Modications', now(), 'System', null, null, 6, 5, 4, 2);
+                                               workflow_id,note_required)
+values ('Submit Modications', now(), 'System', null, null, 6, 5, 4, 2,true);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
-                                               workflow_id)
-values ('Accept', now(), 'System', null, null, 5, 7, 2, 2);
+                                               workflow_id,note_required)
+values ('Accept', now(), 'System', null, null, 5, 7, 2, 2,false);
 -- Workflow State Permissions
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
                                         updated_by, role_id, workflow_status_id)

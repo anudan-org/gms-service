@@ -27,6 +27,8 @@ public class WorkflowStatusTransition {
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   private Workflow workflow;
+  @Column
+  private boolean noteRequired;
 
   @OneToOne
   @JoinColumn(referencedColumnName = "id")
@@ -110,5 +112,13 @@ public class WorkflowStatusTransition {
 
   public void setUpdatedBy(String updatedBy) {
     this.updatedBy = updatedBy;
+  }
+
+  public boolean getNoteRequired() {
+    return noteRequired;
+  }
+
+  public void setNoteRequired(boolean noteRequired) {
+    this.noteRequired = noteRequired;
   }
 }

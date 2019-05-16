@@ -20,4 +20,8 @@ public class SubmissionService {
         (submission.getGrant().getName() + " - " + submission.getTitle()).toUpperCase())
             .replace("%SUBMISSION_STATUS%", submission.getSubmissionStatus().getDisplayName().toUpperCase());
   }
+
+  public Submission getById(Long id){
+    return submissionRepository.findById(id).get();
+  }
 }

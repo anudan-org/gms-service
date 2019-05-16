@@ -37,6 +37,9 @@ public class GrantQualitativeKpiData extends BaseEntity {
   @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY)
   private List<QualitativeKpiNotes> notesHistory;
 
+  @OneToMany(mappedBy = "qualKpiData")
+  List<QualKpiDataDocument> submissionDocs;
+
   @Override
   public Long getId() {
     return id;
@@ -94,5 +97,14 @@ public class GrantQualitativeKpiData extends BaseEntity {
   public void setNotesHistory(
       List<QualitativeKpiNotes> notesHistory) {
     this.notesHistory = notesHistory;
+  }
+
+  public List<QualKpiDataDocument> getSubmissionDocs() {
+    return submissionDocs;
+  }
+
+  public void setSubmissionDocs(
+      List<QualKpiDataDocument> submissionDocs) {
+    this.submissionDocs = submissionDocs;
   }
 }

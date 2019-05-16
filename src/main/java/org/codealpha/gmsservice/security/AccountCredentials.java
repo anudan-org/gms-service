@@ -6,6 +6,7 @@ public class AccountCredentials {
   private String password;
   private String role;
   private String tenant;
+  private String provider;
 
   public String getUsername() {
     return username;
@@ -37,5 +38,13 @@ public class AccountCredentials {
 
   public void setTenant(String tenant) {
     this.tenant = tenant;
+  }
+
+  public String getProvider() {
+    return provider;
+  }
+
+  public void setProvider(String provider) {
+    this.provider = provider;
   }
 }
