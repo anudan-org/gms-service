@@ -112,7 +112,7 @@ public class GrantController {
 
     ObjectMapper mapper = new ObjectMapper();
     try {
-      mapper.writeValueAsString(submissionData);
+      System.out.println(mapper.writeValueAsString(submissionData));
     } catch (JsonProcessingException e) {
       e.printStackTrace();
     }
