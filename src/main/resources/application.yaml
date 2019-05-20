@@ -93,7 +93,7 @@ spring:
     initialization-mode: always
     platform: pg
   jpa:
-    show-sql: true
+    show-sql: false
     database: postgresql
     hibernate:
       jdbc:
