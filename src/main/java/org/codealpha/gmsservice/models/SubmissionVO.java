@@ -3,8 +3,6 @@ package org.codealpha.gmsservice.models;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.codealpha.gmsservice.entities.AppConfig;
@@ -13,6 +11,7 @@ import org.codealpha.gmsservice.entities.GrantDocumentKpiData;
 import org.codealpha.gmsservice.entities.GrantQualitativeKpiData;
 import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
 import org.codealpha.gmsservice.entities.Submission;
+import org.codealpha.gmsservice.entities.SubmissionNote;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.WorkFlowPermission;
 import org.codealpha.gmsservice.entities.WorkflowActionPermission;
@@ -38,6 +37,7 @@ public class SubmissionVO {
   private String updatedBy;
   private WorkflowActionPermission actionAuthorities;
   private List<WorkFlowPermission> flowAuthorities;
+  private List<SubmissionNote> submissionNotes;
 
   public Long getId() {
     return id;
@@ -162,6 +162,15 @@ public class SubmissionVO {
   public void setDocumentKpiSubmissions(
       List<GrantDocumentKpiData> documentKpiSubmissions) {
     this.documentKpiSubmissions = documentKpiSubmissions;
+  }
+
+  public List<SubmissionNote> getSubmissionNotes() {
+    return submissionNotes;
+  }
+
+  public void setSubmissionNotes(
+      List<SubmissionNote> submissionNotes) {
+    this.submissionNotes = submissionNotes;
   }
 
   public SubmissionVO build(Submission submission,

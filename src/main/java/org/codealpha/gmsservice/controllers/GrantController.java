@@ -1,5 +1,7 @@
 package org.codealpha.gmsservice.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -18,6 +20,7 @@ import org.codealpha.gmsservice.entities.QualitativeKpiNotes;
 import org.codealpha.gmsservice.entities.QuantKpiDataDocument;
 import org.codealpha.gmsservice.entities.QuantitativeKpiNotes;
 import org.codealpha.gmsservice.entities.Submission;
+import org.codealpha.gmsservice.entities.SubmissionNote;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.models.GrantVO;
 import org.codealpha.gmsservice.models.KpiSubmissionData;
@@ -34,6 +37,7 @@ import org.codealpha.gmsservice.services.GrantService;
 import org.codealpha.gmsservice.services.QualitativeKpiNotesService;
 import org.codealpha.gmsservice.services.QuantKpiDocumentService;
 import org.codealpha.gmsservice.services.QuantitativeKpiNotesService;
+import org.codealpha.gmsservice.services.SubmissionNoteService;
 import org.codealpha.gmsservice.services.SubmissionService;
 import org.codealpha.gmsservice.services.UserService;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
@@ -80,6 +84,8 @@ public class GrantController {
   private DocKpiDataDocumentService docKpiDataDocumentService;
   @Autowired
   private QuantKpiDocumentService quantKpiDocumentService;
+  @Autowired
+  private SubmissionNoteService submissionNoteService;
 
   @Value("${spring.upload-file-location}")
   private String uploadLocation;
@@ -104,6 +110,12 @@ public class GrantController {
   public GrantVO saveKpiSubmissions(@RequestBody SubmissionData submissionData,
       @PathVariable("userId") Long userId) {
 
+    ObjectMapper mapper = new ObjectMapper();
+    try {
+      mapper.writeValueAsString(submissionData);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+    }
     User user = userService.getUserById(userId);
     for (KpiSubmissionData data : submissionData.getKpiSubmissionData()) {
       switch (data.getType()) {
@@ -243,6 +255,15 @@ public class GrantController {
 
 
     Submission submission = submissionService.getById(submissionData.getId());
+
+    for(String msg : submissionData.getNotes()){
+      SubmissionNote note = new SubmissionNote();
+      note.setMessage(msg);
+      note.setSubmission(submission);
+      note.setPostedBy(user);
+      note.setPostedOn(DateTime.now().toDate());
+      submissionNoteService.saveSubmissionNote(note);
+    }
     submission.setSubmittedOn(DateTime.now().toDate());
     submission
         .setSubmissionStatus(workflowStatusService.findById(submissionData.getKpiSubmissionData().get(0).getToStatusId()));

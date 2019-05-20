@@ -13,7 +13,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
-import org.springframework.core.annotation.Order;
 
 @Entity(name = "submissions")
 public class Submission {
@@ -51,6 +50,10 @@ public class Submission {
   @OneToMany(mappedBy = "submission")
   @OrderBy("id ASC")
   private List<GrantDocumentKpiData> documentKpiSubmissions;
+
+  @OneToMany (mappedBy = "submission")
+  @OrderBy("id DESC")
+  private List<SubmissionNote> submissionNotes;
 
   @Column
   private Date createdAt;
@@ -166,5 +169,14 @@ public class Submission {
   public void setDocumentKpiSubmissions(
       List<GrantDocumentKpiData> documentKpiSubmissions) {
     this.documentKpiSubmissions = documentKpiSubmissions;
+  }
+
+  public List<SubmissionNote> getSubmissionNotes() {
+    return submissionNotes;
+  }
+
+  public void setSubmissionNotes(
+      List<SubmissionNote> submissionNotes) {
+    this.submissionNotes = submissionNotes;
   }
 }
