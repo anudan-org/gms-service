@@ -18,9 +18,13 @@ import org.codealpha.gmsservice.entities.WorkflowActionPermission;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
 public class SubmissionVO {
+
+  private static Logger logger = LoggerFactory.getLogger(SubmissionVO.class);
 
   private Long id;
   private Grant grant;
@@ -190,9 +194,9 @@ public class SubmissionVO {
           voPd.getWriteMethod().invoke(vo, value);
 
         } catch (IllegalAccessException e) {
-          e.printStackTrace();
+          logger.error(e.getMessage(), e);
         } catch (InvocationTargetException e) {
-          e.printStackTrace();
+          logger.error(e.getMessage(), e);
         }
       }
     }

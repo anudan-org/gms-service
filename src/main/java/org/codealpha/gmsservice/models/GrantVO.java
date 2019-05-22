@@ -226,9 +226,9 @@ public class GrantVO {
             voPd.getWriteMethod().invoke(vo, value);
           }
         } catch (IllegalAccessException e) {
-          e.printStackTrace();
+          logger.error(e.getMessage(),e);
         } catch (InvocationTargetException e) {
-          e.printStackTrace();
+          logger.error(e.getMessage(),e);
         }
       }
     }

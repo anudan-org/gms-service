@@ -1,6 +1,5 @@
 package org.codealpha.gmsservice.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import org.codealpha.gmsservice.entities.AppConfig;
@@ -8,9 +7,13 @@ import org.codealpha.gmsservice.entities.BaseEntity;
 import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
 public class GrantQuantitativeKpiDataVO extends BaseEntity {
+
+  private static Logger logger = LoggerFactory.getLogger(GrantQuantitativeKpiDataVO.class);
 
   private Long id;
   private Integer goal;
@@ -59,9 +62,9 @@ public class GrantQuantitativeKpiDataVO extends BaseEntity {
           voPd.getWriteMethod().invoke(vo, value);
 
         } catch (IllegalAccessException e) {
-          e.printStackTrace();
+          logger.error(e.getMessage(),e);
         } catch (InvocationTargetException e) {
-          e.printStackTrace();
+          logger.error(e.getMessage(),e);
         }
       }
     }

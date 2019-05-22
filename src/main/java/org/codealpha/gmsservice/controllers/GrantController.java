@@ -43,6 +43,8 @@ import org.codealpha.gmsservice.services.UserService;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.codealpha.gmsservice.services.WorkflowStatusService;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -55,6 +57,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/user/{userId}/grant")
 public class GrantController {
+
+  private static Logger logger = LoggerFactory.getLogger(GrantController.class);
 
   @Autowired
   private GrantQuantitativeDataService quantitativeDataService;
@@ -114,7 +118,7 @@ public class GrantController {
     try {
       System.out.println(mapper.writeValueAsString(submissionData));
     } catch (JsonProcessingException e) {
-      e.printStackTrace();
+      logger.error(e.getMessage(), e);
     }
     User user = userService.getUserById(userId);
     for (KpiSubmissionData data : submissionData.getKpiSubmissionData()) {
@@ -156,16 +160,15 @@ public class GrantController {
                 quantKpiDataDocument.setQuantKpiData(quantitativeKpiData);
               }
 
-
-              try (FileOutputStream fileOutputStream = new FileOutputStream(fileName)){
+              try (FileOutputStream fileOutputStream = new FileOutputStream(fileName)) {
 
                 byte[] dataBytes = Base64.getDecoder().decode(uploadedFile.getValue());
                 fileOutputStream.write(dataBytes);
                 fileOutputStream.close();
               } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
               } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
               }
 
               quantKpiDataDocument = quantKpiDocumentService.saveFile(quantKpiDataDocument);
@@ -227,9 +230,9 @@ public class GrantController {
                 fileOutputStream.write(dataBytes);
                 fileOutputStream.close();
               } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
               } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
               }
 
               docKpiDataDocument = docKpiDataDocumentService.saveKpiDoc(docKpiDataDocument);
@@ -254,10 +257,9 @@ public class GrantController {
       }
     }
 
-
     Submission submission = submissionService.getById(submissionData.getId());
 
-    for(String msg : submissionData.getNotes()){
+    for (String msg : submissionData.getNotes()) {
       SubmissionNote note = new SubmissionNote();
       note.setMessage(msg);
       note.setSubmission(submission);
@@ -267,7 +269,8 @@ public class GrantController {
     }
     submission.setSubmittedOn(DateTime.now().toDate());
     submission
-        .setSubmissionStatus(workflowStatusService.findById(submissionData.getKpiSubmissionData().get(0).getToStatusId()));
+        .setSubmissionStatus(workflowStatusService
+            .findById(submissionData.getKpiSubmissionData().get(0).getToStatusId()));
 
     submission = submissionService.saveSubmission(submission);
 

@@ -8,6 +8,8 @@ import org.codealpha.gmsservice.models.UIConfig;
 import org.codealpha.gmsservice.services.GranterConfigurationService;
 import org.codealpha.gmsservice.services.OrganizationResolver;
 import org.codealpha.gmsservice.services.OrganizationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -26,6 +28,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RestController
 @RequestMapping(value = "/app")
 public class ApplicationController {
+  private static Logger logger = LoggerFactory.getLogger(ApplicationController.class);
 
   @Autowired
   private OrganizationResolver organizationResolver;
@@ -84,7 +87,7 @@ public class ApplicationController {
       StreamUtils.copy(image.getInputStream(), servletResponse.getOutputStream());
 
     } catch (IOException ex) {
-      ex.printStackTrace();
+      logger.error(ex.getMessage(),ex);
     }
   }
 
