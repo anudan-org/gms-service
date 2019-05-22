@@ -14,6 +14,7 @@ logging:
   level:
     org.codealpha: info
   file: gms.log
+
 ---
 
 spring:

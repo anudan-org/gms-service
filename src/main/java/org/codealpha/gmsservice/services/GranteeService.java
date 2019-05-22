@@ -17,10 +17,10 @@ public class GranteeService {
   public List<Grant> getGrantsOfGranteeForGrantor(Long granteeOrgId, Organization tenantOrg, Long userRoleId){
     List<Grant> allGrants = new ArrayList<>();
 
-    if("GRANTER".equalsIgnoreCase(tenantOrg.getType())){
+    if("GRANTER".equalsIgnoreCase(tenantOrg.getOrganizationType())){
       allGrants
           .addAll(grantRepository.findGrantsOfGranteeForTenantOrg(granteeOrgId, tenantOrg.getId(),userRoleId));
-    }else if("PLATFORM".equalsIgnoreCase(tenantOrg.getType())){
+    }else if("PLATFORM".equalsIgnoreCase(tenantOrg.getOrganizationType())){
       allGrants.addAll(grantRepository.findAllGrantsOfGrantee(granteeOrgId));
     }
     return allGrants;
