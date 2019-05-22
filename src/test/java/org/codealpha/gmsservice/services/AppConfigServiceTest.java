@@ -1,7 +1,5 @@
 package org.codealpha.gmsservice.services;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.util.ArrayList;
 import java.util.List;
 import org.codealpha.gmsservice.constants.AppConfiguration;
@@ -31,14 +29,16 @@ public class AppConfigServiceTest {
         .getAllAppConfigForOrg(Mockito.anyLong());
 
     List<AppConfig> configs = appConfigService.getAllAppConfigForGrantorOrg(1L);
-    Assert.assertTrue(configs.size()==0);
+    Assert.assertTrue(configs.size() == 0);
   }
 
   @Test
   public void getAppConfigForGranterOrg() {
     Mockito.doReturn(new AppConfig()).when(appConfigRepository)
-        .getAppConfigForOrg(Mockito.anyLong(),Mockito.any());
+        .getAppConfigForOrg(Mockito.anyLong(), Mockito.any());
 
-    AppConfig config = appConfigService.getAppConfigForGranterOrg(1L, AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS);
-    Assert.assertNotNull(config);  }
+    AppConfig config = appConfigService
+        .getAppConfigForGranterOrg(1L, AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS);
+    Assert.assertNotNull(config);
+  }
 }

@@ -1,7 +1,5 @@
 package org.codealpha.gmsservice.services;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.util.ArrayList;
 import java.util.List;
 import org.codealpha.gmsservice.entities.Grant;
@@ -11,19 +9,15 @@ import org.codealpha.gmsservice.repositories.GrantRepository;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
 @SpringBootTest
 public class GranteeServiceTest {
 
@@ -43,12 +37,10 @@ public class GranteeServiceTest {
   @Before
   public void setup() {
 
-
     grantorGrants.add(new Grant());
 
     platformGrants.add(new Grant());
     platformGrants.add(new Grant());
-
 
     granteeOrgId = 1L;
 
@@ -71,7 +63,7 @@ public class GranteeServiceTest {
         .findGrantsOfGranteeForTenantOrg(granteeOrgId, tenantOrg.getId(), userRoleId);
     List<Grant> grants = granteeService.getGrantsOfGranteeForGrantor(granteeOrgId, tenantOrg,
         userRoleId);
-    Assert.assertEquals(1,grants.size());
+    Assert.assertEquals(1, grants.size());
   }
 
   @Test
@@ -80,6 +72,6 @@ public class GranteeServiceTest {
         .findAllGrantsOfGrantee(granteeOrgId);
     List<Grant> grants = granteeService.getGrantsOfGranteeForGrantor(granteeOrgId, platformOrg,
         userRoleId);
-    Assert.assertEquals(2,grants.size());
+    Assert.assertEquals(2, grants.size());
   }
 }
