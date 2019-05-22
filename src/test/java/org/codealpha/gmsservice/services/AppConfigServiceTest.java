@@ -8,7 +8,7 @@ import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.repositories.AppConfigRepository;
 import org.junit.Assert;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-class AppConfigServiceTest {
+public class AppConfigServiceTest {
 
   @MockBean
   private AppConfigRepository appConfigRepository;
@@ -26,7 +26,7 @@ class AppConfigServiceTest {
   private AppConfigService appConfigService;
 
   @Test
-  void getAllAppConfigForGrantorOrg() {
+  public void getAllAppConfigForGrantorOrg() {
     Mockito.doReturn(new ArrayList<AppConfig>()).when(appConfigRepository)
         .getAllAppConfigForOrg(Mockito.anyLong());
 
@@ -35,7 +35,7 @@ class AppConfigServiceTest {
   }
 
   @Test
-  void getAppConfigForGranterOrg() {
+  public void getAppConfigForGranterOrg() {
     Mockito.doReturn(new AppConfig()).when(appConfigRepository)
         .getAppConfigForOrg(Mockito.anyLong(),Mockito.any());
 

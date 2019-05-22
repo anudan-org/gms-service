@@ -10,21 +10,22 @@ import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.repositories.GrantRepository;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
-@AutoConfigureBefore
-class GranteeServiceTest {
+public class GranteeServiceTest {
 
   @Autowired
   private GranteeService granteeService;
@@ -39,7 +40,7 @@ class GranteeServiceTest {
   List<Grant> grantorGrants = new ArrayList<>();
   List<Grant> platformGrants = new ArrayList<>();
 
-  @BeforeEach
+  @Before
   public void setup() {
 
 
@@ -65,7 +66,7 @@ class GranteeServiceTest {
   }
 
   @Test
-  void whenValidUserAndTenantEqualsGrantor_ThenReturnOneGrant() {
+  public void whenValidUserAndTenantEqualsGrantor_ThenReturnOneGrant() {
     Mockito.doReturn(grantorGrants).when(grantRepository)
         .findGrantsOfGranteeForTenantOrg(granteeOrgId, tenantOrg.getId(), userRoleId);
     List<Grant> grants = granteeService.getGrantsOfGranteeForGrantor(granteeOrgId, tenantOrg,
@@ -74,7 +75,7 @@ class GranteeServiceTest {
   }
 
   @Test
-  void whenValidUserAndTenantEqualsPlatform_ThenReturnOneGrant() {
+  public void whenValidUserAndTenantEqualsPlatform_ThenReturnOneGrant() {
     Mockito.doReturn(platformGrants).when(grantRepository)
         .findAllGrantsOfGrantee(granteeOrgId);
     List<Grant> grants = granteeService.getGrantsOfGranteeForGrantor(granteeOrgId, platformOrg,
