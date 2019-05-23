@@ -35,7 +35,6 @@ public class GranterController {
 		granter.setCreatedBy("Admin");
 		granter = granterRepository.save(granter);
 
-		System.out.println(granterRepository.findById(granter.getId()));
 	}
 
 	@PostMapping("/{granterId}/rfps/")
