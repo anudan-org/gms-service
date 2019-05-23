@@ -1,8 +1,5 @@
 package org.codealpha.gmsservice.controllers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -102,11 +99,10 @@ public class GrantController {
 
     User user = userService.getUserById(userId);
     Grant grant = grantService.getById(grantId);
-    GrantVO grantVO = new GrantVO()
+    return new GrantVO()
         .build(grant, workflowPermissionService, user,
             appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                 AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
-    return grantVO;
   }
 
   @PutMapping(value = "/kpi")
@@ -114,12 +110,6 @@ public class GrantController {
   public GrantVO saveKpiSubmissions(@RequestBody SubmissionData submissionData,
       @PathVariable("userId") Long userId) {
 
-    ObjectMapper mapper = new ObjectMapper();
-    try {
-      System.out.println(mapper.writeValueAsString(submissionData));
-    } catch (JsonProcessingException e) {
-      logger.error(e.getMessage(), e);
-    }
     User user = userService.getUserById(userId);
     for (KpiSubmissionData data : submissionData.getKpiSubmissionData()) {
       switch (data.getType()) {
@@ -130,7 +120,6 @@ public class GrantController {
           quantitativeKpiData.setUpdatedAt(DateTime.now().toDate());
           quantitativeKpiData.setUpdatedBy(user.getEmailId());
 
-          //quantitativeKpiData.setStatusName(workflowStatusService.findById(data.getToStatusId()).getName());
           if (data.getNotes() != null) {
             for (String note : data.getNotes()) {
               QuantitativeKpiNotes kpiNote = new QuantitativeKpiNotes();
@@ -144,9 +133,8 @@ public class GrantController {
           }
 
           List<QuantKpiDataDocument> kpiDocs = new ArrayList<>();
-          if ((data.getFiles() == null || data
+          if ((data.getFiles() != null && !data
               .getFiles().isEmpty())) {
-          } else {
             for (UploadFile uploadedFile : data.getFiles()) {
               String fileName = uploadLocation + uploadedFile.getFileName();
               QuantKpiDataDocument quantKpiDataDocument = new QuantKpiDataDocument();
@@ -164,9 +152,6 @@ public class GrantController {
 
                 byte[] dataBytes = Base64.getDecoder().decode(uploadedFile.getValue());
                 fileOutputStream.write(dataBytes);
-                fileOutputStream.close();
-              } catch (FileNotFoundException e) {
-                logger.error(e.getMessage(), e);
               } catch (IOException e) {
                 logger.error(e.getMessage(), e);
               }
@@ -209,7 +194,6 @@ public class GrantController {
 
           if (documentKpiData.getActuals() != null && (data.getFiles() == null || data
               .getFiles().isEmpty())) {
-            // documentKpiData.setActuals(documentKpiData.getActuals());
           } else {
             for (UploadFile uploadedFile : data.getFiles()) {
               String fileName = uploadLocation + uploadedFile.getFileName();
@@ -229,8 +213,6 @@ public class GrantController {
                 byte[] dataBytes = Base64.getDecoder().decode(uploadedFile.getValue());
                 fileOutputStream.write(dataBytes);
                 fileOutputStream.close();
-              } catch (FileNotFoundException e) {
-                logger.error(e.getMessage(), e);
               } catch (IOException e) {
                 logger.error(e.getMessage(), e);
               }
@@ -254,6 +236,9 @@ public class GrantController {
           documentKpiData.setSubmissionDocs(submissionDocs);
           grantDocumentDataService.saveDocumentKpi(documentKpiData);
           break;
+
+        default:
+          logger.info("Nothing to do");
       }
     }
 
@@ -290,10 +275,9 @@ public class GrantController {
     grant.setSubstatus(submission.getSubmissionStatus());
     grant = grantService.saveGrant(grant);
     grant = grantService.getById(grant.getId());
-    GrantVO grantVO = new GrantVO()
+    return new GrantVO()
         .build(grant, workflowPermissionService, user,
             appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                 AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
-    return grantVO;
   }
 }
