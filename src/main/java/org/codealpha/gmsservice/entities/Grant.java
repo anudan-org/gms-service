@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -42,6 +43,10 @@ public class Grant extends BaseEntity{
 	@ManyToOne
 	@JoinColumn(name = "grantor_org_id")
 	private Organization grantorOrganization;
+
+	@OneToMany(mappedBy = "grant")
+	@JsonProperty("attribute")
+	private List<GrantStringAttributes> stringAttributes;
 
 	@Column(name = "name")
 	private String name;
@@ -171,4 +176,14 @@ public class Grant extends BaseEntity{
 	public void setGrantStatus(WorkflowStatus status) {
 		this.grantStatus = status;
 	}
+
+	public List<GrantStringAttributes> getStringAttributes() {
+		return stringAttributes;
+	}
+
+	public void setStringAttributes(
+			List<GrantStringAttributes> stringAttributes) {
+		this.stringAttributes = stringAttributes;
+	}
+
 }

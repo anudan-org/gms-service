@@ -50,6 +50,8 @@ public class GrantKpi {
   @JoinColumn(referencedColumnName = "id")
   @JsonIgnore
   private Grant grant;
+  @OneToMany(mappedBy = "kpi")
+  private List<Template> templates;
 
 
 
@@ -149,4 +151,11 @@ public class GrantKpi {
     this.grant = grant;
   }
 
+  public List<Template> getTemplates() {
+    return templates;
+  }
+
+  public void setTemplates(List<Template> templates) {
+    this.templates = templates;
+  }
 }

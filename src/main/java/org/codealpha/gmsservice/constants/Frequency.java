@@ -4,7 +4,8 @@ public enum Frequency {
   ONCE("ONCE"),
   MONTHLY("MONTHLY"),
   QUARTERLY("QUARTERLY"),
-  YEARLY("YEARLY");
+  YEARLY("YEARLY"),
+  HALF_YEARLY("HALF-YEARLY");
 
   private String val;
   Frequency(String value) {

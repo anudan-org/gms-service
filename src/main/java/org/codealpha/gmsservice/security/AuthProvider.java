@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.security;
 
 import java.util.ArrayList;
+import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.services.OrganizationService;
@@ -39,6 +40,10 @@ public class AuthProvider implements AuthenticationProvider {
 
       if (user != null) {
 
+        if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")
+            && !((Granter) user.getOrganization()).getCode().equalsIgnoreCase(tenantCode)) {
+          throw new BadCredentialsException("Invalid login for Granter organization.");
+        }
         if (password.equalsIgnoreCase(user.getPassword())
             && username.equalsIgnoreCase(user.getEmailId())) {
 
@@ -56,6 +61,11 @@ public class AuthProvider implements AuthenticationProvider {
       User user = userService.getUserByEmail(username);
 
       if (user != null) {
+
+        if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")
+            && !((Granter) user.getOrganization()).getCode().equalsIgnoreCase(tenantCode)) {
+          throw new BadCredentialsException("Invalid login for Granter organization.");
+        }
 
         return new UsernamePasswordAuthenticationToken(username, password, new ArrayList());
       } else {

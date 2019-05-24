@@ -4,10 +4,12 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.entities.Template;
 import org.codealpha.gmsservice.models.UIConfig;
 import org.codealpha.gmsservice.services.GranterConfigurationService;
 import org.codealpha.gmsservice.services.OrganizationResolver;
 import org.codealpha.gmsservice.services.OrganizationService;
+import org.codealpha.gmsservice.services.TemplateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RestController
 @RequestMapping(value = "/app")
 public class ApplicationController {
+
   private static Logger logger = LoggerFactory.getLogger(ApplicationController.class);
 
   @Autowired
@@ -41,6 +44,9 @@ public class ApplicationController {
 
   @Autowired
   private ResourceLoader resourceLoader;
+
+  @Autowired
+  private TemplateService templateService;
 
   @Value("${spring.upload-file-location}")
   private String uploadLocation;
@@ -87,7 +93,44 @@ public class ApplicationController {
       StreamUtils.copy(image.getInputStream(), servletResponse.getOutputStream());
 
     } catch (IOException ex) {
-      logger.error(ex.getMessage(),ex);
+      logger.error(ex.getMessage(), ex);
+    }
+  }
+
+  @GetMapping("templates/kpi/{templateId}")
+  public void getTemplate(@PathVariable("templateId") Long templateId,
+      HttpServletResponse servletResponse) {
+
+    Template template = templateService.findByTemplateId(templateId);
+    Resource file = resourceLoader
+        .getResource("file:" + uploadLocation + template.getLocation() + template.getName());
+    switch (template.getFileType()) {
+      case "png":
+        servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
+        break;
+      case "jpg":
+        servletResponse.setContentType(MediaType.IMAGE_JPEG_VALUE);
+        break;
+      case "jpeg":
+        servletResponse.setContentType(MediaType.IMAGE_JPEG_VALUE);
+        break;
+      case "pdf":
+        servletResponse.setContentType(MediaType.APPLICATION_PDF_VALUE);
+        break;
+      case "doc":
+        servletResponse.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+        break;
+      case "xls":
+        servletResponse.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+    }
+    servletResponse
+        .setHeader("Content-Disposition", "attachment; filename=" + template.getName());
+
+    try {
+      StreamUtils.copy(file.getInputStream(), servletResponse.getOutputStream());
+
+    } catch (IOException ex) {
+      logger.error(ex.getMessage(), ex);
     }
   }
 

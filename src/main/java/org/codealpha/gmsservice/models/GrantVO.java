@@ -22,6 +22,7 @@ import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.GrantKpi;
 import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
+import org.codealpha.gmsservice.entities.GrantStringAttributes;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Submission;
 import org.codealpha.gmsservice.entities.User;
@@ -54,6 +55,9 @@ public class GrantVO {
   private List<SubmissionVO> submissions;
   private WorkflowActionPermission actionAuthorities;
   private List<WorkFlowPermission> flowAuthorities;
+  private GrantDetailVO grantDetails;
+  @JsonIgnore
+  private List<GrantStringAttributes> stringAttributes;
 
   private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
@@ -195,7 +199,23 @@ public class GrantVO {
     this.submissions = submissions;
   }
 
-  @OneToMany(mappedBy = "grant", fetch = FetchType.LAZY)
+  public GrantDetailVO getGrantDetails() {
+    return grantDetails;
+  }
+
+  public void setGrantDetails(GrantDetailVO attributes) {
+    this.grantDetails = attributes;
+  }
+
+  public List<GrantStringAttributes> getStringAttributes() {
+    return stringAttributes;
+  }
+
+  public void setStringAttributes(
+      List<GrantStringAttributes> stringAttributes) {
+    this.stringAttributes = stringAttributes;
+  }
+
   public GrantVO build(Grant grant,
       WorkflowPermissionService workflowPermissionService,
       User user, AppConfig submissionWindow) {
@@ -222,13 +242,16 @@ public class GrantVO {
             }
             vo.setSubmissions(submissionVOList);
             System.out.println("KPIS called");
+          } else if (voPd.getName().equalsIgnoreCase("stringAttributes")) {
+            GrantDetailVO grantDetailVO = new GrantDetailVO().build((List<GrantStringAttributes>) value);
+            vo.setGrantDetails(grantDetailVO);
           } else {
             voPd.getWriteMethod().invoke(vo, value);
           }
         } catch (IllegalAccessException e) {
-          logger.error(e.getMessage(),e);
+          logger.error(e.getMessage(), e);
         } catch (InvocationTargetException e) {
-          logger.error(e.getMessage(),e);
+          logger.error(e.getMessage(), e);
         }
       }
     }
