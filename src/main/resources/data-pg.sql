@@ -24,9 +24,9 @@ VALUES ('GRANTER', 'TATR', '2019-04-08 03:02:02.431000', 'System', 'Tata Trust',
 
 -- Granters
 INSERT into public.granters (id, host_url, image_name, navbar_color, navbar_text_color)
-values (2, 'ihf', 'indian_health_fund.png', '#459890', '#fff');
+values (2, 'ihf', 'indian_health_fund.png', '#232323', '#fff');
 INSERT into public.granters (id, host_url, image_name, navbar_color, navbar_text_color)
-values (4, 'tatr', 'tata_trust.png', '#674532', '#fff');
+values (4, 'tatr', 'tata_trust.png', '#ED1B24', '#fff');
 
 
 -- Grantees
