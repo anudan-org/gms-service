@@ -212,7 +212,6 @@ public class GrantController {
 
                 byte[] dataBytes = Base64.getDecoder().decode(uploadedFile.getValue());
                 fileOutputStream.write(dataBytes);
-                fileOutputStream.close();
               } catch (IOException e) {
                 logger.error(e.getMessage(), e);
               }
