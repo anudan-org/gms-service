@@ -208,8 +208,8 @@ public class GrantController {
                 docKpiDataDocument.setDocKpiData(documentKpiData);
               }
 
-              try {
-                FileOutputStream fileOutputStream = new FileOutputStream(fileName);
+              try(FileOutputStream fileOutputStream = new FileOutputStream(fileName)) {
+
                 byte[] dataBytes = Base64.getDecoder().decode(uploadedFile.getValue());
                 fileOutputStream.write(dataBytes);
                 fileOutputStream.close();
