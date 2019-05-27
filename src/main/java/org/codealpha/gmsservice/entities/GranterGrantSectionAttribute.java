@@ -18,6 +18,12 @@ public class GranterGrantSectionAttribute {
   private Long id;
   @Column
   private String fieldName;
+  @Column
+  private String fieldType;
+  @Column
+  private Boolean deletable;
+  @Column
+  private Boolean required;
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   @JsonIgnore
@@ -25,9 +31,7 @@ public class GranterGrantSectionAttribute {
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   private Organization granter;
-  @OneToOne
-  @JoinColumn(referencedColumnName = "id")
-  private GrantSectionAttribute attribute;
+
 
   public Long getId() {
     return id;
@@ -61,11 +65,27 @@ public class GranterGrantSectionAttribute {
     this.fieldName = fieldName;
   }
 
-  public GrantSectionAttribute getAttribute() {
-    return attribute;
+  public String getFieldType() {
+    return fieldType;
   }
 
-  public void setAttribute(GrantSectionAttribute attribute) {
-    this.attribute = attribute;
+  public void setFieldType(String fieldType) {
+    this.fieldType = fieldType;
+  }
+
+  public Boolean getDeletable() {
+    return deletable;
+  }
+
+  public void setDeletable(Boolean deletable) {
+    this.deletable = deletable;
+  }
+
+  public Boolean getRequired() {
+    return required;
+  }
+
+  public void setRequired(Boolean required) {
+    this.required = required;
   }
 }

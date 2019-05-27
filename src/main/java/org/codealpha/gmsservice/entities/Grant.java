@@ -45,8 +45,12 @@ public class Grant extends BaseEntity{
 	private Organization grantorOrganization;
 
 	@OneToMany(mappedBy = "grant")
-	@JsonProperty("attribute")
+	@JsonProperty("stringAttribute")
 	private List<GrantStringAttributes> stringAttributes;
+
+	@OneToMany(mappedBy = "grant")
+	@JsonProperty("docAttribute")
+	private List<GrantDocumentAttributes> documentAttributes;
 
 	@Column(name = "name")
 	private String name;
@@ -186,4 +190,12 @@ public class Grant extends BaseEntity{
 		this.stringAttributes = stringAttributes;
 	}
 
+	public List<GrantDocumentAttributes> getDocumentAttributes() {
+		return documentAttributes;
+	}
+
+	public void setDocumentAttributes(
+			List<GrantDocumentAttributes> documentAttributes) {
+		this.documentAttributes = documentAttributes;
+	}
 }

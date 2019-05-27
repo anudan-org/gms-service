@@ -20,6 +20,7 @@ import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.constants.GrantSubStatus;
 import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.Grant;
+import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
 import org.codealpha.gmsservice.entities.GrantKpi;
 import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
 import org.codealpha.gmsservice.entities.GrantStringAttributes;
@@ -58,6 +59,8 @@ public class GrantVO {
   private GrantDetailVO grantDetails;
   @JsonIgnore
   private List<GrantStringAttributes> stringAttributes;
+  @JsonIgnore
+  private List<GrantDocumentAttributes> documentAttributes;
 
   private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
@@ -216,6 +219,15 @@ public class GrantVO {
     this.stringAttributes = stringAttributes;
   }
 
+  public List<GrantDocumentAttributes> getDocumentAttributes() {
+    return documentAttributes;
+  }
+
+  public void setDocumentAttributes(
+      List<GrantDocumentAttributes> documentAttributes) {
+    this.documentAttributes = documentAttributes;
+  }
+
   public GrantVO build(Grant grant,
       WorkflowPermissionService workflowPermissionService,
       User user, AppConfig submissionWindow) {
@@ -243,7 +255,20 @@ public class GrantVO {
             vo.setSubmissions(submissionVOList);
             System.out.println("KPIS called");
           } else if (voPd.getName().equalsIgnoreCase("stringAttributes")) {
-            GrantDetailVO grantDetailVO = new GrantDetailVO().build((List<GrantStringAttributes>) value);
+            GrantDetailVO grantDetailVO = null;
+            grantDetailVO = vo.getGrantDetails();
+            if(grantDetailVO == null){
+              grantDetailVO = new GrantDetailVO();
+            }
+            grantDetailVO = grantDetailVO.buildStringAttributes((List<GrantStringAttributes>) value);
+            vo.setGrantDetails(grantDetailVO);
+          } else if (voPd.getName().equalsIgnoreCase("documentAttributes")) {
+            GrantDetailVO grantDetailVO = null;
+            grantDetailVO = vo.getGrantDetails();
+            if(grantDetailVO == null){
+              grantDetailVO = new GrantDetailVO();
+            }
+            grantDetailVO = grantDetailVO.buildDocumentAttributes((List<GrantDocumentAttributes>) value);
             vo.setGrantDetails(grantDetailVO);
           } else {
             voPd.getWriteMethod().invoke(vo, value);

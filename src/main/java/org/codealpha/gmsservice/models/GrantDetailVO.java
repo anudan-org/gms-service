@@ -2,6 +2,7 @@ package org.codealpha.gmsservice.models;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
 import org.codealpha.gmsservice.entities.GrantStringAttributes;
 
 public class GrantDetailVO {
@@ -16,8 +17,10 @@ public class GrantDetailVO {
     this.sections = sections;
   }
 
-  public GrantDetailVO build(List<GrantStringAttributes> value) {
-    sections = new ArrayList<>();
+  public GrantDetailVO buildStringAttributes(List<GrantStringAttributes> value) {
+    if(sections==null) {
+      sections = new ArrayList<>();
+    }
     SectionVO sectionVO = null;
     for (GrantStringAttributes stringAttribute : value) {
       sectionVO = new SectionVO();
@@ -31,13 +34,41 @@ public class GrantDetailVO {
       List<SectionAttributesVO> sectionAttributes = sectionVO.getAttributes();
       SectionAttributesVO sectionAttribute = new SectionAttributesVO();
       sectionAttribute.setFieldName(stringAttribute.getSectionAttribute().getFieldName());
-      if(stringAttribute.getSectionAttribute().getAttribute()==null){
-        sectionAttribute.setFieldType("string");
-      }else {
         sectionAttribute
-            .setFieldType(stringAttribute.getSectionAttribute().getAttribute().getFieldType());
-      }
+            .setFieldType(stringAttribute.getSectionAttribute().getFieldType());
+
       sectionAttribute.setFieldValue(stringAttribute.getValue());
+      if (sectionAttributes == null) {
+        sectionAttributes = new ArrayList<>();
+      }
+      if (!sectionAttributes.contains(sectionAttribute)) {
+        sectionAttributes.add(sectionAttribute);
+      }
+      sectionVO.setAttributes(sectionAttributes);
+
+    }
+    return this;
+  }
+
+  public GrantDetailVO buildDocumentAttributes(List<GrantDocumentAttributes> value) {
+    sections = new ArrayList<>();
+    SectionVO sectionVO = null;
+    for (GrantDocumentAttributes documentAttribute : value) {
+      sectionVO = new SectionVO();
+      sectionVO.setName(documentAttribute.getSection().getSectionName());
+
+      if (!sections.contains(sectionVO)) {
+        sections.add(sectionVO);
+      }
+
+      sectionVO = sections.get(sections.indexOf(sectionVO));
+      List<SectionAttributesVO> sectionAttributes = sectionVO.getAttributes();
+      SectionAttributesVO sectionAttribute = new SectionAttributesVO();
+      sectionAttribute.setFieldName(documentAttribute.getName());
+      sectionAttribute
+          .setFieldType(documentAttribute.getSectionAttribute().getFieldType());
+
+      sectionAttribute.setFieldValue(documentAttribute.getLocation());
       if (sectionAttributes == null) {
         sectionAttributes = new ArrayList<>();
       }

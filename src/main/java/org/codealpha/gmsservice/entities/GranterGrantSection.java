@@ -19,9 +19,8 @@ public class GranterGrantSection {
   private Long id;
   @Column
   private String sectionName;
-  @OneToOne
-  @JoinColumn(referencedColumnName = "id")
-  private GrantSection section;
+  @Column
+  private Boolean deletable;
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   private Organization granter;
@@ -42,19 +41,19 @@ public class GranterGrantSection {
     this.sectionName = sectionName;
   }
 
-  public GrantSection getSection() {
-    return section;
-  }
-
-  public void setSection(GrantSection section) {
-    this.section = section;
-  }
-
   public Organization getGranter() {
     return granter;
   }
 
   public void setGranter(Organization granter) {
     this.granter = granter;
+  }
+
+  public Boolean getDeletable() {
+    return deletable;
+  }
+
+  public void setDeletable(Boolean deletable) {
+    this.deletable = deletable;
   }
 }

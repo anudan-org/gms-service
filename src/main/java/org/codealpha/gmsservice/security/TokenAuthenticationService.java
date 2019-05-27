@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.security;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.io.IOException;
@@ -11,10 +12,15 @@ import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.codealpha.gmsservice.exceptions.TokenExpiredException;
+import org.springframework.boot.web.servlet.error.DefaultErrorAttributes;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 public class TokenAuthenticationService {
 
@@ -45,12 +51,17 @@ public class TokenAuthenticationService {
 
   }
 
-  static Authentication getAuthentication(HttpServletRequest request) {
+  static Authentication getAuthentication(HttpServletRequest request, HttpServletResponse response) {
     String token = request.getHeader(HEADER_STRING);
     if (token != null) {
       // parse the token.
-      String user = Jwts.parser().setSigningKey(SECRET)
-          .parseClaimsJws(token.replace(TOKEN_PREFIX, "")).getBody().getSubject();
+      String user = null;
+      try {
+        user = Jwts.parser().setSigningKey(SECRET)
+            .parseClaimsJws(token.replace(TOKEN_PREFIX, "")).getBody().getSubject();
+      }catch (ExpiredJwtException e){
+        throw new TokenExpiredException("Token Expired");
+      }
 
       List<GrantedAuthority> list = new ArrayList<>();
       list.add(new SimpleGrantedAuthority("ADMIN"));

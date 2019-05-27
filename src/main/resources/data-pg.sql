@@ -478,52 +478,74 @@ insert into grant_section_attributes (deletable, field_name, field_type, require
 VALUES (false, 'Bank IFSC Code', 'string', true, null, 3); -- 9
 
 -- insert granter's grant sections configuration
-insert into granter_grant_sections (section_name, granter_id, section_id)
-VALUES ('Basic Details', 2, 1); -- 1
-insert into granter_grant_sections (section_name, granter_id, section_id)
-VALUES ('Grant Towards Project', 2, 2); -- 2
-insert into granter_grant_sections (section_name, granter_id, section_id)
-VALUES ('Financial Details', 2, 3); -- 3
-insert into granter_grant_sections (section_name, granter_id, section_id)
-VALUES ('Involved Parties', 4, 1); -- 4
-insert into granter_grant_sections (section_name, granter_id, section_id)
-VALUES ('Project Summary', 4, 2); -- 5
-insert into granter_grant_sections (section_name, granter_id, section_id)
-VALUES ('Superfluous Information ', 4, null); -- 6
+insert into granter_grant_sections (deletable, section_name, granter_id)
+VALUES (true, 'Basic Details', 2); -- 1
+insert into granter_grant_sections (deletable, section_name, granter_id)
+VALUES (true, 'Grant Towards Project', 2); -- 2
+insert into granter_grant_sections (deletable, section_name, granter_id)
+VALUES (true, 'Financial Details', 2); -- 3
+insert into granter_grant_sections (deletable, section_name, granter_id)
+VALUES (true, 'Involved Parties', 4); -- 4
+insert into granter_grant_sections (deletable, section_name, granter_id)
+VALUES (true, 'Project Summary', 4); -- 5
+insert into granter_grant_sections (deletable, section_name, granter_id)
+VALUES (true, 'Superfluous Information ', 4); -- 6
+insert into granter_grant_sections (deletable, section_name, granter_id)
+VALUES (true, 'Legal/Supporting Documents', 2); -- 7
 
 
 -- Insert Granter's grant section attributes
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('Grant Making Authority', 1, 2, 1); -- 1
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('Grant Receiving Organization', 2, 2, 1); -- 2
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('Grant Receiving Individual', 3, 2, 1); -- 3
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('Project Name', 4, 2, 2); -- 4
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('Project Description', 5, 2, 2); -- 5
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('Project Purpose', 6, 2, 2); -- 6
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('Bank Name', 7, 2, 3); -- 7
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('Bank A/C No.', 8, 2, 3); -- 8
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('IFSC Code', 9, 2, 3); -- 9
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('Grant Making Authority', 1, 4, 1); -- 10
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('Grant Receiving Organization', 2, 4, 1); -- 11
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('Project Name', 4, 4, 2); -- 12
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('Project Description', 5, 4, 2); -- 13
-insert into granter_grant_section_attributes (field_name, attribute_id, granter_id, section_id)
-values ('State of the nation', null, 4, 6); -- 14
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Grant Making Authority', 'string', true, 2, 1); -- 1
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Grant Receiving Organization', 'string', true, 2, 1); -- 2
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Grant Receiving Individual', 'string', true, 2, 1); -- 3
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Project Name', 'string', true, 2, 2); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Project Description', 'string', true, 2, 2); -- 5
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Project Purpose', 'string', true, 2, 2); -- 6
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Bank Name', 'string', true, 2, 3); -- 7
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Bank A/C No.', 'string', true, 2, 3); -- 8
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'IFSC Code', 'string', true, 2, 3); -- 9
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Grant Making Authority', 'string', true, 4, 1); -- 10
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Grant Receiving Organization', 'string', true, 4, 1); -- 11
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Project Name', 'string', true, 4, 2); -- 12
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Project Description', 'string', true, 4, 2); -- 13
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'State of the nation', 'string', true, 4, 6); -- 14
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Grant Letter', 'document', true, 2, 7); -- 15
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'AWP', 'document', true, 2, 7); -- 16
 
 
--- Insert Grant additional attributes
+-- Insert Grant additional String based attributes
 insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
 VALUES ('India Health Fund', 1, 1, 1);
 insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
@@ -556,10 +578,18 @@ VALUES ('The JN Tata Endowment, formalised and established in 1892, selects cand
 insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
 VALUES ('A definitive, analytical and meticulous account of the present state of the nation – from a constitutional perspective',
         2, 6, 14);
-
+-- Insert additional document based attributes
+insert into grant_document_attributes (file_type, location, name, version, grant_id, section_id,
+                                       section_attribute_id)
+values ('pdf','IHF/grants/1/','grant_letter.pdf',1,1,7,15);
+insert into grant_document_attributes (file_type, location, name, version, grant_id, section_id,
+                                       section_attribute_id)
+values ('xls','IHF/grants/1/','annual_work_plan.xls',1,1,7,16);
 
 -- Granter Template
-insert into templates (description, location, name, type, version, kpi_id,file_type) VALUES
-('Utilization reports are to be submitted when requested. It contains financial expenditure details for a given reporting period.','templates/kpi/','utilization_report.xls','kpi',1,9,'xls');
-insert into templates (description, location, name, type, version, kpi_id,file_type) VALUES
-('Helper document to manage project budget','templates/kpi/','project_budget_sheet.xlsx','kpi',1,9,'xls');
+insert into templates (description, location, name, type, version, kpi_id, file_type)
+VALUES ('Utilization reports are to be submitted when requested. It contains financial expenditure details for a given reporting period.',
+        'templates/kpi/', 'utilization_report.xls', 'kpi', 1, 9, 'xls');
+insert into templates (description, location, name, type, version, kpi_id, file_type)
+VALUES ('Helper document to manage project budget', 'templates/kpi/', 'project_budget_sheet.xlsx',
+        'kpi', 1, 9, 'xls');

@@ -3,9 +3,12 @@ package org.codealpha.gmsservice.controllers;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Template;
 import org.codealpha.gmsservice.models.UIConfig;
+import org.codealpha.gmsservice.services.GrantDocumentAttributesService;
+import org.codealpha.gmsservice.services.GrantService;
 import org.codealpha.gmsservice.services.GranterConfigurationService;
 import org.codealpha.gmsservice.services.OrganizationResolver;
 import org.codealpha.gmsservice.services.OrganizationService;
@@ -28,7 +31,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
  * @author Developer <developer@enstratify.com>
  **/
 @RestController
-@RequestMapping(value = "/app")
+@RequestMapping(value = "/public")
 public class ApplicationController {
 
   private static Logger logger = LoggerFactory.getLogger(ApplicationController.class);
@@ -48,6 +51,12 @@ public class ApplicationController {
   @Autowired
   private TemplateService templateService;
 
+  @Autowired
+  private GrantService grantService;
+
+  @Autowired
+  private GrantDocumentAttributesService grantDocumentAttributesService;
+
   @Value("${spring.upload-file-location}")
   private String uploadLocation;
 
@@ -64,19 +73,19 @@ public class ApplicationController {
         long orgId = org.getId();
         config = service.getUiConfiguration(orgId);
 
-        config.setLogoUrl(url.concat("/app/images/")
+        config.setLogoUrl(url.concat("/public/images/")
             .concat(config.getLogoUrl()));
         config.setTenantCode(org.getCode());
         config.setNavbarTextColor(config.getNavbarTextColor());
       } else {
         config = new UIConfig();
-        config.setLogoUrl(url.concat("/app/images/anudan.png"));
+        config.setLogoUrl(url.concat("/public/images/anudan.png"));
         config.setNavbarColor("#e3f2fd");
       }
     } else {
       Organization org = organizationService.getPlatformOrg();
       config = new UIConfig();
-      config.setLogoUrl(url.concat("/app/images/anudan.png"));
+      config.setLogoUrl(url.concat("/public/images/anudan.png"));
       config.setNavbarColor("#e3f2fd");
       config.setTenantCode(org.getCode());
     }
@@ -97,7 +106,7 @@ public class ApplicationController {
     }
   }
 
-  @GetMapping("templates/kpi/{templateId}")
+  @GetMapping("/templates/kpi/{templateId}")
   public void getTemplate(@PathVariable("templateId") Long templateId,
       HttpServletResponse servletResponse) {
 
@@ -134,4 +143,44 @@ public class ApplicationController {
     }
   }
 
+  @GetMapping("/grants/{grantId}/file/{fileName}")
+  public void getGrantFile(@PathVariable("grantId") Long grantId,
+      @PathVariable("fileName") String fileName,
+      HttpServletResponse servletResponse) {
+
+    GrantDocumentAttributes documentAttributes = grantDocumentAttributesService
+        .findByGrantAndName(grantService.getById(grantId), fileName);
+
+    Resource file = resourceLoader
+        .getResource("file:" + uploadLocation + documentAttributes.getLocation() + documentAttributes.getName());
+    String fileType = documentAttributes.getName().substring(documentAttributes.getName().lastIndexOf(".")+1);
+    switch (fileType) {
+      case "png":
+        servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
+        break;
+      case "jpg":
+        servletResponse.setContentType(MediaType.IMAGE_JPEG_VALUE);
+        break;
+      case "jpeg":
+        servletResponse.setContentType(MediaType.IMAGE_JPEG_VALUE);
+        break;
+      case "pdf":
+        servletResponse.setContentType(MediaType.APPLICATION_PDF_VALUE);
+        break;
+      case "doc":
+        servletResponse.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+        break;
+      case "xls":
+        servletResponse.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+    }
+    servletResponse
+        .setHeader("Content-Disposition", "attachment; filename=" + documentAttributes.getName());
+
+    try {
+      StreamUtils.copy(file.getInputStream(), servletResponse.getOutputStream());
+
+    } catch (IOException ex) {
+      logger.error(ex.getMessage(), ex);
+    }
+  }
 }
