@@ -12,7 +12,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 
 @Entity(name = "grant_string_attributes")
-public class GrantStringAttributes {
+public class GrantStringAttribute {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

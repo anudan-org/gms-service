@@ -4,34 +4,24 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import javax.persistence.Column;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import org.codealpha.gmsservice.constants.GrantStatus;
-import org.codealpha.gmsservice.constants.GrantSubStatus;
 import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
 import org.codealpha.gmsservice.entities.GrantKpi;
-import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
-import org.codealpha.gmsservice.entities.GrantStringAttributes;
+import org.codealpha.gmsservice.entities.GrantStringAttribute;
+import org.codealpha.gmsservice.entities.Grantee;
+import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Submission;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.WorkFlowPermission;
 import org.codealpha.gmsservice.entities.WorkflowActionPermission;
-import org.codealpha.gmsservice.entities.WorkflowStatePermission;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
-import org.codealpha.gmsservice.entities.WorkflowStatusTransition;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,8 +30,8 @@ import org.springframework.beans.BeanUtils;
 public class GrantVO {
 
   private Long id;
-  private Organization organization;
-  private Organization grantorOrganization;
+  private Grantee organization;
+  private Granter grantorOrganization;
   private String name;
   private String description;
   private Date createdAt;
@@ -57,8 +47,9 @@ public class GrantVO {
   private WorkflowActionPermission actionAuthorities;
   private List<WorkFlowPermission> flowAuthorities;
   private GrantDetailVO grantDetails;
+  private List<GrantKpi> kpis;
   @JsonIgnore
-  private List<GrantStringAttributes> stringAttributes;
+  private List<GrantStringAttribute> stringAttributes;
   @JsonIgnore
   private List<GrantDocumentAttributes> documentAttributes;
 
@@ -76,7 +67,7 @@ public class GrantVO {
     return organization;
   }
 
-  public void setOrganization(Organization organization) {
+  public void setOrganization(Grantee organization) {
     this.organization = organization;
   }
 
@@ -84,7 +75,7 @@ public class GrantVO {
     return grantorOrganization;
   }
 
-  public void setGrantorOrganization(Organization grantorOrganization) {
+  public void setGrantorOrganization(Granter grantorOrganization) {
     this.grantorOrganization = grantorOrganization;
   }
 
@@ -210,12 +201,12 @@ public class GrantVO {
     this.grantDetails = attributes;
   }
 
-  public List<GrantStringAttributes> getStringAttributes() {
+  public List<GrantStringAttribute> getStringAttributes() {
     return stringAttributes;
   }
 
   public void setStringAttributes(
-      List<GrantStringAttributes> stringAttributes) {
+      List<GrantStringAttribute> stringAttributes) {
     this.stringAttributes = stringAttributes;
   }
 
@@ -226,6 +217,15 @@ public class GrantVO {
   public void setDocumentAttributes(
       List<GrantDocumentAttributes> documentAttributes) {
     this.documentAttributes = documentAttributes;
+  }
+
+  public List<GrantKpi> getKpis() {
+    return kpis;
+  }
+
+  public void setKpis(List<GrantKpi> kpis) {
+    Collections.sort(kpis);
+    this.kpis = kpis;
   }
 
   public GrantVO build(Grant grant,
@@ -243,14 +243,10 @@ public class GrantVO {
           if (voPd.getName().equalsIgnoreCase("submissions")) {
             submissionVOList = new ArrayList<>();
             for (Submission submission : (List<Submission>) value) {
-              try {
                 SubmissionVO submissionVO = new SubmissionVO()
                     .build(submission, workflowPermissionService, user, submissionWindow);
 
                 submissionVOList.add(submissionVO);
-              } catch (ParseException pe) {
-                logger.error(pe.getMessage(), pe);
-              }
             }
             vo.setSubmissions(submissionVOList);
             System.out.println("KPIS called");
@@ -260,7 +256,7 @@ public class GrantVO {
             if(grantDetailVO == null){
               grantDetailVO = new GrantDetailVO();
             }
-            grantDetailVO = grantDetailVO.buildStringAttributes((List<GrantStringAttributes>) value);
+            grantDetailVO = grantDetailVO.buildStringAttributes((List<GrantStringAttribute>) value);
             vo.setGrantDetails(grantDetailVO);
           } else if (voPd.getName().equalsIgnoreCase("documentAttributes")) {
             GrantDetailVO grantDetailVO = null;
@@ -280,11 +276,13 @@ public class GrantVO {
         }
       }
     }
+
+    Collections.sort(vo.getGrantDetails().getSections());
     vo.setFlowAuthorities(workflowPermissionService
-        .getGrantFlowPermissions(vo.grantorOrganization.getId(), user.getRole().getId()));
+        .getGrantFlowPermissions(vo.grantorOrganization.getId(), user.getUserRoles()));
     vo.setActionAuthorities(workflowPermissionService
         .getGrantActionPermissions(vo.getGrantorOrganization().getId(),
-            user.getRole().getId()));
+            user.getUserRoles(),vo.getGrantStatus().getId()));
 
     return vo;
   }

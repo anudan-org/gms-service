@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.controllers;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import javax.transaction.Transactional;
 import javax.xml.ws.Response;
@@ -10,6 +11,7 @@ import org.codealpha.gmsservice.entities.Grantee;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Role;
 import org.codealpha.gmsservice.entities.User;
+import org.codealpha.gmsservice.entities.UserRole;
 import org.codealpha.gmsservice.models.ErrorMessage;
 import org.codealpha.gmsservice.models.UserVO;
 import org.codealpha.gmsservice.services.DashboardService;
@@ -94,7 +96,12 @@ public class UserController {
     newRole.setCreatedBy("System");
 
     newRole = roleService.saveRole(newRole);
-    newUser.setRole(newRole);
+    UserRole userRole = new UserRole();
+    userRole.setRole(newRole);
+    userRole.setUser(newUser);
+    List<UserRole> userRoles = new ArrayList<>();
+    userRoles.add(userRole);
+    newUser.setUserRoles(userRoles);
     newUser.setFirstName("To be set");
     newUser.setLastName("To be set");
     newUser = userService.save(newUser);
@@ -150,7 +157,7 @@ public class UserController {
     switch (userOrg.getType()) {
       case "GRANTEE":
         grants = granteeService
-            .getGrantsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getRole().getId());
+            .getGrantsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getUserRoles());
         return new ResponseEntity<>(dashboardService.build(user, grants), HttpStatus.OK);
       case "GRANTER":
         grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg);

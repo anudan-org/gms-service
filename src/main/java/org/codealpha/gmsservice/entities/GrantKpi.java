@@ -17,12 +17,15 @@ import javax.persistence.OrderBy;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KPIStatus;
 import org.codealpha.gmsservice.constants.KpiType;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
 @Entity(name = "grant_kpis")
-public class GrantKpi {
+public class GrantKpi implements Comparable<GrantKpi> {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @OrderBy("id ASC")
   private Long id;
   @Column
   private String title;
@@ -157,5 +160,13 @@ public class GrantKpi {
 
   public void setTemplates(List<Template> templates) {
     this.templates = templates;
+  }
+
+  @Override
+  public int compareTo(GrantKpi o) {
+    if (id == null || o.id == null) {
+      return 0;
+    }
+    return id.compareTo(o.id);
   }
 }

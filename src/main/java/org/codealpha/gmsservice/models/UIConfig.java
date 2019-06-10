@@ -1,5 +1,8 @@
 package org.codealpha.gmsservice.models;
 
+import java.util.List;
+import org.codealpha.gmsservice.entities.GrantSection;
+
 /**
  * @author Developer <developer@enstratify.com>
  **/
@@ -12,6 +15,8 @@ public class UIConfig {
 	private String tenantCode;
 
 	private String navbarTextColor;
+
+	private List<GrantSection> defaultSections;
 
 	public String getLogoUrl() {
 		return logoUrl;
@@ -43,5 +48,14 @@ public class UIConfig {
 
 	public void setNavbarTextColor(String navbarTextColor) {
 		this.navbarTextColor = navbarTextColor;
+	}
+
+	public List<GrantSection> getDefaultSections() {
+		return defaultSections;
+	}
+
+	public void setDefaultSections(
+			List<GrantSection> defaultSections) {
+		this.defaultSections = defaultSections;
 	}
 }

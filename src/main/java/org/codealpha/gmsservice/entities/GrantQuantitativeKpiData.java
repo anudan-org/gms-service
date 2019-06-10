@@ -11,12 +11,14 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 
 @Entity
 public class GrantQuantitativeKpiData extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @OrderBy("id ASC")
   private Long id;
   @Column
   private Integer goal;
@@ -35,10 +37,14 @@ public class GrantQuantitativeKpiData extends BaseEntity {
   @JoinColumn(referencedColumnName = "id")
   private GrantKpi grantKpi;
 
+  @Column
+  private Boolean toReport;
+
+
   @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY)
   private List<QuantitativeKpiNotes> notesHistory;
 
-  @OneToMany(mappedBy = "quantKpiData",fetch = FetchType.EAGER)
+  @OneToMany(mappedBy = "quantKpiData",fetch = FetchType.LAZY)
   List<QuantKpiDataDocument> submissionDocs;
 
   @Override
@@ -110,5 +116,13 @@ public class GrantQuantitativeKpiData extends BaseEntity {
   public void setSubmissionDocs(
       List<QuantKpiDataDocument> submissionDocs) {
     this.submissionDocs = submissionDocs;
+  }
+
+  public Boolean getToReport() {
+    return toReport;
+  }
+
+  public void setToReport(Boolean toReport) {
+    this.toReport = toReport;
   }
 }

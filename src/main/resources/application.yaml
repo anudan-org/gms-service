@@ -16,7 +16,6 @@ logging:
   file: gms.log
 
 ---
-
 spring:
   profiles: dev
   upload-file-location: /Users/apple/storage/
@@ -28,7 +27,6 @@ spring:
     initialization-mode: always
     platform: pg
   jpa:
-    show-sql: true
     database: postgresql
     hibernate:
       jdbc:
@@ -51,6 +49,16 @@ spring:
 server:
   servlet:
     context-path: /api
+logging:
+  level:
+    org:
+      hibernate:
+        SQL:
+          DEBUG
+        type:
+          descriptor:
+            sql:
+              BasicBinder: TRACE
 ---
 spring:
   profiles: uat

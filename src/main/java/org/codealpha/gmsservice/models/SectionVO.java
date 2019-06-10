@@ -4,9 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
 
-public class SectionVO {
+public class SectionVO implements Comparable<SectionVO> {
+
+  private Long id;
+  @JsonProperty("sectionName")
   private String name;
-  @JsonProperty("attribute")
+  @JsonProperty("attributes")
   private List<SectionAttributesVO> attributes;
 
   public List<SectionAttributesVO> getAttributes() {
@@ -25,6 +28,14 @@ public class SectionVO {
     this.name = name;
   }
 
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -40,5 +51,13 @@ public class SectionVO {
   @Override
   public int hashCode() {
     return Objects.hash(name);
+  }
+
+  @Override
+  public int compareTo(SectionVO o) {
+    if (id == null || o.id == null) {
+      return 0;
+    }
+    return id.compareTo(o.id);
   }
 }

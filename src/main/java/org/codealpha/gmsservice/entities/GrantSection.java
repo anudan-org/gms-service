@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -15,6 +16,7 @@ public class GrantSection {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
   @Column
+  @JsonProperty("sectionName")
   private String sectionName;
   @Column
   private boolean deletable;

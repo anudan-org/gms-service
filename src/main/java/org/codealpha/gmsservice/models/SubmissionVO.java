@@ -179,7 +179,7 @@ public class SubmissionVO {
 
   public SubmissionVO build(Submission submission,
       WorkflowPermissionService workflowPermissionService, User user, AppConfig submissionWindow)
-      throws ParseException {
+       {
     PropertyDescriptor[] propertyDescriptors = BeanUtils
         .getPropertyDescriptors(submission.getClass());
     SubmissionVO vo = new SubmissionVO();
@@ -203,7 +203,7 @@ public class SubmissionVO {
 
     List<WorkFlowPermission> flowPermissions = workflowPermissionService
         .getSubmissionFlowPermissions(vo.getGrant().getGrantorOrganization().getId(),
-            user.getRole().getId(), vo.submissionStatus.getId());
+            user.getUserRoles(), vo.submissionStatus.getId());
     Date submissionWindowStart = new DateTime(submission.getSubmitBy())
         .minusDays(Integer.valueOf(submissionWindow.getConfigValue()) + 1).toDate();
 
@@ -213,7 +213,7 @@ public class SubmissionVO {
 
     WorkflowActionPermission actionPermission = workflowPermissionService
         .getSubmissionActionPermission(vo.grant.getGrantorOrganization().getId(),
-            user.getRole().getId());
+            user.getUserRoles());
     vo.setActionAuthorities(actionPermission);
     return vo;
   }

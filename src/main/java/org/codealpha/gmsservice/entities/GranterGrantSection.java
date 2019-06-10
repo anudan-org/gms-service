@@ -1,6 +1,5 @@
 package org.codealpha.gmsservice.entities;
 
-import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -8,8 +7,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 
 @Entity(name = "granter_grant_sections")
 public class GranterGrantSection {
@@ -23,7 +20,7 @@ public class GranterGrantSection {
   private Boolean deletable;
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
-  private Organization granter;
+  private Granter granter;
 
   public Long getId() {
     return id;
@@ -41,11 +38,11 @@ public class GranterGrantSection {
     this.sectionName = sectionName;
   }
 
-  public Organization getGranter() {
+  public Granter getGranter() {
     return granter;
   }
 
-  public void setGranter(Organization granter) {
+  public void setGranter(Granter granter) {
     this.granter = granter;
   }
 

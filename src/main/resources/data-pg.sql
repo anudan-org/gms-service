@@ -45,57 +45,72 @@ VALUES (2, 'KPI_REMINDER_NOTIFICATION_DAYS', '30'),
 
 -- Roles
 insert into roles (created_at, created_by, name, organization_id, updated_at, updated_by)
-values (now(), 'System', 'Admin', 2, null, null);
+values (now(), 'System', 'Admin', 2, null, null); -- 1
 insert into roles (created_at, created_by, name, organization_id, updated_at, updated_by)
-values (now(), 'System', 'Program Lead', 2, null, null);
+values (now(), 'System', 'Program Lead', 2, null, null); -- 2
 insert into roles (created_at, created_by, name, organization_id, updated_at, updated_by)
-values (now(), 'System', 'Program Manager', 2, null, null);
+values (now(), 'System', 'Program Manager', 2, null, null); -- 3
 insert into roles (created_at, created_by, name, organization_id, updated_at, updated_by)
-values (now(), 'System', 'Admin', 1, null, null);
+values (now(), 'System', 'Admin', 1, null, null); -- 4
 insert into roles (created_at, created_by, name, organization_id, updated_at, updated_by)
-values (now(), 'System', 'Admin', 3, null, null);
+values (now(), 'System', 'Admin', 3, null, null); -- 5
 insert into roles (created_at, created_by, name, organization_id, updated_at, updated_by)
-values (now(), 'System', 'Admin', 4, null, null);
+values (now(), 'System', 'Admin', 4, null, null); --6
+
+-- Role Permissions
+insert into roles_permission (permission, role_id) VALUES ('Create Grant',3);
 
 
 -- Users
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id, role_id)
+                          updated_at, updated_by, organization_id)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'grantee@grantee.com', 'Grantee', 'Customer',
-        'password', null, null, 1, 4);
+        'password', null, null, 1); -- 1
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id, role_id)
+                          updated_at, updated_by, organization_id)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'vineet_prasani@email.com', 'Vineet', 'Prasani',
-        'password', null, null, 1, 4);
+        'password', null, null, 1); -- 2
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id, role_id)
+                          updated_at, updated_by, organization_id)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'manasi.arora@gmail.com', 'Manasi', 'Grantee',
-        'password', null, null, 1, 4);
+        'password', null, null, 1); -- 3
 
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id, role_id)
-VALUES ('2019-04-08 03:00:16.545000', 'System', 'ranjitvictor@gmail.com', 'IHF', 'Admin',
+                          updated_at, updated_by, organization_id)
+VALUES ('2019-04-08 03:00:16.545000', 'System', 'ranjitvictor@gmail.com', 'Ranjit', 'Victor',
         'password',
-        null, null, 2, 2);
+        null, null, 2); -- 4
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id, role_id)
+                          updated_at, updated_by, organization_id)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'vineet.prasani@gmail.com', 'Vineet', 'Prasani',
         'password',
-        null, null, 2, 2);
+        null, null, 2); -- 5
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id, role_id)
+                          updated_at, updated_by, organization_id)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'manasi.arora@enstratify.com', 'Manasi', 'PL',
         'password',
-        null, null, 2, 2);
+        null, null, 2); -- 6
 
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id, role_id)
+                          updated_at, updated_by, organization_id)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'anudan-admin@ihf.com', 'Anudan', 'Admin',
-        'password', null, null, 3, 4);
+        'password', null, null, 3); -- 7
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id, role_id)
+                          updated_at, updated_by, organization_id)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'admin@tatr.com', 'TATR', 'Admin',
-        'password', null, null, 4, 6);
+        'password', null, null, 4); -- 8
+
+insert into user_roles (role_id, user_id) VALUES (4,1);
+insert into user_roles (role_id, user_id) VALUES (1,2);
+insert into user_roles (role_id, user_id) VALUES (2,2);
+insert into user_roles (role_id, user_id) VALUES (1,3);
+insert into user_roles (role_id, user_id) VALUES (2,3);
+insert into user_roles (role_id, user_id) VALUES (1,4);
+insert into user_roles (role_id, user_id) VALUES (3,4);
+insert into user_roles (role_id, user_id) VALUES (3,5);
+insert into user_roles (role_id, user_id) VALUES (3,6);
+insert into user_roles (role_id, user_id) VALUES (5,7);
+insert into user_roles (role_id, user_id) VALUES (6,8);
 
 -- Workflows
 insert into public.workflows (name, granter_id, created_at, created_by, updated_at,
@@ -114,86 +129,88 @@ VALUES ('TATR - KPI Submissions Workflow', 4, now(), 'System', null, null, 'SUBM
 
 -- Workflow Statuses
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
-values (now(), 'System', 'DRAFT', false, null, null, 1, 'Draft'); -- 1
+                                     workflow_id, display_name,initial)
+values (now(), 'System', 'DRAFT', false, null, null, 1, 'Draft',true); -- 1
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
-values (now(), 'System', 'ONGOING', false, null, null, 1, 'On Going'); -- 2
+                                     workflow_id, display_name,initial)
+values (now(), 'System', 'ONBOARDING APPROVED', false, null, null, 1, 'Approved for onboarding',false); -- 2
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
-values (now(), 'System', 'CLOSED', true, null, null, 1, 'Closed'); -- 3
+                                     workflow_id, display_name,initial)
+values (now(), 'System', 'ONGOING', false, null, null, 1, 'On Going',false); -- 3
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
-values (now(), 'System', 'NOT_SUBMITTED', false, null, null, 2, 'Not Submitted'); -- 4
+                                     workflow_id, display_name,initial)
+values (now(), 'System', 'CLOSED', true, null, null, 1, 'Closed',false); -- 4
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
-values (now(), 'System', 'SUBMITTED', false, null, null, 2, 'Submitted'); -- 5
+                                     workflow_id, display_name, initial)
+values (now(), 'System', 'NOT_SUBMITTED', false, null, null, 2, 'Not Submitted', true); -- 5
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
+                                     workflow_id, display_name,initial)
+values (now(), 'System', 'SUBMITTED', false, null, null, 2, 'Submitted',false); -- 6
+insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
+                                     workflow_id, display_name,initial)
 values (now(), 'System', 'MODIFICATIONS REQUESTED', false, null, null, 2,
-        'Modifications Requested'); -- 6
+        'Modifications Requested',false); -- 7
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
-values (now(), 'System', 'ACCEPTED', true, null, null, 2, 'Accepted'); -- 7
+                                     workflow_id, display_name,initial)
+values (now(), 'System', 'ACCEPTED', true, null, null, 2, 'Accepted',false); -- 8
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
-values (now(), 'System', 'DRAFT', false, null, null, 3, 'Draft'); -- 8
+                                     workflow_id, display_name,initial)
+values (now(), 'System', 'DRAFT', false, null, null, 3, 'Draft',true); -- 9
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
-values (now(), 'System', 'ONGOING', false, null, null, 3, 'In Progress'); -- 9
+                                     workflow_id, display_name,initial)
+values (now(), 'System', 'ONGOING', false, null, null, 3, 'In Progress',false); -- 10
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
-values (now(), 'System', 'CLOSED', true, null, null, 3, 'Completed'); -- 10
+                                     workflow_id, display_name,initial)
+values (now(), 'System', 'CLOSED', true, null, null, 3, 'Completed',false); -- 11
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
-values (now(), 'System', 'NOT_SUBMITTED', false, null, null, 4, 'Draft'); -- 11
+                                     workflow_id, display_name,initial)
+values (now(), 'System', 'NOT_SUBMITTED', false, null, null, 4, 'Draft',true); -- 12
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
-values (now(), 'System', 'SUBMITTED', false, null, null, 4, 'Submitted'); -- 12
+                                     workflow_id, display_name,initial)
+values (now(), 'System', 'SUBMITTED', false, null, null, 4, 'Submitted',false); -- 13
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
+                                     workflow_id, display_name,initial)
 values (now(), 'System', 'REJECTED', false, null, null, 4,
-        'Rejected'); -- 13
+        'Rejected',false); -- 14
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-                                     workflow_id, display_name)
-values (now(), 'System', 'ACCEPTED', true, null, null, 4, 'Accepted'); -- 14
+                                     workflow_id, display_name,initial)
+values (now(), 'System', 'ACCEPTED', true, null, null, 4, 'Accepted',false); -- 15
 
 -- Workflow Status Transitions
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
                                                workflow_id, note_required)
-values ('Onboard', now(), 'System', null, null, 1, 2, 2, 1, false);
+values ('Request Approval', now(), 'System', null, null, 1, 2, 3, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
                                                workflow_id, note_required)
-values ('Onboard', now(), 'System', null, null, 1, 2, 3, 1, false);
+values ('Onboard', now(), 'System', null, null, 2, 3, 2, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
                                                workflow_id, note_required)
-values ('Close', now(), 'System', null, null, 2, 3, 2, 1, false);
+values ('Close', now(), 'System', null, null, 3, 4, 3, 1, false);
 
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
                                                workflow_id, note_required)
-values ('Submit', now(), 'System', null, null, 4, 5, 4, 2, false);
+values ('Save Draft', now(), 'System', null, null, 5, 5, 4, 2, false);
 
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
                                                workflow_id, note_required)
-values ('Save Draft', now(), 'System', null, null, 4, 4, 4, 2, false);
-
+values ('Submit', now(), 'System', null, null, 5, 6, 4, 2, true);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
                                                workflow_id, note_required)
-values ('Request Modifications', now(), 'System', null, null, 5, 6, 2, 2, true);
+values ('Request Modications', now(), 'System', null, null, 6, 7, 3, 2, true);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
                                                workflow_id, note_required)
-values ('Submit Modications', now(), 'System', null, null, 6, 5, 4, 2, true);
+values ('Submit Modifications', now(), 'System', null, null, 7, 6, 4, 2, true);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
                                                workflow_id, note_required)
-values ('Accept', now(), 'System', null, null, 5, 7, 2, 2, false);
+values ('Accept', now(), 'System', null, null, 6, 8, 3, 2, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
                                                updated_by, from_state_id, to_state_id, role_id,
                                                workflow_id, note_required)
@@ -225,16 +242,31 @@ values ('Accept', now(), 'System', null, null, 12, 14, 6, 4, false);
 -- Workflow State Permissions
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
                                         updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'MANAGE', null, null, 2, 1);
+VALUES (now(), 'System', 'VIEW', null, null, 3, 2);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
                                         updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 4, 2);
+VALUES (now(), 'System', 'MANAGE', null, null, 3, 1);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
                                         updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 2, 2);
+VALUES (now(), 'System', 'VIEW', null, null, 2, 1);
+insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
+                                        updated_by, role_id, workflow_status_id)
+VALUES (now(), 'System', 'MANAGE', null, null, 2, 2);
+insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
+                                        updated_by, role_id, workflow_status_id)
+VALUES (now(), 'System', 'VIEW', null, null, 2, 3);
+insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
+                                        updated_by, role_id, workflow_status_id)
+VALUES (now(), 'System', 'VIEW', null, null, 3, 3);
+insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
+                                        updated_by, role_id, workflow_status_id)
+VALUES (now(), 'System', 'VIEW', null, null, 4, 3);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
                                         updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'VIEW', null, null, 2, 5);
+insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
+                                        updated_by, role_id, workflow_status_id)
+VALUES (now(), 'System', 'VIEW', null, null, 3, 5);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
                                         updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'MANAGE', null, null, 4, 4);
@@ -262,7 +294,7 @@ insert into public.grants (organization_id, name, description, created_at, creat
 VALUES (1,
         'Improving Outcomes for Rural TB Patients in Private Care',
         'Improving Outcomes for Rural TB Patients in Private Care via Pharmacist Referrals and Community Health Workers (Health-IIH-20170104; (HEA/000/TEDT/036) )',
-        now(), 'System', null, null, 2, 'ONGOING', 4, '2019-02-01', '2020-01-31', 2);
+        now(), 'System', null, null, 2, 'ONGOING', 5, '2019-02-01', '2020-01-31', 1);
 insert into public.grants (organization_id, name, description, created_at, created_by, updated_at,
                            updated_by, grantor_org_id, status_name, substatus_id, start_date,
                            end_date,
@@ -270,7 +302,7 @@ insert into public.grants (organization_id, name, description, created_at, creat
 VALUES (1,
         'When one gains density and volume, one is able to receive mind.',
         'Yes, there is wonderland, it dies with zen.',
-        now(), 'System', null, null, 4, 'ONGOING', 11, '2019-02-01', '2020-01-31', 9);
+        now(), 'System', null, null, 4, 'ONGOING', 12, '2019-02-01', '2020-01-31', 1);
 
 -- Grant KPIs
 insert into public.grant_kpis (created_at, created_by, description, periodicity_unit,
@@ -348,104 +380,104 @@ VALUES (now(), 'System',
 -- Submissions
 insert into submissions (created_at, created_by, submit_by, submitted_on, title, updated_at,
                          updated_by, grant_id, submission_status_id)
-VALUES (now(), 'System', '2019-04-30', null, 'Quarter 1', null, null, 1, 4); -- 1
+VALUES (now(), 'System', '2019-04-30', null, 'Quarter 1', null, null, 1, 5); -- 1
 insert into submissions (created_at, created_by, submit_by, submitted_on, title, updated_at,
                          updated_by, grant_id, submission_status_id)
-VALUES (now(), 'System', '2019-07-31', null, 'Quarter 2', null, null, 1, 4); -- 2
+VALUES (now(), 'System', '2019-07-31', null, 'Quarter 2', null, null, 1, 5); -- 2
 insert into submissions (created_at, created_by, submit_by, submitted_on, title, updated_at,
                          updated_by, grant_id, submission_status_id)
-VALUES (now(), 'System', '2019-10-31', null, 'Quarter 3', null, null, 1, 4); -- 3
+VALUES (now(), 'System', '2019-10-31', null, 'Quarter 3', null, null, 1, 5); -- 3
 insert into submissions (created_at, created_by, submit_by, submitted_on, title, updated_at,
                          updated_by, grant_id, submission_status_id)
-VALUES (now(), 'System', '2020-01-31', null, 'Quarter 4', null, null, 1, 4); -- 4
+VALUES (now(), 'System', '2020-01-31', null, 'Quarter 4', null, null, 1, 5); -- 4
 insert into submissions (created_at, created_by, submit_by, submitted_on, title, updated_at,
                          updated_by, grant_id, submission_status_id)
-VALUES (now(), 'System', '2019-04-30', null, 'Half Yearly 1', null, null, 2, 11); -- 5
+VALUES (now(), 'System', '2019-04-30', null, 'Half Yearly 1', null, null, 2, 12); -- 5
 insert into submissions (created_at, created_by, submit_by, submitted_on, title, updated_at,
                          updated_by, grant_id, submission_status_id)
-VALUES (now(), 'System', '2020-01-31', null, 'Half Yearly 2', null, null, 2, 11); -- 6
+VALUES (now(), 'System', '2020-01-31', null, 'Half Yearly 2', null, null, 2, 12); -- 6
 
 -- Quantitative Data
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 100, 1, 1);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 200, 1, 2);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 300, 1, 3);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 500, 1, 4);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 100, 2, 1);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 200, 2, 2);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 300, 2, 3);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 500, 2, 4);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 100, 3, 1);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 200, 3, 2);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 300, 3, 3);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 500, 3, 4);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 100, 4, 1);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 200, 4, 2);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 300, 4, 3);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 500, 4, 4);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 100, 5, 1);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 200, 5, 2);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 300, 5, 3);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 500, 5, 4);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 100, 6, 1);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 200, 6, 2);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 300, 6, 3);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 500, 6, 4);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 1000, 10, 5);
-insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values (0, 500, 10, 6);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 100, 1, 1,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 200, 1, 2,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 300, 1, 3,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 500, 1, 4,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 100, 2, 1,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 200, 2, 2,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 300, 2, 3,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 500, 2, 4,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 100, 3, 1,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 200, 3, 2,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 300, 3, 3,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 500, 3, 4,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 100, 4, 1,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 200, 4, 2,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 300, 4, 3,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 500, 4, 4,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 100, 5, 1,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 200, 5, 2,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 300, 5, 3,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 500, 5, 4,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 100, 6, 1,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 200, 6, 2,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 300, 6, 3,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 500, 6, 4,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 1000, 10, 5,true);
+insert into grant_quantitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values (0, 500, 10, 6,true);
 
 -- Qualitative Data
-insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values ('', '', 7, 1);
-insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values ('', '', 7, 2);
-insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values ('', '', 7, 3);
-insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values ('', '', 7, 4);
-insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values ('', '', 8, 1);
-insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values ('', '', 8, 2);
-insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values ('', '', 8, 3);
-insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values ('', '', 8, 4);
+insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values ('', '', 7, 1,true);
+insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values ('', '', 7, 2,true);
+insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values ('', '', 7, 3,true);
+insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values ('', '', 7, 4,true);
+insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values ('', '', 8, 1,true);
+insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values ('', '', 8, 2,true);
+insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values ('', '', 8, 3,true);
+insert into grant_qualitative_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values ('', '', 8, 4,true);
 
 -- Document Data
-insert into grant_document_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values ('', '', 9, 1);
-insert into grant_document_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values ('', '', 9, 2);
-insert into grant_document_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values ('', '', 9, 3);
-insert into grant_document_kpi_data (actuals, goal, grant_kpi_id, submission_id)
-values ('', '', 9, 4);
+insert into grant_document_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values ('', '', 9, 1,true);
+insert into grant_document_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values ('', '', 9, 2,true);
+insert into grant_document_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values ('', '', 9, 3,true);
+insert into grant_document_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
+values ('', '', 9, 4,true);
 
 -- Grant Sections at Platform Level
 insert into grant_sections (deletable, section_name)
@@ -593,3 +625,5 @@ VALUES ('Utilization reports are to be submitted when requested. It contains fin
 insert into templates (description, location, name, type, version, kpi_id, file_type)
 VALUES ('Helper document to manage project budget', 'templates/kpi/', 'project_budget_sheet.xlsx',
         'kpi', 1, 9, 'xls');
+
+

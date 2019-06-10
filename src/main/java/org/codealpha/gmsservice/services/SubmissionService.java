@@ -22,6 +22,9 @@ public class SubmissionService {
   }
 
   public Submission getById(Long id){
-    return submissionRepository.findById(id).get();
+    if(submissionRepository.findById(id).isPresent()) {
+      return submissionRepository.findById(id).get();
+    }
+    return null;
   }
 }

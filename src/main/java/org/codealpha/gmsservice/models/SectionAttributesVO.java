@@ -1,12 +1,10 @@
 package org.codealpha.gmsservice.models;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 import java.util.Objects;
-import org.codealpha.gmsservice.entities.GrantStringAttributes;
 
 public class SectionAttributesVO {
 
+  private Long id;
   private String fieldName;
   private String fieldType;
   private String fieldValue;
@@ -33,6 +31,14 @@ public class SectionAttributesVO {
 
   public void setFieldValue(String fieldValue) {
     this.fieldValue = fieldValue;
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
   }
 
   @Override

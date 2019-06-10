@@ -8,6 +8,7 @@ import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Template;
 import org.codealpha.gmsservice.models.UIConfig;
 import org.codealpha.gmsservice.services.GrantDocumentAttributesService;
+import org.codealpha.gmsservice.services.GrantSectionService;
 import org.codealpha.gmsservice.services.GrantService;
 import org.codealpha.gmsservice.services.GranterConfigurationService;
 import org.codealpha.gmsservice.services.OrganizationResolver;
@@ -60,6 +61,9 @@ public class ApplicationController {
   @Value("${spring.upload-file-location}")
   private String uploadLocation;
 
+  @Autowired
+  private GrantSectionService grantSectionService;
+
   @GetMapping(value = {"/config/{host}", "/config"})
   public UIConfig config(@PathVariable(name = "host", required = false) String host,
       HttpServletRequest request) {
@@ -89,6 +93,7 @@ public class ApplicationController {
       config.setNavbarColor("#e3f2fd");
       config.setTenantCode(org.getCode());
     }
+    config.setDefaultSections(grantSectionService.getAllDefaultSections());
     return config;
   }
 

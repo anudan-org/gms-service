@@ -2,7 +2,6 @@ package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.Column;
@@ -20,8 +19,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import org.codealpha.gmsservice.constants.GrantStatus;
-import org.codealpha.gmsservice.constants.GrantSubStatus;
-import org.springframework.core.annotation.Order;
 
 /**
  * @author Developer <developer@enstratify.com>
@@ -32,6 +29,7 @@ public class Grant extends BaseEntity{
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@OrderBy("id ASC")
 	private Long id;
 
 	@JsonIgnore
@@ -45,8 +43,12 @@ public class Grant extends BaseEntity{
 	private Organization grantorOrganization;
 
 	@OneToMany(mappedBy = "grant")
+	@JsonProperty("kpis")
+	private List<GrantKpi> kpis;
+
+	@OneToMany(mappedBy = "grant")
 	@JsonProperty("stringAttribute")
-	private List<GrantStringAttributes> stringAttributes;
+	private List<GrantStringAttribute> stringAttributes;
 
 	@OneToMany(mappedBy = "grant")
 	@JsonProperty("docAttribute")
@@ -181,12 +183,12 @@ public class Grant extends BaseEntity{
 		this.grantStatus = status;
 	}
 
-	public List<GrantStringAttributes> getStringAttributes() {
+	public List<GrantStringAttribute> getStringAttributes() {
 		return stringAttributes;
 	}
 
 	public void setStringAttributes(
-			List<GrantStringAttributes> stringAttributes) {
+			List<GrantStringAttribute> stringAttributes) {
 		this.stringAttributes = stringAttributes;
 	}
 
@@ -197,5 +199,13 @@ public class Grant extends BaseEntity{
 	public void setDocumentAttributes(
 			List<GrantDocumentAttributes> documentAttributes) {
 		this.documentAttributes = documentAttributes;
+	}
+
+	public List<GrantKpi> getKpis() {
+		return kpis;
+	}
+
+	public void setKpis(List<GrantKpi> kpis) {
+		this.kpis = kpis;
 	}
 }

@@ -24,6 +24,8 @@ public class GrantQualitativeKpiData extends BaseEntity {
   private String actuals;
   @Column(nullable = true)
   private String note;
+  @Column
+  private Boolean toReport;
 
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
@@ -106,5 +108,13 @@ public class GrantQualitativeKpiData extends BaseEntity {
   public void setSubmissionDocs(
       List<QualKpiDataDocument> submissionDocs) {
     this.submissionDocs = submissionDocs;
+  }
+
+  public Boolean getToReport() {
+    return toReport;
+  }
+
+  public void setToReport(Boolean toReport) {
+    this.toReport = toReport;
   }
 }

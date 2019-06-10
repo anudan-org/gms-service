@@ -24,6 +24,8 @@ public class GrantDocumentKpiData extends BaseEntity {
   private String actuals;
   @Column(nullable = true)
   private String type;
+  @Column
+  private Boolean toReport;
 
   @Column(nullable = true)
   private String note;
@@ -117,5 +119,13 @@ public class GrantDocumentKpiData extends BaseEntity {
   public void setNotesHistory(
       List<DocumentKpiNotes> notesHistory) {
     this.notesHistory = notesHistory;
+  }
+
+  public Boolean getToReport() {
+    return toReport;
+  }
+
+  public void setToReport(Boolean toReport) {
+    this.toReport = toReport;
   }
 }

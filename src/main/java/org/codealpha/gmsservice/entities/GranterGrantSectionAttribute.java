@@ -8,7 +8,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
 
 @Entity(name = "granter_grant_section_attributes")
 public class GranterGrantSectionAttribute {
@@ -30,7 +29,7 @@ public class GranterGrantSectionAttribute {
   private GranterGrantSection section;
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
-  private Organization granter;
+  private Granter granter;
 
 
   public Long getId() {
@@ -53,7 +52,7 @@ public class GranterGrantSectionAttribute {
     return granter;
   }
 
-  public void setGranter(Organization granter) {
+  public void setGranter(Granter granter) {
     this.granter = granter;
   }
 
