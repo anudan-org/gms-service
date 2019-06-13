@@ -12,6 +12,7 @@ import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
 import org.codealpha.gmsservice.entities.GrantStringAttribute;
 import org.codealpha.gmsservice.entities.GranterGrantSection;
 import org.codealpha.gmsservice.entities.GranterGrantSectionAttribute;
+import org.codealpha.gmsservice.entities.Template;
 import org.codealpha.gmsservice.repositories.GrantDocumentAttributesRepository;
 import org.codealpha.gmsservice.repositories.GrantDocumentDataRepository;
 import org.codealpha.gmsservice.repositories.GrantKpiRepository;
@@ -21,6 +22,7 @@ import org.codealpha.gmsservice.repositories.GrantRepository;
 import org.codealpha.gmsservice.repositories.GrantStringAttributeRepository;
 import org.codealpha.gmsservice.repositories.GranterGrantSectionAttributeRepository;
 import org.codealpha.gmsservice.repositories.GranterGrantSectionRepository;
+import org.codealpha.gmsservice.repositories.TemplateRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -45,6 +47,8 @@ public class GrantService {
   private GrantQualitativeDataRepository grantQualitativeDataRepository;
   @Autowired
   private GrantDocumentDataRepository grantDocumentDataRepository;
+  @Autowired
+  private TemplateRepository templateRepository;
 
   public List<String> getGrantAlerts(Grant grant) {
     return null;
@@ -148,5 +152,21 @@ public GrantQualitativeKpiData saveGrantQualitativeKpiData(GrantQualitativeKpiDa
 
   public GrantDocumentKpiData saveGrantDocumentKpiData(GrantDocumentKpiData kpiData) {
     return grantDocumentDataRepository.save(kpiData);
+  }
+
+  public List<Template> getKpiTemplates(GrantKpi kpiId) {
+
+    return templateRepository.findByKpi(kpiId);
+  }
+
+  public Template getKpiTemplateById(Long templateId){
+    if(templateRepository.findById(templateId).isPresent()) {
+      return templateRepository.findById(templateId).get();
+    }
+    return null;
+  }
+
+  public Template saveKpiTemplate(Template storedTemplate) {
+    return templateRepository.save(storedTemplate);
   }
 }

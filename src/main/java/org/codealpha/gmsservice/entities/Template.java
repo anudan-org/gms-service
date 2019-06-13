@@ -8,6 +8,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.Transient;
 
 @Entity(name = "templates")
 public class Template {
@@ -27,6 +28,8 @@ public class Template {
   private String type;
   @Column
   private int version;
+  @Transient
+  private String data;
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   @JsonIgnore
@@ -94,5 +97,13 @@ public class Template {
 
   public void setFileType(String fileType) {
     this.fileType = fileType;
+  }
+
+  public String getData() {
+    return data;
+  }
+
+  public void setData(String data) {
+    this.data = data;
   }
 }

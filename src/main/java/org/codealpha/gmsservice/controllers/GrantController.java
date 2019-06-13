@@ -1,7 +1,11 @@
 package org.codealpha.gmsservice.controllers;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
@@ -27,6 +31,7 @@ import org.codealpha.gmsservice.entities.QuantKpiDataDocument;
 import org.codealpha.gmsservice.entities.QuantitativeKpiNotes;
 import org.codealpha.gmsservice.entities.Submission;
 import org.codealpha.gmsservice.entities.SubmissionNote;
+import org.codealpha.gmsservice.entities.Template;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.models.GrantQuantitativeKpiDataVO;
 import org.codealpha.gmsservice.models.GrantVO;
@@ -58,6 +63,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.FileSystemUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -333,18 +339,17 @@ public class GrantController {
       grant = grantService.saveGrant(grant);
     }
 
-    for(SubmissionVO submissionVO: grantToSave.getSubmissions()){
+    for (SubmissionVO submissionVO : grantToSave.getSubmissions()) {
       Submission sub = submissionService.getById(submissionVO.getId());
-      if(sub!=null){
+      if (sub != null) {
         sub.setTitle(submissionVO.getTitle());
         sub.setSubmitBy(DateTime.parse(submissionVO.getSubmitBy()).toDate());
         submissionService.saveSubmission(sub);
       }
     }
 
-
     saveSectionAndFieldsChanges(grantToSave, grant);
-    saveReportingAndGoalChanges(grantToSave, grant, userId);
+    saveReportingAndGoalChanges(grantToSave, grant, userId, tenantCode);
 
     grantToSave = new GrantVO()
         .build(grantService.getById(grant.getId()), workflowPermissionService,
@@ -354,11 +359,12 @@ public class GrantController {
     return grantToSave;
   }
 
-  private void saveReportingAndGoalChanges(GrantVO grantToSave, Grant grant, Long userId) {
+  private void saveReportingAndGoalChanges(GrantVO grantToSave, Grant grant, Long userId,
+      String tenantCode) {
 
     for (GrantKpi kpi : grantToSave.getKpis()) {
       GrantKpi grantKpi = grantService.getGrantKpiById(kpi.getId());
-      ;
+
       if (grantKpi == null) {
         grantKpi = new GrantKpi();
         grantKpi.setScheduled(kpi.isScheduled());
@@ -369,14 +375,53 @@ public class GrantController {
         grantKpi.setDescription(kpi.getDescription());
         grantKpi.setCreatedAt(DateTime.now().toDate());
         grantKpi.setCreatedBy(userService.getUserById(userId).getEmailId());
-
       }
 
       grantKpi.setTitle(kpi.getTitle());
       grantKpi = grantService.saveGrantKpi(grantKpi);
       grant.getKpis().add(grantKpi);
-      grantService.saveGrant(grant);
+
+      List<Template> templates = kpi.getTemplates();
+      if (!templates.isEmpty()) {
+        for (Template template : templates) {
+          Template storedTemplate = grantService.getKpiTemplateById(template.getId());
+          if (storedTemplate == null) {
+            storedTemplate = new Template();
+            storedTemplate
+                .setFileType(template.getName().substring(template.getName().lastIndexOf(".") + 1));
+            storedTemplate.setDescription(template.getName());
+            storedTemplate.setKpi(grantKpi);
+            String fileLocation = tenantCode + "/grants/" + grant.getId() + "/templates/kpi/"
+                + grantKpi.getId() + "/";
+            storedTemplate.setLocation(fileLocation);
+
+            try {
+
+              Files.createDirectories(Paths.get(uploadLocation + fileLocation));
+              FileOutputStream fileOutputStream = new FileOutputStream(
+                  uploadLocation+fileLocation + template.getName());
+              byte[] dataBytes = Base64.getDecoder()
+                  .decode(template.getData().substring(template.getData().indexOf(",") + 1));
+              fileOutputStream.write(dataBytes);
+            } catch (IOException e) {
+              logger.error(e.getMessage(), e);
+            }
+
+            storedTemplate.setName(template.getName());
+            storedTemplate.setType("kpi");
+            storedTemplate.setVersion(1);
+          }
+
+          storedTemplate = grantService.saveKpiTemplate(storedTemplate);
+          if (grantKpi.getTemplates() == null) {
+            grantKpi.setTemplates(new ArrayList<>());
+          }
+          grantKpi.getTemplates().add(storedTemplate);
+          grantKpi = grantService.saveGrantKpi(grantKpi);
+        }
+      }
     }
+    grant = grantService.saveGrant(grant);
 
     for (SubmissionVO submissionVO : grantToSave.getSubmissions()) {
       processQuantitativeData(grant, userId, submissionVO);
@@ -444,7 +489,7 @@ public class GrantController {
           sub.setGrant(grant);
           submissionService.saveSubmission(sub);
 
-        }else{
+        } else {
           sub.setTitle(submissionVO.getTitle());
           sub.setSubmitBy(DateTime.parse(submissionVO.getSubmitBy()).toDate());
           submissionService.saveSubmission(sub);
