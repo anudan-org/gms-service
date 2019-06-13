@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -41,8 +42,8 @@ public class GrantVO {
   private WorkflowStatus grantStatus;
   private GrantStatus statusName;
   private WorkflowStatus substatus;
-  private Date startDate;
-  private Date endDate;
+  private String startDate;
+  private String endDate;
   private List<SubmissionVO> submissions;
   private WorkflowActionPermission actionAuthorities;
   private List<WorkFlowPermission> flowAuthorities;
@@ -151,20 +152,22 @@ public class GrantVO {
     this.substatus = substatus;
   }
 
-  public Date getStartDate() {
+  public String getStartDate() {
     return startDate;
   }
 
   public void setStartDate(Date startDate) {
-    this.startDate = startDate;
+
+    this.startDate = new SimpleDateFormat("yyyy-MM-dd").format(startDate);
   }
 
-  public Date getEndDate() {
+  public String getEndDate() {
     return endDate;
   }
 
   public void setEndDate(Date endDate) {
-    this.endDate = endDate;
+
+    this.endDate = new SimpleDateFormat("yyyy-MM-dd").format(endDate);
   }
 
   public WorkflowActionPermission getActionAuthorities() {

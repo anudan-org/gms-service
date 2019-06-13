@@ -9,6 +9,7 @@ public class SectionVO implements Comparable<SectionVO> {
   private Long id;
   @JsonProperty("sectionName")
   private String name;
+  
   @JsonProperty("attributes")
   private List<SectionAttributesVO> attributes;
 

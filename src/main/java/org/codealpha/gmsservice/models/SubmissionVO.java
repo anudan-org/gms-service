@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.models;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import org.codealpha.gmsservice.entities.AppConfig;
@@ -29,7 +30,7 @@ public class SubmissionVO {
   private Long id;
   private Grant grant;
   private String title;
-  private Date submitBy;
+  private String submitBy;
   protected Date submittedOn;
   private WorkflowStatus submissionStatus;
   private List<GrantQuantitativeKpiData> quantitiaveKpisubmissions;
@@ -67,12 +68,13 @@ public class SubmissionVO {
     this.title = title;
   }
 
-  public Date getSubmitBy() {
+  public String getSubmitBy() {
     return submitBy;
   }
 
   public void setSubmitBy(Date submitBy) {
-    this.submitBy = submitBy;
+
+    this.submitBy = new SimpleDateFormat("yyyy-MM-dd").format(submitBy);
   }
 
   public Date getSubmittedOn() {

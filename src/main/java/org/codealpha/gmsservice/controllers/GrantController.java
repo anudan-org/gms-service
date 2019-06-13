@@ -307,12 +307,12 @@ public class GrantController {
       grant = grantService.getById(grantToSave.getId());
       grant.setName(grantToSave.getName());
       grant.setDescription(grantToSave.getDescription());
-      grant.setStartDate(grantToSave.getStartDate());
-      grant.setEndDate(grantToSave.getEndDate());
+      grant.setStartDate(DateTime.parse(grantToSave.getStartDate()).toDate());
+      grant.setEndDate(DateTime.parse(grantToSave.getEndDate()).toDate());
     } else {
       grant = new Grant();
-      grant.setStartDate(grantToSave.getStartDate());
-      grant.setEndDate(grantToSave.getEndDate());
+      grant.setStartDate(DateTime.parse(grantToSave.getStartDate()).toDate());
+      grant.setEndDate(DateTime.parse(grantToSave.getEndDate()).toDate());
       grant.setSubstatus(workflowStatusService
           .findInitialStatusByObjectAndGranterOrgId("SUBMISSION",
               organizationService.findOrganizationByTenantCode(tenantCode).getId()));
@@ -324,14 +324,24 @@ public class GrantController {
       grant.setCreatedBy(userService.getUserById(userId).getEmailId());
       grant.setName(grantToSave.getName());
       grant.setDescription(grantToSave.getDescription());
-      grant.setStartDate(grantToSave.getStartDate());
-      grant.setEndDate(grantToSave.getEndDate());
+      grant.setStartDate(DateTime.parse(grantToSave.getStartDate()).toDate());
+      grant.setEndDate(DateTime.parse(grantToSave.getEndDate()).toDate());
       List<Submission> subs = new ArrayList<>();
       grant.setSubmissions(subs);
       List<GrantKpi> kpis = new ArrayList<>();
       grant.setKpis(kpis);
       grant = grantService.saveGrant(grant);
     }
+
+    for(SubmissionVO submissionVO: grantToSave.getSubmissions()){
+      Submission sub = submissionService.getById(submissionVO.getId());
+      if(sub!=null){
+        sub.setTitle(submissionVO.getTitle());
+        sub.setSubmitBy(DateTime.parse(submissionVO.getSubmitBy()).toDate());
+        submissionService.saveSubmission(sub);
+      }
+    }
+
 
     saveSectionAndFieldsChanges(grantToSave, grant);
     saveReportingAndGoalChanges(grantToSave, grant, userId);
@@ -417,7 +427,7 @@ public class GrantController {
         Submission sub = submissionService.getById(submissionVO.getId());
         if (sub == null) {
           sub = new Submission();
-          sub.setSubmitBy(submissionVO.getSubmitBy());
+          sub.setSubmitBy(DateTime.parse(submissionVO.getSubmitBy()).toDate());
           sub.setSubmissionStatus(submissionVO.getSubmissionStatus());
           sub.setCreatedAt(DateTime.now().toDate());
           sub.setCreatedBy(userService.getUserById(userId).getEmailId());
@@ -434,6 +444,10 @@ public class GrantController {
           sub.setGrant(grant);
           submissionService.saveSubmission(sub);
 
+        }else{
+          sub.setTitle(submissionVO.getTitle());
+          sub.setSubmitBy(DateTime.parse(submissionVO.getSubmitBy()).toDate());
+          submissionService.saveSubmission(sub);
         }
         grantQuantitativeKpiData.setSubmission(sub);
         grantQuantitativeKpiData.setGrantKpi(existingKpi);
@@ -491,7 +505,7 @@ public class GrantController {
         Submission sub = submissionService.getById(submissionVO.getId());
         if (sub == null) {
           sub = new Submission();
-          sub.setSubmitBy(submissionVO.getSubmitBy());
+          sub.setSubmitBy(DateTime.parse(submissionVO.getSubmitBy()).toDate());
           sub.setSubmissionStatus(submissionVO.getSubmissionStatus());
           sub.setCreatedAt(DateTime.now().toDate());
           sub.setCreatedBy(userService.getUserById(userId).getEmailId());
@@ -564,7 +578,7 @@ public class GrantController {
         Submission sub = submissionService.getById(submissionVO.getId());
         if (sub == null) {
           sub = new Submission();
-          sub.setSubmitBy(submissionVO.getSubmitBy());
+          sub.setSubmitBy(DateTime.parse(submissionVO.getSubmitBy()).toDate());
           sub.setSubmissionStatus(submissionVO.getSubmissionStatus());
           sub.setCreatedAt(DateTime.now().toDate());
           sub.setCreatedBy(userService.getUserById(userId).getEmailId());

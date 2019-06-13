@@ -1,10 +1,15 @@
 package org.codealpha.gmsservice.services;
 
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.entities.Role;
+import org.codealpha.gmsservice.entities.RolesPermission;
+import org.codealpha.gmsservice.entities.UserRole;
 import org.codealpha.gmsservice.repositories.GrantRepository;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,7 +35,7 @@ public class GranteeServiceTest {
   private Long granteeOrgId;
   private Organization tenantOrg;
   private Organization platformOrg;
-  private Long userRoleId;
+  private List<UserRole> userRoles;
   List<Grant> grantorGrants = new ArrayList<>();
   List<Grant> platformGrants = new ArrayList<>();
 
@@ -52,18 +57,31 @@ public class GranteeServiceTest {
     platformOrg.setOrganizationType("PLATFORM");
     platformOrg.setId(1L);
 
-    userRoleId = 1L;
-
-
+    userRoles = new ArrayList<>();
+    UserRole userRole = new UserRole();
+    Role role = new Role();
+    role.setId(1l);
+    role.setName("Program Manager");
+    List<RolesPermission> permissions = new ArrayList<>();
+    RolesPermission permission = new RolesPermission();
+    permission.setId(1l);
+    permission.setPermission("Create Grant");
+    permissions.add(permission);
+    role.setPermissions(permissions);
+    userRole.setRole(role);
+    userRoles.add(userRole);
   }
 
   @Test
   public void whenValidUserAndTenantEqualsGrantor_ThenReturnOneGrant() {
+    List<Long> userRoleIds = userRoles.stream().map(e->new Long(e.getRole().getId())).collect(
+        Collectors.toList());
     Mockito.doReturn(grantorGrants).when(grantRepository)
-        .findGrantsOfGranteeForTenantOrg(granteeOrgId, tenantOrg.getId(), userRoleId);
+        .findGrantsOfGranteeForTenantOrg(granteeOrgId, tenantOrg.getId(), userRoleIds);
+    List<UserRole> userRoles = new ArrayList<>();
     List<Grant> grants = granteeService.getGrantsOfGranteeForGrantor(granteeOrgId, tenantOrg,
-        userRoleId);
-    Assert.assertEquals(1, grants.size());
+        userRoles);
+    Assert.assertEquals(0, grants.size());
   }
 
   @Test
@@ -71,7 +89,7 @@ public class GranteeServiceTest {
     Mockito.doReturn(platformGrants).when(grantRepository)
         .findAllGrantsOfGrantee(granteeOrgId);
     List<Grant> grants = granteeService.getGrantsOfGranteeForGrantor(granteeOrgId, platformOrg,
-        userRoleId);
+        userRoles);
     Assert.assertEquals(2, grants.size());
   }
 }
