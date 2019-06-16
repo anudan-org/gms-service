@@ -23,9 +23,11 @@ import org.codealpha.gmsservice.entities.GrantKpi;
 import org.codealpha.gmsservice.entities.GrantQualitativeKpiData;
 import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
 import org.codealpha.gmsservice.entities.GrantStringAttribute;
+import org.codealpha.gmsservice.entities.Grantee;
 import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.GranterGrantSection;
 import org.codealpha.gmsservice.entities.GranterGrantSectionAttribute;
+import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.QualitativeKpiNotes;
 import org.codealpha.gmsservice.entities.QuantKpiDataDocument;
 import org.codealpha.gmsservice.entities.QuantitativeKpiNotes;
@@ -33,6 +35,7 @@ import org.codealpha.gmsservice.entities.Submission;
 import org.codealpha.gmsservice.entities.SubmissionNote;
 import org.codealpha.gmsservice.entities.Template;
 import org.codealpha.gmsservice.entities.User;
+import org.codealpha.gmsservice.entities.WorkFlowPermission;
 import org.codealpha.gmsservice.models.GrantQuantitativeKpiDataVO;
 import org.codealpha.gmsservice.models.GrantVO;
 import org.codealpha.gmsservice.models.KpiSubmissionData;
@@ -306,351 +309,86 @@ public class GrantController {
 
 
   @PutMapping("/")
-  public GrantVO saveGrant(@RequestBody GrantVO grantToSave, @PathVariable("userId") Long userId,
+  public Grant saveGrant(@RequestBody Grant grantToSave, @PathVariable("userId") Long userId,
       @RequestHeader("X-TENANT-CODE") String tenantCode) {
-    Grant grant = null;
-    if (grantToSave.getId() != null) {
-      grant = grantService.getById(grantToSave.getId());
-      grant.setName(grantToSave.getName());
-      grant.setDescription(grantToSave.getDescription());
-      grant.setStartDate(DateTime.parse(grantToSave.getStartDate()).toDate());
-      grant.setEndDate(DateTime.parse(grantToSave.getEndDate()).toDate());
-    } else {
-      grant = new Grant();
-      grant.setStartDate(DateTime.parse(grantToSave.getStartDate()).toDate());
-      grant.setEndDate(DateTime.parse(grantToSave.getEndDate()).toDate());
-      grant.setSubstatus(workflowStatusService
-          .findInitialStatusByObjectAndGranterOrgId("SUBMISSION",
-              organizationService.findOrganizationByTenantCode(tenantCode).getId()));
-      grant.setGrantStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT",
-          organizationService.findOrganizationByTenantCode(tenantCode).getId()));
-      grant.setOrganization(organizationService.get(1l));
-      grant.setGrantorOrganization(organizationService.findOrganizationByTenantCode(tenantCode));
-      grant.setCreatedAt(DateTime.now().toDate());
-      grant.setCreatedBy(userService.getUserById(userId).getEmailId());
-      grant.setName(grantToSave.getName());
-      grant.setDescription(grantToSave.getDescription());
-      grant.setStartDate(DateTime.parse(grantToSave.getStartDate()).toDate());
-      grant.setEndDate(DateTime.parse(grantToSave.getEndDate()).toDate());
-      List<Submission> subs = new ArrayList<>();
-      grant.setSubmissions(subs);
-      List<GrantKpi> kpis = new ArrayList<>();
-      grant.setKpis(kpis);
-      grant = grantService.saveGrant(grant);
-    }
 
-    for (SubmissionVO submissionVO : grantToSave.getSubmissions()) {
-      Submission sub = submissionService.getById(submissionVO.getId());
-      if (sub != null) {
-        sub.setTitle(submissionVO.getTitle());
-        sub.setSubmitBy(DateTime.parse(submissionVO.getSubmitBy()).toDate());
-        submissionService.saveSubmission(sub);
+    /*Grant existingGrant = grantService.getById(grantToSave.getId());
+    if (existingGrant == null) {
+      existingGrant = _createGrant(grantToSave);
+    }*/
+
+    grantToSave  = grantService.saveGrant(grantToSave);
+    User user = userService.getUserById(userId);
+
+    grantToSave.setActionAuthorities(workflowPermissionService
+        .getGrantActionPermissions(grantToSave.getGrantorOrganization().getId(),
+            user.getUserRoles(), grantToSave.getGrantStatus().getId()));
+
+    grantToSave.setFlowAuthorities(workflowPermissionService
+        .getGrantFlowPermissions(grantToSave.getGrantorOrganization().getId(),
+            user.getUserRoles()));
+
+    for (Submission submission : grantToSave.getSubmissions()) {
+      submission.setActionAuthorities(workflowPermissionService
+          .getSubmissionActionPermission(grantToSave.getGrantorOrganization().getId(),
+              user.getUserRoles()));
+
+      AppConfig submissionWindow = appConfigService
+          .getAppConfigForGranterOrg(submission.getGrant().getGrantorOrganization().getId(),
+              AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS);
+      Date submissionWindowStart = new DateTime(submission.getSubmitBy())
+          .minusDays(Integer.valueOf(submissionWindow.getConfigValue()) + 1).toDate();
+
+      List<WorkFlowPermission> flowPermissions = workflowPermissionService
+          .getSubmissionFlowPermissions(grantToSave.getGrantorOrganization().getId(),
+              user.getUserRoles(), submission.getSubmissionStatus().getId());
+
+      if (!flowPermissions.isEmpty() && DateTime.now().toDate()
+          .after(submissionWindowStart)) {
+        submission.setFlowAuthorities(flowPermissions);
       }
     }
 
-    saveSectionAndFieldsChanges(grantToSave, grant);
-    saveReportingAndGoalChanges(grantToSave, grant, userId, tenantCode);
+    GrantVO grantVO = new GrantVO();
+    grantVO = grantVO.build(grantToSave, workflowPermissionService, user, appConfigService
+        .getAppConfigForGranterOrg(grantToSave.getGrantorOrganization().getId(),
+            AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
+    grantToSave.setGrantDetails(grantVO.getGrantDetails());
 
-    grantToSave = new GrantVO()
-        .build(grantService.getById(grant.getId()), workflowPermissionService,
-            userService.getUserById(userId), appConfigService
-                .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                    AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
+    //submissionService.saveSubmissions(grantToSave.getSubmissions());
+
     return grantToSave;
   }
 
-  private void saveReportingAndGoalChanges(GrantVO grantToSave, Grant grant, Long userId,
-      String tenantCode) {
+  private Grant _createGrant(GrantVO grantToSave, Organization userOrg, Organization tenantOrg) {
+    Grant grant = new Grant();
+    grant.setEndDate(grantToSave.getEndDate());
+    grant.setStartDate(grantToSave.getEndDate());
+    grant.setDescription(grantToSave.getDescription());
+    grant.setName(grantToSave.getName());
+    grant.setName(grantToSave.getName());
+    grant.setOrganization((Grantee) userOrg);
+    grant.setGrantorOrganization((Granter)tenantOrg);
+    grant.setGrantStatus(
+        workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", tenantOrg.getId()));
+    //grant.set
 
-    for (GrantKpi kpi : grantToSave.getKpis()) {
-      GrantKpi grantKpi = grantService.getGrantKpiById(kpi.getId());
-
-      if (grantKpi == null) {
-        grantKpi = new GrantKpi();
-        grantKpi.setScheduled(kpi.isScheduled());
-        grantKpi.setPeriodicity(kpi.getPeriodicity());
-        grantKpi.setFrequency(kpi.getFrequency());
-        grantKpi.setKpiType(kpi.getKpiType());
-        grantKpi.setGrant(grant);
-        grantKpi.setDescription(kpi.getDescription());
-        grantKpi.setCreatedAt(DateTime.now().toDate());
-        grantKpi.setCreatedBy(userService.getUserById(userId).getEmailId());
-      }
-
-      grantKpi.setTitle(kpi.getTitle());
-      grantKpi = grantService.saveGrantKpi(grantKpi);
-      grant.getKpis().add(grantKpi);
-
-      List<Template> templates = kpi.getTemplates();
-      if (!templates.isEmpty()) {
-        for (Template template : templates) {
-          Template storedTemplate = grantService.getKpiTemplateById(template.getId());
-          if (storedTemplate == null) {
-            storedTemplate = new Template();
-            storedTemplate
-                .setFileType(template.getName().substring(template.getName().lastIndexOf(".") + 1));
-            storedTemplate.setDescription(template.getName());
-            storedTemplate.setKpi(grantKpi);
-            String fileLocation = tenantCode + "/grants/" + grant.getId() + "/templates/kpi/"
-                + grantKpi.getId() + "/";
-            storedTemplate.setLocation(fileLocation);
-
-            try {
-
-              Files.createDirectories(Paths.get(uploadLocation + fileLocation));
-              FileOutputStream fileOutputStream = new FileOutputStream(
-                  uploadLocation+fileLocation + template.getName());
-              byte[] dataBytes = Base64.getDecoder()
-                  .decode(template.getData().substring(template.getData().indexOf(",") + 1));
-              fileOutputStream.write(dataBytes);
-            } catch (IOException e) {
-              logger.error(e.getMessage(), e);
-            }
-
-            storedTemplate.setName(template.getName());
-            storedTemplate.setType("kpi");
-            storedTemplate.setVersion(1);
-          }
-
-          storedTemplate = grantService.saveKpiTemplate(storedTemplate);
-          if (grantKpi.getTemplates() == null) {
-            grantKpi.setTemplates(new ArrayList<>());
-          }
-          grantKpi.getTemplates().add(storedTemplate);
-          grantKpi = grantService.saveGrantKpi(grantKpi);
-        }
+    for (GrantKpi sentGrantKpi : grantToSave.getKpis()) {
+      GrantKpi existingGrantKpi = grantService.getGrantKpiById(sentGrantKpi.getId());
+      if (existingGrantKpi == null) {
+        existingGrantKpi = _createGrantKpi(grant, sentGrantKpi);
       }
     }
-    grant = grantService.saveGrant(grant);
-
-    for (SubmissionVO submissionVO : grantToSave.getSubmissions()) {
-      processQuantitativeData(grant, userId, submissionVO);
-      processQualitativeData(grant, userId, submissionVO);
-    }
+    return grant;
   }
 
-  private void processQuantitativeData(Grant grant, Long userId, SubmissionVO submissionVO) {
-    for (GrantQuantitativeKpiData quantitativeKpiData : submissionVO
-        .getQuantitiaveKpisubmissions()) {
-      GrantQuantitativeKpiData storedKpiData = grantService
-          .getGrantQuantitativeKpiDataById(quantitativeKpiData.getId());
-      if (storedKpiData != null) {
-        if (storedKpiData.getToReport() != quantitativeKpiData.getToReport()) {
-          storedKpiData.setToReport(quantitativeKpiData.getToReport());
-        }
-        if (storedKpiData.getGoal() != quantitativeKpiData.getGoal()) {
-          storedKpiData.setGoal(quantitativeKpiData.getGoal());
-        }
-        if (storedKpiData.getActuals() != quantitativeKpiData.getActuals()) {
-          storedKpiData.setActuals(quantitativeKpiData.getActuals());
-        }
-        grantService.saveGrantQunatitativeKpiData(storedKpiData);
-      } else {
-
-        GrantKpi existingKpi = grantService
-            .getGrantKpiByNameAndTypeAndGrant(quantitativeKpiData.getGrantKpi().getTitle(),
-                quantitativeKpiData.getGrantKpi().getKpiType(), grant);
-        Date now = DateTime.now().toDate();
-        String userName = userService.getUserById(userId).getEmailId();
-        if (existingKpi == null) {
-          existingKpi = new GrantKpi();
-          existingKpi.setCreatedAt(now);
-          existingKpi.setCreatedBy(userName);
-          existingKpi.setDescription(quantitativeKpiData.getGrantKpi().getDescription());
-          existingKpi.setFrequency(quantitativeKpiData.getGrantKpi().getFrequency());
-          existingKpi.setGrant(grant);
-          existingKpi.setKpiType(quantitativeKpiData.getGrantKpi().getKpiType());
-          existingKpi.setPeriodicity(quantitativeKpiData.getGrantKpi().getPeriodicity());
-          existingKpi.setScheduled(quantitativeKpiData.getGrantKpi().isScheduled());
-          existingKpi.setTitle(quantitativeKpiData.getGrantKpi().getTitle());
-          existingKpi = grantService.saveGrantKpi(existingKpi);
-        }
-
-        GrantQuantitativeKpiData grantQuantitativeKpiData = new GrantQuantitativeKpiData();
-        grantQuantitativeKpiData.setGoal(quantitativeKpiData.getGoal());
-        grantQuantitativeKpiData.setToReport(quantitativeKpiData.getToReport());
-        Submission sub = submissionService.getById(submissionVO.getId());
-        if (sub == null) {
-          sub = new Submission();
-          sub.setSubmitBy(DateTime.parse(submissionVO.getSubmitBy()).toDate());
-          sub.setSubmissionStatus(submissionVO.getSubmissionStatus());
-          sub.setCreatedAt(DateTime.now().toDate());
-          sub.setCreatedBy(userService.getUserById(userId).getEmailId());
-          sub.setSubmissionStatus(submissionVO.getSubmissionStatus());
-          sub.setTitle(submissionVO.getTitle());
-          sub.setSubmissionStatus(workflowStatusService
-              .findInitialStatusByObjectAndGranterOrgId("SUBMISSION",
-                  grant.getGrantorOrganization().getId()));
-          List<GrantQuantitativeKpiData> quantitativeKpiDataList = new ArrayList<>();
-          sub.setQuantitiaveKpisubmissions(quantitativeKpiDataList);
-          sub = submissionService.saveSubmission(sub);
-          grant.getSubmissions().add(sub);
-          grant = grantService.saveGrant(grant);
-          sub.setGrant(grant);
-          submissionService.saveSubmission(sub);
-
-        } else {
-          sub.setTitle(submissionVO.getTitle());
-          sub.setSubmitBy(DateTime.parse(submissionVO.getSubmitBy()).toDate());
-          submissionService.saveSubmission(sub);
-        }
-        grantQuantitativeKpiData.setSubmission(sub);
-        grantQuantitativeKpiData.setGrantKpi(existingKpi);
-        grantQuantitativeKpiData.setCreatedAt(now);
-        grantQuantitativeKpiData.setCreatedBy(userName);
-
-        grantQuantitativeKpiData = grantService
-            .saveGrantQunatitativeKpiData(grantQuantitativeKpiData);
-        sub.getQuantitiaveKpisubmissions().add(grantQuantitativeKpiData);
-        submissionService.saveSubmission(sub);
-      }
-    }
+  private GrantKpi _createGrantKpi(Grant grant, GrantKpi sentGrantKpi) {
+    GrantKpi grantKpi = new GrantKpi();
+    grantKpi.setDescription(sentGrantKpi.getDescription());
+    grantKpi.setGrant(grant);
+return null;
   }
 
-  private void processQualitativeData(Grant grant, Long userId, SubmissionVO submissionVO) {
-    for (GrantQualitativeKpiData qualitativeKpiData : submissionVO
-        .getQualitativeKpiSubmissions()) {
-      GrantQualitativeKpiData storedKpiData = grantService
-          .getGrantQualitativeKpiDataById(qualitativeKpiData.getId());
-      if (storedKpiData != null) {
-        if (storedKpiData.getToReport() != qualitativeKpiData.getToReport()) {
-          storedKpiData.setToReport(qualitativeKpiData.getToReport());
-        }
-        if (storedKpiData.getGoal() != qualitativeKpiData.getGoal()) {
-          storedKpiData.setGoal(qualitativeKpiData.getGoal());
-        }
-        if (storedKpiData.getActuals() != qualitativeKpiData.getActuals()) {
-          storedKpiData.setActuals(qualitativeKpiData.getActuals());
-        }
-        grantService.saveGrantQualitativeKpiData(storedKpiData);
-      } else {
-
-        GrantKpi existingKpi = grantService
-            .getGrantKpiByNameAndTypeAndGrant(qualitativeKpiData.getGrantKpi().getTitle(),
-                qualitativeKpiData.getGrantKpi().getKpiType(), grant);
-        Date now = DateTime.now().toDate();
-        String userName = userService.getUserById(userId).getEmailId();
-        if (existingKpi == null) {
-          existingKpi = new GrantKpi();
-          existingKpi.setCreatedAt(now);
-          existingKpi.setCreatedBy(userName);
-          existingKpi.setDescription(qualitativeKpiData.getGrantKpi().getDescription());
-          existingKpi.setFrequency(qualitativeKpiData.getGrantKpi().getFrequency());
-          existingKpi.setGrant(grant);
-          existingKpi.setKpiType(qualitativeKpiData.getGrantKpi().getKpiType());
-          existingKpi.setPeriodicity(qualitativeKpiData.getGrantKpi().getPeriodicity());
-          existingKpi.setScheduled(qualitativeKpiData.getGrantKpi().isScheduled());
-          existingKpi.setTitle(qualitativeKpiData.getGrantKpi().getTitle());
-          existingKpi = grantService.saveGrantKpi(existingKpi);
-        }
-
-        GrantQualitativeKpiData grantQualitativeKpiData = new GrantQualitativeKpiData();
-        grantQualitativeKpiData.setGoal(qualitativeKpiData.getGoal());
-        grantQualitativeKpiData.setToReport(qualitativeKpiData.getToReport());
-        Submission sub = submissionService.getById(submissionVO.getId());
-        if (sub == null) {
-          sub = new Submission();
-          sub.setSubmitBy(DateTime.parse(submissionVO.getSubmitBy()).toDate());
-          sub.setSubmissionStatus(submissionVO.getSubmissionStatus());
-          sub.setCreatedAt(DateTime.now().toDate());
-          sub.setCreatedBy(userService.getUserById(userId).getEmailId());
-          sub.setSubmissionStatus(submissionVO.getSubmissionStatus());
-          sub.setTitle(submissionVO.getTitle());
-          List<GrantQualitativeKpiData> qualitativeKpiDataList = new ArrayList<>();
-          sub.setQualitativeKpiSubmissions(qualitativeKpiDataList);
-          sub.setSubmissionStatus(workflowStatusService
-              .findInitialStatusByObjectAndGranterOrgId("SUBMISSION",
-                  grant.getGrantorOrganization().getId()));
-          sub = submissionService.saveSubmission(sub);
-          grant.getSubmissions().add(sub);
-          grant = grantService.saveGrant(grant);
-          sub.setGrant(grant);
-          submissionService.saveSubmission(sub);
-        }
-        grantQualitativeKpiData.setSubmission(sub);
-        grantQualitativeKpiData.setGrantKpi(existingKpi);
-        grantQualitativeKpiData.setCreatedAt(now);
-        grantQualitativeKpiData.setCreatedBy(userName);
-
-        grantQualitativeKpiData = grantService
-            .saveGrantQualitativeKpiData(grantQualitativeKpiData);
-        sub.getQualitativeKpiSubmissions().add(grantQualitativeKpiData);
-        submissionService.saveSubmission(sub);
-      }
-    }
-  }
-
-  private void processDocumentData(Grant grant, Long userId, SubmissionVO submissionVO) {
-    for (GrantDocumentKpiData documentKpiData : submissionVO
-        .getDocumentKpiSubmissions()) {
-      GrantDocumentKpiData storedKpiData = grantService
-          .getGrantDocumentKpiDataById(documentKpiData.getId());
-      if (storedKpiData != null) {
-        if (storedKpiData.getToReport() != documentKpiData.getToReport()) {
-          storedKpiData.setToReport(documentKpiData.getToReport());
-        }
-        if (storedKpiData.getGoal() != documentKpiData.getGoal()) {
-          storedKpiData.setGoal(documentKpiData.getGoal());
-        }
-        if (storedKpiData.getActuals() != documentKpiData.getActuals()) {
-          storedKpiData.setActuals(documentKpiData.getActuals());
-        }
-        grantService.saveGrantDocumentKpiData(storedKpiData);
-      } else {
-
-        GrantKpi existingKpi = grantService
-            .getGrantKpiByNameAndTypeAndGrant(documentKpiData.getGrantKpi().getTitle(),
-                documentKpiData.getGrantKpi().getKpiType(), grant);
-        Date now = DateTime.now().toDate();
-        String userName = userService.getUserById(userId).getEmailId();
-        if (existingKpi == null) {
-          existingKpi = new GrantKpi();
-          existingKpi.setCreatedAt(now);
-          existingKpi.setCreatedBy(userName);
-          existingKpi.setDescription(documentKpiData.getGrantKpi().getDescription());
-          existingKpi.setFrequency(documentKpiData.getGrantKpi().getFrequency());
-          existingKpi.setGrant(grant);
-          existingKpi.setKpiType(documentKpiData.getGrantKpi().getKpiType());
-          existingKpi.setPeriodicity(documentKpiData.getGrantKpi().getPeriodicity());
-          existingKpi.setScheduled(documentKpiData.getGrantKpi().isScheduled());
-          existingKpi.setTitle(documentKpiData.getGrantKpi().getTitle());
-          existingKpi = grantService.saveGrantKpi(existingKpi);
-        }
-
-        GrantDocumentKpiData grantDocumentKpiData = new GrantDocumentKpiData();
-        grantDocumentKpiData.setGoal(documentKpiData.getGoal());
-        grantDocumentKpiData.setToReport(documentKpiData.getToReport());
-        Submission sub = submissionService.getById(submissionVO.getId());
-        if (sub == null) {
-          sub = new Submission();
-          sub.setSubmitBy(DateTime.parse(submissionVO.getSubmitBy()).toDate());
-          sub.setSubmissionStatus(submissionVO.getSubmissionStatus());
-          sub.setCreatedAt(DateTime.now().toDate());
-          sub.setCreatedBy(userService.getUserById(userId).getEmailId());
-          sub.setSubmissionStatus(workflowStatusService
-              .findInitialStatusByObjectAndGranterOrgId("SUBMISSION",
-                  grant.getGrantorOrganization().getId()));
-          sub.setTitle(submissionVO.getTitle());
-          List<GrantDocumentKpiData> documentList = new ArrayList<>();
-          sub.setDocumentKpiSubmissions(documentList);
-          sub = submissionService.saveSubmission(sub);
-          grant.getSubmissions().add(sub);
-          grant = grantService.saveGrant(grant);
-          sub.setGrant(grant);
-          submissionService.saveSubmission(sub);
-        }
-        grantDocumentKpiData.setSubmission(sub);
-        grantDocumentKpiData.setGrantKpi(existingKpi);
-        grantDocumentKpiData.setCreatedAt(now);
-        grantDocumentKpiData.setCreatedBy(userName);
-
-        grantDocumentKpiData = grantService
-            .saveGrantDocumentKpiData(grantDocumentKpiData);
-        sub.getDocumentKpiSubmissions().add(grantDocumentKpiData);
-        submissionService.saveSubmission(sub);
-      }
-    }
-  }
 
   @PostMapping("/{grantId}/flow/{fromState}/{toState}")
   public GrantVO MoveGrantState(@PathVariable("userId") Long userId,

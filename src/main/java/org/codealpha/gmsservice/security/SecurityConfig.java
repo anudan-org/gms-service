@@ -5,6 +5,7 @@ import java.nio.file.AccessDeniedException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.transaction.Transactional;
 import org.codealpha.gmsservice.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.stereotype.Component;
 
 @Configuration
+@Transactional
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
   @Autowired

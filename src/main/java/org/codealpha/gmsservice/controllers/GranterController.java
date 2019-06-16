@@ -41,7 +41,7 @@ public class GranterController {
 	public Rfp createRfp(@PathVariable(name = "granterId") Long organizationId,
 			@RequestBody Rfp rfp) {
 
-		rfp.setGranter(granterRepository.findById(organizationId).get());
+		//rfp.setGranter(granterRepository.findById(organizationId).get());
 		rfp.setCreatedAt(LocalDateTime.now());
 		rfp.setCreatedBy("Admin");
 		return rfpRepository.save(rfp);

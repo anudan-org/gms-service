@@ -1,6 +1,9 @@
 package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -34,12 +37,6 @@ public class Granter extends Organization {
 	@Column
 	private String navbarTextColor;
 
-	@OneToMany(mappedBy = "granter", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-	private List<Rfp> rfps;
-
-	@OneToMany(mappedBy = "granter")
-	@JsonIgnore
-	private List<Workflow> workflows;
 
 	@Override
 	public Long getId() {
@@ -75,13 +72,7 @@ public class Granter extends Organization {
 		this.navbarColor = navbarColor;
 	}
 
-	public List<Rfp> getRfps() {
-		return rfps;
-	}
 
-	public void setRfps(List<Rfp> rfps) {
-		this.rfps = rfps;
-	}
 
 	public String getNavbarTextColor() {
 		return navbarTextColor;
@@ -97,7 +88,6 @@ public class Granter extends Organization {
 				"id=" + id +
 				", hostUrl='" + hostUrl + '\'' +
 				", imageName='" + imageName + '\'' +
-				", rfps=" + rfps +
 				", name='" + name + '\'' +
 				", code='" + code + '\'' +
 				", createdAt=" + createdAt +

@@ -42,9 +42,11 @@ public class GrantVO {
   private WorkflowStatus grantStatus;
   private GrantStatus statusName;
   private WorkflowStatus substatus;
-  private String startDate;
-  private String endDate;
-  private List<SubmissionVO> submissions;
+  private Date startDate;
+  private String stDate;
+  private Date endDate;
+  private String enDate;
+  private List<Submission> submissions;
   private WorkflowActionPermission actionAuthorities;
   private List<WorkFlowPermission> flowAuthorities;
   private GrantDetailVO grantDetails;
@@ -152,22 +154,38 @@ public class GrantVO {
     this.substatus = substatus;
   }
 
-  public String getStartDate() {
+  public Date getStartDate() {
     return startDate;
   }
 
   public void setStartDate(Date startDate) {
 
-    this.startDate = new SimpleDateFormat("yyyy-MM-dd").format(startDate);
+    this.startDate = startDate;
   }
 
-  public String getEndDate() {
+  public Date getEndDate() {
     return endDate;
   }
 
   public void setEndDate(Date endDate) {
 
-    this.endDate = new SimpleDateFormat("yyyy-MM-dd").format(endDate);
+    this.endDate = endDate;
+  }
+
+  public String getStDate() {
+    return stDate;
+  }
+
+  public void setStDate(String stDate) {
+    this.stDate = stDate;
+  }
+
+  public String getEnDate() {
+    return enDate;
+  }
+
+  public void setEnDate(String enDate) {
+    this.enDate = enDate;
   }
 
   public WorkflowActionPermission getActionAuthorities() {
@@ -188,11 +206,11 @@ public class GrantVO {
     this.flowAuthorities = flowAuthorities;
   }
 
-  public List<SubmissionVO> getSubmissions() {
+  public List<Submission> getSubmissions() {
     return submissions;
   }
 
-  public void setSubmissions(List<SubmissionVO> submissions) {
+  public void setSubmissions(List<Submission> submissions) {
     this.submissions = submissions;
   }
 
@@ -236,24 +254,14 @@ public class GrantVO {
       User user, AppConfig submissionWindow) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
     GrantVO vo = new GrantVO();
-    List<SubmissionVO> submissionVOList = null;
+    Submission submissionVOList = null;
     for (PropertyDescriptor descriptor : propertyDescriptors) {
       if (!descriptor.getName().equalsIgnoreCase("class")) {
         try {
           Object value = descriptor.getReadMethod().invoke(grant);
           PropertyDescriptor voPd = BeanUtils
               .getPropertyDescriptor(vo.getClass(), descriptor.getName());
-          if (voPd.getName().equalsIgnoreCase("submissions")) {
-            submissionVOList = new ArrayList<>();
-            for (Submission submission : (List<Submission>) value) {
-                SubmissionVO submissionVO = new SubmissionVO()
-                    .build(submission, workflowPermissionService, user, submissionWindow);
-
-                submissionVOList.add(submissionVO);
-            }
-            vo.setSubmissions(submissionVOList);
-            System.out.println("KPIS called");
-          } else if (voPd.getName().equalsIgnoreCase("stringAttributes")) {
+           if (voPd.getName().equalsIgnoreCase("stringAttributes")) {
             GrantDetailVO grantDetailVO = null;
             grantDetailVO = vo.getGrantDetails();
             if(grantDetailVO == null){

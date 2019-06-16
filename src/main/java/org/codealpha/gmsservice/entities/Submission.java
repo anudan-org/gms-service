@@ -1,10 +1,17 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -13,6 +20,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
+import javax.persistence.Transient;
 
 @Entity(name = "submissions")
 public class Submission {
@@ -21,9 +29,10 @@ public class Submission {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(referencedColumnName = "id")
-  @JsonIgnore
+  @JsonProperty(access = Access.WRITE_ONLY)
+  @JsonBackReference
   private Grant grant;
 
   @Column
@@ -32,6 +41,8 @@ public class Submission {
   @Column
   @OrderBy("ASC")
   private Date submitBy;
+  @Transient
+  private String submitDateStr;
   @Column
   protected Date submittedOn;
 
@@ -39,21 +50,29 @@ public class Submission {
   @JoinColumn(referencedColumnName = "id")
   private WorkflowStatus submissionStatus;
 
-  @OneToMany(mappedBy = "submission")
+  @OneToMany(mappedBy = "submission",cascade = CascadeType.ALL,orphanRemoval = true)
   @OrderBy("id ASC")
+  @JsonManagedReference
   private List<GrantQuantitativeKpiData> quantitiaveKpisubmissions;
 
-  @OneToMany(mappedBy = "submission")
+  @OneToMany(mappedBy = "submission",cascade = CascadeType.ALL,orphanRemoval = true)
   @OrderBy("id ASC")
+  @JsonManagedReference
   private List<GrantQualitativeKpiData> qualitativeKpiSubmissions;
 
-  @OneToMany(mappedBy = "submission")
+  @OneToMany(mappedBy = "submission",cascade = CascadeType.ALL,orphanRemoval = true)
   @OrderBy("id ASC")
+  @JsonManagedReference
   private List<GrantDocumentKpiData> documentKpiSubmissions;
 
   @OneToMany (mappedBy = "submission")
   @OrderBy("id DESC")
   private List<SubmissionNote> submissionNotes;
+
+  @Transient
+  private WorkflowActionPermission actionAuthorities;
+  @Transient
+  private List<WorkFlowPermission> flowAuthorities;
 
   @Column
   private Date createdAt;
@@ -178,5 +197,31 @@ public class Submission {
   public void setSubmissionNotes(
       List<SubmissionNote> submissionNotes) {
     this.submissionNotes = submissionNotes;
+  }
+
+  public String getSubmitDateStr() {
+    return new SimpleDateFormat("yyyy-MM-dd").format(submitBy);
+  }
+
+  public void setSubmitDateStr(String submitDateStr) {
+    this.submitDateStr = submitDateStr;
+  }
+
+  public WorkflowActionPermission getActionAuthorities() {
+    return actionAuthorities;
+  }
+
+  public void setActionAuthorities(
+      WorkflowActionPermission actionAuthorities) {
+    this.actionAuthorities = actionAuthorities;
+  }
+
+  public List<WorkFlowPermission> getFlowAuthorities() {
+    return flowAuthorities;
+  }
+
+  public void setFlowAuthorities(
+      List<WorkFlowPermission> flowAuthorities) {
+    this.flowAuthorities = flowAuthorities;
   }
 }

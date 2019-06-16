@@ -1,7 +1,12 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import java.util.List;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -28,9 +33,10 @@ public class GrantQuantitativeKpiData extends BaseEntity {
   private String note;
 
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(referencedColumnName = "id")
-  @JsonIgnore
+  @JsonProperty(access = Access.WRITE_ONLY)
+  @JsonBackReference
   private Submission submission;
 
   @ManyToOne
@@ -41,10 +47,11 @@ public class GrantQuantitativeKpiData extends BaseEntity {
   private Boolean toReport;
 
 
-  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   private List<QuantitativeKpiNotes> notesHistory;
 
-  @OneToMany(mappedBy = "quantKpiData",fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "quantKpiData", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+  @JsonManagedReference
   List<QuantKpiDataDocument> submissionDocs;
 
   @Override

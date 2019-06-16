@@ -1,6 +1,8 @@
 package org.codealpha.gmsservice.services;
 
+import java.util.List;
 import org.codealpha.gmsservice.entities.Submission;
+import org.codealpha.gmsservice.models.SubmissionVO;
 import org.codealpha.gmsservice.repositories.SubmissionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,5 +28,9 @@ public class SubmissionService {
       return submissionRepository.findById(id).get();
     }
     return null;
+  }
+
+  public List<Submission> saveSubmissions(List<Submission> submissions) {
+    return (List<Submission>) submissionRepository.saveAll(submissions);
   }
 }

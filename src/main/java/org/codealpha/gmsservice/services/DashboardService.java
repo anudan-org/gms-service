@@ -1,12 +1,18 @@
 package org.codealpha.gmsservice.services;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import org.codealpha.gmsservice.constants.AppConfiguration;
+import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.Grant;
+import org.codealpha.gmsservice.entities.Submission;
 import org.codealpha.gmsservice.entities.User;
+import org.codealpha.gmsservice.entities.WorkFlowPermission;
+import org.codealpha.gmsservice.models.GrantDetailVO;
 import org.codealpha.gmsservice.models.GrantVO;
 import org.codealpha.gmsservice.models.Tenant;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +43,7 @@ public class DashboardService {
     for (String name : tenantNames) {
       Tenant tenant = new Tenant();
       tenant.setName(name);
-      List<GrantVO> grantsList = new ArrayList<>();
+      List<Grant> grantsList = new ArrayList<>();
       tenant.setGrants(grantsList);
       tenants.add(tenant);
     }
@@ -45,12 +51,43 @@ public class DashboardService {
     for (Grant grant : grants) {
       for (Tenant tenant : tenants) {
         if (tenant.getName().equalsIgnoreCase(grant.getGrantorOrganization().getCode())) {
-          List<GrantVO> grantList = tenant.getGrants();
+          List<Grant> grantList = tenant.getGrants();
+
+          grant.setActionAuthorities(workflowPermissionService
+              .getGrantActionPermissions(grant.getGrantorOrganization().getId(),
+                  user.getUserRoles(), grant.getGrantStatus().getId()));
+
+          grant.setFlowAuthorities(workflowPermissionService
+              .getGrantFlowPermissions(grant.getGrantorOrganization().getId(),
+                  user.getUserRoles()));
+
+          for (Submission submission : grant.getSubmissions()) {
+            submission.setActionAuthorities(workflowPermissionService
+                .getSubmissionActionPermission(grant.getGrantorOrganization().getId(),
+                    user.getUserRoles()));
+
+            AppConfig submissionWindow = appConfigService
+                .getAppConfigForGranterOrg(submission.getGrant().getGrantorOrganization().getId(),
+                    AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS);
+            Date submissionWindowStart = new DateTime(submission.getSubmitBy())
+                .minusDays(Integer.valueOf(submissionWindow.getConfigValue()) + 1).toDate();
+
+            List<WorkFlowPermission> flowPermissions = workflowPermissionService
+                .getSubmissionFlowPermissions(grant.getGrantorOrganization().getId(),
+                    user.getUserRoles(), submission.getSubmissionStatus().getId());
+
+            if (!flowPermissions.isEmpty() && DateTime.now().toDate()
+                .after(submissionWindowStart)) {
+              submission.setFlowAuthorities(flowPermissions);
+            }
+          }
 
           GrantVO grantVO = new GrantVO();
-          grantList.add(grantVO.build(grant, workflowPermissionService, user, appConfigService
+          grantVO = grantVO.build(grant, workflowPermissionService, user, appConfigService
               .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                  AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS)));
+                  AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
+          grant.setGrantDetails(grantVO.getGrantDetails());
+          grantList.add(grant);
           tenant.setGrants(grantList);
         }
       }

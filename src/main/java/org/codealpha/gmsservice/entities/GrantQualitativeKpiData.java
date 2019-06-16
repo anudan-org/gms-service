@@ -1,7 +1,11 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import java.util.List;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -29,17 +33,18 @@ public class GrantQualitativeKpiData extends BaseEntity {
 
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
-  @JsonIgnore
+  @JsonProperty(access = Access.WRITE_ONLY)
+  @JsonBackReference
   private Submission submission;
 
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   private GrantKpi grantKpi;
 
-  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY,cascade = CascadeType.ALL,orphanRemoval = true)
   private List<QualitativeKpiNotes> notesHistory;
 
-  @OneToMany(mappedBy = "qualKpiData")
+  @OneToMany(mappedBy = "qualKpiData",cascade = CascadeType.ALL,orphanRemoval = true)
   List<QualKpiDataDocument> submissionDocs;
 
   @Override
