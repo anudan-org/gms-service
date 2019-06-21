@@ -81,7 +81,7 @@ public class GrantDetailVO {
         if (sectionAttributes == null) {
           sectionAttributes = new ArrayList<>();
         }
-        if (!sectionAttributes.contains(sectionAttribute)) {
+        if (sectionAttributes.size()>0 && !sectionAttributes.contains(sectionAttribute)) {
           sectionAttributes.add(sectionAttribute);
         }
         sectionVO.setAttributes(sectionAttributes);

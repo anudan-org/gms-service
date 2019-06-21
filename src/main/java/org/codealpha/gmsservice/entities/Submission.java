@@ -50,17 +50,17 @@ public class Submission {
   @JoinColumn(referencedColumnName = "id")
   private WorkflowStatus submissionStatus;
 
-  @OneToMany(mappedBy = "submission",cascade = CascadeType.ALL,orphanRemoval = true)
+  @OneToMany(mappedBy = "submission",cascade = CascadeType.ALL)
   @OrderBy("id ASC")
   @JsonManagedReference
   private List<GrantQuantitativeKpiData> quantitiaveKpisubmissions;
 
-  @OneToMany(mappedBy = "submission",cascade = CascadeType.ALL,orphanRemoval = true)
+  @OneToMany(mappedBy = "submission",cascade = CascadeType.ALL)
   @OrderBy("id ASC")
   @JsonManagedReference
   private List<GrantQualitativeKpiData> qualitativeKpiSubmissions;
 
-  @OneToMany(mappedBy = "submission",cascade = CascadeType.ALL,orphanRemoval = true)
+  @OneToMany(mappedBy = "submission",cascade = CascadeType.ALL)
   @OrderBy("id ASC")
   @JsonManagedReference
   private List<GrantDocumentKpiData> documentKpiSubmissions;

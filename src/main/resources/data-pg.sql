@@ -69,7 +69,7 @@ VALUES ('2019-04-08 03:00:16.545000', 'System', 'grantee@grantee.com', 'Grantee'
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
                           updated_at, updated_by, organization_id)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'vineet_prasani@email.com', 'Vineet', 'Prasani',
-        'password', null, null, 1); -- 2
+        'password', null, null, 2); -- 2
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
                           updated_at, updated_by, organization_id)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'manasi.arora@gmail.com', 'Manasi', 'Grantee',

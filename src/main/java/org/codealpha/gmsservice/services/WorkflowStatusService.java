@@ -19,4 +19,10 @@ public class WorkflowStatusService {
   public WorkflowStatus findInitialStatusByObjectAndGranterOrgId(String object, Long orgid){
     return workflowStatusRepository.getInitialStatusByObjectAndGranterOrg(object,orgid);
   }
+
+  public WorkflowStatus getById(Long id){
+    return workflowStatusRepository.getById(id);
+  }
+
+
 }

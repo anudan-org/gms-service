@@ -41,10 +41,10 @@ public class GrantQualitativeKpiData extends BaseEntity {
   @JoinColumn(referencedColumnName = "id")
   private GrantKpi grantKpi;
 
-  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY,cascade = CascadeType.ALL,orphanRemoval = true)
+  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY,cascade = CascadeType.ALL)
   private List<QualitativeKpiNotes> notesHistory;
 
-  @OneToMany(mappedBy = "qualKpiData",cascade = CascadeType.ALL,orphanRemoval = true)
+  @OneToMany(mappedBy = "qualKpiData",cascade = CascadeType.ALL)
   List<QualKpiDataDocument> submissionDocs;
 
   @Override

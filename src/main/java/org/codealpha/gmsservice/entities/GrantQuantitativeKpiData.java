@@ -47,10 +47,10 @@ public class GrantQuantitativeKpiData extends BaseEntity {
   private Boolean toReport;
 
 
-  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
   private List<QuantitativeKpiNotes> notesHistory;
 
-  @OneToMany(mappedBy = "quantKpiData", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "quantKpiData", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
   @JsonManagedReference
   List<QuantKpiDataDocument> submissionDocs;
 

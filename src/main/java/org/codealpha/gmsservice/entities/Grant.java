@@ -49,6 +49,7 @@ public class Grant extends BaseEntity {
 
   @OneToMany(mappedBy = "grant")
   @JsonProperty("kpis")
+  @OrderBy("kpiType ASC")
   private List<GrantKpi> kpis;
 
   @OneToMany(mappedBy = "grant")
@@ -99,7 +100,7 @@ public class Grant extends BaseEntity {
   @Transient
   private String enDate;
 
-  @OneToMany(mappedBy = "grant", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "grant", cascade = CascadeType.ALL)
   @OrderBy("submitBy ASC")
   @JsonManagedReference
   private List<Submission> submissions;

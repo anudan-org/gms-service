@@ -290,7 +290,7 @@ public class GrantVO {
 
     Collections.sort(vo.getGrantDetails().getSections());
     vo.setFlowAuthorities(workflowPermissionService
-        .getGrantFlowPermissions(vo.grantorOrganization.getId(), user.getUserRoles()));
+        .getGrantFlowPermissions(vo.grantorOrganization.getId(), user.getUserRoles(),vo.grantStatus.getId()));
     vo.setActionAuthorities(workflowPermissionService
         .getGrantActionPermissions(vo.getGrantorOrganization().getId(),
             user.getUserRoles(),vo.getGrantStatus().getId()));

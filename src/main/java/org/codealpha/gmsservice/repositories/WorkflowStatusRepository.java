@@ -9,4 +9,6 @@ public interface WorkflowStatusRepository extends CrudRepository<WorkflowStatus,
   @Query(value = "select ws.* from workflows w inner join workflow_statuses ws on w.id = ws.workflow_id where ws.initial=true and w.object=?1 and w.granter_id=?2", nativeQuery = true)
   public WorkflowStatus getInitialStatusByObjectAndGranterOrg(String object, Long granterOrgId);
 
+  @Query(value = "select * from workflow_statuses where id=?1", nativeQuery = true)
+  public WorkflowStatus getById(Long statusId);
 }
