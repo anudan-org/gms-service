@@ -346,6 +346,7 @@ public class GrantController {
             grant = new Grant();
             grant.setGrantStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", tenant.getId()));
             grant.setSubstatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", tenant.getId()));
+            grant.setOrganization((Grantee)grantToSave.getOrganization());
         } else {
             grant = grantService.getById(grantToSave.getId());
         }

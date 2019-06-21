@@ -2,6 +2,7 @@ package org.codealpha.gmsservice.models;
 
 import java.util.List;
 import org.codealpha.gmsservice.entities.GrantSection;
+import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
 
 /**
@@ -21,6 +22,7 @@ public class UIConfig {
 
 	private WorkflowStatus grantInitialStatus;
 	private WorkflowStatus submissionInitialStatus;
+	private List<Organization> granteeOrgs;
 
 	public String getLogoUrl() {
 		return logoUrl;
@@ -77,5 +79,13 @@ public class UIConfig {
 
 	public void setSubmissionInitialStatus(WorkflowStatus submissionInitialStatus) {
 		this.submissionInitialStatus = submissionInitialStatus;
+	}
+
+	public List<Organization> getGranteeOrgs() {
+		return granteeOrgs;
+	}
+
+	public void setGranteeOrgs(List<Organization> granteeOrgs) {
+		this.granteeOrgs = granteeOrgs;
 	}
 }

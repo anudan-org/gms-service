@@ -86,6 +86,7 @@ public class ApplicationController {
             }
             config.setGrantInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", org.getId()));
             config.setSubmissionInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", org.getId()));
+            config.setGranteeOrgs(organizationService.getGranteeOrgs());
         } else {
             Organization org = organizationService.getPlatformOrg();
             config = new UIConfig();

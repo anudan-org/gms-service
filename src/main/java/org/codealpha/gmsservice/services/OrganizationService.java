@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.services;
 
+import java.util.List;
 import java.util.Optional;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
@@ -39,4 +40,7 @@ public class OrganizationService {
 	}
 
 
+	public List<Organization> getGranteeOrgs(){
+		return repository.getGranteeOrgs();
+	}
 }
