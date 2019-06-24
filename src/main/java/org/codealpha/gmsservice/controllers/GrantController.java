@@ -6,10 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import javax.transaction.Transactional;
 
 import org.codealpha.gmsservice.constants.AppConfiguration;
@@ -306,7 +303,7 @@ public class GrantController {
 
         grant.setFlowAuthorities(workflowPermissionService
                 .getGrantFlowPermissions(grant.getGrantorOrganization().getId(),
-                        user.getUserRoles(),grant.getGrantStatus().getId()));
+                        user.getUserRoles(), grant.getGrantStatus().getId()));
 
         for (Submission submission : grant.getSubmissions()) {
             submission.setActionAuthorities(workflowPermissionService
@@ -337,6 +334,7 @@ public class GrantController {
 
         //submissionService.saveSubmissions(grantToSave.getSubmissions());
 
+        grant.getSubmissions().sort((a, b) -> a.getSubmitBy().compareTo(b.getSubmitBy()));
         return grant;
     }
 
@@ -346,7 +344,11 @@ public class GrantController {
             grant = new Grant();
             grant.setGrantStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", tenant.getId()));
             grant.setSubstatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", tenant.getId()));
-            grant.setOrganization((Grantee)grantToSave.getOrganization());
+            grant.setOrganization((Grantee) grantToSave.getOrganization());
+            List<GrantStringAttribute> stringAttributes = new ArrayList<>();
+            List<GrantDocumentAttributes> docAttributes = new ArrayList<>();
+            grant.setStringAttributes(stringAttributes);
+            grant.setDocumentAttributes(docAttributes);
         } else {
             grant = grantService.getById(grantToSave.getId());
         }
@@ -375,7 +377,7 @@ public class GrantController {
         return grantService.saveGrant(grant);
     }
 
-    private void  _processDocumentAttributes(Grant grant, Grant grantToSave, Organization tenant) {
+    private void _processDocumentAttributes(Grant grant, Grant grantToSave, Organization tenant) {
         List<GrantDocumentAttributes> documentAttributes = new ArrayList<>();
         GranterGrantSection granterGrantSection = null;
         for (SectionVO sectionVO : grantToSave.getGrantDetails().getSections()) {
@@ -414,7 +416,9 @@ public class GrantController {
                     grantDocAttribute.setGrant(grant);
                 }
                 grantService.saveGrantDocumentAttribute(grantDocAttribute);
+                grant.getDocumentAttributes().add(grantDocAttribute);
             }
+            grant = grantService.saveGrant(grant);
         }
     }
 
@@ -458,7 +462,9 @@ public class GrantController {
                 }
                 grantStringAttribute.setValue(sectionAttributesVO.getFieldValue());
                 grantService.saveGrantStringAttribute(grantStringAttribute);
+                grant.getStringAttributes().add(grantStringAttribute);
             }
+            grant = grantService.saveGrant(grant);
         }
 
     }
@@ -553,7 +559,7 @@ public class GrantController {
                 grant.setSubstatus(workflowStatusService.findById(submission.getSubmissionStatus().getId()));
                 grant = grantService.saveGrant(grant);
             }
-            grantSubmission.setSubmitBy(submission.getSubmitBy());
+            grantSubmission.setSubmitBy(DateTime.parse(submission.getSubmitDateStr()).toDate());
             grantSubmission.setSubmitDateStr(submission.getSubmitDateStr());
             grantSubmission.setSubmittedOn(submission.getSubmittedOn());
             grantSubmission.setTitle(submission.getTitle());
@@ -575,7 +581,7 @@ public class GrantController {
         List<GrantQuantitativeKpiData> quantKpiDataList = new ArrayList<>();
         for (GrantQuantitativeKpiData docKpi : submission2Save.getQuantitiaveKpisubmissions()) {
             for (GrantKpi kpi : submission.getGrant().getKpis()) {
-                if (kpi.getKpiType() == KpiType.QUANTITATIVE && kpi.getTitle().equalsIgnoreCase(docKpi.getGrantKpi().getTitle())) {
+                if (kpi.getKpiType() == KpiType.QUANTITATIVE && (kpi.getId() == docKpi.getGrantKpi().getId() || kpi.getTitle().equalsIgnoreCase(docKpi.getGrantKpi().getTitle()))) {
                     if (docKpi.getId() < 0) {
                         quantKpiData = new GrantQuantitativeKpiData();
                     } else {
@@ -608,7 +614,7 @@ public class GrantController {
         List<GrantQualitativeKpiData> qualKpiDataList = new ArrayList<>();
         for (GrantQualitativeKpiData docKpi : submission2Save.getQualitativeKpiSubmissions()) {
             for (GrantKpi kpi : submission.getGrant().getKpis()) {
-                if (kpi.getKpiType() == KpiType.QUALITATIVE && kpi.getId() == docKpi.getGrantKpi().getId()) {
+                if (kpi.getKpiType() == KpiType.QUALITATIVE && (kpi.getId() == docKpi.getGrantKpi().getId() || kpi.getTitle().equalsIgnoreCase(docKpi.getGrantKpi().getTitle()))) {
                     if (docKpi.getId() < 0) {
                         qualKpiData = new GrantQualitativeKpiData();
                     } else {
@@ -640,7 +646,7 @@ public class GrantController {
         List<GrantDocumentKpiData> documentKpiDataList = new ArrayList<>();
         for (GrantDocumentKpiData docKpi : submission2Save.getDocumentKpiSubmissions()) {
             for (GrantKpi kpi : submission.getGrant().getKpis()) {
-                if (kpi.getKpiType() == KpiType.DOCUMENT && kpi.getTitle().equalsIgnoreCase(docKpi.getGrantKpi().getTitle())) {
+                if (kpi.getKpiType() == KpiType.DOCUMENT && (kpi.getId() == docKpi.getGrantKpi().getId() || kpi.getTitle().equalsIgnoreCase(docKpi.getGrantKpi().getTitle()))) {
                     if (docKpi.getId() < 0) {
                         documentKpiData = new GrantDocumentKpiData();
                     } else {
