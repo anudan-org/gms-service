@@ -3,9 +3,10 @@ package org.codealpha.gmsservice.controllers;
 import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.codealpha.gmsservice.entities.DocKpiDataDocument;
-import org.codealpha.gmsservice.entities.GrantDocumentKpiData;
 import org.codealpha.gmsservice.services.DocKpiDataDocumentService;
 import org.codealpha.gmsservice.services.GrantDocumentDataService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/submission/{submissionId}/kpi/{kpiId}")
 public class KpiSubmissionController {
 
+  private static Logger logger = LoggerFactory.getLogger(KpiSubmissionController.class);
+
   @Autowired
   private ResourceLoader resourceLoader;
   @Autowired
@@ -33,14 +36,14 @@ public class KpiSubmissionController {
 
   @GetMapping("/file/{fileId}")
   public void getFile(@PathVariable("submissionId") Long submissionId,
-      @PathVariable("kpiId") Long kpiId,@PathVariable("fileId") Long fileId,
+      @PathVariable("kpiId") Long kpiId, @PathVariable("fileId") Long fileId,
       HttpServletResponse servletResponse) {
 
     //GrantDocumentKpiData documentKpiData = grantDocumentDataService.findByKpiIdAndSubmissionId(kpiId,submissionId);
     DocKpiDataDocument doc = docKpiDataDocumentService.getById(fileId);
 
-    Resource file = resourceLoader.getResource("file:"+uploadLocation + doc.getFileName());
-    switch (doc.getFileType()){
+    Resource file = resourceLoader.getResource("file:" + uploadLocation + doc.getFileName());
+    switch (doc.getFileType()) {
       case "png":
         servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
         break;
@@ -62,7 +65,7 @@ public class KpiSubmissionController {
       StreamUtils.copy(file.getInputStream(), servletResponse.getOutputStream());
 
     } catch (IOException ex) {
-      ex.printStackTrace();
+      logger.error(ex.getMessage(), ex);
     }
   }
 

@@ -4,32 +4,25 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.time.LocalDateTime;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import javax.persistence.Column;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import org.codealpha.gmsservice.constants.GrantStatus;
-import org.codealpha.gmsservice.constants.GrantSubStatus;
 import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.Grant;
+import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
 import org.codealpha.gmsservice.entities.GrantKpi;
-import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
+import org.codealpha.gmsservice.entities.GrantStringAttribute;
+import org.codealpha.gmsservice.entities.Grantee;
+import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Submission;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.WorkFlowPermission;
 import org.codealpha.gmsservice.entities.WorkflowActionPermission;
-import org.codealpha.gmsservice.entities.WorkflowStatePermission;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
-import org.codealpha.gmsservice.entities.WorkflowStatusTransition;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +31,8 @@ import org.springframework.beans.BeanUtils;
 public class GrantVO {
 
   private Long id;
-  private Organization organization;
-  private Organization grantorOrganization;
+  private Grantee organization;
+  private Granter grantorOrganization;
   private String name;
   private String description;
   private Date createdAt;
@@ -50,10 +43,18 @@ public class GrantVO {
   private GrantStatus statusName;
   private WorkflowStatus substatus;
   private Date startDate;
+  private String stDate;
   private Date endDate;
-  private List<SubmissionVO> submissions;
+  private String enDate;
+  private List<Submission> submissions;
   private WorkflowActionPermission actionAuthorities;
   private List<WorkFlowPermission> flowAuthorities;
+  private GrantDetailVO grantDetails;
+  private List<GrantKpi> kpis;
+  @JsonIgnore
+  private List<GrantStringAttribute> stringAttributes;
+  @JsonIgnore
+  private List<GrantDocumentAttributes> documentAttributes;
 
   private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
@@ -69,7 +70,7 @@ public class GrantVO {
     return organization;
   }
 
-  public void setOrganization(Organization organization) {
+  public void setOrganization(Grantee organization) {
     this.organization = organization;
   }
 
@@ -77,7 +78,7 @@ public class GrantVO {
     return grantorOrganization;
   }
 
-  public void setGrantorOrganization(Organization grantorOrganization) {
+  public void setGrantorOrganization(Granter grantorOrganization) {
     this.grantorOrganization = grantorOrganization;
   }
 
@@ -158,6 +159,7 @@ public class GrantVO {
   }
 
   public void setStartDate(Date startDate) {
+
     this.startDate = startDate;
   }
 
@@ -166,7 +168,24 @@ public class GrantVO {
   }
 
   public void setEndDate(Date endDate) {
+
     this.endDate = endDate;
+  }
+
+  public String getStDate() {
+    return stDate;
+  }
+
+  public void setStDate(String stDate) {
+    this.stDate = stDate;
+  }
+
+  public String getEnDate() {
+    return enDate;
+  }
+
+  public void setEnDate(String enDate) {
+    this.enDate = enDate;
   }
 
   public WorkflowActionPermission getActionAuthorities() {
@@ -187,56 +206,94 @@ public class GrantVO {
     this.flowAuthorities = flowAuthorities;
   }
 
-  public List<SubmissionVO> getSubmissions() {
+  public List<Submission> getSubmissions() {
     return submissions;
   }
 
-  public void setSubmissions(List<SubmissionVO> submissions) {
+  public void setSubmissions(List<Submission> submissions) {
     this.submissions = submissions;
   }
 
-  @OneToMany(mappedBy = "grant", fetch = FetchType.LAZY)
+  public GrantDetailVO getGrantDetails() {
+    return grantDetails;
+  }
+
+  public void setGrantDetails(GrantDetailVO attributes) {
+    this.grantDetails = attributes;
+  }
+
+  public List<GrantStringAttribute> getStringAttributes() {
+    return stringAttributes;
+  }
+
+  public void setStringAttributes(
+      List<GrantStringAttribute> stringAttributes) {
+    this.stringAttributes = stringAttributes;
+  }
+
+  public List<GrantDocumentAttributes> getDocumentAttributes() {
+    return documentAttributes;
+  }
+
+  public void setDocumentAttributes(
+      List<GrantDocumentAttributes> documentAttributes) {
+    this.documentAttributes = documentAttributes;
+  }
+
+  public List<GrantKpi> getKpis() {
+    return kpis;
+  }
+
+  public void setKpis(List<GrantKpi> kpis) {
+    Collections.sort(kpis);
+    this.kpis = kpis;
+  }
+
   public GrantVO build(Grant grant,
       WorkflowPermissionService workflowPermissionService,
       User user, AppConfig submissionWindow) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
     GrantVO vo = new GrantVO();
-    List<SubmissionVO> submissionVOList = null;
+    Submission submissionVOList = null;
     for (PropertyDescriptor descriptor : propertyDescriptors) {
       if (!descriptor.getName().equalsIgnoreCase("class")) {
         try {
           Object value = descriptor.getReadMethod().invoke(grant);
           PropertyDescriptor voPd = BeanUtils
               .getPropertyDescriptor(vo.getClass(), descriptor.getName());
-          if (voPd.getName().equalsIgnoreCase("submissions")) {
-            submissionVOList = new ArrayList<>();
-            for (Submission submission : (List<Submission>) value) {
-              try {
-                SubmissionVO submissionVO = new SubmissionVO()
-                    .build(submission, workflowPermissionService, user, submissionWindow);
-
-                submissionVOList.add(submissionVO);
-              } catch (ParseException pe) {
-                logger.error(pe.getMessage(), pe);
-              }
+           if (voPd.getName().equalsIgnoreCase("stringAttributes")) {
+            GrantDetailVO grantDetailVO = null;
+            grantDetailVO = vo.getGrantDetails();
+            if(grantDetailVO == null){
+              grantDetailVO = new GrantDetailVO();
             }
-            vo.setSubmissions(submissionVOList);
-            System.out.println("KPIS called");
+            grantDetailVO = grantDetailVO.buildStringAttributes((List<GrantStringAttribute>) value);
+            vo.setGrantDetails(grantDetailVO);
+          } else if (voPd.getName().equalsIgnoreCase("documentAttributes")) {
+            GrantDetailVO grantDetailVO = null;
+            grantDetailVO = vo.getGrantDetails();
+            if(grantDetailVO == null){
+              grantDetailVO = new GrantDetailVO();
+            }
+            grantDetailVO = grantDetailVO.buildDocumentAttributes((List<GrantDocumentAttributes>) value);
+            vo.setGrantDetails(grantDetailVO);
           } else {
             voPd.getWriteMethod().invoke(vo, value);
           }
         } catch (IllegalAccessException e) {
-          e.printStackTrace();
+          logger.error(e.getMessage(), e);
         } catch (InvocationTargetException e) {
-          e.printStackTrace();
+          logger.error(e.getMessage(), e);
         }
       }
     }
+
+    Collections.sort(vo.getGrantDetails().getSections());
     vo.setFlowAuthorities(workflowPermissionService
-        .getGrantFlowPermissions(vo.grantorOrganization.getId(), user.getRole().getId()));
+        .getGrantFlowPermissions(vo.grantorOrganization.getId(), user.getUserRoles(),vo.grantStatus.getId()));
     vo.setActionAuthorities(workflowPermissionService
         .getGrantActionPermissions(vo.getGrantorOrganization().getId(),
-            user.getRole().getId()));
+            user.getUserRoles(),vo.getGrantStatus().getId()));
 
     return vo;
   }

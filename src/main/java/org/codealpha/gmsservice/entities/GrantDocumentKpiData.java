@@ -1,7 +1,11 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import java.util.List;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -24,23 +28,26 @@ public class GrantDocumentKpiData extends BaseEntity {
   private String actuals;
   @Column(nullable = true)
   private String type;
+  @Column
+  private Boolean toReport;
 
   @Column(nullable = true)
   private String note;
 
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
-  @JsonIgnore
+  @JsonProperty(access = Access.WRITE_ONLY)
+  @JsonBackReference
   private Submission submission;
 
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   private GrantKpi grantKpi;
 
-  @OneToMany(mappedBy = "docKpiData")
+  @OneToMany(mappedBy = "docKpiData",cascade = CascadeType.ALL)
   List<DocKpiDataDocument> submissionDocs;
 
-  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY,cascade = CascadeType.ALL)
   private List<DocumentKpiNotes> notesHistory;
 
   @Override
@@ -117,5 +124,13 @@ public class GrantDocumentKpiData extends BaseEntity {
   public void setNotesHistory(
       List<DocumentKpiNotes> notesHistory) {
     this.notesHistory = notesHistory;
+  }
+
+  public Boolean getToReport() {
+    return toReport;
+  }
+
+  public void setToReport(Boolean toReport) {
+    this.toReport = toReport;
   }
 }

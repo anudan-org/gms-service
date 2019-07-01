@@ -2,8 +2,10 @@ package org.codealpha.gmsservice.entities;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -24,7 +26,7 @@ public class User {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "organizationId")
 	private Organization organization;
 
@@ -52,9 +54,8 @@ public class User {
 	@Column
 	private String updatedBy;
 
-	@OneToOne
-	@JoinColumn(referencedColumnName = "id")
-	private Role role;
+	@OneToMany(mappedBy = "user",fetch = FetchType.EAGER)
+	private List<UserRole> userRoles;
 
 	public Long getId() {
 		return id;
@@ -136,11 +137,11 @@ public class User {
 		this.updatedBy = updatedBy;
 	}
 
-	public Role getRole() {
-		return role;
+	public List<UserRole> getUserRoles() {
+		return userRoles;
 	}
 
-	public void setRole(Role role) {
-		this.role = role;
+	public void setUserRoles(List<UserRole> userRoles) {
+		this.userRoles = userRoles;
 	}
 }

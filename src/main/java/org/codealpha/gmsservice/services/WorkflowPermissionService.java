@@ -1,7 +1,10 @@
 package org.codealpha.gmsservice.services;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.entities.Role;
+import org.codealpha.gmsservice.entities.UserRole;
 import org.codealpha.gmsservice.entities.WorkFlowPermission;
 import org.codealpha.gmsservice.entities.WorkflowActionPermission;
 import org.codealpha.gmsservice.repositories.WorkflowActionPermissionRepository;
@@ -17,24 +20,43 @@ public class WorkflowPermissionService {
   @Autowired
   private WorkflowActionPermissionRepository workflowActionPermissionRepository;
 
-  public List<WorkFlowPermission> getGrantFlowPermissions(Long granterOrgId, Long userRoleId) {
+  public List<WorkFlowPermission> getGrantFlowPermissions(Long granterOrgId,
+      List<UserRole> userRoles, Long grantStatusId) {
 
-    return workflowPermissionRepository.getPermissionsForGrantFlow(granterOrgId, userRoleId);
+    List<Long> userRoleIds = userRoles.stream().map(e -> new Long(e.getRole().getId())).collect(
+        Collectors.toList());
+
+    return workflowPermissionRepository.getPermissionsForGrantFlow(granterOrgId, userRoleIds,grantStatusId);
   }
 
-  public List<WorkFlowPermission> getSubmissionFlowPermissions(Long granterOrgId, Long userRoleId, Long statusId) {
+  public List<WorkFlowPermission> getSubmissionFlowPermissions(Long granterOrgId, List<UserRole> userRoles,
+      Long statusId) {
 
-    return workflowPermissionRepository.getPermissionsForSubmissionFlow(granterOrgId, userRoleId, statusId);
+    List<Long> userRoleIds = userRoles.stream().map(e->new Long(e.getRole().getId())).collect(
+        Collectors.toList());
+
+    return workflowPermissionRepository
+        .getPermissionsForSubmissionFlow(granterOrgId, userRoleIds, statusId);
   }
 
-  public WorkflowActionPermission getGrantActionPermissions(Long granterOrgId, Long userRoleId) {
 
-    return workflowActionPermissionRepository.getActionPermissionsForGrant(granterOrgId, userRoleId);
+  public WorkflowActionPermission getGrantActionPermissions(Long granterOrgId,
+      List<UserRole> userRoles, Long grantStatusId) {
+
+    List<Long> userRoleIds = userRoles.stream().map(e -> new Long(e.getRole().getId())).collect(
+        Collectors.toList());
+    return workflowActionPermissionRepository
+        .getActionPermissionsForGrant(granterOrgId, userRoleIds, grantStatusId);
   }
 
-  public WorkflowActionPermission getSubmissionActionPermission(Long granterOrgId, Long userRoleId) {
+  public WorkflowActionPermission getSubmissionActionPermission(Long granterOrgId,
+      List<UserRole> userRoles) {
 
-    return workflowActionPermissionRepository.getActionPermissionsForSubmission(granterOrgId, userRoleId);
+    List<Long> userRoleIds = userRoles.stream().map(e -> new Long(e.getRole().getId())).collect(
+        Collectors.toList());
+
+    return workflowActionPermissionRepository
+        .getActionPermissionsForSubmission(granterOrgId, userRoleIds);
   }
 
 

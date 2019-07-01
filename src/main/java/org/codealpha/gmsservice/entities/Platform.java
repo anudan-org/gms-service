@@ -30,8 +30,6 @@ public class Platform extends Organization {
 	@Column(name = "navbar_color")
 	private String navbarColor;
 
-	@OneToMany(mappedBy = "granter", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-	private List<Rfp> rfps;
 
 	@Override
 	public Long getId() {
@@ -67,21 +65,12 @@ public class Platform extends Organization {
 		this.navbarColor = navbarColor;
 	}
 
-	public List<Rfp> getRfps() {
-		return rfps;
-	}
-
-	public void setRfps(List<Rfp> rfps) {
-		this.rfps = rfps;
-	}
-
 	@Override
 	public String toString() {
 		return "Granter{" +
 				"id=" + id +
 				", hostUrl='" + hostUrl + '\'' +
 				", imageName='" + imageName + '\'' +
-				", rfps=" + rfps +
 				", name='" + name + '\'' +
 				", code='" + code + '\'' +
 				", createdAt=" + createdAt +

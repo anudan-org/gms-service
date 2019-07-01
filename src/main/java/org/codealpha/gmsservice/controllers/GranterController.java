@@ -35,14 +35,13 @@ public class GranterController {
 		granter.setCreatedBy("Admin");
 		granter = granterRepository.save(granter);
 
-		System.out.println(granterRepository.findById(granter.getId()));
 	}
 
 	@PostMapping("/{granterId}/rfps/")
 	public Rfp createRfp(@PathVariable(name = "granterId") Long organizationId,
 			@RequestBody Rfp rfp) {
 
-		rfp.setGranter(granterRepository.findById(organizationId).get());
+		//rfp.setGranter(granterRepository.findById(organizationId).get());
 		rfp.setCreatedAt(LocalDateTime.now());
 		rfp.setCreatedBy("Admin");
 		return rfpRepository.save(rfp);

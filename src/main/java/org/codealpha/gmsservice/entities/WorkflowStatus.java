@@ -24,6 +24,8 @@ public class WorkflowStatus {
   @Column(nullable = true)
   String displayName;
   @Column
+  private boolean initial;
+  @Column
   private Boolean terminal;
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
@@ -121,5 +123,13 @@ public class WorkflowStatus {
 
   public void setDisplayName(String displayName) {
     this.displayName = displayName;
+  }
+
+  public boolean isInitial() {
+    return initial;
+  }
+
+  public void setInitial(boolean initial) {
+    this.initial = initial;
   }
 }

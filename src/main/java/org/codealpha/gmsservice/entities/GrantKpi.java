@@ -16,13 +16,17 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KPIStatus;
+import org.codealpha.gmsservice.constants.KpiReportingType;
 import org.codealpha.gmsservice.constants.KpiType;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
 @Entity(name = "grant_kpis")
-public class GrantKpi {
+public class GrantKpi implements Comparable<GrantKpi> {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @OrderBy("id ASC")
   private Long id;
   @Column
   private String title;
@@ -39,6 +43,9 @@ public class GrantKpi {
   @Enumerated(EnumType.STRING)
   private KpiType kpiType;
   @Column
+  @Enumerated(EnumType.STRING)
+  private KpiReportingType kpiReportingType;
+  @Column
   private Date createdAt;
   @Column
   private String createdBy;
@@ -50,6 +57,8 @@ public class GrantKpi {
   @JoinColumn(referencedColumnName = "id")
   @JsonIgnore
   private Grant grant;
+  @OneToMany(mappedBy = "kpi")
+  private List<Template> templates;
 
 
 
@@ -149,4 +158,27 @@ public class GrantKpi {
     this.grant = grant;
   }
 
+  public List<Template> getTemplates() {
+    return templates;
+  }
+
+  public void setTemplates(List<Template> templates) {
+    this.templates = templates;
+  }
+
+  public KpiReportingType getKpiReportingType() {
+    return kpiReportingType;
+  }
+
+  public void setKpiReportingType(KpiReportingType kpiReportingType) {
+    this.kpiReportingType = kpiReportingType;
+  }
+
+  @Override
+  public int compareTo(GrantKpi o) {
+    if (id == null || o.id == null) {
+      return 0;
+    }
+    return id.compareTo(o.id);
+  }
 }

@@ -14,20 +14,19 @@ logging:
   level:
     org.codealpha: info
   file: gms.log
----
 
+---
 spring:
   profiles: dev
-  upload-file-location: /Users/apple/storage/
+  upload-file-location: /Users/ranjitvictor/storage/
   send-mail: false
   datasource:
-    url: jdbc:postgresql://localhost:5432/anudan
-    username: apple
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: ranjitvictor
     password:
     initialization-mode: always
     platform: pg
   jpa:
-    show-sql: true
     database: postgresql
     hibernate:
       jdbc:

@@ -1,7 +1,11 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import java.util.List;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -24,20 +28,23 @@ public class GrantQualitativeKpiData extends BaseEntity {
   private String actuals;
   @Column(nullable = true)
   private String note;
+  @Column
+  private Boolean toReport;
 
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
-  @JsonIgnore
+  @JsonProperty(access = Access.WRITE_ONLY)
+  @JsonBackReference
   private Submission submission;
 
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   private GrantKpi grantKpi;
 
-  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "kpiData", fetch = FetchType.LAZY,cascade = CascadeType.ALL)
   private List<QualitativeKpiNotes> notesHistory;
 
-  @OneToMany(mappedBy = "qualKpiData")
+  @OneToMany(mappedBy = "qualKpiData",cascade = CascadeType.ALL)
   List<QualKpiDataDocument> submissionDocs;
 
   @Override
@@ -106,5 +113,13 @@ public class GrantQualitativeKpiData extends BaseEntity {
   public void setSubmissionDocs(
       List<QualKpiDataDocument> submissionDocs) {
     this.submissionDocs = submissionDocs;
+  }
+
+  public Boolean getToReport() {
+    return toReport;
+  }
+
+  public void setToReport(Boolean toReport) {
+    this.toReport = toReport;
   }
 }

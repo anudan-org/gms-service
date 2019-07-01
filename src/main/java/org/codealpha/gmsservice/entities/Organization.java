@@ -1,5 +1,8 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -27,6 +30,14 @@ import javax.persistence.Transient;
 @Table(name = "organizations")
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "organization_type")
+@JsonTypeInfo(
+		use = JsonTypeInfo.Id.NAME,
+		include = JsonTypeInfo.As.PROPERTY,
+		property = "type")
+@JsonSubTypes({
+		@JsonSubTypes.Type(value = Granter.class, name = "GRANTER"),
+		@JsonSubTypes.Type(value = Grantee.class, name = "GRANTEE")
+})
 public abstract class Organization {
 
 	@Id

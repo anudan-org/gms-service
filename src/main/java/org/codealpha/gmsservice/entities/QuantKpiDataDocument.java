@@ -1,14 +1,11 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import java.util.Objects;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 
 @Entity
 public class QuantKpiDataDocument {
@@ -22,9 +19,12 @@ public class QuantKpiDataDocument {
   private String fileType;
   @Column
   private int version = 1;
+  @Transient
+  private String data;
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
-  @JsonIgnore
+  @JsonBackReference
+  @JsonProperty(access = Access.WRITE_ONLY)
   private GrantQuantitativeKpiData quantKpiData;
 
   public Long getId() {
@@ -77,6 +77,14 @@ public class QuantKpiDataDocument {
     }
     QuantKpiDataDocument that = (QuantKpiDataDocument) o;
     return fileName.equals(that.fileName);
+  }
+
+  public String getData() {
+    return data;
+  }
+
+  public void setData(String data) {
+    this.data = data;
   }
 
   @Override

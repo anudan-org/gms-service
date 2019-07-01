@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.models;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import org.codealpha.gmsservice.entities.AppConfig;
@@ -18,14 +19,18 @@ import org.codealpha.gmsservice.entities.WorkflowActionPermission;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
 public class SubmissionVO {
 
+  private static Logger logger = LoggerFactory.getLogger(SubmissionVO.class);
+
   private Long id;
   private Grant grant;
   private String title;
-  private Date submitBy;
+  private String submitBy;
   protected Date submittedOn;
   private WorkflowStatus submissionStatus;
   private List<GrantQuantitativeKpiData> quantitiaveKpisubmissions;
@@ -63,12 +68,13 @@ public class SubmissionVO {
     this.title = title;
   }
 
-  public Date getSubmitBy() {
+  public String getSubmitBy() {
     return submitBy;
   }
 
   public void setSubmitBy(Date submitBy) {
-    this.submitBy = submitBy;
+
+    this.submitBy = new SimpleDateFormat("yyyy-MM-dd").format(submitBy);
   }
 
   public Date getSubmittedOn() {
@@ -175,7 +181,7 @@ public class SubmissionVO {
 
   public SubmissionVO build(Submission submission,
       WorkflowPermissionService workflowPermissionService, User user, AppConfig submissionWindow)
-      throws ParseException {
+       {
     PropertyDescriptor[] propertyDescriptors = BeanUtils
         .getPropertyDescriptors(submission.getClass());
     SubmissionVO vo = new SubmissionVO();
@@ -190,16 +196,16 @@ public class SubmissionVO {
           voPd.getWriteMethod().invoke(vo, value);
 
         } catch (IllegalAccessException e) {
-          e.printStackTrace();
+          logger.error(e.getMessage(), e);
         } catch (InvocationTargetException e) {
-          e.printStackTrace();
+          logger.error(e.getMessage(), e);
         }
       }
     }
 
     List<WorkFlowPermission> flowPermissions = workflowPermissionService
         .getSubmissionFlowPermissions(vo.getGrant().getGrantorOrganization().getId(),
-            user.getRole().getId(), vo.submissionStatus.getId());
+            user.getUserRoles(), vo.submissionStatus.getId());
     Date submissionWindowStart = new DateTime(submission.getSubmitBy())
         .minusDays(Integer.valueOf(submissionWindow.getConfigValue()) + 1).toDate();
 
@@ -209,7 +215,7 @@ public class SubmissionVO {
 
     WorkflowActionPermission actionPermission = workflowPermissionService
         .getSubmissionActionPermission(vo.grant.getGrantorOrganization().getId(),
-            user.getRole().getId());
+            user.getUserRoles());
     vo.setActionAuthorities(actionPermission);
     return vo;
   }

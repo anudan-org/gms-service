@@ -12,11 +12,13 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.codealpha.gmsservice.entities.User;
+import org.codealpha.gmsservice.exceptions.InvalidCredentialsException;
 import org.codealpha.gmsservice.exceptions.InvalidHeadersException;
 import org.codealpha.gmsservice.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -79,4 +81,10 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
 
   }
 
+  @Override
+  protected void unsuccessfulAuthentication(HttpServletRequest request,
+      HttpServletResponse response, AuthenticationException failed)
+      throws IOException, ServletException {
+    throw new InvalidCredentialsException(failed.getMessage());
+  }
 }
