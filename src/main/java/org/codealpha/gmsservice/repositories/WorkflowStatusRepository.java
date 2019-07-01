@@ -11,4 +11,6 @@ public interface WorkflowStatusRepository extends CrudRepository<WorkflowStatus,
 
   @Query(value = "select * from workflow_statuses where id=?1", nativeQuery = true)
   public WorkflowStatus getById(Long statusId);
+
+
 }

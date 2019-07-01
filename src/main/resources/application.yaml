@@ -49,16 +49,6 @@ spring:
 server:
   servlet:
     context-path: /api
-logging:
-  level:
-    org:
-      hibernate:
-        SQL:
-          DEBUG
-        type:
-          descriptor:
-            sql:
-              BasicBinder: TRACE
 ---
 spring:
   profiles: uat

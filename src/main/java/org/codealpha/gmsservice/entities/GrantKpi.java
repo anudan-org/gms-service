@@ -16,6 +16,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KPIStatus;
+import org.codealpha.gmsservice.constants.KpiReportingType;
 import org.codealpha.gmsservice.constants.KpiType;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -41,6 +42,9 @@ public class GrantKpi implements Comparable<GrantKpi> {
   @Column
   @Enumerated(EnumType.STRING)
   private KpiType kpiType;
+  @Column
+  @Enumerated(EnumType.STRING)
+  private KpiReportingType kpiReportingType;
   @Column
   private Date createdAt;
   @Column
@@ -160,6 +164,14 @@ public class GrantKpi implements Comparable<GrantKpi> {
 
   public void setTemplates(List<Template> templates) {
     this.templates = templates;
+  }
+
+  public KpiReportingType getKpiReportingType() {
+    return kpiReportingType;
+  }
+
+  public void setKpiReportingType(KpiReportingType kpiReportingType) {
+    this.kpiReportingType = kpiReportingType;
   }
 
   @Override

@@ -2,9 +2,8 @@ package org.codealpha.gmsservice.constants;
 
 public enum KpiReportingType {
 
-  QUANTITATIVE("QUANTITATIVE"),
-  QUALITATIVE("QUALITATIVE"),
-  DOCUMENT("DOCUMENT");
+  ACTIVITY("ACTIVITY"),
+  FINANCIAL("FINANCIAL");
 
 
   private String val;

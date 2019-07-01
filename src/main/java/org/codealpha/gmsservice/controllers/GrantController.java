@@ -487,6 +487,7 @@ public class GrantController {
             grantKpi.setFrequency(kpi.getFrequency());
             grantKpi.setUpdatedAt(DateTime.now().toDate());
             grantKpi.setUpdatedBy(user.getEmailId());
+            grantKpi.setKpiReportingType(kpi.getKpiReportingType());
             grantKpi.setGrant(grant);
 
             grantKpi = grantService.saveGrantKpi(grantKpi);
