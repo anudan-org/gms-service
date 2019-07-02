@@ -324,6 +324,12 @@ public class GrantController {
                     .after(submissionWindowStart)) {
                 submission.setFlowAuthorities(flowPermissions);
             }
+            if (DateTime.now().toDate()
+                    .after(submissionWindowStart)) {
+                submission.setOpenForReporting(true);
+            }else{
+                submission.setOpenForReporting(false);
+            }
         }
 
         GrantVO grantVO = new GrantVO();

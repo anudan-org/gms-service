@@ -75,6 +75,8 @@ public class Submission {
   private WorkflowActionPermission actionAuthorities;
   @Transient
   private List<WorkFlowPermission> flowAuthorities;
+  @Transient
+  private boolean openForReporting;
 
   @Column
   private Date createdAt;
@@ -227,5 +229,13 @@ public class Submission {
   public void setFlowAuthorities(
       List<WorkFlowPermission> flowAuthorities) {
     this.flowAuthorities = flowAuthorities;
+  }
+
+  public boolean isOpenForReporting() {
+    return openForReporting;
+  }
+
+  public void setOpenForReporting(boolean openForReporting) {
+    this.openForReporting = openForReporting;
   }
 }
