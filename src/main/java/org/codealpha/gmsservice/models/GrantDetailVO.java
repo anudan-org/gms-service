@@ -41,6 +41,8 @@ public class GrantDetailVO {
         sectionAttribute.setFieldName(stringAttribute.getSectionAttribute().getFieldName());
         sectionAttribute
             .setFieldType(stringAttribute.getSectionAttribute().getFieldType());
+        sectionAttribute.setDeletable(stringAttribute.getSectionAttribute().getDeletable());
+        sectionAttribute.setRequired(stringAttribute.getSectionAttribute().getRequired());
 
         sectionAttribute.setFieldValue(stringAttribute.getValue());
         if (sectionAttributes == null) {
@@ -76,6 +78,9 @@ public class GrantDetailVO {
         sectionAttribute.setFieldName(documentAttribute.getName());
         sectionAttribute
             .setFieldType(documentAttribute.getSectionAttribute().getFieldType());
+
+        sectionAttribute.setDeletable(documentAttribute.getSectionAttribute().getDeletable());
+        sectionAttribute.setRequired(documentAttribute.getSectionAttribute().getRequired());
 
         sectionAttribute.setFieldValue(documentAttribute.getLocation());
         if (sectionAttributes == null) {

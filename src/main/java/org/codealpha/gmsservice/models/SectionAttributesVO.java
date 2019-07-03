@@ -8,6 +8,8 @@ public class SectionAttributesVO {
   private String fieldName;
   private String fieldType;
   private String fieldValue;
+  private boolean deletable;
+  private boolean required;
 
   public String getFieldName() {
     return fieldName;
@@ -39,6 +41,22 @@ public class SectionAttributesVO {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  public boolean isDeletable() {
+    return deletable;
+  }
+
+  public void setDeletable(boolean deletable) {
+    this.deletable = deletable;
+  }
+
+  public boolean isRequired() {
+    return required;
+  }
+
+  public void setRequired(boolean required) {
+    this.required = required;
   }
 
   @Override
