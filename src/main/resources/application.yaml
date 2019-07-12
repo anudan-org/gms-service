@@ -22,8 +22,8 @@ spring:
   send-mail: false
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
-    username: ranjitvictor
-    password:
+    username: postgres
+    password: postgres
     initialization-mode: always
     platform: pg
   jpa:
