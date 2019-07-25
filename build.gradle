@@ -38,6 +38,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     compile group: 'javax.mail', name: 'mail', version: '1.4'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+    compile group: 'com.openhtmltopdf', name: 'openhtmltopdf-core', version: '1.0.0'
+    compile group: 'com.openhtmltopdf', name: 'openhtmltopdf-pdfbox', version: '1.0.0'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'
     compile group: 'joda-time', name: 'joda-time', version: '2.9.9'
 

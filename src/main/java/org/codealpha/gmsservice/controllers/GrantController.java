@@ -7,8 +7,11 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
 import java.util.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KpiType;
@@ -43,7 +46,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpRequest;
+import org.springframework.http.MediaType;
 import org.springframework.util.FileSystemUtils;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -91,6 +99,8 @@ public class GrantController {
     private SubmissionNoteService submissionNoteService;
     @Autowired
     private OrganizationService organizationService;
+    @Autowired
+    private ResourceLoader resourceLoader;
 
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
@@ -327,7 +337,7 @@ public class GrantController {
             if (DateTime.now().toDate()
                     .after(submissionWindowStart)) {
                 submission.setOpenForReporting(true);
-            }else{
+            } else {
                 submission.setOpenForReporting(false);
             }
         }
@@ -956,6 +966,47 @@ public class GrantController {
                 }
             }
         }
+    }
+
+
+    @PostMapping("/{grantId}/pdf")
+    public void getPDFExport(@PathVariable("grantId") Long grantId, @RequestBody String htmlContent, HttpServletRequest request, HttpServletResponse response) {
+
+        Grant grant = grantService.getById(grantId);
+
+        File tempFile = null;
+        FileOutputStream fos = null;
+        try {
+            tempFile = File.createTempFile("myfile", ".tmp");
+            fos = new FileOutputStream(tempFile);
+            PdfRendererBuilder builder = new PdfRendererBuilder();
+            builder
+                    .useFastMode()
+                    .withHtmlContent(htmlContent, request.getServletPath())
+                    .toStream(fos)
+                    .run();
+
+            Resource file = resourceLoader.getResource(tempFile.getPath());
+            response.setContentType(MediaType.APPLICATION_PDF_VALUE);
+            response
+                    .setHeader("Content-Disposition", "attachment; filename=" + grant.getName()+".pdf");
+
+            StreamUtils.copy(file.getInputStream(), response.getOutputStream());
+
+
+        } catch (IOException ioe) {
+            logger.error(ioe.getMessage());
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+        }finally {
+            tempFile.delete();
+            try {
+                fos.close();
+            } catch (IOException e) {
+                logger.error(e.getMessage());
+            }
+        }
+
     }
 
 
