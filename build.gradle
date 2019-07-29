@@ -38,6 +38,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     compile group: 'javax.mail', name: 'mail', version: '1.4'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+    compile group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.16'
+    compile group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
+    compile group: 'net.sf.cssbox', name: 'cssbox', version: '4.15'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'
     compile group: 'joda-time', name: 'joda-time', version: '2.9.9'
 

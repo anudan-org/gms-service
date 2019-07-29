@@ -91,6 +91,7 @@ alter table grants
 	add end_date timestamp;
 
 
-
+-- 25 Jul 2019
+alter table grant_qualitative_kpi_data alter column actuals type text using actuals::text;
 
 

@@ -1,26 +1,34 @@
 package org.codealpha.gmsservice.controllers;
 
+import java.awt.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 
+import org.apache.commons.lang3.text.WordUtils;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDDocumentInformation;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDSimpleFont;
+import org.apache.pdfbox.pdmodel.font.PDTrueTypeFont;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KpiType;
 import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.models.GrantQuantitativeKpiDataVO;
-import org.codealpha.gmsservice.models.GrantVO;
-import org.codealpha.gmsservice.models.KpiSubmissionData;
-import org.codealpha.gmsservice.models.SectionAttributesVO;
-import org.codealpha.gmsservice.models.SectionVO;
-import org.codealpha.gmsservice.models.SubmissionData;
-import org.codealpha.gmsservice.models.SubmissionVO;
-import org.codealpha.gmsservice.models.UploadFile;
+import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.AppConfigService;
 import org.codealpha.gmsservice.services.CommonEmailSevice;
 import org.codealpha.gmsservice.services.DocKpiDataDocumentService;
@@ -39,11 +47,21 @@ import org.codealpha.gmsservice.services.UserService;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.codealpha.gmsservice.services.WorkflowStatusService;
 import org.joda.time.DateTime;
+import org.jsoup.Jsoup;
+import org.jsoup.helper.W3CDom;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRequest;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.FileSystemUtils;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -91,6 +109,8 @@ public class GrantController {
     private SubmissionNoteService submissionNoteService;
     @Autowired
     private OrganizationService organizationService;
+    @Autowired
+    private ResourceLoader resourceLoader;
 
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
@@ -327,7 +347,7 @@ public class GrantController {
             if (DateTime.now().toDate()
                     .after(submissionWindowStart)) {
                 submission.setOpenForReporting(true);
-            }else{
+            } else {
                 submission.setOpenForReporting(false);
             }
         }
@@ -955,6 +975,185 @@ public class GrantController {
                         break;
                 }
             }
+        }
+    }
+
+
+    @PostMapping(value = "/{grantId}/pdf")
+    public PdfDocument getPDFExport(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @RequestBody String htmlContent, HttpServletRequest request, HttpServletResponse response) {
+
+        Grant grant = grantService.getById(grantId);
+        String fileName = grant.getName().replaceAll("[^A-Za-z0-9]", "_") + ".pdf";
+
+        PDDocument report = new PDDocument();
+        File tempFile = null;
+        User user = userService.getUserById(userId);
+
+        try {
+
+            //Add Document Properties
+            PDDocumentInformation info = new PDDocumentInformation();
+            info.setAuthor(user.getFirstName() + " " + user.getLastName());
+            info.setTitle(grant.getName());
+            info.setSubject("Grant Summary");
+
+            //Add Page 1
+            PDPage page = new PDPage();
+            report.addPage(page);
+
+            //Add content to page 1
+            PDPageContentStream contentStream = new PDPageContentStream(report, page);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(20, 700);
+            contentStream.setFont(PDType1Font.HELVETICA, 10F);
+            contentStream.setLeading(14.5f);
+
+            _writeContent(contentStream,"Title",grant.getName());
+            _writeContent(contentStream,"Generic",grant.getDescription());
+            _writeContent(contentStream,"Label","Grant Start:");
+            _writeContent(contentStream,"Generic",new SimpleDateFormat("dd-MMM-yyyy").format(grant.getStartDate()));
+            _writeContent(contentStream,"Label","Grant End:");
+            _writeContent(contentStream,"Generic",new SimpleDateFormat("dd-MMM-yyyy").format(grant.getEndDate()));
+
+            GrantVO grantVO = new GrantVO();
+            grantVO = grantVO.build(grant, workflowPermissionService, user, appConfigService
+                    .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                            AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
+            grant.setGrantDetails(grantVO.getGrantDetails());
+            for(SectionVO section : grant.getGrantDetails().getSections()){
+                _writeContent(contentStream,"Header",section.getName());
+
+                for(SectionAttributesVO attributesVO : section.getAttributes()){
+                    _writeContent(contentStream,"Label",attributesVO.getFieldName());
+                    _writeContent(contentStream,"Generic",attributesVO.getFieldValue());
+                }
+            }
+
+            contentStream.endText();
+            contentStream.close();
+
+            PDPage submissionPage = new PDPage();
+            report.addPage(submissionPage);
+
+            contentStream = new PDPageContentStream(report, submissionPage);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(20, 700);
+            contentStream.setFont(PDType1Font.HELVETICA, 10F);
+            contentStream.setLeading(14.5f);
+            _writeContent(contentStream,"Header","Submission Details");
+            for(Submission submission: grant.getSubmissions()){
+                _writeContent(contentStream,"Generic",submission.getTitle() + " [" + submission.getSubmitBy() + "] [" + submission.getSubmissionStatus().getDisplayName() + "]");
+            }
+
+            contentStream.endText();
+            contentStream.close();
+
+            report.save(fileName);
+            tempFile = new File(fileName);
+            Resource file = resourceLoader.getResource("file:" + tempFile.getAbsolutePath());
+            response.setContentType(MediaType.APPLICATION_PDF_VALUE);
+            response
+                    .setHeader("Content-Disposition", "attachment; filename=" + grant.getName() + ".pdf");
+            byte[] imageBytes = new byte[(int) tempFile.length()];
+            file.getInputStream().read(imageBytes, 0, imageBytes.length);
+            file.getInputStream().close();
+            String imageStr = Base64.getEncoder().encodeToString(imageBytes);
+            PdfDocument pdfDocument = new PdfDocument();
+            pdfDocument.setData(imageStr);
+
+            return pdfDocument;
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+        } finally {
+            try {
+                report.close();
+                tempFile.delete();
+            } catch (IOException e) {
+                logger.error(e.getMessage());
+            }
+        }
+
+        /*File tempFile = null;
+        FileOutputStream fos = null;
+        try {
+            tempFile = new File(grant.getName().replaceAll("[^A-Za-z0-9]", "_")+ ".pdf");
+            fos = new FileOutputStream(tempFile);
+            PdfRendererBuilder builder = new PdfRendererBuilder();
+
+            Document doc = Jsoup.parse(htmlContent);
+            doc.getElementsByClass("sidebar").remove();
+
+            builder
+                    .useFastMode()
+                    .withW3cDocument(new W3CDom().fromJsoup(doc), request.getServletPath())
+                    .toStream(fos)
+                    .run();
+
+            Resource file = resourceLoader.getResource("file:"+tempFile.getAbsolutePath());
+            response.setContentType(MediaType.APPLICATION_PDF_VALUE);
+            response
+                    .setHeader("Content-Disposition", "attachment; filename=" + grant.getName()+".pdf");
+            byte[] imageBytes = new byte[(int)tempFile.length()];
+            file.getInputStream().read(imageBytes, 0, imageBytes.length);
+            file.getInputStream().close();
+            String imageStr = Base64.getEncoder().encodeToString(imageBytes);
+            PdfDocument pdfDocument = new PdfDocument();
+            pdfDocument.setData(imageStr);
+
+            return pdfDocument;
+
+
+
+        } catch (IOException ioe) {
+            logger.error(ioe.getMessage());
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+        }*/
+
+        return null;
+    }
+
+    private void _writeContent(PDPageContentStream contentStream, String type, String content) {
+        try {
+            switch (type) {
+                case "Title":
+                    contentStream.setFont(PDType1Font.HELVETICA_BOLD, 16F);
+                    contentStream.setNonStrokingColor(Color.BLACK);
+                    break;
+                case "Header":
+                    contentStream.setFont(PDType1Font.HELVETICA_BOLD, 14F);
+                    contentStream.setNonStrokingColor(Color.BLACK);
+                    break;
+                case "Label":
+                    contentStream.setFont(PDType1Font.HELVETICA, 10F);
+                    contentStream.setNonStrokingColor(Color.GRAY);
+                    break;
+                case "Generic":
+                    contentStream.setFont(PDType1Font.HELVETICA, 10F);
+                    contentStream.setNonStrokingColor(Color.BLACK);
+                    break;
+                default:
+                    contentStream.setNonStrokingColor(Color.BLACK);
+            }
+
+            content = WordUtils.wrap(content,120);
+            String[] splitContent = content.split("\n");
+            for(int i=0; i<splitContent.length;i++){
+                contentStream.showText(splitContent[i]);
+                contentStream.newLine();
+            }
+
+            switch (type) {
+                case "Header":
+                    contentStream.newLine();
+                    break;
+                case "Generic":
+                    contentStream.newLine();
+                    break;
+            }
+
+        } catch (IOException e) {
+            logger.error(e.getMessage());
         }
     }
 

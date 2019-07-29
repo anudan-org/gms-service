@@ -519,7 +519,7 @@ insert into submissions (created_at, created_by, submit_by, submitted_on, title,
 VALUES (now(), 'System', '2019-04-30', null, 'Quarter 1', null, null, 1, 11); -- 1
 insert into submissions (created_at, created_by, submit_by, submitted_on, title, updated_at,
                          updated_by, grant_id, submission_status_id)
-VALUES (now(), 'System', '2019-07-31', null, 'Quarter 2', null, null, 1, 11); -- 2
+VALUES (now(), 'System', '2019-08-31', null, 'Quarter 2', null, null, 1, 11); -- 2
 insert into submissions (created_at, created_by, submit_by, submitted_on, title, updated_at,
                          updated_by, grant_id, submission_status_id)
 VALUES (now(), 'System', '2019-10-31', null, 'Quarter 3', null, null, 1, 11); -- 3
