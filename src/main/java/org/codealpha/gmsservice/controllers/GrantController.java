@@ -378,23 +378,29 @@ public class GrantController {
         } else {
             grant = grantService.getById(grantToSave.getId());
         }
+        grant.setAmount(grantToSave.getAmount());
         grant.setDescription(grantToSave.getDescription());
-        grant.setEnDate(grantToSave.getEnDate());
-        grant.setEndDate(grantToSave.getEndDate());
+        if(grantToSave.getEndDate()!=null){
+            grant.setEnDate(grantToSave.getEnDate());
+            grant.setEndDate(grantToSave.getEndDate());
+        }
         grant.setGrantorOrganization((Granter) tenant);
         grant.setGrantStatus(grantToSave.getGrantStatus());
         grant.setName(grantToSave.getName());
         //grant.setOrganization((Grantee) user.getOrganization());
-        grant.setStartDate(grantToSave.getStartDate());
+        
         grant.setStatusName(grantToSave.getStatusName());
-        grant.setStDate(grantToSave.getStDate());
+        if(grantToSave.getEndDate()!=null){
+            grant.setStartDate(grantToSave.getStartDate());
+            grant.setStDate(grantToSave.getStDate());
+        }
         grant.setSubstatus(grantToSave.getSubstatus());
         grant.setUpdatedAt(DateTime.now().toDate());
         grant.setUpdatedBy(user.getEmailId());
         grant.setSubstatus(grantToSave.getSubstatus());
         grant = grantService.saveGrant(grant);
 
-        _processDocumentAttributes(grant, grantToSave, tenant);
+        //_processDocumentAttributes(grant, grantToSave, tenant);
         grant.setKpis(_processGrantKpis(grant, grantToSave, tenant, user));
         _processStringAttributes(grant, grantToSave, tenant);
         grant.setSubmissions(_processGrantSubmissions(grant, grantToSave, tenant, user));

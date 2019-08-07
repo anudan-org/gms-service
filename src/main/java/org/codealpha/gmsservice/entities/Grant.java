@@ -67,6 +67,9 @@ public class Grant extends BaseEntity {
   private String description;
 
   @Column
+  private Double amount;
+
+  @Column
   private Date createdAt;
 
   @Column
@@ -269,5 +272,13 @@ public class Grant extends BaseEntity {
 
   public void setEnDate(String enDate) {
     this.enDate = enDate;
+  }
+
+  public void setAmount(Double amount){
+    this.amount = amount;
+  }
+
+  public Double getAmount(){
+    return this.amount;
   }
 }

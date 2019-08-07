@@ -75,7 +75,13 @@ public class GrantService {
             if (grantStringAttribute.isPresent()) {
                 return grantStringAttribute.get().getSectionAttribute();
             }
+        }else if (type.equalsIgnoreCase("multiline")) {
+            Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
+            if (grantStringAttribute.isPresent()) {
+                return grantStringAttribute.get().getSectionAttribute();
+            }
         }
+         
         return null;
     }
 

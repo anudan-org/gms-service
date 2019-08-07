@@ -46,6 +46,7 @@ public class GrantVO {
   private String stDate;
   private Date endDate;
   private String enDate;
+  private Double amount;
   private List<Submission> submissions;
   private WorkflowActionPermission actionAuthorities;
   private List<WorkFlowPermission> flowAuthorities;
@@ -247,6 +248,14 @@ public class GrantVO {
   public void setKpis(List<GrantKpi> kpis) {
     Collections.sort(kpis);
     this.kpis = kpis;
+  }
+
+  public void setAmount(Double amount){
+    this.amount = amount;
+  }
+
+  public Double getAmount(){
+    return this.amount;
   }
 
   public GrantVO build(Grant grant,
