@@ -682,4 +682,5 @@ insert into templates (description, location, name, type, version, kpi_id, file_
 VALUES ('Helper document to manage project budget', 'templates/kpi/', 'project_budget_sheet.xlsx',
         'kpi', 1, 9, 'xls');
 
-
+-- Notifications
+insert into notifications(message,read,user_id) values('New message',false,4);
