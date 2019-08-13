@@ -380,6 +380,7 @@ public class GrantController {
         }
         grant.setAmount(grantToSave.getAmount());
         grant.setDescription(grantToSave.getDescription());
+        grant.setRepresentative(grantToSave.getRepresentative());
         if(grantToSave.getEndDate()!=null){
             grant.setEnDate(grantToSave.getEnDate());
             grant.setEndDate(grantToSave.getEndDate());
@@ -476,7 +477,7 @@ public class GrantController {
                 } else {
                     sectionAttribute = grantService.getSectionAttributeByAttributeIdAndType(sectionAttributesVO.getId(), sectionAttributesVO.getFieldType());
                 }
-                sectionAttribute.setDeletable(true);
+                //sectionAttribute.setDeletable(true);
                 sectionAttribute.setFieldName(sectionAttributesVO.getFieldName());
                 sectionAttribute.setFieldType(sectionAttributesVO.getFieldType());
                 sectionAttribute.setGranter((Granter) tenant);

@@ -103,6 +103,9 @@ public class Grant extends BaseEntity {
   @Transient
   private String enDate;
 
+  @Column
+  private String representative;
+
   @OneToMany(mappedBy = "grant", cascade = CascadeType.ALL)
   @OrderBy("submitBy ASC")
   @JsonManagedReference
@@ -280,5 +283,13 @@ public class Grant extends BaseEntity {
 
   public Double getAmount(){
     return this.amount;
+  }
+
+  public void setRepresentative(String rep){
+    this.representative = rep;
+  }
+
+  public String getRepresentative(){
+    return this.representative;
   }
 }

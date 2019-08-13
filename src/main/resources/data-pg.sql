@@ -617,24 +617,63 @@ values ('', '', 9, 4,true);
 
 -- Grant Sections at Platform Level
 insert into grant_sections (deletable, section_name)
-VALUES (false, 'Purpose');
+VALUES (false, 'Purpose'); --1
 insert into grant_sections (deletable, section_name)
-VALUES (false, 'Project Approach');
+VALUES (false, 'Project Approach'); --2
 insert into grant_sections (deletable, section_name)
-VALUES (true, 'Project Risks/challenges');
+VALUES (true, 'Project Risks/challenges'); --3
 insert into grant_sections (deletable, section_name)
-VALUES (true, 'Grant Terms & Conditions');
+VALUES (true, 'Project Outcome Measurement & Evaluation'); --4
+insert into grant_sections (deletable, section_name)
+VALUES (true, 'Budget & Finance Details'); --5
+insert into grant_sections (deletable, section_name)
+VALUES (true, 'Grant Terms & Conditions'); --6
 
 -- Grant Section Attributes ast Platform Level
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
-VALUES (false, 'Description', 'multiline', true, null, 1); --1
+VALUES (false, 'What is need being addressed?', 'multiline', true, null, 1); --1
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
-VALUES (false, 'Description', 'multiline', true, null, 2); --2
+VALUES (false, 'Why do this?', 'multiline', true, null, 1);
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
-VALUES (false, 'Description', 'multiline', true, null, 3); -- 3
+VALUES (false, 'What is the proposed intervention?', 'multiline', true, null, 2); 
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
-VALUES (false, 'Description', 'multiline', true, null, 4); -- 4
-
+VALUES (false, 'Describe the intervention', 'multiline', true, null, 2); 
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Describe the main activities of the project', 'multiline', true, null, 2); --2
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Describe the key assumptions', 'multiline', true, null, 2);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Describe the success factors', 'multiline', true, null, 2);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Describe the risks to the project & mitigation plans', 'multiline', true, null, 3); -- 3
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Describe the impact outcomes', 'multiline', true, null, 4); -- 4
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Annual budget', 'text', true, null, 5);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Disbursement schedule', 'text', true, null, 5);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Bank Name', 'text', true, null, 5);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Bank A/C No.', 'text', true, null, 5);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Bank IFSC Code', 'text', true, null, 5);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Severability', 'multiline', true, null, 6);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Governing Law and Jursidiction', 'multiline', true, null, 6);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Binding terms', 'multiline', true, null, 6);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Insurance', 'multiline', true, null, 6);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Notices', 'multiline', true, null, 6);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Indemnification', 'multiline', true, null, 6);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Assignment', 'multiline', true, null, 6);
+insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
+VALUES (false, 'Amendment', 'multiline', true, null, 6);
 
 -- insert granter's grant sections configuration
 insert into granter_grant_sections (deletable, section_name, granter_id)
@@ -644,34 +683,129 @@ VALUES (true, 'Project Approach', 2); -- 2
 insert into granter_grant_sections (deletable, section_name, granter_id)
 VALUES (true, 'Project Risks/challenges', 2); -- 3
 insert into granter_grant_sections (deletable, section_name, granter_id)
-VALUES (true, 'Grant Terms & Conditions', 2); -- 4
+VALUES (true, 'Project Outcome Measurement & Evaluation', 2); --4
+insert into granter_grant_sections (deletable, section_name, granter_id)
+VALUES (true, 'Budget & Finance Details', 2); --5
+insert into granter_grant_sections (deletable, section_name, granter_id)
+VALUES (true, 'Grant Terms & Conditions', 2); -- 6
 
 
 
 -- Insert Granter's grant section attributes
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
                                               granter_id, section_id)
-values (true, 'Description', 'multiline', true, 2, 1); -- 1
+values (true, 'What is need being addressed?', 'multiline', true, 2, 1); -- 1
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
                                               granter_id, section_id)
-values (true, 'Description', 'multiline', true, 2, 2); -- 2
+values (true, 'Why do this?', 'multiline', true, 2, 1);
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
                                               granter_id, section_id)
-values (true, 'Description', 'multiline', true, 2, 3); -- 3
+values (true, 'What is the proposed intervention?', 'multiline', true, 2, 2);
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
                                               granter_id, section_id)
-values (true, 'Description', 'multiline', true, 2, 4); -- 4
+values (true, 'Describe the intervention', 'multiline', true, 2, 2); -- 2
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Describe the main activities of the project', 'multiline', true, 2, 2); -- 2
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Describe the key assumptions', 'multiline', true, 2, 2); -- 2
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Describe the success factors', 'multiline', true, 2, 2); -- 2
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Describe the risks to the project & mitigation plans', 'multiline', true, 2, 3); -- 3
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Describe the impact outcomes', 'multiline', true, 2, 4); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Annual budget', 'text', true, 2, 5); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Disbursement schedule', 'multiline', true, 2, 5); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Bank Name', 'text', true, 2, 5); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Bank A/C No.', 'text', true, 2, 5); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Bank IFSC Code', 'text', true, 2, 5); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Severability', 'multiline', true, 2, 6); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Governing Law and Jursidiction', 'multiline', true, 2, 6); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Binding terms', 'multiline', true, 2, 6); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Insurance', 'multiline', true, 2, 6); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Notices', 'multiline', true, 2, 6); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Indemnification', 'multiline', true, 2, 6); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Assignment', 'multiline', true, 2, 6); -- 4
+insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
+                                              granter_id, section_id)
+values (true, 'Amendment', 'multiline', true, 2, 6); -- 4
 
 
 -- Insert Grant additional String based attributes
 insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
 VALUES ('', 1, 1, 1);
 insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
-VALUES ('', 1, 2, 2);
+VALUES ('', 1, 1, 2);
 insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
-VALUES ('', 1, 3, 3);
+VALUES ('', 1, 2, 3);
 insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
-VALUES ('Generic Terms and conditions', 1, 4, 4);
+VALUES ('', 1, 2, 4);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 2, 5);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 2, 6);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 2, 7);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 3, 8);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 4, 9);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 5, 10);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 5, 11);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 5, 12);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 5, 13);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 5, 14);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 6, 15);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 6, 16);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 6, 17);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 6, 18);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 6, 19);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 6, 20);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 6, 21);
+insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+VALUES ('', 1, 6, 22);
+
 
 
 -- Granter Template

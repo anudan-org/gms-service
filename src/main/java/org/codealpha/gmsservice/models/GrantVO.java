@@ -46,6 +46,7 @@ public class GrantVO {
   private String stDate;
   private Date endDate;
   private String enDate;
+  private String representative;
   private Double amount;
   private List<Submission> submissions;
   private WorkflowActionPermission actionAuthorities;
@@ -256,6 +257,14 @@ public class GrantVO {
 
   public Double getAmount(){
     return this.amount;
+  }
+
+  public void setRepresentative(String rep){
+    this.representative = rep;
+  }
+
+  public String getRepresentative(){
+    return this.representative;
   }
 
   public GrantVO build(Grant grant,
