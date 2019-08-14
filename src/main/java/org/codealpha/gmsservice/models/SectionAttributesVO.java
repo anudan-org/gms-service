@@ -8,6 +8,8 @@ public class SectionAttributesVO {
   private String fieldName;
   private String fieldType;
   private String fieldValue;
+  private String target;
+  private String frequency;
   private boolean deletable;
   private boolean required;
 
@@ -57,6 +59,22 @@ public class SectionAttributesVO {
 
   public void setRequired(boolean required) {
     this.required = required;
+  }
+
+  public void setTarget(String tr){
+    this.target = tr;
+  }
+
+  public String getTarget(){
+    return this.target;
+  }
+
+  public void setFrequency(String fq){
+    this.frequency = fq;
+  }
+
+  public String getFrequency(){
+    return this.frequency;
   }
 
   @Override

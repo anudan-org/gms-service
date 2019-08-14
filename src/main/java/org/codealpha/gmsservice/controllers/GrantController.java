@@ -459,9 +459,10 @@ public class GrantController {
         List<GrantStringAttribute> stringAttributes = new ArrayList<>();
         GranterGrantSection granterGrantSection = null;
         for (SectionVO sectionVO : grantToSave.getGrantDetails().getSections()) {
-            if (sectionVO.getId() < 0) {
+            granterGrantSection = grantService.findByGranterAndSectionName((Granter)grant.getGrantorOrganization(),sectionVO.getName());
+            if (sectionVO.getId() < 0 && granterGrantSection==null) {
                 granterGrantSection = new GranterGrantSection();
-            } else {
+            }else if(sectionVO.getId()>0){
                 granterGrantSection = grantService.getGrantSectionBySectionId(sectionVO.getId());
             }
             granterGrantSection.setSectionName(sectionVO.getName());
@@ -471,15 +472,24 @@ public class GrantController {
             granterGrantSection = grantService.saveSection(granterGrantSection);
 
             GranterGrantSectionAttribute sectionAttribute = null;
+
             for (SectionAttributesVO sectionAttributesVO : sectionVO.getAttributes()) {
-                if (sectionAttributesVO.getId() < 0) {
+                if(sectionAttributesVO.getFieldName().trim().equalsIgnoreCase("")){
+                    continue;
+                }
+                if(sectionAttributesVO.getId()>0){
+                    sectionAttribute = grantService.getSectionAttributeByAttributeIdAndType(sectionAttributesVO.getId(),sectionAttributesVO.getFieldType());
+                }else{
+                    sectionAttribute = grantService.findBySectionAndFieldName(granterGrantSection,sectionAttributesVO.getFieldName());
+                }
+
+
+                if (sectionAttributesVO.getId() < 0 && sectionAttribute==null) {
                     sectionAttribute = new GranterGrantSectionAttribute();
-                } else {
-                    sectionAttribute = grantService.getSectionAttributeByAttributeIdAndType(sectionAttributesVO.getId(), sectionAttributesVO.getFieldType());
                 }
                 //sectionAttribute.setDeletable(true);
                 sectionAttribute.setFieldName(sectionAttributesVO.getFieldName());
-                sectionAttribute.setFieldType(sectionAttributesVO.getFieldType());
+                sectionAttribute.setFieldType(sectionAttributesVO.getFieldType());                
                 sectionAttribute.setGranter((Granter) tenant);
                 sectionAttribute.setRequired(true);
                 sectionAttribute.setSection(granterGrantSection);
@@ -493,6 +503,8 @@ public class GrantController {
                     grantStringAttribute.setSection(granterGrantSection);
                     grantStringAttribute.setGrant(grant);
                 }
+                grantStringAttribute.setTarget(sectionAttributesVO.getTarget());
+                grantStringAttribute.setFrequency(sectionAttributesVO.getFrequency());
                 grantStringAttribute.setValue(sectionAttributesVO.getFieldValue());
                 grantService.saveGrantStringAttribute(grantStringAttribute);
                 grant.getStringAttributes().add(grantStringAttribute);

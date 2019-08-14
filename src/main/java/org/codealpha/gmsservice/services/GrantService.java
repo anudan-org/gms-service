@@ -80,6 +80,11 @@ public class GrantService {
             if (grantStringAttribute.isPresent()) {
                 return grantStringAttribute.get().getSectionAttribute();
             }
+        }else if (type.equalsIgnoreCase("kpi")) {
+            Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
+            if (grantStringAttribute.isPresent()) {
+                return grantStringAttribute.get().getSectionAttribute();
+            }
         }
          
         return null;
@@ -234,5 +239,13 @@ public class GrantService {
 
     public Template saveKpiTemplate(Template storedTemplate) {
         return templateRepository.save(storedTemplate);
+    }
+
+    public GranterGrantSectionAttribute findBySectionAndFieldName(GranterGrantSection section, String fieldName ){
+        return granterGrantSectionAttributeRepository.findBySectionAndFieldName(section, fieldName);
+    }
+
+    public GranterGrantSection findByGranterAndSectionName(Granter granter, String sectionName){
+        return granterGrantSectionRepository.findByGranterAndSectionName(granter,sectionName);
     }
 }

@@ -6,5 +6,5 @@ import org.springframework.data.repository.CrudRepository;
 
 public interface GranterGrantSectionAttributeRepository extends CrudRepository<GranterGrantSectionAttribute, Long> {
 
-  public GranterGrantSectionAttribute findBySectionAndFieldTypeAndFieldName(GranterGrantSection section, String fieldType,String fieldName );
+  public GranterGrantSectionAttribute findBySectionAndFieldName(GranterGrantSection section, String fieldName );
 }

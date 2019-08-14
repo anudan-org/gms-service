@@ -45,6 +45,9 @@ public class GrantDetailVO {
         sectionAttribute.setRequired(stringAttribute.getSectionAttribute().getRequired());
 
         sectionAttribute.setFieldValue(stringAttribute.getValue());
+        sectionAttribute.setTarget(stringAttribute.getTarget());
+        sectionAttribute.setFrequency(stringAttribute.getFrequency());
+        
         if (sectionAttributes == null) {
           sectionAttributes = new ArrayList<>();
         }
