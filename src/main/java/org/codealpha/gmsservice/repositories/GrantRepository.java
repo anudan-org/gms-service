@@ -2,6 +2,7 @@ package org.codealpha.gmsservice.repositories;
 
 import java.util.List;
 import org.codealpha.gmsservice.entities.Grant;
+import org.codealpha.gmsservice.entities.Granter;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
@@ -20,5 +21,6 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
   @Query(value = "select A.* from grants A where A.organization_id=?1", nativeQuery = true)
   public List<Grant> findAllGrantsOfGrantee(Long granteeOrgId);
 
+  public Grant findByNameAndGrantorOrganization(String name, Granter granter);
 
 }

@@ -60,10 +60,10 @@ public class Grant extends BaseEntity {
   @JsonProperty("docAttribute")
   private List<GrantDocumentAttributes> documentAttributes;
 
-  @Column(name = "name")
+  @Column(name = "name",columnDefinition = "text")
   private String name;
 
-  @Column(name = "description")
+  @Column(name = "description",columnDefinition = "text")
   private String description;
 
   @Column

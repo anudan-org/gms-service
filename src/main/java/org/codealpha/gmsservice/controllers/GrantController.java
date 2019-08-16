@@ -15,6 +15,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.text.WordUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -366,7 +368,8 @@ public class GrantController {
 
     private Grant _processGrant(Grant grantToSave, Organization tenant, User user) {
         Grant grant = null;
-        if (grantToSave.getId() < 0) {
+        //grant = grantService.findGrantByNameAndGranter(grantToSave.getName(),(Granter)tenant);
+        if (grantToSave.getId() < 0 ) {
             grant = new Grant();
             grant.setGrantStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", tenant.getId()));
             grant.setSubstatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", tenant.getId()));
@@ -375,7 +378,7 @@ public class GrantController {
             List<GrantDocumentAttributes> docAttributes = new ArrayList<>();
             grant.setStringAttributes(stringAttributes);
             grant.setDocumentAttributes(docAttributes);
-        } else {
+        }else{
             grant = grantService.getById(grantToSave.getId());
         }
         grant.setAmount(grantToSave.getAmount());
@@ -505,7 +508,18 @@ public class GrantController {
                 }
                 grantStringAttribute.setTarget(sectionAttributesVO.getTarget());
                 grantStringAttribute.setFrequency(sectionAttributesVO.getFrequency());
-                grantStringAttribute.setValue(sectionAttributesVO.getFieldValue());
+                if(sectionAttribute.getFieldType().equalsIgnoreCase("table")){
+                    List<TableData> tableData = sectionAttributesVO.getFieldTableValue();
+                    ObjectMapper mapper = new ObjectMapper();
+                    try {
+                        grantStringAttribute.setValue(mapper.writeValueAsString(tableData));
+                    } catch (JsonProcessingException e) {
+                        e.printStackTrace();
+                    }
+
+                }else {
+                    grantStringAttribute.setValue(sectionAttributesVO.getFieldValue());
+                }
                 grantService.saveGrantStringAttribute(grantStringAttribute);
                 grant.getStringAttributes().add(grantStringAttribute);
             }

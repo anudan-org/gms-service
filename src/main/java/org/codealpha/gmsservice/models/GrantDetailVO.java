@@ -1,8 +1,13 @@
 package org.codealpha.gmsservice.models;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
 import org.codealpha.gmsservice.entities.GrantStringAttribute;
 
@@ -45,6 +50,33 @@ public class GrantDetailVO {
         sectionAttribute.setRequired(stringAttribute.getSectionAttribute().getRequired());
 
         sectionAttribute.setFieldValue(stringAttribute.getValue());
+        if(sectionAttribute.getFieldType().equalsIgnoreCase("table")){
+            ObjectMapper mapper = new ObjectMapper();
+          if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){
+            List<TableData> tableDataList = new ArrayList<>();
+            TableData tableData = new TableData();
+            tableData.setName("Row");
+            tableData.setColumns(new ColumnData[5]);
+            for(int i=0;i<tableData.getColumns().length;i++){
+
+              tableData.getColumns()[i] = new ColumnData("Column " + (i+1),null);
+            }
+            tableDataList.add(tableData);
+
+            try {
+              sectionAttribute.setFieldValue( mapper.writeValueAsString(tableDataList));
+            } catch (JsonProcessingException e) {
+              e.printStackTrace();
+            }
+          }
+          List<TableData> tableData = null;
+          try {
+            tableData = mapper.readValue(sectionAttribute.getFieldValue(), new TypeReference<List<TableData>>() {});
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+          sectionAttribute.setFieldTableValue(tableData);
+        }
         sectionAttribute.setTarget(stringAttribute.getTarget());
         sectionAttribute.setFrequency(stringAttribute.getFrequency());
         

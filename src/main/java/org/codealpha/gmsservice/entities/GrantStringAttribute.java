@@ -21,7 +21,7 @@ public class GrantStringAttribute {
   @JoinColumn(referencedColumnName = "id")
   @JsonProperty("attributeDetails")
   private GranterGrantSectionAttribute sectionAttribute;
-  @Column
+  @Column(columnDefinition = "text")
   private String value;
   @Column
   private String target;

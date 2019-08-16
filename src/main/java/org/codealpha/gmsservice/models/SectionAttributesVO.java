@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.models;
 
+import java.util.List;
 import java.util.Objects;
 
 public class SectionAttributesVO {
@@ -8,6 +9,7 @@ public class SectionAttributesVO {
   private String fieldName;
   private String fieldType;
   private String fieldValue;
+  private List<TableData> fieldTableValue;
   private String target;
   private String frequency;
   private boolean deletable;
@@ -75,6 +77,14 @@ public class SectionAttributesVO {
 
   public String getFrequency(){
     return this.frequency;
+  }
+
+  public List<TableData> getFieldTableValue() {
+    return fieldTableValue;
+  }
+
+  public void setFieldTableValue(List<TableData> fieldTableValue) {
+    this.fieldTableValue = fieldTableValue;
   }
 
   @Override

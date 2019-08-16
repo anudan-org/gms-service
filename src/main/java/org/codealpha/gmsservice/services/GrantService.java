@@ -85,6 +85,11 @@ public class GrantService {
             if (grantStringAttribute.isPresent()) {
                 return grantStringAttribute.get().getSectionAttribute();
             }
+        }else if (type.equalsIgnoreCase("table")) {
+            Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
+            if (grantStringAttribute.isPresent()) {
+                return grantStringAttribute.get().getSectionAttribute();
+            }
         }
          
         return null;
@@ -247,5 +252,9 @@ public class GrantService {
 
     public GranterGrantSection findByGranterAndSectionName(Granter granter, String sectionName){
         return granterGrantSectionRepository.findByGranterAndSectionName(granter,sectionName);
+    }
+
+    public Grant findGrantByNameAndGranter(String name, Granter granter){
+        return grantRepository.findByNameAndGrantorOrganization(name, granter);
     }
 }
