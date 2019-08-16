@@ -3,11 +3,13 @@ package org.codealpha.gmsservice.models;
 import java.util.List;
 import java.util.Objects;
 import org.codealpha.gmsservice.entities.Grant;
+import org.codealpha.gmsservice.entities.GranterGrantTemplate;
 
 public class Tenant {
 
   private String name;
   private List<Grant> grants;
+  private List<GranterGrantTemplate> grantTemplates;
 
   public Tenant() {
   }
@@ -30,6 +32,14 @@ public class Tenant {
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  public List<GranterGrantTemplate> getGrantTemplates() {
+    return grantTemplates;
+  }
+
+  public void setGrantTemplates(List<GranterGrantTemplate> grantTemplates) {
+    this.grantTemplates = grantTemplates;
   }
 
   @Override

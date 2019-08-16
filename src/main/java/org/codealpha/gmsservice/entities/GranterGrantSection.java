@@ -21,6 +21,10 @@ public class GranterGrantSection {
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   private Granter granter;
+  @Column
+  private Long grantTemplateId;
+
+
 
   public Long getId() {
     return id;
@@ -52,5 +56,13 @@ public class GranterGrantSection {
 
   public void setDeletable(Boolean deletable) {
     this.deletable = deletable;
+  }
+
+  public Long getGrantTemplateId() {
+    return grantTemplateId;
+  }
+
+  public void setGrantTemplateId(Long grantTemplateId) {
+    this.grantTemplateId = grantTemplateId;
   }
 }
