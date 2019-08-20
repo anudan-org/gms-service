@@ -649,15 +649,15 @@ VALUES (false, 'Describe the risks to the project & mitigation plans', 'multilin
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
 VALUES (false, 'Describe the impact outcomes', 'multiline', true, null, 4); -- 4
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
-VALUES (false, 'Annual budget', 'text', true, null, 5);
+VALUES (false, 'Annual budget', 'multiline', true, null, 5);
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
-VALUES (false, 'Disbursement schedule', 'text', true, null, 5);
+VALUES (false, 'Disbursement schedule', 'multiline', true, null, 5);
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
-VALUES (false, 'Bank Name', 'text', true, null, 5);
+VALUES (false, 'Bank Name', 'multiline', true, null, 5);
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
-VALUES (false, 'Bank A/C No.', 'text', true, null, 5);
+VALUES (false, 'Bank A/C No.', 'multiline', true, null, 5);
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
-VALUES (false, 'Bank IFSC Code', 'text', true, null, 5);
+VALUES (false, 'Bank IFSC Code', 'multiline', true, null, 5);
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
 VALUES (false, 'Severability', 'multiline', true, null, 6);
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
@@ -722,19 +722,19 @@ insert into granter_grant_section_attributes (deletable, field_name, field_type,
 values (true, 'Describe the impact outcomes', 'multiline', true, 2, 4); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
                                               granter_id, section_id)
-values (true, 'Annual budget', 'text', true, 2, 5); -- 4
+values (true, 'Annual budget', 'multiline', true, 2, 5); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
                                               granter_id, section_id)
 values (true, 'Disbursement schedule', 'multiline', true, 2, 5); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
                                               granter_id, section_id)
-values (true, 'Bank Name', 'text', true, 2, 5); -- 4
+values (true, 'Bank Name', 'multiline', true, 2, 5); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
                                               granter_id, section_id)
-values (true, 'Bank A/C No.', 'text', true, 2, 5); -- 4
+values (true, 'Bank A/C No.', 'multiline', true, 2, 5); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
                                               granter_id, section_id)
-values (true, 'Bank IFSC Code', 'text', true, 2, 5); -- 4
+values (true, 'Bank IFSC Code', 'multiline', true, 2, 5); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
                                               granter_id, section_id)
 values (true, 'Severability', 'multiline', true, 2, 6); -- 4
