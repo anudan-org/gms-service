@@ -42,6 +42,9 @@ public class Notifications {
   	@Column
   	private boolean read;
 
+    @Column
+    private Date postedOn;
+
 
   	@Column
   	private Long userId;
@@ -69,4 +72,12 @@ public class Notifications {
   	public Long getUserId(){
   		return this.userId;
   	}
+
+    public void setPostedOn(Date dt){
+      this.postedOn = dt;
+    }
+
+    public Date getPostedOn(){
+      return this.postedOn;
+    }
 }

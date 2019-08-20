@@ -39,6 +39,7 @@ import org.codealpha.gmsservice.services.GrantDocumentDataService;
 import org.codealpha.gmsservice.services.GrantQualitativeDataService;
 import org.codealpha.gmsservice.services.GrantQuantitativeDataService;
 import org.codealpha.gmsservice.services.GrantService;
+import org.codealpha.gmsservice.services.GranteeService;
 import org.codealpha.gmsservice.services.OrganizationService;
 import org.codealpha.gmsservice.services.QualitativeKpiNotesService;
 import org.codealpha.gmsservice.services.QuantKpiDocumentService;
@@ -113,6 +114,8 @@ public class GrantController {
     private OrganizationService organizationService;
     @Autowired
     private ResourceLoader resourceLoader;
+    @Autowired
+    private GranteeService granteeService;
 
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
@@ -391,7 +394,17 @@ public class GrantController {
         grant.setGrantorOrganization((Granter) tenant);
         grant.setGrantStatus(grantToSave.getGrantStatus());
         grant.setName(grantToSave.getName());
-        //grant.setOrganization((Grantee) user.getOrganization());
+
+        Organization newGrantee =null;
+
+        newGrantee = organizationService.findByNameAndOrganizationType(grantToSave.getOrganization().getName(), grantToSave.getOrganization().getType());
+
+        if(grantToSave.getOrganization().getId() < 0 && newGrantee==null){
+            newGrantee = (Grantee)grantToSave.getOrganization();
+            newGrantee = granteeService.saveGrantee((Grantee)newGrantee);    
+        }
+        grantToSave.setOrganization((Grantee)newGrantee);
+        grant.setOrganization((Grantee)grantToSave.getOrganization());
         
         grant.setStatusName(grantToSave.getStatusName());
         if(grantToSave.getEndDate()!=null){

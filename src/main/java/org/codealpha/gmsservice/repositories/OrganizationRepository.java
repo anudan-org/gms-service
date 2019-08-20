@@ -21,5 +21,7 @@ public interface OrganizationRepository extends CrudRepository<Organization, Lon
   @Query(value = "select * from organizations where organization_type='GRANTEE'",nativeQuery = true)
   public List<Organization> getGranteeOrgs();
 
+  public Organization findByNameAndOrganizationType(String name, String type);
+
 
 }
