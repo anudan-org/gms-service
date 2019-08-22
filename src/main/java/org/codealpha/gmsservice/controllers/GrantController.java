@@ -397,13 +397,16 @@ public class GrantController {
 
         Organization newGrantee =null;
 
-        newGrantee = organizationService.findByNameAndOrganizationType(grantToSave.getOrganization().getName(), grantToSave.getOrganization().getType());
-
-        if(grantToSave.getOrganization().getId() < 0 && newGrantee==null){
+        if(grantToSave.getOrganization()!=null){
+            newGrantee = organizationService.findByNameAndOrganizationType(grantToSave.getOrganization().getName(), grantToSave.getOrganization().getType());
+            if(grantToSave.getOrganization().getId() < 0 && newGrantee==null){
             newGrantee = (Grantee)grantToSave.getOrganization();
             newGrantee = granteeService.saveGrantee((Grantee)newGrantee);    
         }
-        grantToSave.setOrganization((Grantee)newGrantee);
+            grantToSave.setOrganization((Grantee)newGrantee);
+        }
+
+        
         grant.setOrganization((Grantee)grantToSave.getOrganization());
         
         grant.setStatusName(grantToSave.getStatusName());

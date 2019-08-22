@@ -260,6 +260,9 @@ public class Grant extends BaseEntity {
   }
 
   public String getStDate() {
+    if(startDate==null){
+      return "";
+    }
 
     return new SimpleDateFormat("yyyy-MM-dd").format(startDate);
   }
@@ -270,6 +273,9 @@ public class Grant extends BaseEntity {
 
   public String getEnDate() {
 
+  if(endDate==null){
+      return "";
+    }
     return new SimpleDateFormat("yyyy-MM-dd").format(endDate);
   }
 
