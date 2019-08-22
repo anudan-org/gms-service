@@ -162,34 +162,19 @@ VALUES ('TATR - KPI Submissions Workflow', 4, now(), 'System', null, null, 'SUBM
 -- Workflow Statuses
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
 workflow_id, display_name,initial)
-values (now(), 'System','DRAFT (Grant)', FALSE, null, null, 1, 'DRAFT (Grant)',TRUE); --1
+values (now(), 'System','DRAFT', FALSE, null, null, 1, 'DRAFT',TRUE); --1
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
 workflow_id, display_name,initial)
-values (now(), 'System','ONBOARDING APPROVAL REQUESTED', FALSE, null, null, 1, 'ONBOARDING APPROVAL REQUESTED',FALSE); --2
+values (now(), 'System','REVIEW PENDING', FALSE, null, null, 1, 'REVIEW PENDING',FALSE); --2
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
 workflow_id, display_name,initial)
-values (now(), 'System','ONBOARDING APPROVED', FALSE, null, null, 1, 'ONBOARDING APPROVED',FALSE); --3
+values (now(), 'System','APPROVED', FALSE, null, null, 1, 'APPROVED',FALSE); --3
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
 workflow_id, display_name,initial)
-values (now(), 'System','ONBOARDING REJECTED', FALSE, null, null, 1, 'ONBOARDING REJECTED',FALSE); --4
+values (now(), 'System','RETURED', FALSE, null, null, 1, 'RETURNED',FALSE); --4
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
 workflow_id, display_name,initial)
-values (now(), 'System','ONGOING', FALSE, null, null, 1, 'ONGOING',FALSE); --5
-insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','CLOSURE INITIATED', FALSE, null, null, 1, 'CLOSURE INITIATED',FALSE); --6
-insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','CLOSURE REPORT SUBMITTED', FALSE, null, null, 1, 'CLOSURE REPORT SUBMITTED',FALSE); --7
-insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','CLOSURE APPROVAL REQUESTED', FALSE, null, null, 1, 'CLOSURE APPROVAL REQUESTED',FALSE); --8
-insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','CLOSURE MODIFICATIONS REQUESTED', FALSE, null, null, 1, 'CLOSURE MODIFICATIONS REQUESTED',FALSE); --9
-insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','CLOSED', TRUE, null, null, 1, 'CLOSED',FALSE); --10
+values (now(), 'System','CLOSED', FALSE, null, null, 1, 'CLOSED',FALSE); --5
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
 workflow_id, display_name,initial)
 values (now(), 'System','DRAFT', FALSE, null, null, 2, 'DRAFT',TRUE); --11
@@ -209,11 +194,11 @@ values (now(), 'System','MODIFICATIONS SUBMITTED', TRUE, null, null, 2, 'MODIFIC
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
 updated_by, from_state_id, to_state_id, role_id,
 workflow_id, note_required)
-values ('Request Onboarding Approval', now(), 'System', null, null, 1, 2, 3, 1, false);
+values ('Submit', now(), 'System', null, null, 1, 2, 3, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
 updated_by, from_state_id, to_state_id, role_id,
 workflow_id, note_required)
-values ('Approve for Onboarding', now(), 'System', null, null, 2, 3, 2, 1, false);
+values ('Approve', now(), 'System', null, null, 2, 3, 2, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
 updated_by, from_state_id, to_state_id, role_id,
 workflow_id, note_required)
@@ -225,32 +210,9 @@ values ('Submit Modifications', now(), 'System', null, null, 4, 2, 3, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
 updated_by, from_state_id, to_state_id, role_id,
 workflow_id, note_required)
-values ('Onboard Grant', now(), 'System', null, null, 3, 5, 3, 1, false);
-insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
-updated_by, from_state_id, to_state_id, role_id,
-workflow_id, note_required)
-values ('Initiate Grant Closure', now(), 'System', null, null, 5, 6, 3, 1, false);
-insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
-updated_by, from_state_id, to_state_id, role_id,
-workflow_id, note_required)
-values ('Submit Closure Report', now(), 'System', null, null, 6, 7, 4, 1, false);
-insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
-updated_by, from_state_id, to_state_id, role_id,
-workflow_id, note_required)
-values ('Request Closure Approval', now(), 'System', null, null, 7, 8, 3, 1, false);
-insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
-updated_by, from_state_id, to_state_id, role_id,
-workflow_id, note_required)
-values ('Close Grant', now(), 'System', null, null, 8, 10, 2, 1, false);
-insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
-updated_by, from_state_id, to_state_id, role_id,
-workflow_id, note_required)
-values ('Request Modifications', now(), 'System', null, null, 7, 9, 3, 1, false);
-insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
-updated_by, from_state_id, to_state_id, role_id,
-workflow_id, note_required)
-values ('Submit Modifications', now(), 'System', null, null, 9, 7, 4, 1, false);
-insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
+values ('Close Grant', now(), 'System', null, null, 3, 4, 3, 1, false);
+
+/*insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
 updated_by, from_state_id, to_state_id, role_id,
 workflow_id, note_required)
 values ('Submit Report', now(), 'System', null, null, 11, 12, 4, 2, false);
@@ -269,7 +231,7 @@ values ('Submit Modifications', now(), 'System', null, null, 14, 15, 4, 2, false
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
 updated_by, from_state_id, to_state_id, role_id,
 workflow_id, note_required)
-values ('Approve Submission', now(), 'System', null, null, 15, 13, 3, 2, false);
+values ('Approve Submission', now(), 'System', null, null, 15, 13, 3, 2, false);*/
 -- Workflow State Permissions
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
@@ -310,7 +272,7 @@ VALUES (now(), 'System', 'VIEW', null, null, 8, 4);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'VIEW', null, null, 2, 4);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
+/*insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'VIEW', null, null, 3, 5);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
@@ -420,10 +382,10 @@ updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'VIEW', null, null, 7, 10);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'MANAGE', null, null, 4, 11);
+VALUES (now(), 'System', 'MANAGE', null, null, 4, 11);*/
 
 -- Grants
-insert into public.grants (organization_id, name, description, created_at, created_by, updated_at,
+/*insert into public.grants (organization_id, name, description, created_at, created_by, updated_at,
                            updated_by, grantor_org_id, status_name, substatus_id, start_date,
                            end_date,
                            grant_status_id, amount)
@@ -614,7 +576,7 @@ insert into grant_document_kpi_data (actuals, goal, grant_kpi_id, submission_id,
 values ('', '', 9, 3,true);
 insert into grant_document_kpi_data (actuals, goal, grant_kpi_id, submission_id,to_report)
 values ('', '', 9, 4,true);
-
+*/
 -- Grant Sections at Platform Level
 insert into grant_sections (deletable, section_name)
 VALUES (false, 'Purpose'); --1
@@ -762,7 +724,7 @@ values (true, 'Amendment', 'multiline', true, 2, 6); -- 4
 
 
 -- Insert Grant additional String based attributes
-insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
+/*insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
 VALUES ('', 1, 1, 1);
 insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
 VALUES ('', 1, 1, 2);
@@ -805,17 +767,17 @@ VALUES ('', 1, 6, 20);
 insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
 VALUES ('', 1, 6, 21);
 insert into grant_string_attributes (value, grant_id, section_id, section_attribute_id)
-VALUES ('', 1, 6, 22);
+VALUES ('', 1, 6, 22);*/
 
 
 
 -- Granter Template
-insert into templates (description, location, name, type, version, kpi_id, file_type)
+/*insert into templates (description, location, name, type, version, kpi_id, file_type)
 VALUES ('Utilization reports are to be submitted when requested. It contains financial expenditure details for a given reporting period.',
         'templates/kpi/', 'utilization_report.xls', 'kpi', 1, 9, 'xls');
 insert into templates (description, location, name, type, version, kpi_id, file_type)
 VALUES ('Helper document to manage project budget', 'templates/kpi/', 'project_budget_sheet.xlsx',
-        'kpi', 1, 9, 'xls');
+        'kpi', 1, 9, 'xls');*/
 
 -- Notifications
 insert into notifications(message,read,user_id) values('New message',false,4);

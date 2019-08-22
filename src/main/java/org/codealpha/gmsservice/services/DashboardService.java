@@ -29,14 +29,12 @@ public class DashboardService {
     List<Tenant> tenants;
 
 
-    public DashboardService build(User user, List<Grant> grants) {
+    public DashboardService build(User user, List<Grant> grants, Organization tenantOrg) {
         this.user = user;
         List<String> tenantNames = new ArrayList<>();
-        for (Grant grant : grants) {
-            if (!tenantNames.contains(grant.getGrantorOrganization().getCode())) {
-                tenantNames.add(grant.getGrantorOrganization().getCode());
+            if (!tenantNames.contains(tenantOrg.getCode())) {
+                tenantNames.add(tenantOrg.getCode());
             }
-        }
 
         tenants = new ArrayList<>();
         for (String name : tenantNames) {

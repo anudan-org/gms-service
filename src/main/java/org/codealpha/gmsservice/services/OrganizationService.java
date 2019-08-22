@@ -35,6 +35,7 @@ public class OrganizationService {
 		return repository.findByOrganizationTypeEquals("PLATFORM");
 	}
 
+
 	public Organization save(Organization organization){
 		return repository.save(organization);
 	}
@@ -43,6 +44,11 @@ public class OrganizationService {
 	public List<Organization> getGranteeOrgs(){
 		return repository.getGranteeOrgs();
 	}
+
+	public List<Organization> getGranterOrgs(){
+		return repository.getGranterOrgs();
+	}
+
 
 	public Organization findByNameAndOrganizationType(String name, String type){
 		return repository.findByNameAndOrganizationType(name, type);
