@@ -49,7 +49,15 @@ public class Notifications {
   	@Column
   	private Long userId;
 
-  	public void setMessage(String message){
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public void setMessage(String message){
   		this.message = message;
   	}
 

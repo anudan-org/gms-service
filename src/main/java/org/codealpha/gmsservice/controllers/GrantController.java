@@ -4,9 +4,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -22,49 +20,20 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.font.PDFont;
-import org.apache.pdfbox.pdmodel.font.PDSimpleFont;
-import org.apache.pdfbox.pdmodel.font.PDTrueTypeFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.codealpha.gmsservice.constants.AppConfiguration;
-import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KpiType;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
-import org.codealpha.gmsservice.services.AppConfigService;
-import org.codealpha.gmsservice.services.CommonEmailSevice;
-import org.codealpha.gmsservice.services.DocKpiDataDocumentService;
-import org.codealpha.gmsservice.services.DocumentKpiNotesService;
-import org.codealpha.gmsservice.services.GrantDocumentDataService;
-import org.codealpha.gmsservice.services.GrantQualitativeDataService;
-import org.codealpha.gmsservice.services.GrantQuantitativeDataService;
-import org.codealpha.gmsservice.services.GrantService;
-import org.codealpha.gmsservice.services.GranteeService;
-import org.codealpha.gmsservice.services.OrganizationService;
-import org.codealpha.gmsservice.services.QualitativeKpiNotesService;
-import org.codealpha.gmsservice.services.QuantKpiDocumentService;
-import org.codealpha.gmsservice.services.QuantitativeKpiNotesService;
-import org.codealpha.gmsservice.services.SubmissionNoteService;
-import org.codealpha.gmsservice.services.SubmissionService;
-import org.codealpha.gmsservice.services.UserService;
-import org.codealpha.gmsservice.services.WorkflowPermissionService;
-import org.codealpha.gmsservice.services.WorkflowStatusService;
+import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
-import org.jsoup.Jsoup;
-import org.jsoup.helper.W3CDom;
-import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.util.FileSystemUtils;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -116,6 +85,8 @@ public class GrantController {
     private ResourceLoader resourceLoader;
     @Autowired
     private GranteeService granteeService;
+    @Autowired
+    private NotificationsService notificationsService;
 
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
@@ -288,7 +259,7 @@ public class GrantController {
         submission = submissionService.saveSubmission(submission);
 
         List<User> usersToNotify = userService
-                .usersToNotifyOnSubmissionStateChangeTo(submission.getSubmissionStatus().getId());
+                .usersToNotifyOnWorkflowSateChangeTo(submission.getSubmissionStatus().getId());
 
         for (User userToNotify : usersToNotify) {
             commonEmailSevice.sendMail(userToNotify.getEmailId(), appConfigService
@@ -911,7 +882,23 @@ public class GrantController {
         grant.setUpdatedAt(DateTime.now().toDate());
         grant.setUpdatedBy(userService.getUserById(userId).getEmailId());
         grant = grantService.saveGrant(grant);
-        return new GrantVO().build(grant, workflowPermissionService, userService.getUserById(userId),
+
+        User user = userService.getUserById(userId);
+        WorkflowStatus toStatus = workflowStatusService.findById(toStateId);
+
+        //List<WorkFlowPermission> permissions = workflowPermissionService.getFlowPermisionsOfRoleForStateTransition(grant.getId(),user.getUserRoles(),toStateId);
+        //if(!permissions.isEmpty()){
+            List<User> usersToNotify = userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
+            String notificationMessageTemplate = appConfigService
+                    .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                            AppConfiguration.GRANT_ALERT_NOTIFICATION_MESSAGE).getConfigValue();
+
+            String message = grantService.buildNotificationContent(grant,toStatus,notificationMessageTemplate);
+
+            usersToNotify.stream().forEach(u -> notificationsService.saveNotification(message, u.getId()));
+
+        //}
+        return new GrantVO().build(grant, workflowPermissionService, user,
                 appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
 

@@ -1,8 +1,7 @@
 package org.codealpha.gmsservice.services;
 
 import java.util.List;
-import javax.xml.ws.ServiceMode;
-import org.codealpha.gmsservice.entities.Organization;
+
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.exceptions.UserNotFoundException;
 import org.codealpha.gmsservice.repositories.UserRepository;
@@ -36,7 +35,7 @@ public class UserService {
     return userRepository.save(user);
   }
 
-  public List<User> usersToNotifyOnSubmissionStateChangeTo(Long toStateId){
-    return userRepository.usersToNotifyOnSubmissionSateChangeTo(toStateId);
+  public List<User> usersToNotifyOnWorkflowSateChangeTo(Long toStateId){
+    return userRepository.usersToNotifyOnWorkflowSateChangeTo(toStateId);
   }
 }

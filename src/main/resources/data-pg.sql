@@ -6,7 +6,8 @@ VALUES ('KPI_REMINDER_NOTIFICATION_DAYS', '30'),
        ('KPI_SUBMISSION_WINDOW_DAYS', '20'),
        ('SUBMISSION_ALTER_MAIL_SUBJECT', 'Submission Alert'),
        ('SUBMISSION_ALTER_MAIL_CONTENT',
-        'Submission for %SUBMISSION_TITLE% has been recently updated to %SUBMISSION_STATUS%. Your action is required.');
+        'Submission for %SUBMISSION_TITLE% has been recently updated to %SUBMISSION_STATUS%. Your action is required.'),
+        ('GRANT_ALERT_NOTIFICATION_MESSAGE','Grant %GRANT_NAME% is %GRANT_STATUS%');
 
 -- Organizations
 INSERT INTO public.organizations (organization_type, code, created_at, created_by, name, updated_at,
@@ -161,20 +162,20 @@ VALUES ('TATR - KPI Submissions Workflow', 4, now(), 'System', null, null, 'SUBM
 
 -- Workflow Statuses
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','DRAFT', FALSE, null, null, 1, 'DRAFT',TRUE); --1
+workflow_id, display_name,initial,verb)
+values (now(), 'System','DRAFT', FALSE, null, null, 1, 'DRAFT',TRUE,'Draft'); --1
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','REVIEW PENDING', FALSE, null, null, 1, 'REVIEW PENDING',FALSE); --2
+workflow_id, display_name,initial,verb)
+values (now(), 'System','REVIEW PENDING', FALSE, null, null, 1, 'REVIEW PENDING',FALSE,'Pending Review'); --2
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','APPROVED', FALSE, null, null, 1, 'APPROVED',FALSE); --3
+workflow_id, display_name,initial,verb)
+values (now(), 'System','APPROVED', FALSE, null, null, 1, 'APPROVED',FALSE,'Approved'); --3
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','RETURED', FALSE, null, null, 1, 'RETURNED',FALSE); --4
+workflow_id, display_name,initial,verb)
+values (now(), 'System','RETURNED', FALSE, null, null, 1, 'RETURNED',FALSE,'Returned'); --4
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','CLOSED', FALSE, null, null, 1, 'CLOSED',FALSE); --5
+workflow_id, display_name,initial,verb)
+values (now(), 'System','CLOSED', FALSE, null, null, 1, 'CLOSED',FALSE,'Closed'); --5
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
 workflow_id, display_name,initial)
 values (now(), 'System','DRAFT', FALSE, null, null, 2, 'DRAFT',TRUE); --11

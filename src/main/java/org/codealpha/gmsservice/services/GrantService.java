@@ -257,4 +257,10 @@ public class GrantService {
     public Grant findGrantByNameAndGranter(String name, Granter granter){
         return grantRepository.findByNameAndGrantorOrganization(name, granter);
     }
+
+    public String buildNotificationContent(Grant grant,WorkflowStatus status, String configValue) {
+        return configValue.replace("%GRANT_NAME%",
+                grant.getName())
+                .replace("%GRANT_STATUS%", status.getVerb());
+    }
 }
