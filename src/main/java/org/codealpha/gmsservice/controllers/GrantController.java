@@ -337,6 +337,10 @@ public class GrantController {
         //submissionService.saveSubmissions(grantToSave.getSubmissions());
 
         grant.getSubmissions().sort((a, b) -> a.getSubmitBy().compareTo(b.getSubmitBy()));
+        grant.getGrantDetails().getSections().sort((a,b) -> a.getId().compareTo(b.getId()));
+        for(SectionVO sec : grant.getGrantDetails().getSections()){
+            sec.getAttributes().sort((a,b) -> a.getId().compareTo(b.getId()));
+        }
         return grant;
     }
 
@@ -361,6 +365,10 @@ public class GrantController {
         if(grantToSave.getEndDate()!=null){
             grant.setEnDate(grantToSave.getEnDate());
             grant.setEndDate(grantToSave.getEndDate());
+        }
+        if(grantToSave.getStartDate()!=null){
+            grant.setStDate(grantToSave.getStDate());
+            grant.setStartDate(grantToSave.getStartDate());
         }
         grant.setGrantorOrganization((Granter) tenant);
         grant.setGrantStatus(grantToSave.getGrantStatus());

@@ -17,6 +17,8 @@ public class GranterGrantSection {
   @Column
   private String sectionName;
   @Column
+  private int sectionOrder;
+  @Column
   private Boolean deletable;
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
@@ -64,5 +66,13 @@ public class GranterGrantSection {
 
   public void setGrantTemplateId(Long grantTemplateId) {
     this.grantTemplateId = grantTemplateId;
+  }
+
+  public int getSectionOrder() {
+    return sectionOrder;
+  }
+
+  public void setSectionOrder(int sectionOrder) {
+    this.sectionOrder = sectionOrder;
   }
 }

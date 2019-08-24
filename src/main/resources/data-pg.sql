@@ -640,18 +640,18 @@ VALUES (false, 'Amendment', 'multiline', true, null, 6);
 
 insert into granter_grant_templates (name, description, granter_id) values ('Default Grant Template', 'This is the default template for IHF Grants',2);
 -- insert granter's grant sections configuration
-insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id)
-VALUES (true, 'Purpose', 2,1); -- 1
-insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id)
-VALUES (true, 'Project Approach', 2,1); -- 2
-insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id)
-VALUES (true, 'Project Risks/challenges', 2,1); -- 3
-insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id)
-VALUES (true, 'Project Outcome Measurement & Evaluation', 2,1); --4
-insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id)
-VALUES (true, 'Budget & Finance Details', 2,1); --5
-insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id)
-VALUES (true, 'Grant Terms & Conditions', 2,1); -- 6
+insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id, section_order)
+VALUES (true, 'Purpose', 2,1,1); -- 1
+insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id, section_order)
+VALUES (true, 'Project Approach', 2,1,2); -- 2
+insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id,section_order)
+VALUES (true, 'Project Risks/challenges', 2,1,3); -- 3
+insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id, section_order)
+VALUES (true, 'Project Outcome Measurement & Evaluation', 2,1,4); --4
+insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id, section_order)
+VALUES (true, 'Budget & Finance Details', 2,1,5); --5
+insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id, section_order)
+VALUES (true, 'Grant Terms & Conditions', 2,1,6); -- 6
 
 
 
