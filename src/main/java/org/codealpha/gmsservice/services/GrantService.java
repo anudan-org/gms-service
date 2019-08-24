@@ -263,4 +263,8 @@ public class GrantService {
                 grant.getName())
                 .replace("%GRANT_STATUS%", status.getVerb());
     }
+
+    public List<GranterGrantSection> getGrantSections(Grant grant){
+        return granterGrantSectionRepository.findByGranter((Granter)grant.getGrantorOrganization());
+    }
 }

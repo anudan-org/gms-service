@@ -24,6 +24,8 @@ public class DashboardService {
     private AppConfigService appConfigService;
     @Autowired
     private GranterGrantTemplateService granterGrantTemplateService;
+    @Autowired
+    private GrantService grantService;
 
 
     List<Tenant> tenants;
@@ -32,9 +34,9 @@ public class DashboardService {
     public DashboardService build(User user, List<Grant> grants, Organization tenantOrg) {
         this.user = user;
         List<String> tenantNames = new ArrayList<>();
-            if (!tenantNames.contains(tenantOrg.getCode())) {
-                tenantNames.add(tenantOrg.getCode());
-            }
+        if (!tenantNames.contains(tenantOrg.getCode())) {
+            tenantNames.add(tenantOrg.getCode());
+        }
 
         tenants = new ArrayList<>();
         for (String name : tenantNames) {
@@ -88,7 +90,7 @@ public class DashboardService {
                     }
 
                     GrantVO grantVO = new GrantVO();
-                    grantVO = grantVO.build(grant, workflowPermissionService, user, appConfigService
+                    grantVO = grantVO.build(grant,grantService.getGrantSections(grant), workflowPermissionService, user, appConfigService
                             .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                     AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
                     grant.setGrantDetails(grantVO.getGrantDetails());

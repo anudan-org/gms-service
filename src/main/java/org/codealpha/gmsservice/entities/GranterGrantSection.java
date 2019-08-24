@@ -17,7 +17,7 @@ public class GranterGrantSection {
   @Column
   private String sectionName;
   @Column
-  private int sectionOrder;
+  private Integer sectionOrder;
   @Column
   private Boolean deletable;
   @ManyToOne
@@ -68,11 +68,11 @@ public class GranterGrantSection {
     this.grantTemplateId = grantTemplateId;
   }
 
-  public int getSectionOrder() {
+  public Integer getSectionOrder() {
     return sectionOrder;
   }
 
-  public void setSectionOrder(int sectionOrder) {
+  public void setSectionOrder(Integer sectionOrder) {
     this.sectionOrder = sectionOrder;
   }
 }

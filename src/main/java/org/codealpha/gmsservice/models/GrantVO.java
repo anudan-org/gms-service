@@ -10,19 +10,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.codealpha.gmsservice.constants.GrantStatus;
-import org.codealpha.gmsservice.entities.AppConfig;
-import org.codealpha.gmsservice.entities.Grant;
-import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
-import org.codealpha.gmsservice.entities.GrantKpi;
-import org.codealpha.gmsservice.entities.GrantStringAttribute;
-import org.codealpha.gmsservice.entities.Grantee;
-import org.codealpha.gmsservice.entities.Granter;
-import org.codealpha.gmsservice.entities.Organization;
-import org.codealpha.gmsservice.entities.Submission;
-import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.entities.WorkFlowPermission;
-import org.codealpha.gmsservice.entities.WorkflowActionPermission;
-import org.codealpha.gmsservice.entities.WorkflowStatus;
+import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -267,7 +255,7 @@ public class GrantVO {
     return this.representative;
   }
 
-  public GrantVO build(Grant grant,
+  public GrantVO build(Grant grant,List<GranterGrantSection> sections,
       WorkflowPermissionService workflowPermissionService,
       User user, AppConfig submissionWindow) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
@@ -285,7 +273,7 @@ public class GrantVO {
             if(grantDetailVO == null){
               grantDetailVO = new GrantDetailVO();
             }
-            grantDetailVO = grantDetailVO.buildStringAttributes((List<GrantStringAttribute>) value);
+            grantDetailVO = grantDetailVO.buildStringAttributes(sections, (List<GrantStringAttribute>) value);
             vo.setGrantDetails(grantDetailVO);
           } else if (voPd.getName().equalsIgnoreCase("documentAttributes")) {
             GrantDetailVO grantDetailVO = null;

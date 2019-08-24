@@ -100,7 +100,7 @@ public class GrantController {
         User user = userService.getUserById(userId);
         Grant grant = grantService.getById(grantId);
         return new GrantVO()
-                .build(grant, workflowPermissionService, user,
+                .build(grant, grantService.getGrantSections(grant), workflowPermissionService, user,
                         appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                 AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
     }
@@ -275,7 +275,7 @@ public class GrantController {
         grant = grantService.saveGrant(grant);
         grant = grantService.getById(grant.getId());
         return new GrantVO()
-                .build(grant, workflowPermissionService, user,
+                .build(grant, grantService.getGrantSections(grant), workflowPermissionService, user,
                         appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                 AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
     }
@@ -329,7 +329,8 @@ public class GrantController {
         }
 
         GrantVO grantVO = new GrantVO();
-        grantVO = grantVO.build(grant, workflowPermissionService, user, appConfigService
+
+        grantVO = grantVO.build(grant, grantService.getGrantSections(grant), workflowPermissionService, user, appConfigService
                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
         grant.setGrantDetails(grantVO.getGrantDetails());
@@ -906,7 +907,7 @@ public class GrantController {
             usersToNotify.stream().forEach(u -> notificationsService.saveNotification(message, u.getId()));
 
         //}
-        return new GrantVO().build(grant, workflowPermissionService, user,
+        return new GrantVO().build(grant,grantService.getGrantSections(grant), workflowPermissionService, user,
                 appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
 
@@ -1060,7 +1061,7 @@ public class GrantController {
             _writeContent(contentStream,"Generic",new SimpleDateFormat("dd-MMM-yyyy").format(grant.getEndDate()));
 
             GrantVO grantVO = new GrantVO();
-            grantVO = grantVO.build(grant, workflowPermissionService, user, appConfigService
+            grantVO = grantVO.build(grant, grantService.getGrantSections(grant), workflowPermissionService, user, appConfigService
                     .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                             AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
             grant.setGrantDetails(grantVO.getGrantDetails());

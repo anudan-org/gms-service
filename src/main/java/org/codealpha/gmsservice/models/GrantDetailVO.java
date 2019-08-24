@@ -8,8 +8,10 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
 import org.codealpha.gmsservice.entities.GrantStringAttribute;
+import org.codealpha.gmsservice.entities.GranterGrantSection;
 
 public class GrantDetailVO {
 
@@ -24,22 +26,24 @@ public class GrantDetailVO {
     this.sections = sections;
   }
 
-  public GrantDetailVO buildStringAttributes(List<GrantStringAttribute> value) {
-    if(sections==null) {
-      sections = new ArrayList<>();
-    }
+  public GrantDetailVO buildStringAttributes(List<GranterGrantSection> grantSections, List<GrantStringAttribute> value) {
+
     SectionVO sectionVO = null;
+    sections = new ArrayList<>();
+
+    for(GranterGrantSection sec: grantSections){
+      sectionVO = new SectionVO();
+      sectionVO.setId(sec.getId());
+      sectionVO.setName(sec.getSectionName());
+
+      if (!sections.contains(sectionVO)) {
+        sections.add(sectionVO);
+      }
+    }
     if(value!=null) {
       for (GrantStringAttribute stringAttribute : value) {
-        sectionVO = new SectionVO();
-        sectionVO.setId(stringAttribute.getSection().getId());
-        sectionVO.setName(stringAttribute.getSection().getSectionName());
 
-        if (!sections.contains(sectionVO)) {
-          sections.add(sectionVO);
-        }
-
-        sectionVO = sections.get(sections.indexOf(sectionVO));
+        sectionVO = sections.get(sections.indexOf(stringAttribute.getSection()));
         List<SectionAttributesVO> sectionAttributes = sectionVO.getAttributes();
         SectionAttributesVO sectionAttribute = new SectionAttributesVO();
         sectionAttribute.setId(stringAttribute.getId());
