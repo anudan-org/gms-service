@@ -26,6 +26,8 @@ public class DashboardService {
     private GranterGrantTemplateService granterGrantTemplateService;
     @Autowired
     private GrantService grantService;
+    @Autowired
+    private TemplateLibraryService templateLibraryService;
 
 
     List<Tenant> tenants;
@@ -45,6 +47,7 @@ public class DashboardService {
             List<Grant> grantsList = new ArrayList<>();
             tenant.setGrants(grantsList);
             tenant.setGrantTemplates(granterGrantTemplateService.findByGranterId(user.getOrganization().getId()));
+            tenant.setTemplateLibrary(templateLibraryService.getTemplateLibraryForGranter((Granter)user.getOrganization()));
             tenants.add(tenant);
         }
 
@@ -90,7 +93,7 @@ public class DashboardService {
                     }
 
                     GrantVO grantVO = new GrantVO();
-                    grantVO = grantVO.build(grant,grantService.getGrantSections(grant), workflowPermissionService, user, appConfigService
+                    grantVO = grantVO.build(grant, grantService.getGrantSections(grant), workflowPermissionService, user, appConfigService
                             .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                     AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
                     grant.setGrantDetails(grantVO.getGrantDetails());

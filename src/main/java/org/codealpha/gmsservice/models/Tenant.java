@@ -4,12 +4,14 @@ import java.util.List;
 import java.util.Objects;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.GranterGrantTemplate;
+import org.codealpha.gmsservice.entities.TemplateLibrary;
 
 public class Tenant {
 
   private String name;
   private List<Grant> grants;
   private List<GranterGrantTemplate> grantTemplates;
+  private List<TemplateLibrary> templateLibrary;
 
   public Tenant() {
   }
@@ -40,6 +42,14 @@ public class Tenant {
 
   public void setGrantTemplates(List<GranterGrantTemplate> grantTemplates) {
     this.grantTemplates = grantTemplates;
+  }
+
+  public List<TemplateLibrary> getTemplateLibrary() {
+    return templateLibrary;
+  }
+
+  public void setTemplateLibrary(List<TemplateLibrary> templateLibrary) {
+    this.templateLibrary = templateLibrary;
   }
 
   @Override

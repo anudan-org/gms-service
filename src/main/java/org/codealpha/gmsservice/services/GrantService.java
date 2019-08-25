@@ -68,14 +68,17 @@ public class GrantService {
 
     public GranterGrantSectionAttribute getSectionAttributeByAttributeIdAndType(
             Long attributeId, String type) {
-        if (type.equalsIgnoreCase("document")) {
-            return grantDocumentAttributesRepository.findById(attributeId).get().getSectionAttribute();
-        } else if (type.equalsIgnoreCase("text")) {
+        if (type.equalsIgnoreCase("text")) {
             Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
             if (grantStringAttribute.isPresent()) {
                 return grantStringAttribute.get().getSectionAttribute();
             }
         }else if (type.equalsIgnoreCase("multiline")) {
+            Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
+            if (grantStringAttribute.isPresent()) {
+                return grantStringAttribute.get().getSectionAttribute();
+            }
+        }else if (type.equalsIgnoreCase("document")) {
             Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
             if (grantStringAttribute.isPresent()) {
                 return grantStringAttribute.get().getSectionAttribute();

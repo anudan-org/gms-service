@@ -782,3 +782,9 @@ VALUES ('Helper document to manage project budget', 'templates/kpi/', 'project_b
 
 -- Notifications
 insert into notifications(message,read,user_id) values('New message',false,4);
+
+-- Template Library
+insert into template_library (name, description,location,type, version, granter_id)
+values('UC Report','UC report format to be used when submitting report on spends','/IHF/template-library/dummy.pdf','pdf',1,2);
+insert into template_library (name, description,location,type, version, granter_id)
+values('Sample annual report','Sample annual report to be submitted with each report','/IHF/template-library/sample.pdf','pdf',1,2);
