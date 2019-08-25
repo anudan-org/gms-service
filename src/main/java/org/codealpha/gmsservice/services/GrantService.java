@@ -95,7 +95,7 @@ public class GrantService {
         return null;
     }
 
-    public GrantStringAttribute getStringAttributeByAttribute(
+    public List<GrantStringAttribute> getStringAttributesByAttribute(
             GranterGrantSectionAttribute grantSectionAttribute) {
         return grantStringAttributeRepository.findBySectionAttribute(grantSectionAttribute);
     }
@@ -266,5 +266,22 @@ public class GrantService {
 
     public List<GranterGrantSection> getGrantSections(Grant grant){
         return granterGrantSectionRepository.findByGranter((Granter)grant.getGrantorOrganization());
+    }
+
+    public List<GranterGrantSectionAttribute> getAttributesBySection(GranterGrantSection section){
+        return granterGrantSectionAttributeRepository.findBySection(section);
+    }
+
+
+    public void deleteSections(List<GranterGrantSection> sections){
+        granterGrantSectionRepository.deleteAll(sections);
+    }
+
+    public void deleteSectionAttributes(List<GranterGrantSectionAttribute> attributes){
+        granterGrantSectionAttributeRepository.deleteAll(attributes);
+    }
+
+    public void deleteStringAttributes(List<GrantStringAttribute> stringAttributes){
+        grantStringAttributeRepository.deleteAll(stringAttributes);
     }
 }

@@ -43,7 +43,7 @@ public class GrantDetailVO {
     if(value!=null) {
       for (GrantStringAttribute stringAttribute : value) {
 
-        sectionVO = sections.get(sections.indexOf(stringAttribute.getSection()));
+        sectionVO = sections.stream().filter(a -> a.getName().equalsIgnoreCase(stringAttribute.getSection().getSectionName())).findFirst().get();
         List<SectionAttributesVO> sectionAttributes = sectionVO.getAttributes();
         SectionAttributesVO sectionAttribute = new SectionAttributesVO();
         sectionAttribute.setId(stringAttribute.getId());

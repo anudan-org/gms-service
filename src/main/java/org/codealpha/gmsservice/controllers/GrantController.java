@@ -338,9 +338,11 @@ public class GrantController {
         //submissionService.saveSubmissions(grantToSave.getSubmissions());
 
         grant.getSubmissions().sort((a, b) -> a.getSubmitBy().compareTo(b.getSubmitBy()));
-        grant.getGrantDetails().getSections().sort((a,b) -> a.getId().compareTo(b.getId()));
-        for(SectionVO sec : grant.getGrantDetails().getSections()){
-            sec.getAttributes().sort((a,b) -> a.getId().compareTo(b.getId()));
+        grant.getGrantDetails().getSections().sort((a, b) -> a.getId().compareTo(b.getId()));
+        for (SectionVO sec : grant.getGrantDetails().getSections()) {
+            if (sec.getAttributes() != null){
+                sec.getAttributes().sort((a, b) -> a.getId().compareTo(b.getId()));
+            }
         }
         return grant;
     }
@@ -348,7 +350,7 @@ public class GrantController {
     private Grant _processGrant(Grant grantToSave, Organization tenant, User user) {
         Grant grant = null;
         //grant = grantService.findGrantByNameAndGranter(grantToSave.getName(),(Granter)tenant);
-        if (grantToSave.getId() < 0 ) {
+        if (grantToSave.getId() < 0) {
             grant = new Grant();
             grant.setGrantStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", tenant.getId()));
             grant.setSubstatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", tenant.getId()));
@@ -357,17 +359,17 @@ public class GrantController {
             List<GrantDocumentAttributes> docAttributes = new ArrayList<>();
             grant.setStringAttributes(stringAttributes);
             grant.setDocumentAttributes(docAttributes);
-        }else{
+        } else {
             grant = grantService.getById(grantToSave.getId());
         }
         grant.setAmount(grantToSave.getAmount());
         grant.setDescription(grantToSave.getDescription());
         grant.setRepresentative(grantToSave.getRepresentative());
-        if(grantToSave.getEndDate()!=null){
+        if (grantToSave.getEndDate() != null) {
             grant.setEnDate(grantToSave.getEnDate());
             grant.setEndDate(grantToSave.getEndDate());
         }
-        if(grantToSave.getStartDate()!=null){
+        if (grantToSave.getStartDate() != null) {
             grant.setStDate(grantToSave.getStDate());
             grant.setStartDate(grantToSave.getStartDate());
         }
@@ -375,22 +377,22 @@ public class GrantController {
         grant.setGrantStatus(grantToSave.getGrantStatus());
         grant.setName(grantToSave.getName());
 
-        Organization newGrantee =null;
+        Organization newGrantee = null;
 
-        if(grantToSave.getOrganization()!=null){
+        if (grantToSave.getOrganization() != null) {
             newGrantee = organizationService.findByNameAndOrganizationType(grantToSave.getOrganization().getName(), grantToSave.getOrganization().getType());
-            if(grantToSave.getOrganization().getId() < 0 && newGrantee==null){
-            newGrantee = (Grantee)grantToSave.getOrganization();
-            newGrantee = granteeService.saveGrantee((Grantee)newGrantee);    
-        }
-            grantToSave.setOrganization((Grantee)newGrantee);
+            if (grantToSave.getOrganization().getId() < 0 && newGrantee == null) {
+                newGrantee = (Grantee) grantToSave.getOrganization();
+                newGrantee = granteeService.saveGrantee((Grantee) newGrantee);
+            }
+            grantToSave.setOrganization((Grantee) newGrantee);
         }
 
-        
-        grant.setOrganization((Grantee)grantToSave.getOrganization());
-        
+
+        grant.setOrganization((Grantee) grantToSave.getOrganization());
+
         grant.setStatusName(grantToSave.getStatusName());
-        if(grantToSave.getEndDate()!=null){
+        if (grantToSave.getEndDate() != null) {
             grant.setStartDate(grantToSave.getStartDate());
             grant.setStDate(grantToSave.getStDate());
         }
@@ -457,11 +459,26 @@ public class GrantController {
     private void _processStringAttributes(Grant grant, Grant grantToSave, Organization tenant) {
         List<GrantStringAttribute> stringAttributes = new ArrayList<>();
         GranterGrantSection granterGrantSection = null;
+        List<GranterGrantSection> sectionsToDelete = new ArrayList<>();
+        if(grantService.getGrantSections(grant)!=null){
+            for(GranterGrantSection grantSection: grantService.getGrantSections(grant)){
+                boolean found = false;
+                for(SectionVO secVO : grantToSave.getGrantDetails().getSections()){
+                    if(secVO.getName().equalsIgnoreCase(grantSection.getSectionName())){
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found){
+                    sectionsToDelete.add(grantSection);
+                }
+            }
+        }
         for (SectionVO sectionVO : grantToSave.getGrantDetails().getSections()) {
-            granterGrantSection = grantService.findByGranterAndSectionName((Granter)grant.getGrantorOrganization(),sectionVO.getName());
-            if (sectionVO.getId() < 0 && granterGrantSection==null) {
+            granterGrantSection = grantService.findByGranterAndSectionName((Granter) grant.getGrantorOrganization(), sectionVO.getName());
+            if (sectionVO.getId() < 0 && granterGrantSection == null) {
                 granterGrantSection = new GranterGrantSection();
-            }else if(sectionVO.getId()>0){
+            } else if (sectionVO.getId() > 0) {
                 granterGrantSection = grantService.getGrantSectionBySectionId(sectionVO.getId());
             }
             granterGrantSection.setSectionName(sectionVO.getName());
@@ -472,55 +489,71 @@ public class GrantController {
 
             GranterGrantSectionAttribute sectionAttribute = null;
 
-            for (SectionAttributesVO sectionAttributesVO : sectionVO.getAttributes()) {
-                if(sectionAttributesVO.getFieldName().trim().equalsIgnoreCase("")){
-                    continue;
-                }
-                if(sectionAttributesVO.getId()>0){
-                    sectionAttribute = grantService.getSectionAttributeByAttributeIdAndType(sectionAttributesVO.getId(),sectionAttributesVO.getFieldType());
-                }else{
-                    sectionAttribute = grantService.findBySectionAndFieldName(granterGrantSection,sectionAttributesVO.getFieldName());
-                }
-
-
-                if (sectionAttributesVO.getId() < 0 && sectionAttribute==null) {
-                    sectionAttribute = new GranterGrantSectionAttribute();
-                }
-                //sectionAttribute.setDeletable(true);
-                sectionAttribute.setFieldName(sectionAttributesVO.getFieldName());
-                sectionAttribute.setFieldType(sectionAttributesVO.getFieldType());                
-                sectionAttribute.setGranter((Granter) tenant);
-                sectionAttribute.setRequired(true);
-                sectionAttribute.setSection(granterGrantSection);
-                sectionAttribute = grantService.saveSectionAttribute(sectionAttribute);
-
-
-                GrantStringAttribute grantStringAttribute = grantService.findGrantStringBySectionAttribueAndGrant(granterGrantSection, sectionAttribute, grant);
-                if (grantStringAttribute == null) {
-                    grantStringAttribute = new GrantStringAttribute();
-                    grantStringAttribute.setSectionAttribute(sectionAttribute);
-                    grantStringAttribute.setSection(granterGrantSection);
-                    grantStringAttribute.setGrant(grant);
-                }
-                grantStringAttribute.setTarget(sectionAttributesVO.getTarget());
-                grantStringAttribute.setFrequency(sectionAttributesVO.getFrequency());
-                if(sectionAttribute.getFieldType().equalsIgnoreCase("table")){
-                    List<TableData> tableData = sectionAttributesVO.getFieldTableValue();
-                    ObjectMapper mapper = new ObjectMapper();
-                    try {
-                        grantStringAttribute.setValue(mapper.writeValueAsString(tableData));
-                    } catch (JsonProcessingException e) {
-                        e.printStackTrace();
+            if (sectionVO.getAttributes() != null) {
+                for (SectionAttributesVO sectionAttributesVO : sectionVO.getAttributes()) {
+                    if (sectionAttributesVO.getFieldName().trim().equalsIgnoreCase("")) {
+                        continue;
+                    }
+                    if (sectionAttributesVO.getId() > 0) {
+                        sectionAttribute = grantService.getSectionAttributeByAttributeIdAndType(sectionAttributesVO.getId(), sectionAttributesVO.getFieldType());
+                    } else {
+                        sectionAttribute = grantService.findBySectionAndFieldName(granterGrantSection, sectionAttributesVO.getFieldName());
                     }
 
-                }else {
-                    grantStringAttribute.setValue(sectionAttributesVO.getFieldValue());
+
+                    if (sectionAttributesVO.getId() < 0 && sectionAttribute == null) {
+                        sectionAttribute = new GranterGrantSectionAttribute();
+                    }
+                    //sectionAttribute.setDeletable(true);
+                    sectionAttribute.setFieldName(sectionAttributesVO.getFieldName());
+                    sectionAttribute.setFieldType(sectionAttributesVO.getFieldType());
+                    sectionAttribute.setGranter((Granter) tenant);
+                    sectionAttribute.setRequired(true);
+                    sectionAttribute.setSection(granterGrantSection);
+                    sectionAttribute = grantService.saveSectionAttribute(sectionAttribute);
+
+
+                    GrantStringAttribute grantStringAttribute = grantService.findGrantStringBySectionAttribueAndGrant(granterGrantSection, sectionAttribute, grant);
+                    if (grantStringAttribute == null) {
+                        grantStringAttribute = new GrantStringAttribute();
+                        grantStringAttribute.setSectionAttribute(sectionAttribute);
+                        grantStringAttribute.setSection(granterGrantSection);
+                        grantStringAttribute.setGrant(grant);
+                    }
+                    grantStringAttribute.setTarget(sectionAttributesVO.getTarget());
+                    grantStringAttribute.setFrequency(sectionAttributesVO.getFrequency());
+                    if (sectionAttribute.getFieldType().equalsIgnoreCase("table")) {
+                        List<TableData> tableData = sectionAttributesVO.getFieldTableValue();
+                        ObjectMapper mapper = new ObjectMapper();
+                        try {
+                            grantStringAttribute.setValue(mapper.writeValueAsString(tableData));
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                        }
+
+                    } else {
+                        grantStringAttribute.setValue(sectionAttributesVO.getFieldValue());
+                    }
+                    grantService.saveGrantStringAttribute(grantStringAttribute);
+                    grant.getStringAttributes().add(grantStringAttribute);
                 }
-                grantService.saveGrantStringAttribute(grantStringAttribute);
-                grant.getStringAttributes().add(grantStringAttribute);
             }
             grant = grantService.saveGrant(grant);
         }
+
+            if(sectionsToDelete!=null && sectionsToDelete.size()>0){
+                for(GranterGrantSection section : sectionsToDelete){
+                    GranterGrantSection sec = grantService.getGrantSectionBySectionId(section.getId());
+                    List<GranterGrantSectionAttribute> attribs = grantService.getAttributesBySection(sec);
+                    for(GranterGrantSectionAttribute attribute : attribs){
+                        List<GrantStringAttribute> strAttribs = grantService.getStringAttributesByAttribute(attribute);
+                        grantService.deleteStringAttributes(strAttribs);
+                    }
+                    grantService.deleteSectionAttributes(attribs);
+                }
+                grantService.deleteSections(sectionsToDelete);
+                grant = grantService.saveGrant(grant);
+            }
 
     }
 
@@ -897,17 +930,17 @@ public class GrantController {
 
         //List<WorkFlowPermission> permissions = workflowPermissionService.getFlowPermisionsOfRoleForStateTransition(grant.getId(),user.getUserRoles(),toStateId);
         //if(!permissions.isEmpty()){
-            List<User> usersToNotify = userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
-            String notificationMessageTemplate = appConfigService
-                    .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                            AppConfiguration.GRANT_ALERT_NOTIFICATION_MESSAGE).getConfigValue();
+        List<User> usersToNotify = userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
+        String notificationMessageTemplate = appConfigService
+                .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                        AppConfiguration.GRANT_ALERT_NOTIFICATION_MESSAGE).getConfigValue();
 
-            String message = grantService.buildNotificationContent(grant,toStatus,notificationMessageTemplate);
+        String message = grantService.buildNotificationContent(grant, toStatus, notificationMessageTemplate);
 
-            usersToNotify.stream().forEach(u -> notificationsService.saveNotification(message, u.getId()));
+        usersToNotify.stream().forEach(u -> notificationsService.saveNotification(message, u.getId()));
 
         //}
-        return new GrantVO().build(grant,grantService.getGrantSections(grant), workflowPermissionService, user,
+        return new GrantVO().build(grant, grantService.getGrantSections(grant), workflowPermissionService, user,
                 appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
 
@@ -997,7 +1030,7 @@ public class GrantController {
                 switch (sectionAttributesVO.getFieldType()) {
                     case "string":
                         GrantStringAttribute grantStringAttribute = grantService
-                                .getStringAttributeByAttribute(sectionAttribute);
+                                .findGrantStringBySectionAttribueAndGrant(sectionAttribute.getSection(),sectionAttribute,grant);
 
                         if (grantStringAttribute == null) {
                             GrantStringAttribute newGrantStringAttribute = new GrantStringAttribute();
@@ -1053,24 +1086,24 @@ public class GrantController {
             contentStream.setFont(PDType1Font.HELVETICA, 10F);
             contentStream.setLeading(14.5f);
 
-            _writeContent(contentStream,"Title",grant.getName());
-            _writeContent(contentStream,"Generic",grant.getDescription());
-            _writeContent(contentStream,"Label","Grant Start:");
-            _writeContent(contentStream,"Generic",new SimpleDateFormat("dd-MMM-yyyy").format(grant.getStartDate()));
-            _writeContent(contentStream,"Label","Grant End:");
-            _writeContent(contentStream,"Generic",new SimpleDateFormat("dd-MMM-yyyy").format(grant.getEndDate()));
+            _writeContent(contentStream, "Title", grant.getName());
+            _writeContent(contentStream, "Generic", grant.getDescription());
+            _writeContent(contentStream, "Label", "Grant Start:");
+            _writeContent(contentStream, "Generic", new SimpleDateFormat("dd-MMM-yyyy").format(grant.getStartDate()));
+            _writeContent(contentStream, "Label", "Grant End:");
+            _writeContent(contentStream, "Generic", new SimpleDateFormat("dd-MMM-yyyy").format(grant.getEndDate()));
 
             GrantVO grantVO = new GrantVO();
             grantVO = grantVO.build(grant, grantService.getGrantSections(grant), workflowPermissionService, user, appConfigService
                     .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                             AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
             grant.setGrantDetails(grantVO.getGrantDetails());
-            for(SectionVO section : grant.getGrantDetails().getSections()){
-                _writeContent(contentStream,"Header",section.getName());
+            for (SectionVO section : grant.getGrantDetails().getSections()) {
+                _writeContent(contentStream, "Header", section.getName());
 
-                for(SectionAttributesVO attributesVO : section.getAttributes()){
-                    _writeContent(contentStream,"Label",attributesVO.getFieldName());
-                    _writeContent(contentStream,"Generic",attributesVO.getFieldValue());
+                for (SectionAttributesVO attributesVO : section.getAttributes()) {
+                    _writeContent(contentStream, "Label", attributesVO.getFieldName());
+                    _writeContent(contentStream, "Generic", attributesVO.getFieldValue());
                 }
             }
 
@@ -1085,9 +1118,9 @@ public class GrantController {
             contentStream.newLineAtOffset(20, 700);
             contentStream.setFont(PDType1Font.HELVETICA, 10F);
             contentStream.setLeading(14.5f);
-            _writeContent(contentStream,"Header","Submission Details");
-            for(Submission submission: grant.getSubmissions()){
-                _writeContent(contentStream,"Generic",submission.getTitle() + " [" + submission.getSubmitBy() + "] [" + submission.getSubmissionStatus().getDisplayName() + "]");
+            _writeContent(contentStream, "Header", "Submission Details");
+            for (Submission submission : grant.getSubmissions()) {
+                _writeContent(contentStream, "Generic", submission.getTitle() + " [" + submission.getSubmitBy() + "] [" + submission.getSubmissionStatus().getDisplayName() + "]");
             }
 
             contentStream.endText();
@@ -1181,9 +1214,9 @@ public class GrantController {
                     contentStream.setNonStrokingColor(Color.BLACK);
             }
 
-            content = WordUtils.wrap(content,120);
+            content = WordUtils.wrap(content, 120);
             String[] splitContent = content.split("\n");
-            for(int i=0; i<splitContent.length;i++){
+            for (int i = 0; i < splitContent.length; i++) {
                 contentStream.showText(splitContent[i]);
                 contentStream.newLine();
             }
