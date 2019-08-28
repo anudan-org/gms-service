@@ -413,10 +413,10 @@ public class GrantController {
 
     private void _processDocumentAttributes(Grant grant, Grant grantToSave, Organization tenant) {
         List<GrantDocumentAttributes> documentAttributes = new ArrayList<>();
-        GranterGrantSection granterGrantSection = null;
+        GrantSpecificSection granterGrantSection = null;
         for (SectionVO sectionVO : grantToSave.getGrantDetails().getSections()) {
             if (sectionVO.getId() < 0) {
-                granterGrantSection = new GranterGrantSection();
+                granterGrantSection = new GrantSpecificSection();
             } else {
                 granterGrantSection = grantService.getGrantSectionBySectionId(sectionVO.getId());
             }
@@ -426,10 +426,10 @@ public class GrantController {
 
             granterGrantSection = grantService.saveSection(granterGrantSection);
 
-            GranterGrantSectionAttribute sectionAttribute = null;
+            GrantSpecificSectionAttribute sectionAttribute = null;
             for (SectionAttributesVO sectionAttributesVO : sectionVO.getAttributes()) {
                 if (sectionAttributesVO.getId() < 0) {
-                    sectionAttribute = new GranterGrantSectionAttribute();
+                    sectionAttribute = new GrantSpecificSectionAttribute();
                 } else {
                     sectionAttribute = grantService.getSectionAttributeByAttributeIdAndType(sectionAttributesVO.getId(), sectionAttributesVO.getFieldType());
                 }
@@ -458,10 +458,10 @@ public class GrantController {
 
     private void _processStringAttributes(Grant grant, Grant grantToSave, Organization tenant) {
         List<GrantStringAttribute> stringAttributes = new ArrayList<>();
-        GranterGrantSection granterGrantSection = null;
-        List<GranterGrantSection> sectionsToDelete = new ArrayList<>();
+        GrantSpecificSection grantSpecificSection = null;
+        List<GrantSpecificSection> sectionsToDelete = new ArrayList<>();
         if(grantService.getGrantSections(grant)!=null){
-            for(GranterGrantSection grantSection: grantService.getGrantSections(grant)){
+            for(GrantSpecificSection grantSection: grantService.getGrantSections(grant)){
                 boolean found = false;
                 for(SectionVO secVO : grantToSave.getGrantDetails().getSections()){
                     if(secVO.getName().equalsIgnoreCase(grantSection.getSectionName())){
@@ -475,19 +475,19 @@ public class GrantController {
             }
         }
         for (SectionVO sectionVO : grantToSave.getGrantDetails().getSections()) {
-            granterGrantSection = grantService.findByGranterAndSectionName((Granter) grant.getGrantorOrganization(), sectionVO.getName());
-            if (sectionVO.getId() < 0 && granterGrantSection == null) {
-                granterGrantSection = new GranterGrantSection();
+            grantSpecificSection = grantService.findByGranterAndSectionName((Granter) grant.getGrantorOrganization(), sectionVO.getName());
+            if (sectionVO.getId() < 0 && grantSpecificSection == null) {
+                grantSpecificSection = new GrantSpecificSection();
             } else if (sectionVO.getId() > 0) {
-                granterGrantSection = grantService.getGrantSectionBySectionId(sectionVO.getId());
+                grantSpecificSection = grantService.getGrantSectionBySectionId(sectionVO.getId());
             }
-            granterGrantSection.setSectionName(sectionVO.getName());
-            granterGrantSection.setGranter((Granter) tenant);
-            granterGrantSection.setDeletable(true);
+            grantSpecificSection.setSectionName(sectionVO.getName());
+            grantSpecificSection.setGranter((Granter) tenant);
+            grantSpecificSection.setDeletable(true);
 
-            granterGrantSection = grantService.saveSection(granterGrantSection);
+            grantSpecificSection = grantService.saveSection(grantSpecificSection);
 
-            GranterGrantSectionAttribute sectionAttribute = null;
+            GrantSpecificSectionAttribute sectionAttribute = null;
 
             if (sectionVO.getAttributes() != null) {
                 for (SectionAttributesVO sectionAttributesVO : sectionVO.getAttributes()) {
@@ -497,27 +497,27 @@ public class GrantController {
                     if (sectionAttributesVO.getId() > 0) {
                         sectionAttribute = grantService.getSectionAttributeByAttributeIdAndType(sectionAttributesVO.getId(), sectionAttributesVO.getFieldType());
                     } else {
-                        sectionAttribute = grantService.findBySectionAndFieldName(granterGrantSection, sectionAttributesVO.getFieldName());
+                        sectionAttribute = grantService.findBySectionAndFieldName(grantSpecificSection, sectionAttributesVO.getFieldName());
                     }
 
 
                     if (sectionAttributesVO.getId() < 0 && sectionAttribute == null) {
-                        sectionAttribute = new GranterGrantSectionAttribute();
+                        sectionAttribute = new GrantSpecificSectionAttribute();
                     }
                     //sectionAttribute.setDeletable(true);
                     sectionAttribute.setFieldName(sectionAttributesVO.getFieldName());
                     sectionAttribute.setFieldType(sectionAttributesVO.getFieldType());
                     sectionAttribute.setGranter((Granter) tenant);
                     sectionAttribute.setRequired(true);
-                    sectionAttribute.setSection(granterGrantSection);
+                    sectionAttribute.setSection(grantSpecificSection);
                     sectionAttribute = grantService.saveSectionAttribute(sectionAttribute);
 
 
-                    GrantStringAttribute grantStringAttribute = grantService.findGrantStringBySectionAttribueAndGrant(granterGrantSection, sectionAttribute, grant);
+                    GrantStringAttribute grantStringAttribute = grantService.findGrantStringBySectionAttribueAndGrant(grantSpecificSection, sectionAttribute, grant);
                     if (grantStringAttribute == null) {
                         grantStringAttribute = new GrantStringAttribute();
                         grantStringAttribute.setSectionAttribute(sectionAttribute);
-                        grantStringAttribute.setSection(granterGrantSection);
+                        grantStringAttribute.setSection(grantSpecificSection);
                         grantStringAttribute.setGrant(grant);
                     }
                     grantStringAttribute.setTarget(sectionAttributesVO.getTarget());
@@ -542,10 +542,10 @@ public class GrantController {
         }
 
             if(sectionsToDelete!=null && sectionsToDelete.size()>0){
-                for(GranterGrantSection section : sectionsToDelete){
-                    GranterGrantSection sec = grantService.getGrantSectionBySectionId(section.getId());
-                    List<GranterGrantSectionAttribute> attribs = grantService.getAttributesBySection(sec);
-                    for(GranterGrantSectionAttribute attribute : attribs){
+                for(GrantSpecificSection section : sectionsToDelete){
+                    GrantSpecificSection sec = grantService.getGrantSectionBySectionId(section.getId());
+                    List<GrantSpecificSectionAttribute> attribs = grantService.getAttributesBySection(sec);
+                    for(GrantSpecificSectionAttribute attribute : attribs){
                         List<GrantStringAttribute> strAttribs = grantService.getStringAttributesByAttribute(attribute);
                         grantService.deleteStringAttributes(strAttribs);
                     }
@@ -995,7 +995,7 @@ public class GrantController {
 
     }
 
-    private void saveSectionAndFieldsChanges(
+    /*private void saveSectionAndFieldsChanges(
             @RequestBody GrantVO grantToSave, Grant grant) {
         for (SectionVO sectionVO : grantToSave.getGrantDetails().getSections()) {
             GranterGrantSection grantSection = grantService.getGrantSectionBySectionId(sectionVO.getId());
@@ -1055,7 +1055,7 @@ public class GrantController {
             }
         }
     }
-
+*/
 
     @PostMapping(value = "/{grantId}/pdf")
     public PdfDocument getPDFExport(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @RequestBody String htmlContent, HttpServletRequest request, HttpServletResponse response) {

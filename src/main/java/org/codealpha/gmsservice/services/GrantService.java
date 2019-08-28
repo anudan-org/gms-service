@@ -44,6 +44,10 @@ public class GrantService {
     private QuantitativeKpiNotesRepository quantitativeKpiNotesRepository;
     @Autowired
     private QuantKpiDocumentRepository quantKpiDocumentRepository;
+    @Autowired
+    private GrantSpecificSectionAttributeRepository grantSpecificSectionAttributeRepository;
+    @Autowired
+    private GrantSpecificSectionRepository grantSpecificSectionRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -57,16 +61,16 @@ public class GrantService {
         return grantRepository.findById(id).get();
     }
 
-    public GranterGrantSection getGrantSectionBySectionId(Long sectionId) {
+    public GrantSpecificSection getGrantSectionBySectionId(Long sectionId) {
 
-        Optional<GranterGrantSection> granterGrantSection = granterGrantSectionRepository.findById(sectionId);
+        Optional<GrantSpecificSection> granterGrantSection = grantSpecificSectionRepository.findById(sectionId);
         if (granterGrantSection.isPresent()) {
             return granterGrantSection.get();
         }
         return null;
     }
 
-    public GranterGrantSectionAttribute getSectionAttributeByAttributeIdAndType(
+    public GrantSpecificSectionAttribute getSectionAttributeByAttributeIdAndType(
             Long attributeId, String type) {
         if (type.equalsIgnoreCase("text")) {
             Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
@@ -99,7 +103,7 @@ public class GrantService {
     }
 
     public List<GrantStringAttribute> getStringAttributesByAttribute(
-            GranterGrantSectionAttribute grantSectionAttribute) {
+            GrantSpecificSectionAttribute grantSectionAttribute) {
         return grantStringAttributeRepository.findBySectionAttribute(grantSectionAttribute);
     }
 
@@ -111,13 +115,13 @@ public class GrantService {
         return grantStringAttributeRepository.save(grantStringAttribute);
     }
 
-    public GranterGrantSectionAttribute saveSectionAttribute(
-            GranterGrantSectionAttribute sectionAttribute) {
-        return granterGrantSectionAttributeRepository.save(sectionAttribute);
+    public GrantSpecificSectionAttribute saveSectionAttribute(
+            GrantSpecificSectionAttribute sectionAttribute) {
+        return grantSpecificSectionAttributeRepository.save(sectionAttribute);
     }
 
-    public GranterGrantSection saveSection(GranterGrantSection newSection) {
-        return granterGrantSectionRepository.save(newSection);
+    public GrantSpecificSection saveSection(GrantSpecificSection newSection) {
+        return grantSpecificSectionRepository.save(newSection);
     }
 
     public GrantQuantitativeKpiData getGrantQuantitativeKpiDataById(Long quntKpiDataId) {
@@ -233,11 +237,11 @@ public class GrantService {
         return quantKpiDocumentRepository.save(dataDocument);
     }
 
-    public GrantStringAttribute findGrantStringBySectionAttribueAndGrant(GranterGrantSection granterGrantSection,GranterGrantSectionAttribute granterGrantSectionAttribute, Grant grant){
+    public GrantStringAttribute findGrantStringBySectionAttribueAndGrant(GrantSpecificSection granterGrantSection,GrantSpecificSectionAttribute granterGrantSectionAttribute, Grant grant){
         return grantStringAttributeRepository.findBySectionAndSectionAttributeAndGrant(granterGrantSection,granterGrantSectionAttribute,grant);
     }
 
-    public GrantDocumentAttributes findGrantDocumentBySectionAttribueAndGrant(GranterGrantSection granterGrantSection,GranterGrantSectionAttribute granterGrantSectionAttribute, Grant grant){
+    public GrantDocumentAttributes findGrantDocumentBySectionAttribueAndGrant(GrantSpecificSection granterGrantSection,GrantSpecificSectionAttribute granterGrantSectionAttribute, Grant grant){
         return grantDocumentAttributesRepository.findBySectionAndSectionAttributeAndGrant(granterGrantSection,granterGrantSectionAttribute,grant);
     }
 
@@ -249,12 +253,12 @@ public class GrantService {
         return templateRepository.save(storedTemplate);
     }
 
-    public GranterGrantSectionAttribute findBySectionAndFieldName(GranterGrantSection section, String fieldName ){
-        return granterGrantSectionAttributeRepository.findBySectionAndFieldName(section, fieldName);
+    public GrantSpecificSectionAttribute findBySectionAndFieldName(GrantSpecificSection section, String fieldName ){
+        return grantSpecificSectionAttributeRepository.findBySectionAndFieldName(section, fieldName);
     }
 
-    public GranterGrantSection findByGranterAndSectionName(Granter granter, String sectionName){
-        return granterGrantSectionRepository.findByGranterAndSectionName(granter,sectionName);
+    public GrantSpecificSection findByGranterAndSectionName(Granter granter, String sectionName){
+        return grantSpecificSectionRepository.findByGranterAndSectionName(granter,sectionName);
     }
 
     public Grant findGrantByNameAndGranter(String name, Granter granter){
@@ -267,21 +271,21 @@ public class GrantService {
                 .replace("%GRANT_STATUS%", status.getVerb());
     }
 
-    public List<GranterGrantSection> getGrantSections(Grant grant){
-        return granterGrantSectionRepository.findByGranter((Granter)grant.getGrantorOrganization());
+    public List<GrantSpecificSection> getGrantSections(Grant grant){
+        return grantSpecificSectionRepository.findByGranter((Granter)grant.getGrantorOrganization());
     }
 
-    public List<GranterGrantSectionAttribute> getAttributesBySection(GranterGrantSection section){
-        return granterGrantSectionAttributeRepository.findBySection(section);
+    public List<GrantSpecificSectionAttribute> getAttributesBySection(GrantSpecificSection section){
+        return grantSpecificSectionAttributeRepository.findBySection(section);
     }
 
 
-    public void deleteSections(List<GranterGrantSection> sections){
-        granterGrantSectionRepository.deleteAll(sections);
+    public void deleteSections(List<GrantSpecificSection> sections){
+        grantSpecificSectionRepository.deleteAll(sections);
     }
 
-    public void deleteSectionAttributes(List<GranterGrantSectionAttribute> attributes){
-        granterGrantSectionAttributeRepository.deleteAll(attributes);
+    public void deleteSectionAttributes(List<GrantSpecificSectionAttribute> attributes){
+        grantSpecificSectionAttributeRepository.deleteAll(attributes);
     }
 
     public void deleteStringAttributes(List<GrantStringAttribute> stringAttributes){

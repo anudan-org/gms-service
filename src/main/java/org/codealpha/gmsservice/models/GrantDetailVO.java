@@ -8,10 +8,7 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.codealpha.gmsservice.entities.Grant;
-import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
-import org.codealpha.gmsservice.entities.GrantStringAttribute;
-import org.codealpha.gmsservice.entities.GranterGrantSection;
+import org.codealpha.gmsservice.entities.*;
 
 public class GrantDetailVO {
 
@@ -26,12 +23,12 @@ public class GrantDetailVO {
     this.sections = sections;
   }
 
-  public GrantDetailVO buildStringAttributes(List<GranterGrantSection> grantSections, List<GrantStringAttribute> value) {
+  public GrantDetailVO buildStringAttributes(List<GrantSpecificSection> grantSections, List<GrantStringAttribute> value) {
 
     SectionVO sectionVO = null;
     sections = new ArrayList<>();
 
-    for(GranterGrantSection sec: grantSections){
+    for(GrantSpecificSection sec: grantSections){
       sectionVO = new SectionVO();
       sectionVO.setId(sec.getId());
       sectionVO.setName(sec.getSectionName());

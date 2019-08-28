@@ -94,7 +94,7 @@ public class ApplicationController {
             config.setNavbarColor("#e3f2fd");
             config.setTenantCode(org.getCode());
         }
-        config.setDefaultSections(grantSectionService.getAllDefaultSections());
+        //config.setDefaultSections(grantSectionService.getAllDefaultSections());
         return config;
     }
 

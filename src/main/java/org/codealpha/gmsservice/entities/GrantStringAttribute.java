@@ -15,7 +15,7 @@ public class GrantStringAttribute {
   @OneToOne
   @JoinColumn(referencedColumnName = "id")
   @JsonProperty("attributeDetails")
-  private GranterGrantSectionAttribute sectionAttribute;
+  private GrantSpecificSectionAttribute sectionAttribute;
   @Column(columnDefinition = "text")
   private String value;
   @Column
@@ -29,7 +29,7 @@ public class GrantStringAttribute {
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   @JsonProperty("sectionDetails")
-  private GranterGrantSection section;
+  private GrantSpecificSection section;
 
   public Long getId() {
     return id;
@@ -39,12 +39,12 @@ public class GrantStringAttribute {
     this.id = id;
   }
 
-  public GranterGrantSectionAttribute getSectionAttribute() {
+  public GrantSpecificSectionAttribute getSectionAttribute() {
     return sectionAttribute;
   }
 
   public void setSectionAttribute(
-      GranterGrantSectionAttribute sectionAttribute) {
+          GrantSpecificSectionAttribute sectionAttribute) {
     this.sectionAttribute = sectionAttribute;
   }
 
@@ -64,11 +64,11 @@ public class GrantStringAttribute {
     this.grant = grant;
   }
 
-  public GranterGrantSection getSection() {
+  public GrantSpecificSection getSection() {
     return section;
   }
 
-  public void setSection(GranterGrantSection section) {
+  public void setSection(GrantSpecificSection section) {
     this.section = section;
   }
 

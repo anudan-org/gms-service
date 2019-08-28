@@ -1,12 +1,9 @@
 package org.codealpha.gmsservice.entities;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import javax.persistence.*;
+import java.util.List;
 
 @Entity(name = "granter_grant_sections")
 public class GranterGrantSection {
@@ -23,10 +20,12 @@ public class GranterGrantSection {
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   private Granter granter;
-  @Column
-  private Long grantTemplateId;
+  @ManyToOne
+  @JoinColumn(referencedColumnName = "id")
+  private GranterGrantTemplate grantTemplate;
 
-
+  @OneToMany(mappedBy = "section",fetch = FetchType.LAZY)
+  private List<GranterGrantSectionAttribute> attributes;
 
   public Long getId() {
     return id;
@@ -60,19 +59,27 @@ public class GranterGrantSection {
     this.deletable = deletable;
   }
 
-  public Long getGrantTemplateId() {
-    return grantTemplateId;
-  }
-
-  public void setGrantTemplateId(Long grantTemplateId) {
-    this.grantTemplateId = grantTemplateId;
-  }
-
   public Integer getSectionOrder() {
     return sectionOrder;
   }
 
   public void setSectionOrder(Integer sectionOrder) {
     this.sectionOrder = sectionOrder;
+  }
+
+  public GranterGrantTemplate getGrantTemplate() {
+    return grantTemplate;
+  }
+
+  public void setGrantTemplate(GranterGrantTemplate grantTemplate) {
+    this.grantTemplate = grantTemplate;
+  }
+
+  public List<GranterGrantSectionAttribute> getAttributes() {
+    return attributes;
+  }
+
+  public void setAttributes(List<GranterGrantSectionAttribute> attributes) {
+    this.attributes = attributes;
   }
 }

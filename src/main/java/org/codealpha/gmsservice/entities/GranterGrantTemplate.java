@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity(name = "granter_grant_templates")
 public class GranterGrantTemplate {
@@ -13,6 +14,8 @@ public class GranterGrantTemplate {
     private String name;
     @Column(columnDefinition = "text")
     private String description;
+    @OneToMany(mappedBy = "grantTemplate",fetch = FetchType.LAZY)
+    private List<GranterGrantSection> sections;
 
     @Column
     private Long granterId;
@@ -47,5 +50,13 @@ public class GranterGrantTemplate {
 
     public void setGranterId(Long granterId) {
         this.granterId = granterId;
+    }
+
+    public List<GranterGrantSection> getSections() {
+        return sections;
+    }
+
+    public void setSections(List<GranterGrantSection> sections) {
+        this.sections = sections;
     }
 }

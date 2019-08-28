@@ -255,7 +255,7 @@ public class GrantVO {
     return this.representative;
   }
 
-  public GrantVO build(Grant grant,List<GranterGrantSection> sections,
+  public GrantVO build(Grant grant,List<GrantSpecificSection> sections,
       WorkflowPermissionService workflowPermissionService,
       User user, AppConfig submissionWindow) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
