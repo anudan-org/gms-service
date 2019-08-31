@@ -67,6 +67,9 @@ public class Grant extends BaseEntity {
   private String description;
 
   @Column
+  private Long templateId;
+
+  @Column
   private Double amount;
 
   @Column
@@ -297,5 +300,13 @@ public class Grant extends BaseEntity {
 
   public String getRepresentative(){
     return this.representative;
+  }
+
+  public Long getTemplateId() {
+    return templateId;
+  }
+
+  public void setTemplateId(Long templateId) {
+    this.templateId = templateId;
   }
 }

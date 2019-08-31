@@ -41,6 +41,7 @@ public class GrantVO {
   private List<WorkFlowPermission> flowAuthorities;
   private GrantDetailVO grantDetails;
   private List<GrantKpi> kpis;
+  private Long templateId;
   @JsonIgnore
   private List<GrantStringAttribute> stringAttributes;
   @JsonIgnore
@@ -237,6 +238,14 @@ public class GrantVO {
   public void setKpis(List<GrantKpi> kpis) {
     Collections.sort(kpis);
     this.kpis = kpis;
+  }
+
+  public Long getTemplateId() {
+    return templateId;
+  }
+
+  public void setTemplateId(Long templateId) {
+    this.templateId = templateId;
   }
 
   public void setAmount(Double amount){

@@ -17,4 +17,8 @@ public class GranterGrantTemplateService {
     public List<GranterGrantTemplate> findByGranterId(Long granterId){
         return granterGrantTemplateRepository.findByGranterId(granterId);
     }
+
+    public GranterGrantTemplate findByTemplateId(Long templateId){
+        return granterGrantTemplateRepository.findById(templateId).get();
+    }
 }

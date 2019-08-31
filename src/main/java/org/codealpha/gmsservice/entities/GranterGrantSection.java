@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
@@ -22,6 +23,7 @@ public class GranterGrantSection {
   private Granter granter;
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
+  @JsonBackReference
   private GranterGrantTemplate grantTemplate;
 
   @OneToMany(mappedBy = "section",fetch = FetchType.LAZY)
