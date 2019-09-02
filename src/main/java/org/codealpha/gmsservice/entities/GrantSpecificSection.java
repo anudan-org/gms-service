@@ -18,6 +18,8 @@ public class GrantSpecificSection {
   @JoinColumn(referencedColumnName = "id")
   private Granter granter;
   @Column
+  private Long grantId;
+  @Column
   private Long grantTemplateId;
 
 
@@ -69,4 +71,12 @@ public class GrantSpecificSection {
   public void setSectionOrder(Integer sectionOrder) {
     this.sectionOrder = sectionOrder;
   }
+
+    public Long getGrantId() {
+        return grantId;
+    }
+
+    public void setGrantId(Long grantId) {
+        this.grantId = grantId;
+    }
 }

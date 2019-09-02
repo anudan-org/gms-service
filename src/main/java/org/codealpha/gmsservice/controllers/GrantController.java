@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -114,6 +115,7 @@ public class GrantController {
         grant.setGrantorOrganization((Granter)organizationService.findOrganizationByTenantCode(tenantCode));
         grant.setRepresentative("");
         grant.setTemplateId(templateId);
+        grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(templateId));
 
         grant = grantService.saveGrant(grant);
 
@@ -129,6 +131,7 @@ public class GrantController {
             specificSection.setGrantTemplateId(grantTemplate.getId());
             specificSection.setSectionName(grantSection.getSectionName());
             specificSection.setSectionOrder(grantSection.getSectionOrder());
+            specificSection.setGrantId(grant.getId());
 
             specificSection = grantService.saveSection(specificSection);
             for(GranterGrantSectionAttribute sectionAttribute:grantSection.getAttributes()){
@@ -173,6 +176,8 @@ public class GrantController {
                 .getGrantFlowPermissions(grant.getGrantorOrganization().getId(),
                         user.getUserRoles(), grant.getGrantStatus().getId()));
 
+        grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
+
         GrantVO grantVO = new GrantVO();
 
         grantVO = grantVO.build(grant, grantService.getGrantSections(grant), workflowPermissionService, user, appConfigService
@@ -216,15 +221,76 @@ public class GrantController {
 
         GrantSpecificSection specificSection = new GrantSpecificSection();
         specificSection.setGranter((Granter)organizationService.findOrganizationByTenantCode(tenantCode));
-        specificSection.setGrantTemplateId(templateId);
         specificSection.setSectionName(sectionName);
+
+        specificSection.setGrantTemplateId(templateId);
         specificSection.setDeletable(true);
+        specificSection.setGrantId(grantId);
         specificSection = grantService.saveSection(specificSection);
+
+        if(_checkIfGrantTemplateChanged(grant,specificSection)){
+            GranterGrantTemplate newTemplate = _createNewGrantTemplateFromExisiting(grant);
+            templateId = newTemplate.getId();
+        }
 
         grant = _grantToReturn(userId,grant);
         return new SectionInfo(specificSection.getId(),specificSection.getSectionName(),grant);
 
     }
+
+    @Transactional(Transactional.TxType.REQUIRED)
+    private GranterGrantTemplate _createNewGrantTemplateFromExisiting(Grant grant) {
+        GranterGrantTemplate currentGrantTemplate = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
+        GranterGrantTemplate newTemplate = new GranterGrantTemplate();
+        newTemplate.setName("Custom Template");
+        newTemplate = grantService.saveGrantTemplate(newTemplate);
+        List<GranterGrantSection> newSections = new ArrayList<>();
+        for(GrantSpecificSection currentSection : grantService.getGrantSections(grant)){
+            GranterGrantSection newSection = new GranterGrantSection();
+            newSection.setSectionOrder(currentSection.getSectionOrder());
+            newSection.setSectionName(currentSection.getSectionName());
+            newSection.setGrantTemplate(newTemplate);
+            newSection.setGranter((Granter)grant.getGrantorOrganization());
+            newSection.setDeletable(currentSection.getDeletable());
+
+            newSection = grantService.saveGrantTemaplteSection(newSection);
+            newSections.add(newSection);
+
+            currentSection.setGrantTemplateId(newTemplate.getId());
+            currentSection = grantService.saveSection(currentSection);
+
+            for(GrantSpecificSectionAttribute currentAttribute:grantService.getAttributesBySection(currentSection)){
+                GranterGrantSectionAttribute newAttribute = new GranterGrantSectionAttribute();
+                newAttribute.setDeletable(currentAttribute.getDeletable());
+                newAttribute.setFieldName(currentAttribute.getFieldName());
+                newAttribute.setFieldType(currentAttribute.getFieldType());
+                newAttribute.setGranter((Granter)currentAttribute.getGranter());
+                newAttribute.setRequired(currentAttribute.getRequired());
+                newAttribute.setSection(newSection);
+
+                newAttribute = grantService.saveGrantTemaplteSectionAttribute(newAttribute);
+
+            }
+        }
+
+        newTemplate.setSections(newSections);
+        newTemplate = grantService.saveGrantTemplate(newTemplate);
+
+        grant.setTemplateId(newTemplate.getId());
+        grantService.saveGrant(grant);
+        return newTemplate;
+    }
+
+    private Boolean _checkIfGrantTemplateChanged(Grant grant, GrantSpecificSection newSection) {
+        GranterGrantTemplate currentGrantTemplate = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
+        for(GranterGrantSection grantSection : currentGrantTemplate.getSections()){
+            if(!grantSection.getSectionName().equalsIgnoreCase(newSection.getSectionName())){
+               return true;
+            }
+        }
+        return false;
+    }
+
     @GetMapping("/{id}")
     public GrantVO getGrant(@PathVariable("id") Long grantId, @PathVariable("userId") Long userId) {
 

@@ -69,6 +69,9 @@ public class Grant extends BaseEntity {
   @Column
   private Long templateId;
 
+  @Transient
+  private GranterGrantTemplate grantTemplate;
+
   @Column
   private Double amount;
 
@@ -309,4 +312,12 @@ public class Grant extends BaseEntity {
   public void setTemplateId(Long templateId) {
     this.templateId = templateId;
   }
+
+    public GranterGrantTemplate getGrantTemplate() {
+        return grantTemplate;
+    }
+
+    public void setGrantTemplate(GranterGrantTemplate grantTemplate) {
+        this.grantTemplate = grantTemplate;
+    }
 }

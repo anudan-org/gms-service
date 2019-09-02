@@ -11,5 +11,5 @@ public interface GrantSpecificSectionRepository extends CrudRepository<GrantSpec
 
     public GrantSpecificSection findByGranterAndSectionName(Granter granter, String sectionName);
 
-    List<GrantSpecificSection> findByGranter(Granter granter);
+    List<GrantSpecificSection> findByGranterAndGrantId(Granter granter,Long grantId);
 }

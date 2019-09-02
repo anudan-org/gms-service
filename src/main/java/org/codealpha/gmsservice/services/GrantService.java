@@ -48,6 +48,8 @@ public class GrantService {
     private GrantSpecificSectionAttributeRepository grantSpecificSectionAttributeRepository;
     @Autowired
     private GrantSpecificSectionRepository grantSpecificSectionRepository;
+    @Autowired
+    private GranterGrantTemplateRepository granterGrantTemplateRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -241,6 +243,10 @@ public class GrantService {
         return grantStringAttributeRepository.findBySectionAndSectionAttributeAndGrant(granterGrantSection,granterGrantSectionAttribute,grant);
     }
 
+    public GrantStringAttribute findGrantStringBySectionIdAttribueIdAndGrantId(Long granterGrantSectionId,Long granterGrantSectionAttributeId, Long grantId){
+        return grantStringAttributeRepository.findBySectionAndSectionIdAttributeIdAndGrantId(granterGrantSectionId,granterGrantSectionAttributeId,grantId);
+    }
+
     public GrantDocumentAttributes findGrantDocumentBySectionAttribueAndGrant(GrantSpecificSection granterGrantSection,GrantSpecificSectionAttribute granterGrantSectionAttribute, Grant grant){
         return grantDocumentAttributesRepository.findBySectionAndSectionAttributeAndGrant(granterGrantSection,granterGrantSectionAttribute,grant);
     }
@@ -272,7 +278,7 @@ public class GrantService {
     }
 
     public List<GrantSpecificSection> getGrantSections(Grant grant){
-        return grantSpecificSectionRepository.findByGranter((Granter)grant.getGrantorOrganization());
+        return grantSpecificSectionRepository.findByGranterAndGrantId((Granter)grant.getGrantorOrganization(), grant.getId());
     }
 
     public List<GrantSpecificSectionAttribute> getAttributesBySection(GrantSpecificSection section){
@@ -290,5 +296,17 @@ public class GrantService {
 
     public void deleteStringAttributes(List<GrantStringAttribute> stringAttributes){
         grantStringAttributeRepository.deleteAll(stringAttributes);
+    }
+
+    public GranterGrantTemplate saveGrantTemplate(GranterGrantTemplate newTemplate) {
+        return granterGrantTemplateRepository.save(newTemplate);
+    }
+
+    public GranterGrantSection saveGrantTemaplteSection(GranterGrantSection section){
+        return granterGrantSectionRepository.save(section);
+    }
+
+    public GranterGrantSectionAttribute saveGrantTemaplteSectionAttribute(GranterGrantSectionAttribute attribute){
+        return granterGrantSectionAttributeRepository.save(attribute);
     }
 }

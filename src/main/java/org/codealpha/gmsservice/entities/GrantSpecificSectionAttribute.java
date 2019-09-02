@@ -10,9 +10,9 @@ public class GrantSpecificSectionAttribute {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  @Column
+  @Column(columnDefinition = "text")
   private String fieldName;
-  @Column
+  @Column(columnDefinition = "text")
   private String fieldType;
   @Column
   private Boolean deletable;

@@ -42,6 +42,8 @@ public class GrantVO {
   private GrantDetailVO grantDetails;
   private List<GrantKpi> kpis;
   private Long templateId;
+  private GranterGrantTemplate grantTemplate;
+  private Long grantId;
   @JsonIgnore
   private List<GrantStringAttribute> stringAttributes;
   @JsonIgnore
@@ -248,7 +250,15 @@ public class GrantVO {
     this.templateId = templateId;
   }
 
-  public void setAmount(Double amount){
+    public Long getGrantId() {
+        return grantId;
+    }
+
+    public void setGrantId(Long grantId) {
+        this.grantId = grantId;
+    }
+
+    public void setAmount(Double amount){
     this.amount = amount;
   }
 
@@ -264,9 +274,17 @@ public class GrantVO {
     return this.representative;
   }
 
-  public GrantVO build(Grant grant,List<GrantSpecificSection> sections,
-      WorkflowPermissionService workflowPermissionService,
-      User user, AppConfig submissionWindow) {
+    public GranterGrantTemplate getGrantTemplate() {
+        return grantTemplate;
+    }
+
+    public void setGrantTemplate(GranterGrantTemplate grantTemplate) {
+        this.grantTemplate = grantTemplate;
+    }
+
+    public GrantVO build(Grant grant, List<GrantSpecificSection> sections,
+                         WorkflowPermissionService workflowPermissionService,
+                         User user, AppConfig submissionWindow) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
     GrantVO vo = new GrantVO();
     Submission submissionVOList = null;

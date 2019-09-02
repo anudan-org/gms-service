@@ -97,6 +97,7 @@ public class DashboardService {
                             .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                     AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
                     grant.setGrantDetails(grantVO.getGrantDetails());
+                    grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
                     grantList.add(grant);
                     tenant.setGrants(grantList);
                 }
