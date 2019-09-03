@@ -15,6 +15,8 @@ public class GrantSpecificSectionAttribute {
   @Column(columnDefinition = "text")
   private String fieldType;
   @Column
+  private int attributeOrder;
+  @Column
   private Boolean deletable;
   @Column
   private Boolean required;
@@ -81,5 +83,13 @@ public class GrantSpecificSectionAttribute {
 
   public void setRequired(Boolean required) {
     this.required = required;
+  }
+
+  public int getAttributeOrder() {
+    return attributeOrder;
+  }
+
+  public void setAttributeOrder(int attributeOrder) {
+    this.attributeOrder = attributeOrder;
   }
 }

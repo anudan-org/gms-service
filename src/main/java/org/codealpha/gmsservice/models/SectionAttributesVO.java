@@ -10,6 +10,7 @@ public class SectionAttributesVO {
   private String fieldType;
   private String fieldValue;
   private List<TableData> fieldTableValue;
+  private int attributeOrder;
   private String target;
   private String frequency;
   private boolean deletable;
@@ -85,6 +86,14 @@ public class SectionAttributesVO {
 
   public void setFieldTableValue(List<TableData> fieldTableValue) {
     this.fieldTableValue = fieldTableValue;
+  }
+
+  public int getAttributeOrder() {
+    return attributeOrder;
+  }
+
+  public void setAttributeOrder(int attributeOrder) {
+    this.attributeOrder = attributeOrder;
   }
 
   @Override

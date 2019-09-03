@@ -9,6 +9,8 @@ public class SectionVO implements Comparable<SectionVO> {
   private Long id;
   @JsonProperty("sectionName")
   private String name;
+
+  private int order;
   
   @JsonProperty("attributes")
   private List<SectionAttributesVO> attributes;
@@ -35,6 +37,14 @@ public class SectionVO implements Comparable<SectionVO> {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  public int getOrder() {
+    return order;
+  }
+
+  public void setOrder(int order) {
+    this.order = order;
   }
 
   @Override

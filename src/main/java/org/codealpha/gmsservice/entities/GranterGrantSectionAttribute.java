@@ -20,6 +20,8 @@ public class GranterGrantSectionAttribute {
   @Column
   private String fieldType;
   @Column
+  private int attributeOrder;
+  @Column
   private Boolean deletable;
   @Column
   private Boolean required;
@@ -86,5 +88,13 @@ public class GranterGrantSectionAttribute {
 
   public void setRequired(Boolean required) {
     this.required = required;
+  }
+
+  public int getAttributeOrder() {
+    return attributeOrder;
+  }
+
+  public void setAttributeOrder(int attributeOrder) {
+    this.attributeOrder = attributeOrder;
   }
 }

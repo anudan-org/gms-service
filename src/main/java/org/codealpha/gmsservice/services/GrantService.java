@@ -322,4 +322,11 @@ public class GrantService {
         granterGrantTemplateRepository.delete(template);
     }
 
+    public int getNextAttributeOrder(Long granterId, Long sectionId){
+        return grantSpecificSectionAttributeRepository.getNextAttributeOrder(granterId,sectionId);
+    }
+
+    public int getNextSectionOrder(Long granterId, Long templateId){
+        return grantSpecificSectionRepository.getNextSectionOrder(granterId,templateId);
+    }
 }

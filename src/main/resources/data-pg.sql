@@ -657,71 +657,71 @@ VALUES (true, 'Grant Terms & Conditions', 2,1,6); -- 6
 
 -- Insert Granter's grant section attributes
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'What is need being addressed?', 'multiline', true, 2, 1); -- 1
+                                              granter_id, section_id, attribute_order)
+values (true, 'What is the need being addressed?', 'multiline', true, 2, 1,1); -- 1
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Why do this?', 'multiline', true, 2, 1);
+                                              granter_id, section_id, attribute_order)
+values (true, 'Why do this?', 'multiline', true, 2, 1,2);
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'What is the proposed intervention?', 'multiline', true, 2, 2);
+                                              granter_id, section_id, attribute_order)
+values (true, 'What is the proposed intervention?', 'multiline', true, 2, 2,1);
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Describe the intervention', 'multiline', true, 2, 2); -- 2
+                                              granter_id, section_id, attribute_order)
+values (true, 'Describe the intervention', 'multiline', true, 2, 2,2); -- 2
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Describe the main activities of the project', 'multiline', true, 2, 2); -- 2
+                                              granter_id, section_id, attribute_order)
+values (true, 'Describe the main activities of the project', 'multiline', true, 2, 2,3); -- 2
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Describe the key assumptions', 'multiline', true, 2, 2); -- 2
+                                              granter_id, section_id, attribute_order)
+values (true, 'Describe the key assumptions', 'multiline', true, 2, 2,4); -- 2
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Describe the success factors', 'multiline', true, 2, 2); -- 2
+                                              granter_id, section_id, attribute_order)
+values (true, 'Describe the success factors', 'multiline', true, 2, 2,5); -- 2
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Describe the risks to the project & mitigation plans', 'multiline', true, 2, 3); -- 3
+                                              granter_id, section_id, attribute_order)
+values (true, 'Describe the risks to the project & mitigation plans', 'multiline', true, 2, 3,1); -- 3
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Describe the impact outcomes', 'multiline', true, 2, 4); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Describe the impact outcomes', 'multiline', true, 2, 4,1); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Annual budget', 'multiline', true, 2, 5); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Annual budget', 'multiline', true, 2, 5,1); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Disbursement schedule', 'multiline', true, 2, 5); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Disbursement schedule', 'multiline', true, 2, 5,2); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Bank Name', 'multiline', true, 2, 5); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Bank Name', 'multiline', true, 2, 5,3); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Bank A/C No.', 'multiline', true, 2, 5); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Bank A/C No.', 'multiline', true, 2, 5,4); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Bank IFSC Code', 'multiline', true, 2, 5); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Bank IFSC Code', 'multiline', true, 2, 5,5); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Severability', 'multiline', true, 2, 6); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Severability', 'multiline', true, 2, 6,1); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Governing Law and Jursidiction', 'multiline', true, 2, 6); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Governing Law and Jursidiction', 'multiline', true, 2, 6,2); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Binding terms', 'multiline', true, 2, 6); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Binding terms', 'multiline', true, 2, 6,3); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Insurance', 'multiline', true, 2, 6); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Insurance', 'multiline', true, 2, 6,4); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Notices', 'multiline', true, 2, 6); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Notices', 'multiline', true, 2, 6,5); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Indemnification', 'multiline', true, 2, 6); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Indemnification', 'multiline', true, 2, 6,6); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Assignment', 'multiline', true, 2, 6); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Assignment', 'multiline', true, 2, 6,7); -- 4
 insert into granter_grant_section_attributes (deletable, field_name, field_type, required,
-                                              granter_id, section_id)
-values (true, 'Amendment', 'multiline', true, 2, 6); -- 4
+                                              granter_id, section_id, attribute_order)
+values (true, 'Amendment', 'multiline', true, 2, 6,8); -- 4
 
 
 -- Insert Grant additional String based attributes

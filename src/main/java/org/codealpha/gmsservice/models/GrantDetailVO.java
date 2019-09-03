@@ -32,6 +32,7 @@ public class GrantDetailVO {
       sectionVO = new SectionVO();
       sectionVO.setId(sec.getId());
       sectionVO.setName(sec.getSectionName());
+      sectionVO.setOrder(sec.getSectionOrder());
 
       if (!sections.contains(sectionVO)) {
         sections.add(sectionVO);
@@ -49,6 +50,7 @@ public class GrantDetailVO {
             .setFieldType(stringAttribute.getSectionAttribute().getFieldType());
         //sectionAttribute.setDeletable(stringAttribute.getSectionAttribute().getDeletable());
         sectionAttribute.setRequired(stringAttribute.getSectionAttribute().getRequired());
+        sectionAttribute.setAttributeOrder(stringAttribute.getSectionAttribute().getAttributeOrder());
 
         sectionAttribute.setFieldValue(stringAttribute.getValue());
         if(sectionAttribute.getFieldType().equalsIgnoreCase("table")){

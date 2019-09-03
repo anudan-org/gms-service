@@ -134,6 +134,7 @@ public class GrantController {
                 specificSectionAttribute.setFieldType(sectionAttribute.getFieldType());
                 specificSectionAttribute.setGranter((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
                 specificSectionAttribute.setRequired(false);
+                specificSectionAttribute.setAttributeOrder(sectionAttribute.getAttributeOrder());
                 specificSectionAttribute.setSection(specificSection);
                 specificSectionAttribute = grantService.saveSectionAttribute(specificSectionAttribute);
 
@@ -177,6 +178,13 @@ public class GrantController {
                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
         grant.setGrantDetails(grantVO.getGrantDetails());
+
+        grant.getGrantDetails().getSections().sort((a,b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+        for(SectionVO section: grant.getGrantDetails().getSections()){
+            if(section.getAttributes()!=null) {
+                section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+            }
+        }
         grant = grantService.saveGrant(grant);
         return grant;
     }
@@ -192,6 +200,7 @@ public class GrantController {
         newSectionAttribute.setFieldType("multiline");
         newSectionAttribute.setFieldName("");
         newSectionAttribute.setDeletable(true);
+        newSectionAttribute.setAttributeOrder(grantService.getNextAttributeOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(),sectionId));
         newSectionAttribute.setGranter((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
         newSectionAttribute = grantService.saveSectionAttribute(newSectionAttribute);
         GrantStringAttribute stringAttribute = new GrantStringAttribute();
@@ -224,6 +233,7 @@ public class GrantController {
         specificSection.setGrantTemplateId(templateId);
         specificSection.setDeletable(true);
         specificSection.setGrantId(grantId);
+        specificSection.setSectionOrder(grantService.getNextSectionOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(),templateId));
         specificSection = grantService.saveSection(specificSection);
 
         if (_checkIfGrantTemplateChanged(grant, specificSection, null)) {
@@ -287,6 +297,7 @@ public class GrantController {
                 newAttribute.setFieldType(currentAttribute.getFieldType());
                 newAttribute.setGranter((Granter) currentAttribute.getGranter());
                 newAttribute.setRequired(currentAttribute.getRequired());
+                newAttribute.setAttributeOrder(currentAttribute.getAttributeOrder());
                 newAttribute.setSection(newSection);
 
                 newAttribute = grantService.saveGrantTemaplteSectionAttribute(newAttribute);
@@ -563,10 +574,10 @@ public class GrantController {
         //submissionService.saveSubmissions(grantToSave.getSubmissions());
 
         grant.getSubmissions().sort((a, b) -> a.getSubmitBy().compareTo(b.getSubmitBy()));
-        grant.getGrantDetails().getSections().sort((a, b) -> a.getId().compareTo(b.getId()));
+        grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
         for (SectionVO sec : grant.getGrantDetails().getSections()) {
             if (sec.getAttributes() != null) {
-                sec.getAttributes().sort((a, b) -> a.getId().compareTo(b.getId()));
+                sec.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
             }
         }
         return grant;
@@ -632,8 +643,9 @@ public class GrantController {
         _processStringAttributes(grant, grantToSave, tenant);
         //grant.setSubmissions(_processGrantSubmissions(grant, grantToSave, tenant, user));
 
+        grant = grantService.saveGrant(grant);
 
-        return grantService.saveGrant(grant);
+        return grant;
     }
 
     private void _processDocumentAttributes(Grant grant, Grant grantToSave, Organization tenant) {

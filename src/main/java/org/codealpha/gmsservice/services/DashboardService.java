@@ -8,6 +8,7 @@ import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.GrantDetailVO;
 import org.codealpha.gmsservice.models.GrantVO;
+import org.codealpha.gmsservice.models.SectionVO;
 import org.codealpha.gmsservice.models.Tenant;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,6 +99,12 @@ public class DashboardService {
                                     AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
                     grant.setGrantDetails(grantVO.getGrantDetails());
                     grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
+                    grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+                    for(SectionVO section: grant.getGrantDetails().getSections()){
+                        if(section.getAttributes()!=null) {
+                            section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+                        }
+                    }
                     grantList.add(grant);
                     tenant.setGrants(grantList);
                 }
