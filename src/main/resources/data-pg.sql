@@ -638,7 +638,7 @@ VALUES (false, 'Assignment', 'multiline', true, null, 6);
 insert into grant_section_attributes (deletable, field_name, field_type, required, type, section_id)
 VALUES (false, 'Amendment', 'multiline', true, null, 6);
 
-insert into granter_grant_templates (name, description, granter_id) values ('Default Grant Template', 'This is the default template for IHF Grants',2);
+insert into granter_grant_templates (name, description, granter_id, published) values ('Default Grant Template', 'This is the default template for IHF Grants',2,true);
 -- insert granter's grant sections configuration
 insert into granter_grant_sections (deletable, section_name, granter_id,grant_template_id, section_order)
 VALUES (true, 'Purpose', 2,1,1); -- 1

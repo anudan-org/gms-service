@@ -16,9 +16,12 @@ public class GranterGrantTemplate {
     private String name;
     @Column(columnDefinition = "text")
     private String description;
-    @OneToMany(mappedBy = "grantTemplate",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "grantTemplate",fetch = FetchType.LAZY,cascade = CascadeType.ALL,orphanRemoval = true)
     @JsonManagedReference
     private List<GranterGrantSection> sections;
+
+    @Column
+    private boolean published;
 
     @Column
     private Long granterId;
@@ -61,5 +64,13 @@ public class GranterGrantTemplate {
 
     public void setSections(List<GranterGrantSection> sections) {
         this.sections = sections;
+    }
+
+    public boolean isPublished() {
+        return published;
+    }
+
+    public void setPublished(boolean published) {
+        this.published = published;
     }
 }

@@ -26,7 +26,7 @@ public class GranterGrantSection {
   @JsonBackReference
   private GranterGrantTemplate grantTemplate;
 
-  @OneToMany(mappedBy = "section",fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "section",fetch = FetchType.LAZY,cascade = CascadeType.ALL,orphanRemoval = true)
   private List<GranterGrantSectionAttribute> attributes;
 
   public Long getId() {
