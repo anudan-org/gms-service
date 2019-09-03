@@ -15,6 +15,6 @@ public interface GrantSpecificSectionAttributeRepository extends CrudRepository<
 
   public List<GrantSpecificSectionAttribute> findBySection(GrantSpecificSection section);
 
-  @Query(value = "select max(attribute_order)+1 from grant_specific_section_attributes where granter_id=?1 and section_id=?2",nativeQuery = true)
+  @Query(value = "select case when max(attribute_order)+1 is null then 1 else max(attribute_order)+1 end from grant_specific_section_attributes where granter_id=?1 and section_id=?2",nativeQuery = true)
   public int getNextAttributeOrder(Long granterId, Long sectionId);
 }

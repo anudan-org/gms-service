@@ -18,6 +18,10 @@ public class GranterGrantTemplateService {
         return granterGrantTemplateRepository.findByGranterId(granterId);
     }
 
+    public List<GranterGrantTemplate> findByGranterIdAndPublishedStatus(Long granterId, boolean published){
+        return granterGrantTemplateRepository.findByGranterIdAndPublished(granterId,published);
+    }
+
     public GranterGrantTemplate findByTemplateId(Long templateId){
         return granterGrantTemplateRepository.findById(templateId).get();
     }

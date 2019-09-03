@@ -590,6 +590,7 @@ public class GrantController {
                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
         grant.setGrantDetails(grantVO.getGrantDetails());
+        grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
 
         //submissionService.saveSubmissions(grantToSave.getSubmissions());
 
@@ -1172,7 +1173,7 @@ public class GrantController {
     }
 
     @PostMapping("/{grantId}/flow/{fromState}/{toState}")
-    public GrantVO MoveGrantState(@PathVariable("userId") Long userId,
+    public Grant MoveGrantState(@PathVariable("userId") Long userId,
                                   @PathVariable("grantId") Long grantId, @PathVariable("fromState") Long fromStateId,
                                   @PathVariable("toState") Long toStateId) {
 
@@ -1197,9 +1198,46 @@ public class GrantController {
         usersToNotify.stream().forEach(u -> notificationsService.saveNotification(message, u.getId()));
 
         //}
-        return new GrantVO().build(grant, grantService.getGrantSections(grant), workflowPermissionService, user,
+
+        grant.setActionAuthorities(workflowPermissionService
+                .getGrantActionPermissions(grant.getGrantorOrganization().getId(),
+                        user.getUserRoles(), grant.getGrantStatus().getId()));
+
+        grant.setFlowAuthorities(workflowPermissionService
+                .getGrantFlowPermissions(grant.getGrantorOrganization().getId(),
+                        user.getUserRoles(), grant.getGrantStatus().getId()));
+        GrantVO grantVO = new GrantVO().build(grant, grantService.getGrantSections(grant), workflowPermissionService, user,
                 appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
+
+        grant.setGrantDetails(grantVO.getGrantDetails());
+        grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
+
+        grant.getSubmissions().sort((a, b) -> a.getSubmitBy().compareTo(b.getSubmitBy()));
+        grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+        for (SectionVO sec : grant.getGrantDetails().getSections()) {
+            if (sec.getAttributes() != null) {
+                sec.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+            }
+        }
+        return grant;
+
+    }
+
+    @PutMapping("/{grantId}/template/{templateId}/{templateName}")
+    public Grant updateTemplateName(@PathVariable("userId") Long userId,
+                                    @PathVariable("grantId") Long grantId,
+                                    @PathVariable("templateId") Long templateId,
+                                    @PathVariable("templateName") String templateName){
+
+        GranterGrantTemplate template = granterGrantTemplateService.findByTemplateId(templateId);
+        template.setName(templateName);
+        template.setPublished(true);
+        grantService.saveGrantTemplate(template);
+
+        Grant grant = grantService.getById(grantId);
+        grant = _grantToReturn(userId,grant);
+        return grant;
 
     }
 
@@ -1493,4 +1531,8 @@ public class GrantController {
     }
 
 
+    @GetMapping("/templates")
+    public List<GranterGrantTemplate> getTenantPublishedGrantTemplates(@RequestHeader("X-TENANT-CODE") String tenantCode){
+        return granterGrantTemplateService.findByGranterIdAndPublishedStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(),true);
+    }
 }
