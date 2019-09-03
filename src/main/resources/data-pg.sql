@@ -66,6 +66,7 @@ values (now(), 'System', 'Finance Lead', 2, null, null); --8
 
 -- Role Permissions
 insert into roles_permission (permission, role_id) VALUES ('Create Grant',3);
+insert into roles_permission (permission, role_id) VALUES ('Delete Grant',3);
 insert into roles_permission (permission, role_id) VALUES ('Manage Workflows',3);
 
 

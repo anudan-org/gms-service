@@ -329,4 +329,8 @@ public class GrantService {
     public int getNextSectionOrder(Long granterId, Long templateId){
         return grantSpecificSectionRepository.getNextSectionOrder(granterId,templateId);
     }
+
+    public void deleteGrant(Grant grant){
+        grantRepository.delete(grant);
+    }
 }

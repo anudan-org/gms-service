@@ -159,6 +159,26 @@ public class GrantController {
         return grant;
     }
 
+    @DeleteMapping("/{grantId}")
+    public void deleteGrant(@PathVariable("grantId") Long grantId,@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode){
+        Grant grant = grantService.getById(grantId);
+        for(GrantSpecificSection section: grantService.getGrantSections(grant)){
+            List<GrantSpecificSectionAttribute> attribs = grantService.getAttributesBySection(section);
+            for (GrantSpecificSectionAttribute attribute : attribs) {
+                List<GrantStringAttribute> strAttribs = grantService.getStringAttributesByAttribute(attribute);
+                grantService.deleteStringAttributes(strAttribs);
+            }
+            grantService.deleteSectionAttributes(attribs);
+            grantService.deleteSection(section);
+        }
+        grantService.deleteGrant(grant);
+
+        GranterGrantTemplate template = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
+        if(!template.isPublished()){
+            grantService.deleteGrantTemplate(template);
+        }
+    }
+
     private Grant _grantToReturn(@PathVariable("userId") Long userId, Grant grant) {
         User user = userService.getUserById(userId);
 
