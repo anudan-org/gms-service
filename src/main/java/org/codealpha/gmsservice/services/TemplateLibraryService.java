@@ -16,4 +16,8 @@ public class TemplateLibraryService {
     public List<TemplateLibrary> getTemplateLibraryForGranter(Granter granter){
         return templateLibraryRepository.findByGranterId(granter.getId());
     }
+
+    public TemplateLibrary getTemplateLibraryDocumentById(Long id){
+        return templateLibraryRepository.findById(id).get();
+    }
 }

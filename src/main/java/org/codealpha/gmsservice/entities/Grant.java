@@ -32,7 +32,7 @@ import org.joda.time.DateTime;
  **/
 @Entity
 @Table(name = "grants")
-public class Grant extends BaseEntity {
+public class Grant {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -319,5 +319,37 @@ public class Grant extends BaseEntity {
 
     public void setGrantTemplate(GranterGrantTemplate grantTemplate) {
         this.grantTemplate = grantTemplate;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(String updatedBy) {
+        this.updatedBy = updatedBy;
     }
 }

@@ -1,12 +1,16 @@
 package org.codealpha.gmsservice.controllers;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Template;
+import org.codealpha.gmsservice.entities.TemplateLibrary;
 import org.codealpha.gmsservice.models.UIConfig;
 import org.codealpha.gmsservice.services.*;
 import org.slf4j.Logger;
@@ -61,6 +65,9 @@ public class ApplicationController {
 
     @Autowired
     private GrantSectionService grantSectionService;
+
+    @Autowired
+    private TemplateLibraryService templateLibraryService;
 
     @GetMapping(value = {"/config/{host}", "/config"})
     public UIConfig config(@PathVariable(name = "host", required = false) String host,
@@ -187,17 +194,21 @@ public class ApplicationController {
       }
     }
 
-    @GetMapping("/grants/{grantId}/file/{fileName}")
+    @GetMapping("/grants/{grantId}/file/{fileId}")
     public void getGrantFile(@PathVariable("grantId") Long grantId,
-                             @PathVariable("fileName") String fileName,
+                             @PathVariable("fileId") Long fileId,
                              HttpServletResponse servletResponse) {
 
-        GrantDocumentAttributes documentAttributes = grantDocumentAttributesService
-                .findByGrantAndName(grantService.getById(grantId), fileName);
+        TemplateLibrary templateLibrary = templateLibraryService.getTemplateLibraryDocumentById(fileId);
 
-        Resource file = resourceLoader
-                .getResource("file:" + uploadLocation + documentAttributes.getLocation() + documentAttributes.getName());
-        String fileType = documentAttributes.getName().substring(documentAttributes.getName().lastIndexOf(".") + 1);
+        Resource file = null;
+        try {
+            file = resourceLoader
+                    .getResource("file:" + uploadLocation + URLDecoder.decode(templateLibrary.getLocation(),"UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        String fileType = templateLibrary.getType();
         switch (fileType) {
             case "png":
                 servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
@@ -214,11 +225,17 @@ public class ApplicationController {
             case "doc":
                 servletResponse.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                 break;
+            case "docx":
+                servletResponse.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                break;
             case "xls":
+                servletResponse.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                break;
+            case "xlsx":
                 servletResponse.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
         }
         servletResponse
-                .setHeader("Content-Disposition", "attachment; filename=" + documentAttributes.getName());
+                .setHeader("Content-Disposition", "attachment; filename=" + templateLibrary.getName());
 
         try {
             StreamUtils.copy(file.getInputStream(), servletResponse.getOutputStream());

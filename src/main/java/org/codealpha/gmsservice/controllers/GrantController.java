@@ -105,6 +105,8 @@ public class GrantController {
         grant.setEndDate(null);
         grant.setEnDate("");
         grant.setOrganization(null);
+        grant.setCreatedAt(new Date());
+        grant.setCreatedBy(userService.getUserById(userId).getEmailId());
         grant.setGrantorOrganization((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
         grant.setRepresentative("");
         grant.setTemplateId(templateId);
