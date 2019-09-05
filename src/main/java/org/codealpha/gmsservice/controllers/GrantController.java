@@ -243,6 +243,23 @@ public class GrantController {
         return new FieldInfo(newSectionAttribute.getId(), grant);
     }
 
+    @DeleteMapping("/{id}/section/{sectionId}/field/{fieldId}")
+    public Grant deleteField(@PathVariable("userId") Long userId,@PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("fieldId") Long fieldId){
+        Grant grant = grantService.getById(grantId);
+        GrantSpecificSectionAttribute attribute = grantService.getAttributeById(fieldId);
+
+        GrantStringAttribute stringAttrib = grantService.findGrantStringBySectionIdAttribueIdAndGrantId(attribute.getSection().getId(),attribute.getId(),grantId);
+
+        grantService.deleteStringAttribute(stringAttrib);
+        grantService.deleteAtttribute(attribute);
+
+        if (_checkIfGrantTemplateChanged(grant, attribute.getSection(), null)) {
+            GranterGrantTemplate newTemplate = _createNewGrantTemplateFromExisiting(grant);
+        }
+        grant = _grantToReturn(userService.getUserById(userId).getId(), grant);
+        return grant;
+    }
+
     @PostMapping("/{id}/field/{fieldId}")
     public FieldInfo updateField(@RequestBody SectionAttributesVO attributeToSave, @PathVariable("id") Long grantId, @PathVariable("fieldId") Long fieldId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode){
         GrantSpecificSectionAttribute currentAttribute = grantService.getAttributeById(fieldId);
@@ -769,19 +786,19 @@ public class GrantController {
             GrantSpecificSectionAttribute sectionAttribute = null;
 
             if (sectionVO.getAttributes() != null) {
+                List<GrantSpecificSectionAttribute> sectionAttributesToDelete = new ArrayList<>();
                 for (SectionAttributesVO sectionAttributesVO : sectionVO.getAttributes()) {
                     /*if (sectionAttributesVO.getFieldName().trim().equalsIgnoreCase("")) {
                         continue;
                     }*/
-                    if (sectionAttributesVO.getId() > 0) {
-                        sectionAttribute = grantService.getSectionAttributeByAttributeIdAndType(sectionAttributesVO.getId(), sectionAttributesVO.getFieldType());
-                    } else {
-                        sectionAttribute = grantService.findBySectionAndFieldName(grantSpecificSection, sectionAttributesVO.getFieldName());
-                    }
+
+                    sectionAttribute = grantService.getSectionAttributeByAttributeIdAndType(sectionAttributesVO.getId(), sectionAttributesVO.getFieldType());
 
 
-                    if (sectionAttributesVO.getId() < 0 && sectionAttribute == null) {
-                        sectionAttribute = new GrantSpecificSectionAttribute();
+
+                    if (sectionAttribute == null) {
+                        sectionAttributesToDelete.add(sectionAttribute);
+                        continue;
                     }
                     //sectionAttribute.setDeletable(true);
                     sectionAttribute.setFieldName(sectionAttributesVO.getFieldName());

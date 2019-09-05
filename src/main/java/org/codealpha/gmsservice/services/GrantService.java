@@ -297,12 +297,20 @@ public class GrantService {
         grantSpecificSectionRepository.delete(section);
     }
 
+    public void deleteAtttribute(GrantSpecificSectionAttribute attrib){
+        grantSpecificSectionAttributeRepository.delete(attrib);
+    }
+
     public void deleteSectionAttributes(List<GrantSpecificSectionAttribute> attributes){
         grantSpecificSectionAttributeRepository.deleteAll(attributes);
     }
 
     public void deleteStringAttributes(List<GrantStringAttribute> stringAttributes){
         grantStringAttributeRepository.deleteAll(stringAttributes);
+    }
+
+    public void deleteStringAttribute(GrantStringAttribute stringAttribute){
+        grantStringAttributeRepository.delete(stringAttribute);
     }
 
     public GranterGrantTemplate saveGrantTemplate(GranterGrantTemplate newTemplate) {
