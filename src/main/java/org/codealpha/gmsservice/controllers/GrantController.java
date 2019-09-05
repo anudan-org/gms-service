@@ -142,14 +142,14 @@ public class GrantController {
 
 
                 GrantStringAttribute stringAttribute = new GrantStringAttribute();
-                switch (sectionAttribute.getFieldType()) {
-                    case "multiline":
+
                         stringAttribute.setSection(specificSection);
                         stringAttribute.setGrant(grant);
                         stringAttribute.setSectionAttribute(specificSectionAttribute);
                         stringAttribute.setValue("");
-                        break;
-                }
+                        stringAttribute.setFrequency("");
+                        stringAttribute.setTarget("");
+
                 stringAttribute = grantService.saveStringAttribute(stringAttribute);
                 grant.getStringAttributes().add(stringAttribute);
             }
@@ -724,7 +724,7 @@ public class GrantController {
             for (GrantSpecificSection grantSection : grantService.getGrantSections(grant)) {
                 boolean found = false;
                 for (SectionVO secVO : grantToSave.getGrantDetails().getSections()) {
-                    if (secVO.getId() == grantSection.getId()) {
+                    if (secVO.getId().longValue() == grantSection.getId().longValue()) {
                         found = true;
                         break;
                     }
