@@ -26,6 +26,8 @@ public class WorkflowStatus {
   @Column(nullable = true)
   private String verb;
   @Column
+  private String internalStatus;
+  @Column
   private boolean initial;
   @Column
   private Boolean terminal;
@@ -141,5 +143,13 @@ public class WorkflowStatus {
 
   public void setVerb(String verb) {
     this.verb = verb;
+  }
+
+  public String getInternalStatus() {
+    return internalStatus;
+  }
+
+  public void setInternalStatus(String internalStatus) {
+    this.internalStatus = internalStatus;
   }
 }

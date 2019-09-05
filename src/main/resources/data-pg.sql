@@ -129,6 +129,10 @@ INSERT INTO public.users (created_at, created_by, email_id, first_name, last_nam
                           updated_at, updated_by, organization_id)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'vapte@tatatrusts.org', 'Vapte', 'Partner',
         'password', null, null, 1); -- 13
+INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
+                          updated_at, updated_by, organization_id)
+VALUES ('2019-04-08 03:00:16.545000', 'System', 'vineet@socialalpha.org', 'Vineet', 'Finance',
+        'password', null, null, 2); -- 14
 
 insert into user_roles (role_id, user_id) VALUES (4,1);
 insert into user_roles (role_id, user_id) VALUES (1,2);
@@ -145,6 +149,8 @@ insert into user_roles (role_id, user_id) VALUES (3,9);
 insert into user_roles (role_id, user_id) VALUES (2,10);
 insert into user_roles (role_id, user_id) VALUES (7,11);
 insert into user_roles (role_id, user_id) VALUES (8,12);
+insert into user_roles (role_id, user_id) VALUES (7,14);
+
 
 -- Workflows
 insert into public.workflows (name, granter_id, created_at, created_by, updated_at,
@@ -163,56 +169,41 @@ VALUES ('TATR - KPI Submissions Workflow', 4, now(), 'System', null, null, 'SUBM
 
 -- Workflow Statuses
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial,verb)
-values (now(), 'System','DRAFT', FALSE, null, null, 1, 'DRAFT',TRUE,'Draft'); --1
+workflow_id, display_name,initial,verb,internal_status)
+values (now(), 'System','DRAFT', FALSE, null, null, 1, 'DRAFT',TRUE,'Draft','DRAFT'); --1
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial,verb)
-values (now(), 'System','REVIEW PENDING', FALSE, null, null, 1, 'REVIEW PENDING',FALSE,'Pending Review'); --2
+workflow_id, display_name,initial,verb,internal_status)
+values (now(), 'System','SUBMITTED (Pending Review)', FALSE, null, null, 1, 'Submitted (Pending Review)',FALSE,'Submitted (Pending Review)', 'DRAFT'); --2
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial,verb)
-values (now(), 'System','APPROVED', FALSE, null, null, 1, 'APPROVED',FALSE,'Approved'); --3
+workflow_id, display_name,initial,verb,internal_status)
+values (now(), 'System','APPROVED (Pending Review)', FALSE, null, null, 1, 'Approved (Pending Review)',FALSE,'Approved (Pending Review)','DRAFT'); --3
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial,verb)
-values (now(), 'System','RETURNED', FALSE, null, null, 1, 'RETURNED',FALSE,'Returned'); --4
+workflow_id, display_name,initial,verb,internal_status)
+values (now(), 'System','APPROVED', FALSE, null, null, 1, 'RETURNED',FALSE,'Returned','ACTIVE'); --4
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial,verb)
-values (now(), 'System','CLOSED', FALSE, null, null, 1, 'CLOSED',FALSE,'Closed'); --5
-insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','DRAFT', FALSE, null, null, 2, 'DRAFT',TRUE); --11
-insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','APROVAL PENDING', FALSE, null, null, 2, 'APROVAL PENDING',FALSE); --12
-insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','APPROVED', FALSE, null, null, 2, 'APPROVED',FALSE); --13
-insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','MODIFICATIONS REQUESTED', FALSE, null, null, 2, 'MODIFICATIONS REQUESTED',FALSE); --14
-insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
-workflow_id, display_name,initial)
-values (now(), 'System','MODIFICATIONS SUBMITTED', TRUE, null, null, 2, 'MODIFICATIONS SUBMITTED',FALSE); --15
+workflow_id, display_name,initial,verb,internal_status)
+values (now(), 'System','CLOSED', FALSE, null, null, 1, 'CLOSED',FALSE,'Closed','CLOSED'); --5
+--15
 -- Workflow Status Transitions
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
 updated_by, from_state_id, to_state_id, role_id,
 workflow_id, note_required)
 values ('Submit', now(), 'System', null, null, 1, 2, 3, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
-updated_by, from_state_id, to_state_id, role_id,
-workflow_id, note_required)
-values ('Approve', now(), 'System', null, null, 2, 3, 2, 1, false);
+updated_by, from_state_id, to_state_id, role_id, workflow_id, note_required)
+values ('Approve', now(), 'System', null, null, 2, 3, 7, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
-updated_by, from_state_id, to_state_id, role_id,
-workflow_id, note_required)
-values ('Request Modifications', now(), 'System', null, null, 2, 4, 2, 1, false);
+updated_by, from_state_id, to_state_id, role_id, workflow_id, note_required)
+values ('Return', now(), 'System', null, null, 2, 1, 7, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
-updated_by, from_state_id, to_state_id, role_id,
-workflow_id, note_required)
-values ('Submit Modifications', now(), 'System', null, null, 4, 2, 3, 1, false);
+updated_by, from_state_id, to_state_id, role_id, workflow_id, note_required)
+values ('Approve', now(), 'System', null, null, 3, 4, 2, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
-updated_by, from_state_id, to_state_id, role_id,
-workflow_id, note_required)
-values ('Close Grant', now(), 'System', null, null, 3, 5, 3, 1, false);
+updated_by, from_state_id, to_state_id, role_id, workflow_id, note_required)
+values ('Return', now(), 'System', null, null, 3, 2, 2, 1, false);
+insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
+updated_by, from_state_id, to_state_id, role_id, workflow_id, note_required)
+values ('Close', now(), 'System', null, null, 4, 5, 3, 1, false);
 
 /*insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
 updated_by, from_state_id, to_state_id, role_id,
@@ -240,7 +231,7 @@ updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'MANAGE', null, null, 3, 1);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'MANAGE', null, null, 2, 2);
+VALUES (now(), 'System', 'MANAGE', null, null, 2, 1);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'VIEW', null, null, 3, 2);
@@ -249,40 +240,22 @@ updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'VIEW', null, null, 7, 2);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 8, 2);
+VALUES (now(), 'System', 'MANAGE', null, null, 2, 3);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'VIEW', null, null, 3, 3);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 2, 3);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'VIEW', null, null, 7, 3);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 8, 3);
+VALUES (now(), 'System', 'VIEW', null, null, 2, 4);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'MANAGE', null, null, 3, 4);
+VALUES (now(), 'System', 'VIEW', null, null, 3, 4);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'VIEW', null, null, 7, 4);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 8, 4);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 2, 4);
-/*insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 3, 5);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 8, 5);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 7, 5);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'VIEW', null, null, 2, 5);
@@ -291,100 +264,10 @@ updated_by, role_id, workflow_status_id)
 VALUES (now(), 'System', 'VIEW', null, null, 3, 5);
 insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
 updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 4, 5);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 4, 6);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 3, 6);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 2, 6);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 7, 6);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 8, 6);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 4, 7);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 3, 7);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 8, 7);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 7, 7);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 2, 7);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 4, 9);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 3, 9);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 2, 9);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 8, 9);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 7, 9);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 4, 7);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 3, 7);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 2, 7);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 8, 7);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 7, 7);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 4, 8);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 3, 8);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 2, 8);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 8, 8);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 7, 8);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 4, 10);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 3, 10);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 2, 10);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 8, 10);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'VIEW', null, null, 7, 10);
-insert into workflow_state_permissions (created_at, created_by, permission, updated_at,
-updated_by, role_id, workflow_status_id)
-VALUES (now(), 'System', 'MANAGE', null, null, 4, 11);*/
+VALUES (now(), 'System', 'VIEW', null, null, 7, 5);
+
+
+
 
 -- Grants
 /*insert into public.grants (organization_id, name, description, created_at, created_by, updated_at,

@@ -20,9 +20,9 @@ spring:
   profiles: dev
   send-mail: false
   datasource:
-    url: jdbc:postgresql://localhost:3000/gms
+    url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
-    password: SA#1029
+    password: postgres
     initialization-mode: always
     platform: pg
   jpa:
@@ -31,7 +31,7 @@ spring:
       jdbc:
         lob:
           non_contextual_creation: true
-      ddl-auto: none
+      ddl-auto: create
   jackson:
     default-property-inclusion: non_null
   mail:
@@ -97,7 +97,7 @@ spring:
       jdbc:
         lob:
           non_contextual_creation: true
-      ddl-auto: none
+      ddl-auto: create
   jackson:
     default-property-inclusion: non_null
   mail:
