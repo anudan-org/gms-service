@@ -97,7 +97,7 @@ spring:
       jdbc:
         lob:
           non_contextual_creation: true
-      ddl-auto: create
+      ddl-auto: none
   jackson:
     default-property-inclusion: non_null
   mail:
