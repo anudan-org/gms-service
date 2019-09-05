@@ -72,6 +72,9 @@ public class GrantService {
         return null;
     }
 
+    public GrantSpecificSectionAttribute getAttributeById(Long attributeId){
+        return grantSpecificSectionAttributeRepository.findById(attributeId).get();
+    }
     public GrantSpecificSectionAttribute getSectionAttributeByAttributeIdAndType(
             Long attributeId, String type) {
         if (type.equalsIgnoreCase("text")) {

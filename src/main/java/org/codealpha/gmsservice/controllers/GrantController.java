@@ -243,6 +243,25 @@ public class GrantController {
         return new FieldInfo(newSectionAttribute.getId(), grant);
     }
 
+    @PostMapping("/{id}/field/{fieldId}")
+    public FieldInfo updateField(@RequestBody SectionAttributesVO attributeToSave, @PathVariable("id") Long grantId, @PathVariable("fieldId") Long fieldId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode){
+        GrantSpecificSectionAttribute currentAttribute = grantService.getAttributeById(fieldId);
+        currentAttribute.setFieldName(attributeToSave.getFieldName());
+        currentAttribute.setFieldType(attributeToSave.getFieldType());
+        currentAttribute = grantService.saveSectionAttribute(currentAttribute);
+        GrantStringAttribute stringAttribute = grantService.findGrantStringBySectionIdAttribueIdAndGrantId(currentAttribute.getSection().getId(),currentAttribute.getId(),grantId);
+        stringAttribute.setValue("");
+        stringAttribute = grantService.saveStringAttribute(stringAttribute);
+
+        Grant grant = grantService.getById(grantId);
+        if (_checkIfGrantTemplateChanged(grant, currentAttribute.getSection(), currentAttribute)) {
+            _createNewGrantTemplateFromExisiting(grant);
+        }
+
+
+        grant = _grantToReturn(userId, grant);
+        return new FieldInfo(currentAttribute.getId(), grant);
+    }
     @GetMapping("/{id}/template/{templateId}/section/{sectionName}")
     public SectionInfo createSection(@PathVariable("id") Long grantId, @PathVariable("templateId") Long templateId, @PathVariable("sectionName") String sectionName, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
