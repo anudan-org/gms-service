@@ -32,7 +32,7 @@ import org.joda.time.DateTime;
  **/
 @Entity
 @Table(name = "grants")
-public class Grant extends BaseEntity {
+public class Grant {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -60,11 +60,20 @@ public class Grant extends BaseEntity {
   @JsonProperty("docAttribute")
   private List<GrantDocumentAttributes> documentAttributes;
 
-  @Column(name = "name")
+  @Column(name = "name",columnDefinition = "text")
   private String name;
 
-  @Column(name = "description")
+  @Column(name = "description",columnDefinition = "text")
   private String description;
+
+  @Column
+  private Long templateId;
+
+  @Transient
+  private GranterGrantTemplate grantTemplate;
+
+  @Column
+  private Double amount;
 
   @Column
   private Date createdAt;
@@ -99,6 +108,9 @@ public class Grant extends BaseEntity {
   private Date endDate;
   @Transient
   private String enDate;
+
+  @Column
+  private String representative;
 
   @OneToMany(mappedBy = "grant", cascade = CascadeType.ALL)
   @OrderBy("submitBy ASC")
@@ -254,6 +266,9 @@ public class Grant extends BaseEntity {
   }
 
   public String getStDate() {
+    if(startDate==null){
+      return "";
+    }
 
     return new SimpleDateFormat("yyyy-MM-dd").format(startDate);
   }
@@ -264,10 +279,77 @@ public class Grant extends BaseEntity {
 
   public String getEnDate() {
 
+  if(endDate==null){
+      return "";
+    }
     return new SimpleDateFormat("yyyy-MM-dd").format(endDate);
   }
 
   public void setEnDate(String enDate) {
     this.enDate = enDate;
   }
+
+  public void setAmount(Double amount){
+    this.amount = amount;
+  }
+
+  public Double getAmount(){
+    return this.amount;
+  }
+
+  public void setRepresentative(String rep){
+    this.representative = rep;
+  }
+
+  public String getRepresentative(){
+    return this.representative;
+  }
+
+  public Long getTemplateId() {
+    return templateId;
+  }
+
+  public void setTemplateId(Long templateId) {
+    this.templateId = templateId;
+  }
+
+    public GranterGrantTemplate getGrantTemplate() {
+        return grantTemplate;
+    }
+
+    public void setGrantTemplate(GranterGrantTemplate grantTemplate) {
+        this.grantTemplate = grantTemplate;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(String updatedBy) {
+        this.updatedBy = updatedBy;
+    }
 }

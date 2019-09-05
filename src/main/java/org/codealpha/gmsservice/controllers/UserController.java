@@ -158,10 +158,10 @@ public class UserController {
       case "GRANTEE":
         grants = granteeService
             .getGrantsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getUserRoles());
-        return new ResponseEntity<>(dashboardService.build(user, grants), HttpStatus.OK);
+        return new ResponseEntity<>(dashboardService.build(user, grants,tenantOrg), HttpStatus.OK);
       case "GRANTER":
         grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg);
-        return new ResponseEntity<>(dashboardService.build(user, grants), HttpStatus.OK);
+        return new ResponseEntity<>(dashboardService.build(user, grants,tenantOrg), HttpStatus.OK);
     }
 
     return new ResponseEntity<>(null, HttpStatus.OK);

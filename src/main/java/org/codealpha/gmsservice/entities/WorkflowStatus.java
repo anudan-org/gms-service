@@ -23,6 +23,10 @@ public class WorkflowStatus {
   private String name;
   @Column(nullable = true)
   String displayName;
+  @Column(nullable = true)
+  private String verb;
+  @Column
+  private String internalStatus;
   @Column
   private boolean initial;
   @Column
@@ -113,7 +117,7 @@ public class WorkflowStatus {
   }
 
   public void setStatePermissions(
-      List<WorkflowStatePermission> statePermissions) {
+          List<WorkflowStatePermission> statePermissions) {
     this.statePermissions = statePermissions;
   }
 
@@ -131,5 +135,21 @@ public class WorkflowStatus {
 
   public void setInitial(boolean initial) {
     this.initial = initial;
+  }
+
+  public String getVerb() {
+    return verb;
+  }
+
+  public void setVerb(String verb) {
+    this.verb = verb;
+  }
+
+  public String getInternalStatus() {
+    return internalStatus;
+  }
+
+  public void setInternalStatus(String internalStatus) {
+    this.internalStatus = internalStatus;
   }
 }

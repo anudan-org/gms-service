@@ -4,19 +4,18 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 
-@Entity(name = "grant_section_attributes")
-public class GrantSectionAttribute {
+@Entity(name = "grant_specific_section_attributes")
+public class GrantSpecificSectionAttribute {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @OrderBy("id")
   private Long id;
-  @Column
-  private String type;
-  @Column
+  @Column(columnDefinition = "text")
   private String fieldName;
-  @Column
+  @Column(columnDefinition = "text")
   private String fieldType;
+  @Column
+  private int attributeOrder;
   @Column
   private Boolean deletable;
   @Column
@@ -24,7 +23,11 @@ public class GrantSectionAttribute {
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   @JsonIgnore
-  private GrantSection section;
+  private GrantSpecificSection section;
+  @ManyToOne
+  @JoinColumn(referencedColumnName = "id")
+  private Granter granter;
+
 
   public Long getId() {
     return id;
@@ -34,12 +37,20 @@ public class GrantSectionAttribute {
     this.id = id;
   }
 
-  public String getType() {
-    return type;
+  public GrantSpecificSection getSection() {
+    return section;
   }
 
-  public void setType(String type) {
-    this.type = type;
+  public void setSection(GrantSpecificSection section) {
+    this.section = section;
+  }
+
+  public Organization getGranter() {
+    return granter;
+  }
+
+  public void setGranter(Granter granter) {
+    this.granter = granter;
   }
 
   public String getFieldName() {
@@ -74,13 +85,11 @@ public class GrantSectionAttribute {
     this.required = required;
   }
 
-  public GrantSection getSection() {
-    return section;
+  public int getAttributeOrder() {
+    return attributeOrder;
   }
 
-  public void setSection(GrantSection section) {
-    this.section = section;
+  public void setAttributeOrder(int attributeOrder) {
+    this.attributeOrder = attributeOrder;
   }
-
-
 }

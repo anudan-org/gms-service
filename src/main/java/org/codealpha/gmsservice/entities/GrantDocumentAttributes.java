@@ -29,11 +29,12 @@ public class GrantDocumentAttributes {
   @OneToOne
   @JoinColumn(referencedColumnName = "id")
   @JsonProperty("attributeDetails")
-  private GranterGrantSectionAttribute sectionAttribute;
+  @JsonIgnore
+  private GrantSpecificSectionAttribute sectionAttribute;
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   @JsonProperty("sectionDetails")
-  private GranterGrantSection section;
+  private GrantSpecificSection section;
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   @JsonIgnore
@@ -79,20 +80,20 @@ public class GrantDocumentAttributes {
     this.version = version;
   }
 
-  public GranterGrantSectionAttribute getSectionAttribute() {
+  public GrantSpecificSectionAttribute getSectionAttribute() {
     return sectionAttribute;
   }
 
   public void setSectionAttribute(
-      GranterGrantSectionAttribute sectionAttribute) {
+          GrantSpecificSectionAttribute sectionAttribute) {
     this.sectionAttribute = sectionAttribute;
   }
 
-  public GranterGrantSection getSection() {
+  public GrantSpecificSection getSection() {
     return section;
   }
 
-  public void setSection(GranterGrantSection section) {
+  public void setSection(GrantSpecificSection section) {
     this.section = section;
   }
 
