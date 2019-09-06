@@ -58,11 +58,11 @@ public class GrantDetailVO {
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){
             List<TableData> tableDataList = new ArrayList<>();
             TableData tableData = new TableData();
-            tableData.setName("Row");
+            tableData.setName("");
             tableData.setColumns(new ColumnData[5]);
             for(int i=0;i<tableData.getColumns().length;i++){
 
-              tableData.getColumns()[i] = new ColumnData("Column " + (i+1),null);
+              tableData.getColumns()[i] = new ColumnData("","");
             }
             tableDataList.add(tableData);
 
