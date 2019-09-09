@@ -24,6 +24,7 @@ import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import org.codealpha.gmsservice.constants.GrantStatus;
+import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.GrantDetailVO;
 import org.joda.time.DateTime;
 
@@ -123,6 +124,8 @@ public class Grant {
   private List<WorkFlowPermission> flowAuthorities;
   @Transient
   private GrantDetailVO grantDetails;
+  @Transient
+  private List<AssignedTo> currentAssignment;
 
   public Long getId() {
     return id;
@@ -352,4 +355,12 @@ public class Grant {
     public void setUpdatedBy(String updatedBy) {
         this.updatedBy = updatedBy;
     }
+
+  public List<AssignedTo> getCurrentAssignment() {
+    return currentAssignment;
+  }
+
+  public void setCurrentAssignment(List<AssignedTo> currentAssignment) {
+    this.currentAssignment = currentAssignment;
+  }
 }

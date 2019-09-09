@@ -50,6 +50,8 @@ public class GrantService {
     private GrantSpecificSectionRepository grantSpecificSectionRepository;
     @Autowired
     private GranterGrantTemplateRepository granterGrantTemplateRepository;
+    @Autowired
+    private GrantAssignmentRepository grantAssignmentRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -343,5 +345,13 @@ public class GrantService {
 
     public void deleteGrant(Grant grant){
         grantRepository.delete(grant);
+    }
+
+    public GrantAssignments createAssignmentForGrant(GrantAssignments assignment){
+       return grantAssignmentRepository.save(assignment);
+    }
+
+    public List<GrantAssignments> getGrantCurrentAssignments(Grant grant){
+        return grantAssignmentRepository.findByGrantIdAndStateId(grant.getId(),grant.getGrantStatus().getId());
     }
 }

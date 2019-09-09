@@ -23,6 +23,9 @@ public class GranterGrantTemplateService {
     }
 
     public GranterGrantTemplate findByTemplateId(Long templateId){
-        return granterGrantTemplateRepository.findById(templateId).get();
+        if(granterGrantTemplateRepository.findById(templateId).isPresent()) {
+            return granterGrantTemplateRepository.findById(templateId).get();
+        }
+        return null;
     }
 }

@@ -6,10 +6,7 @@ import java.util.List;
 
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.models.GrantDetailVO;
-import org.codealpha.gmsservice.models.GrantVO;
-import org.codealpha.gmsservice.models.SectionVO;
-import org.codealpha.gmsservice.models.Tenant;
+import org.codealpha.gmsservice.models.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,6 +26,8 @@ public class DashboardService {
     private GrantService grantService;
     @Autowired
     private TemplateLibraryService templateLibraryService;
+    @Autowired
+    private UserService userService;
 
 
     List<Tenant> tenants;
@@ -48,7 +47,7 @@ public class DashboardService {
             List<Grant> grantsList = new ArrayList<>();
             tenant.setGrants(grantsList);
             tenant.setGrantTemplates(granterGrantTemplateService.findByGranterId(user.getOrganization().getId()));
-            tenant.setTemplateLibrary(templateLibraryService.getTemplateLibraryForGranter((Granter)user.getOrganization()));
+            tenant.setTemplateLibrary(templateLibraryService.getTemplateLibraryForGranter((Granter) user.getOrganization()));
             tenants.add(tenant);
         }
 
@@ -99,9 +98,21 @@ public class DashboardService {
                                     AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
                     grant.setGrantDetails(grantVO.getGrantDetails());
                     grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
+                    List<GrantAssignments> grantAssignments = grantService.getGrantCurrentAssignments(grant);
+                    if (grantAssignments != null) {
+                        for (GrantAssignments assignment : grantAssignments) {
+                            if (grant.getCurrentAssignment() == null) {
+                                List<AssignedTo> assignedToList = new ArrayList<>();
+                                grant.setCurrentAssignment(assignedToList);
+                            }
+                            AssignedTo newAssignedTo = new AssignedTo();
+                            newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                            grant.getCurrentAssignment().add(newAssignedTo);
+                        }
+                    }
                     grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
-                    for(SectionVO section: grant.getGrantDetails().getSections()){
-                        if(section.getAttributes()!=null) {
+                    for (SectionVO section : grant.getGrantDetails().getSections()) {
+                        if (section.getAttributes() != null) {
                             section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
                         }
                     }

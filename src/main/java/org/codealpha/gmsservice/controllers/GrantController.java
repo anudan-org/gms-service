@@ -114,6 +114,13 @@ public class GrantController {
 
         grant = grantService.saveGrant(grant);
 
+        GrantAssignments assignment = new GrantAssignments();
+        assignment.setAnchor(true);
+        assignment.setAssignments(userService.getUserById(userId).getId());
+        assignment.setGrantId(grant.getId());
+        assignment.setStateId(grant.getGrantStatus().getId());
+        grantService.createAssignmentForGrant(assignment);
+
         GranterGrantTemplate grantTemplate = granterGrantTemplateService.findByTemplateId(templateId);
 
         List<GrantSpecificSection> grantSpecificSections = new ArrayList<>();
@@ -211,8 +218,10 @@ public class GrantController {
         return grant;
     }
 
-    @GetMapping("/{id}/section/{sectionId}/field")
-    public FieldInfo createFieldInSection(@PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @PostMapping("/{id}/section/{sectionId}/field")
+    public FieldInfo createFieldInSection(@RequestBody Grant grantToSave,@PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        //grantService.saveGrant(grantToSave);
+        saveGrant(grantToSave,userId,tenantCode);
         Grant grant = grantService.getById(grantId);
         GrantSpecificSection grantSection = grantService.getGrantSectionBySectionId(sectionId);
 
@@ -231,20 +240,22 @@ public class GrantController {
         stringAttribute.setSection(grantSection);
         stringAttribute.setGrant(grant);
 
+
+
         stringAttribute = grantService.saveStringAttribute(stringAttribute);
         grant.getStringAttributes().add(stringAttribute);
-
+        grant = grantService.saveGrant(grant);
         if (_checkIfGrantTemplateChanged(grant, grantSection, newSectionAttribute)) {
             _createNewGrantTemplateFromExisiting(grant);
         }
-
 
         grant = _grantToReturn(userId, grant);
         return new FieldInfo(newSectionAttribute.getId(), grant);
     }
 
-    @DeleteMapping("/{id}/section/{sectionId}/field/{fieldId}")
-    public Grant deleteField(@PathVariable("userId") Long userId, @PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("fieldId") Long fieldId) {
+    @PostMapping("/{id}/section/{sectionId}/field/{fieldId}")
+    public Grant deleteField(@RequestBody Grant grantToSave,@PathVariable("userId") Long userId, @PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("fieldId") Long fieldId,@RequestHeader("X-TENANT-CODE") String tenantCode) {
+        saveGrant(grantToSave,userId,tenantCode);
         Grant grant = grantService.getById(grantId);
         GrantSpecificSectionAttribute attribute = grantService.getAttributeById(fieldId);
 
@@ -631,7 +642,10 @@ public class GrantController {
                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
         grant.setGrantDetails(grantVO.getGrantDetails());
-        grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
+        GranterGrantTemplate templ = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
+        if(templ!=null) {
+            grant.setGrantTemplate(templ);
+        }
 
         //submissionService.saveSubmissions(grantToSave.getSubmissions());
 
