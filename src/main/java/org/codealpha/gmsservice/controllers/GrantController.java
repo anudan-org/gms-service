@@ -255,7 +255,7 @@ public class GrantController {
 
     @PostMapping("/{id}/section/{sectionId}/field/{fieldId}")
     public Grant deleteField(@RequestBody Grant grantToSave,@PathVariable("userId") Long userId, @PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("fieldId") Long fieldId,@RequestHeader("X-TENANT-CODE") String tenantCode) {
-        saveGrant(grantToSave,userId,tenantCode);
+        //saveGrant(grantToSave,userId,tenantCode);
         Grant grant = grantService.getById(grantId);
         GrantSpecificSectionAttribute attribute = grantService.getAttributeById(fieldId);
 
