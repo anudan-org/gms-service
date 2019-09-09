@@ -200,7 +200,7 @@ updated_by, from_state_id, to_state_id, role_id, workflow_id, note_required)
 values ('Approve', now(), 'System', null, null, 3, 4, 2, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
 updated_by, from_state_id, to_state_id, role_id, workflow_id, note_required)
-values ('Return', now(), 'System', null, null, 3, 2, 2, 1, false);
+values ('Return', now(), 'System', null, null, 3, 1, 2, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
 updated_by, from_state_id, to_state_id, role_id, workflow_id, note_required)
 values ('Close', now(), 'System', null, null, 4, 5, 3, 1, false);
