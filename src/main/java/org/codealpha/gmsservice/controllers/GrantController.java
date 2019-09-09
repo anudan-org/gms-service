@@ -121,6 +121,20 @@ public class GrantController {
         assignment.setStateId(grant.getGrantStatus().getId());
         grantService.createAssignmentForGrant(assignment);
 
+        assignment = new GrantAssignments();
+        assignment.setAnchor(false);
+        assignment.setAssignments(userService.getUserByEmail("vineet@socialalpha.org").getId());
+        assignment.setGrantId(grant.getId());
+        assignment.setStateId(workflowStatusService.findById(2L).getId());
+        grantService.createAssignmentForGrant(assignment);
+
+        assignment = new GrantAssignments();
+        assignment.setAnchor(false);
+        assignment.setAssignments(userService.getUserByEmail("vineet_prasani@email.com").getId());
+        assignment.setGrantId(grant.getId());
+        assignment.setStateId(workflowStatusService.findById(3L).getId());
+        grantService.createAssignmentForGrant(assignment);
+
         GranterGrantTemplate grantTemplate = granterGrantTemplateService.findByTemplateId(templateId);
 
         List<GrantSpecificSection> grantSpecificSections = new ArrayList<>();
