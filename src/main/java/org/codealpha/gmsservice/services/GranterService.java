@@ -25,13 +25,13 @@ public class GranterService {
     return (List<Granter>) granterRepository.findAll();
   }
 
-  public List<Grant> getGrantsOfGranterForGrantor(Long granterOrgId, Organization tenantOrg) {
+  public List<Grant> getGrantsOfGranterForGrantor(Long granterOrgId, Organization tenantOrg, Long userId) {
 
     List<Grant> allGrants = new ArrayList<>();
 
     if("GRANTER".equalsIgnoreCase(tenantOrg.getType())){
       allGrants
-          .addAll(grantRepository.findGrantsOfGranter(granterOrgId));
+          .addAll(grantRepository.findAssignedGrantsOfGranter(granterOrgId,userId));
     }else if("PLATFORM".equalsIgnoreCase(tenantOrg.getType())){
       allGrants.addAll(grantRepository.findGrantsOfGranter(granterOrgId));
     }

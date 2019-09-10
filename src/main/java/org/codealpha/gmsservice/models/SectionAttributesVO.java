@@ -105,8 +105,7 @@ public class SectionAttributesVO {
       return false;
     }
     SectionAttributesVO that = (SectionAttributesVO) o;
-    return fieldName.equals(that.fieldName) &&
-        fieldType.equals(that.fieldType);
+    return id==that.id;
   }
 
   @Override

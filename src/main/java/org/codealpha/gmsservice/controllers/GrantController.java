@@ -114,6 +114,27 @@ public class GrantController {
 
         grant = grantService.saveGrant(grant);
 
+        GrantAssignments assignment = new GrantAssignments();
+        assignment.setAnchor(true);
+        assignment.setAssignments(userService.getUserById(userId).getId());
+        assignment.setGrantId(grant.getId());
+        assignment.setStateId(grant.getGrantStatus().getId());
+        grantService.createAssignmentForGrant(assignment);
+
+        assignment = new GrantAssignments();
+        assignment.setAnchor(false);
+        assignment.setAssignments(userService.getUserByEmail("vineet@socialalpha.org").getId());
+        assignment.setGrantId(grant.getId());
+        assignment.setStateId(workflowStatusService.findById(2L).getId());
+        grantService.createAssignmentForGrant(assignment);
+
+        assignment = new GrantAssignments();
+        assignment.setAnchor(false);
+        assignment.setAssignments(userService.getUserByEmail("vineet_prasani@email.com").getId());
+        assignment.setGrantId(grant.getId());
+        assignment.setStateId(workflowStatusService.findById(3L).getId());
+        grantService.createAssignmentForGrant(assignment);
+
         GranterGrantTemplate grantTemplate = granterGrantTemplateService.findByTemplateId(templateId);
 
         List<GrantSpecificSection> grantSpecificSections = new ArrayList<>();
@@ -143,12 +164,12 @@ public class GrantController {
 
                 GrantStringAttribute stringAttribute = new GrantStringAttribute();
 
-                        stringAttribute.setSection(specificSection);
-                        stringAttribute.setGrant(grant);
-                        stringAttribute.setSectionAttribute(specificSectionAttribute);
-                        stringAttribute.setValue("");
-                        stringAttribute.setFrequency("");
-                        stringAttribute.setTarget("");
+                stringAttribute.setSection(specificSection);
+                stringAttribute.setGrant(grant);
+                stringAttribute.setSectionAttribute(specificSectionAttribute);
+                stringAttribute.setValue("");
+                stringAttribute.setFrequency("");
+                stringAttribute.setTarget("");
 
                 stringAttribute = grantService.saveStringAttribute(stringAttribute);
                 grant.getStringAttributes().add(stringAttribute);
@@ -162,9 +183,9 @@ public class GrantController {
     }
 
     @DeleteMapping("/{grantId}")
-    public void deleteGrant(@PathVariable("grantId") Long grantId,@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode){
+    public void deleteGrant(@PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Grant grant = grantService.getById(grantId);
-        for(GrantSpecificSection section: grantService.getGrantSections(grant)){
+        for (GrantSpecificSection section : grantService.getGrantSections(grant)) {
             List<GrantSpecificSectionAttribute> attribs = grantService.getAttributesBySection(section);
             for (GrantSpecificSectionAttribute attribute : attribs) {
                 List<GrantStringAttribute> strAttribs = grantService.getStringAttributesByAttribute(attribute);
@@ -176,7 +197,7 @@ public class GrantController {
         grantService.deleteGrant(grant);
 
         GranterGrantTemplate template = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
-        if(!template.isPublished()){
+        if (!template.isPublished()) {
             grantService.deleteGrantTemplate(template);
         }
     }
@@ -201,9 +222,9 @@ public class GrantController {
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
         grant.setGrantDetails(grantVO.getGrantDetails());
 
-        grant.getGrantDetails().getSections().sort((a,b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
-        for(SectionVO section: grant.getGrantDetails().getSections()){
-            if(section.getAttributes()!=null) {
+        grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+        for (SectionVO section : grant.getGrantDetails().getSections()) {
+            if (section.getAttributes() != null) {
                 section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
             }
         }
@@ -211,8 +232,10 @@ public class GrantController {
         return grant;
     }
 
-    @GetMapping("/{id}/section/{sectionId}/field")
-    public FieldInfo createFieldInSection(@PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @PostMapping("/{id}/section/{sectionId}/field")
+    public FieldInfo createFieldInSection(@RequestBody Grant grantToSave,@PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        //grantService.saveGrant(grantToSave);
+        saveGrant(grantToSave,userId,tenantCode);
         Grant grant = grantService.getById(grantId);
         GrantSpecificSection grantSection = grantService.getGrantSectionBySectionId(sectionId);
 
@@ -222,7 +245,7 @@ public class GrantController {
         newSectionAttribute.setFieldType("multiline");
         newSectionAttribute.setFieldName("");
         newSectionAttribute.setDeletable(true);
-        newSectionAttribute.setAttributeOrder(grantService.getNextAttributeOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(),sectionId));
+        newSectionAttribute.setAttributeOrder(grantService.getNextAttributeOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(), sectionId));
         newSectionAttribute.setGranter((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
         newSectionAttribute = grantService.saveSectionAttribute(newSectionAttribute);
         GrantStringAttribute stringAttribute = new GrantStringAttribute();
@@ -231,24 +254,26 @@ public class GrantController {
         stringAttribute.setSection(grantSection);
         stringAttribute.setGrant(grant);
 
+
+
         stringAttribute = grantService.saveStringAttribute(stringAttribute);
         grant.getStringAttributes().add(stringAttribute);
-
+        grant = grantService.saveGrant(grant);
         if (_checkIfGrantTemplateChanged(grant, grantSection, newSectionAttribute)) {
             _createNewGrantTemplateFromExisiting(grant);
         }
-
 
         grant = _grantToReturn(userId, grant);
         return new FieldInfo(newSectionAttribute.getId(), grant);
     }
 
-    @DeleteMapping("/{id}/section/{sectionId}/field/{fieldId}")
-    public Grant deleteField(@PathVariable("userId") Long userId,@PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("fieldId") Long fieldId){
+    @PostMapping("/{id}/section/{sectionId}/field/{fieldId}")
+    public Grant deleteField(@RequestBody Grant grantToSave,@PathVariable("userId") Long userId, @PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("fieldId") Long fieldId,@RequestHeader("X-TENANT-CODE") String tenantCode) {
+        //saveGrant(grantToSave,userId,tenantCode);
         Grant grant = grantService.getById(grantId);
         GrantSpecificSectionAttribute attribute = grantService.getAttributeById(fieldId);
 
-        GrantStringAttribute stringAttrib = grantService.findGrantStringBySectionIdAttribueIdAndGrantId(attribute.getSection().getId(),attribute.getId(),grantId);
+        GrantStringAttribute stringAttrib = grantService.findGrantStringBySectionIdAttribueIdAndGrantId(attribute.getSection().getId(), attribute.getId(), grantId);
 
         grantService.deleteStringAttribute(stringAttrib);
         grantService.deleteAtttribute(attribute);
@@ -261,12 +286,12 @@ public class GrantController {
     }
 
     @PostMapping("/{id}/field/{fieldId}")
-    public FieldInfo updateField(@RequestBody SectionAttributesVO attributeToSave, @PathVariable("id") Long grantId, @PathVariable("fieldId") Long fieldId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode){
+    public FieldInfo updateField(@RequestBody SectionAttributesVO attributeToSave, @PathVariable("id") Long grantId, @PathVariable("fieldId") Long fieldId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
         GrantSpecificSectionAttribute currentAttribute = grantService.getAttributeById(fieldId);
         currentAttribute.setFieldName(attributeToSave.getFieldName());
         currentAttribute.setFieldType(attributeToSave.getFieldType());
         currentAttribute = grantService.saveSectionAttribute(currentAttribute);
-        GrantStringAttribute stringAttribute = grantService.findGrantStringBySectionIdAttribueIdAndGrantId(currentAttribute.getSection().getId(),currentAttribute.getId(),grantId);
+        GrantStringAttribute stringAttribute = grantService.findGrantStringBySectionIdAttribueIdAndGrantId(currentAttribute.getSection().getId(), currentAttribute.getId(), grantId);
         stringAttribute.setValue("");
         stringAttribute = grantService.saveStringAttribute(stringAttribute);
 
@@ -279,6 +304,7 @@ public class GrantController {
         grant = _grantToReturn(userId, grant);
         return new FieldInfo(currentAttribute.getId(), grant);
     }
+
     @GetMapping("/{id}/template/{templateId}/section/{sectionName}")
     public SectionInfo createSection(@PathVariable("id") Long grantId, @PathVariable("templateId") Long templateId, @PathVariable("sectionName") String sectionName, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
@@ -291,7 +317,7 @@ public class GrantController {
         specificSection.setGrantTemplateId(templateId);
         specificSection.setDeletable(true);
         specificSection.setGrantId(grantId);
-        specificSection.setSectionOrder(grantService.getNextSectionOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(),templateId));
+        specificSection.setSectionOrder(grantService.getNextSectionOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(), templateId));
         specificSection = grantService.saveSection(specificSection);
 
         if (_checkIfGrantTemplateChanged(grant, specificSection, null)) {
@@ -323,7 +349,7 @@ public class GrantController {
     private GranterGrantTemplate _createNewGrantTemplateFromExisiting(Grant grant) {
         GranterGrantTemplate currentGrantTemplate = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
         GranterGrantTemplate newTemplate = null;
-        if (!currentGrantTemplate.isPublished()){
+        if (!currentGrantTemplate.isPublished()) {
             grantService.deleteGrantTemplate(currentGrantTemplate);
         }
         newTemplate = new GranterGrantTemplate();
@@ -582,7 +608,9 @@ public class GrantController {
 
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         User user = userService.getUserById(userId);
+        grantToSave.setOrganization(_processNewGranteeOrgIfPresent(grantToSave));
         Grant grant = _processGrant(grantToSave, tenantOrg, user);
+
         //grant = _processGrantKpis(grantToSave, tenantOrg, user);
 
         //grantToSave = grantService.saveGrant(grantToSave);
@@ -628,7 +656,10 @@ public class GrantController {
                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
         grant.setGrantDetails(grantVO.getGrantDetails());
-        grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
+        GranterGrantTemplate templ = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
+        if(templ!=null) {
+            grant.setGrantTemplate(templ);
+        }
 
         //submissionService.saveSubmissions(grantToSave.getSubmissions());
 
@@ -640,6 +671,19 @@ public class GrantController {
             }
         }
         return grant;
+    }
+
+    private Grantee _processNewGranteeOrgIfPresent(Grant grantToSave) {
+        Grantee newGrantee = null;
+        if(grantToSave.getOrganization()!=null) {
+            if (grantToSave.getOrganization().getId() < 0) {
+                newGrantee = (Grantee) grantToSave.getOrganization();
+                newGrantee = granteeService.saveGrantee((Grantee) newGrantee);
+            } else {
+                newGrantee = (Grantee) grantToSave.getOrganization();
+            }
+        }
+        return newGrantee;
     }
 
     private Grant _processGrant(Grant grantToSave, Organization tenant, User user) {
@@ -672,16 +716,8 @@ public class GrantController {
         grant.setGrantStatus(grantToSave.getGrantStatus());
         grant.setName(grantToSave.getName());
 
-        Organization newGrantee = null;
 
-        if (grantToSave.getOrganization() != null) {
-            newGrantee = organizationService.findByNameAndOrganizationType(grantToSave.getOrganization().getName(), grantToSave.getOrganization().getType());
-            if (grantToSave.getOrganization().getId() < 0 && newGrantee == null) {
-                newGrantee = (Grantee) grantToSave.getOrganization();
-                newGrantee = granteeService.saveGrantee((Grantee) newGrantee);
-            }
-            grantToSave.setOrganization((Grantee) newGrantee);
-        }
+        grantToSave.setOrganization((Grantee)grantToSave.getOrganization());
 
 
         grant.setOrganization((Grantee) grantToSave.getOrganization());
@@ -793,7 +829,6 @@ public class GrantController {
                     }*/
 
                     sectionAttribute = grantService.getSectionAttributeByAttributeIdAndType(sectionAttributesVO.getId(), sectionAttributesVO.getFieldType());
-
 
 
                     if (sectionAttribute == null) {
@@ -1212,8 +1247,8 @@ public class GrantController {
 
     @PostMapping("/{grantId}/flow/{fromState}/{toState}")
     public Grant MoveGrantState(@PathVariable("userId") Long userId,
-                                  @PathVariable("grantId") Long grantId, @PathVariable("fromState") Long fromStateId,
-                                  @PathVariable("toState") Long toStateId) {
+                                @PathVariable("grantId") Long grantId, @PathVariable("fromState") Long fromStateId,
+                                @PathVariable("toState") Long toStateId) {
 
         Grant grant = grantService.getById(grantId);
         grant.setGrantStatus(workflowStatusService.findById(toStateId));
@@ -1266,7 +1301,7 @@ public class GrantController {
     public Grant updateTemplateName(@PathVariable("userId") Long userId,
                                     @PathVariable("grantId") Long grantId,
                                     @PathVariable("templateId") Long templateId,
-                                    @PathVariable("templateName") String templateName){
+                                    @PathVariable("templateName") String templateName) {
 
         GranterGrantTemplate template = granterGrantTemplateService.findByTemplateId(templateId);
         template.setName(templateName);
@@ -1274,7 +1309,7 @@ public class GrantController {
         grantService.saveGrantTemplate(template);
 
         Grant grant = grantService.getById(grantId);
-        grant = _grantToReturn(userId,grant);
+        grant = _grantToReturn(userId, grant);
         return grant;
 
     }
@@ -1570,7 +1605,7 @@ public class GrantController {
 
 
     @GetMapping("/templates")
-    public List<GranterGrantTemplate> getTenantPublishedGrantTemplates(@RequestHeader("X-TENANT-CODE") String tenantCode){
-        return granterGrantTemplateService.findByGranterIdAndPublishedStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(),true);
+    public List<GranterGrantTemplate> getTenantPublishedGrantTemplates(@RequestHeader("X-TENANT-CODE") String tenantCode) {
+        return granterGrantTemplateService.findByGranterIdAndPublishedStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(), true);
     }
 }

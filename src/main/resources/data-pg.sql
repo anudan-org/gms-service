@@ -173,13 +173,13 @@ workflow_id, display_name,initial,verb,internal_status)
 values (now(), 'System','DRAFT', FALSE, null, null, 1, 'DRAFT',TRUE,'Draft','DRAFT'); --1
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
 workflow_id, display_name,initial,verb,internal_status)
-values (now(), 'System','SUBMITTED (Pending Review)', FALSE, null, null, 1, 'Submitted (Pending Review)',FALSE,'Submitted (Pending Review)', 'DRAFT'); --2
+values (now(), 'System','SUBMITTED (Pending Review)', FALSE, null, null, 1, 'Submitted (Pending Review)',FALSE,'SUBMITTED (Pending Review)', 'DRAFT'); --2
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
 workflow_id, display_name,initial,verb,internal_status)
-values (now(), 'System','APPROVED (Pending Review)', FALSE, null, null, 1, 'Approved (Pending Review)',FALSE,'Approved (Pending Review)','DRAFT'); --3
+values (now(), 'System','APPROVED (Pending Review)', FALSE, null, null, 1, 'Submitted (Pending Review)',FALSE,'SUBMITTED (Pending Review)','DRAFT'); --3
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
 workflow_id, display_name,initial,verb,internal_status)
-values (now(), 'System','APPROVED', FALSE, null, null, 1, 'RETURNED',FALSE,'Returned','ACTIVE'); --4
+values (now(), 'System','APPROVED', FALSE, null, null, 1, 'ACTIVE',FALSE,'ACTIVE','ACTIVE'); --4
 insert into public.workflow_statuses(created_at, created_by, name, terminal, updated_at, updated_by,
 workflow_id, display_name,initial,verb,internal_status)
 values (now(), 'System','CLOSED', FALSE, null, null, 1, 'CLOSED',FALSE,'Closed','CLOSED'); --5
@@ -200,7 +200,7 @@ updated_by, from_state_id, to_state_id, role_id, workflow_id, note_required)
 values ('Approve', now(), 'System', null, null, 3, 4, 2, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
 updated_by, from_state_id, to_state_id, role_id, workflow_id, note_required)
-values ('Return', now(), 'System', null, null, 3, 2, 2, 1, false);
+values ('Return', now(), 'System', null, null, 3, 1, 2, 1, false);
 insert into public.workflow_status_transitions(action, created_at, created_by, updated_at,
 updated_by, from_state_id, to_state_id, role_id, workflow_id, note_required)
 values ('Close', now(), 'System', null, null, 4, 5, 3, 1, false);

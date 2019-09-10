@@ -36,6 +36,7 @@ public class GrantVO {
   private String enDate;
   private String representative;
   private Double amount;
+  private List<AssignedTo> currentAssignment;
   private List<Submission> submissions;
   private WorkflowActionPermission actionAuthorities;
   private List<WorkFlowPermission> flowAuthorities;
@@ -154,6 +155,14 @@ public class GrantVO {
   public void setStartDate(Date startDate) {
 
     this.startDate = startDate;
+  }
+
+  public List<AssignedTo> getCurrentAssignment() {
+    return currentAssignment;
+  }
+
+  public void setCurrentAssignment(List<AssignedTo> currentAssignment) {
+    this.currentAssignment = currentAssignment;
   }
 
   public Date getEndDate() {

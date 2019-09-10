@@ -160,7 +160,7 @@ public class UserController {
             .getGrantsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getUserRoles());
         return new ResponseEntity<>(dashboardService.build(user, grants,tenantOrg), HttpStatus.OK);
       case "GRANTER":
-        grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg);
+        grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId());
         return new ResponseEntity<>(dashboardService.build(user, grants,tenantOrg), HttpStatus.OK);
     }
 

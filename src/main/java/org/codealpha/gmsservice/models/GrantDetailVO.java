@@ -34,6 +34,7 @@ public class GrantDetailVO {
       sectionVO.setName(sec.getSectionName());
       sectionVO.setOrder(sec.getSectionOrder());
 
+
       if (!sections.contains(sectionVO)) {
         sections.add(sectionVO);
       }
