@@ -28,6 +28,8 @@ public class DashboardService {
     private TemplateLibraryService templateLibraryService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private WorkflowStatusService workflowStatusService;
 
 
     List<Tenant> tenants;
@@ -98,6 +100,22 @@ public class DashboardService {
                                     AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
                     grant.setGrantDetails(grantVO.getGrantDetails());
                     grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
+                    List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
+                    for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
+                        GrantAssignmentsVO assignmentsVO = new GrantAssignmentsVO();
+                        assignmentsVO.setId(assignment.getId());
+                        assignmentsVO.setAnchor(assignment.isAnchor());
+                        assignmentsVO.setAssignments(assignment.getAssignments());
+                        if(assignment.getAssignments()!=null) {
+                            assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
+                        }
+                        assignmentsVO.setGrantId(assignment.getGrantId());
+                        assignmentsVO.setStateId(assignment.getStateId());
+                        assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
+                        workflowAssignments.add(assignmentsVO);
+                    }
+                    grant.setWorkflowAssignment(workflowAssignments);
+
                     List<GrantAssignments> grantAssignments = grantService.getGrantCurrentAssignments(grant);
                     if (grantAssignments != null) {
                         for (GrantAssignments assignment : grantAssignments) {
@@ -106,7 +124,9 @@ public class DashboardService {
                                 grant.setCurrentAssignment(assignedToList);
                             }
                             AssignedTo newAssignedTo = new AssignedTo();
-                            newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                            if(assignment.getAssignments()!=null) {
+                                newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                            }
                             grant.getCurrentAssignment().add(newAssignedTo);
                         }
                     }

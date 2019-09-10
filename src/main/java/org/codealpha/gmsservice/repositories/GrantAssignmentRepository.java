@@ -8,4 +8,5 @@ import java.util.List;
 public interface GrantAssignmentRepository  extends CrudRepository<GrantAssignments,Long> {
 
 public List<GrantAssignments> findByGrantIdAndStateId(Long grantId,Long stateId);
+public List<GrantAssignments> findByGrantId(Long grantId);
 }

@@ -347,11 +347,22 @@ public class GrantService {
         grantRepository.delete(grant);
     }
 
-    public GrantAssignments createAssignmentForGrant(GrantAssignments assignment){
+    public GrantAssignments saveAssignmentForGrant(GrantAssignments assignment){
        return grantAssignmentRepository.save(assignment);
     }
 
     public List<GrantAssignments> getGrantCurrentAssignments(Grant grant){
         return grantAssignmentRepository.findByGrantIdAndStateId(grant.getId(),grant.getGrantStatus().getId());
+    }
+
+    public List<GrantAssignments> getGrantWorkflowAssignments(Grant grant){
+        return grantAssignmentRepository.findByGrantId(grant.getId());
+    }
+
+    public GrantAssignments getGrantAssignmentById(Long assignmentId){
+        if(grantAssignmentRepository.findById(assignmentId).isPresent()) {
+            return grantAssignmentRepository.findById(assignmentId).get();
+        }
+        return null;
     }
 }

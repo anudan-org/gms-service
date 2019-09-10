@@ -2,6 +2,7 @@ package org.codealpha.gmsservice.services;
 
 import java.util.List;
 
+import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.exceptions.UserNotFoundException;
 import org.codealpha.gmsservice.repositories.UserRepository;
@@ -38,4 +39,9 @@ public class UserService {
   public List<User> usersToNotifyOnWorkflowSateChangeTo(Long toStateId){
     return userRepository.usersToNotifyOnWorkflowSateChangeTo(toStateId);
   }
+
+  public List<User> getAllTenantUsers(Organization org){
+    return userRepository.findByOrganization(org);
+  }
+
 }

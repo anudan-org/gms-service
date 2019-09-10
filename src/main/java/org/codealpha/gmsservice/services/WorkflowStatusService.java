@@ -6,6 +6,8 @@ import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class WorkflowStatusService {
 
@@ -20,6 +22,9 @@ public class WorkflowStatusService {
     return workflowStatusRepository.getInitialStatusByObjectAndGranterOrg(object,orgid);
   }
 
+  public List<WorkflowStatus> getTenantWorkflowStatuses(String object, Long granterOrgId){
+    return workflowStatusRepository.getAllTenantStatuses(object,granterOrgId);
+  }
   public WorkflowStatus getById(Long id){
     return workflowStatusRepository.getById(id);
   }
