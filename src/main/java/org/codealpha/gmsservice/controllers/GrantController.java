@@ -335,6 +335,14 @@ public class GrantController {
         GrantSpecificSection section = grantService.getGrantSectionBySectionId(sectionId);
         Grant grant = grantService.getById(grantId);
 
+        for(GrantSpecificSectionAttribute attrib:grantService.getAttributesBySection(section)){
+            for(GrantStringAttribute stringAttrib: grantService.getStringAttributesByAttribute(attrib)){
+                if(stringAttrib!=null){
+                    grantService.deleteStringAttribute(stringAttrib);
+                }
+            }
+        }
+        grantService.deleteSectionAttributes(grantService.getAttributesBySection(section));
         grantService.deleteSection(section);
 
         if (_checkIfGrantTemplateChanged(grant, section, null)) {
