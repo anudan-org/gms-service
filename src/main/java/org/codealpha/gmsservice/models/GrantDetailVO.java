@@ -80,6 +80,18 @@ public class GrantDetailVO {
             e.printStackTrace();
           }
           sectionAttribute.setFieldTableValue(tableData);
+        } else if(sectionAttribute.getFieldType().equalsIgnoreCase("document")){
+          ObjectMapper mapper = new ObjectMapper();
+          if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
+            sectionAttribute.setDocs(new ArrayList<>());
+          }else{
+            try {
+              List<TemplateLibrary> assignedTemplates = mapper.readValue(sectionAttribute.getFieldValue(),new TypeReference<List<TemplateLibrary>>(){});
+              sectionAttribute.setDocs(assignedTemplates);
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+          }
         }
         sectionAttribute.setTarget(stringAttribute.getTarget());
         sectionAttribute.setFrequency(stringAttribute.getFrequency());

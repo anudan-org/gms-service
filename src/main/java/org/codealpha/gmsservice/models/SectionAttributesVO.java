@@ -1,5 +1,7 @@
 package org.codealpha.gmsservice.models;
 
+import org.codealpha.gmsservice.entities.TemplateLibrary;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -10,6 +12,7 @@ public class SectionAttributesVO {
   private String fieldType;
   private String fieldValue;
   private List<TableData> fieldTableValue;
+  private List<TemplateLibrary> docs;
   private int attributeOrder;
   private String target;
   private String frequency;
@@ -94,6 +97,14 @@ public class SectionAttributesVO {
 
   public void setAttributeOrder(int attributeOrder) {
     this.attributeOrder = attributeOrder;
+  }
+
+  public List<TemplateLibrary> getDocs() {
+    return docs;
+  }
+
+  public void setDocs(List<TemplateLibrary> docs) {
+    this.docs = docs;
   }
 
   @Override
