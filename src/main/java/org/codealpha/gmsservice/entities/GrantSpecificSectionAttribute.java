@@ -20,6 +20,8 @@ public class GrantSpecificSectionAttribute {
   private Boolean deletable;
   @Column
   private Boolean required;
+  @Column(columnDefinition = "text")
+  private String extras;
   @ManyToOne
   @JoinColumn(referencedColumnName = "id")
   @JsonIgnore
@@ -91,5 +93,13 @@ public class GrantSpecificSectionAttribute {
 
   public void setAttributeOrder(int attributeOrder) {
     this.attributeOrder = attributeOrder;
+  }
+
+  public String getExtras() {
+    return extras;
+  }
+
+  public void setExtras(String extras) {
+    this.extras = extras;
   }
 }

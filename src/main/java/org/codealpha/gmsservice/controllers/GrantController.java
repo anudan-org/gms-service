@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.text.WordUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -154,6 +155,7 @@ public class GrantController {
                 specificSectionAttribute.setFieldType(sectionAttribute.getFieldType());
                 specificSectionAttribute.setGranter((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
                 specificSectionAttribute.setRequired(false);
+                specificSectionAttribute.setExtras(sectionAttribute.getExtras());
                 specificSectionAttribute.setAttributeOrder(sectionAttribute.getAttributeOrder());
                 specificSectionAttribute.setSection(specificSection);
                 specificSectionAttribute = grantService.saveSectionAttribute(specificSectionAttribute);
@@ -164,7 +166,11 @@ public class GrantController {
                 stringAttribute.setSection(specificSection);
                 stringAttribute.setGrant(grant);
                 stringAttribute.setSectionAttribute(specificSectionAttribute);
-                stringAttribute.setValue("");
+                if(specificSectionAttribute.getFieldType().equalsIgnoreCase("table") && specificSectionAttribute.getExtras()!=null && specificSectionAttribute.getExtras()!=""){
+                    stringAttribute.setValue(sectionAttribute.getExtras());
+                }else {
+                    stringAttribute.setValue("");
+                }
                 stringAttribute.setFrequency("");
                 stringAttribute.setTarget("");
 
@@ -416,6 +422,23 @@ public class GrantController {
                 newAttribute.setRequired(currentAttribute.getRequired());
                 newAttribute.setAttributeOrder(currentAttribute.getAttributeOrder());
                 newAttribute.setSection(newSection);
+                if(currentAttribute.getFieldType().equalsIgnoreCase("table")){
+                    GrantStringAttribute stringAttribute = grantService.findGrantStringBySectionIdAttribueIdAndGrantId(currentSection.getId(),currentAttribute.getId(),grant.getId());
+
+                    ObjectMapper mapper = new ObjectMapper();
+                    try {
+                        List<TableData> tableData = mapper.readValue(stringAttribute.getValue(),new TypeReference<List<TableData>>(){});
+                        for(TableData data :tableData){
+                            for(ColumnData columnData : data.getColumns()){
+                                columnData.setValue("");
+                            }
+                        }
+                        newAttribute.setExtras(mapper.writeValueAsString(tableData));
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
 
                 newAttribute = grantService.saveGrantTemaplteSectionAttribute(newAttribute);
 
