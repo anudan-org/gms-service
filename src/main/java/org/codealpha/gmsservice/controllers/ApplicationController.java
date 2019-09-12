@@ -60,6 +60,9 @@ public class ApplicationController {
     @Autowired
     private WorkflowStatusService workflowStatusService;
 
+    @Autowired
+    private UserService userService;
+
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
 
@@ -93,6 +96,8 @@ public class ApplicationController {
             }
             config.setGrantInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", org.getId()));
             config.setSubmissionInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", org.getId()));
+            config.setWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANT",org.getId()));
+            config.setTenantUsers(userService.getAllTenantUsers(org));
             config.setGranteeOrgs(organizationService.getGranteeOrgs());
         } else {
             Organization org = organizationService.getPlatformOrg();

@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.models;
 import java.util.List;
 import org.codealpha.gmsservice.entities.GrantSection;
 import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
 
 /**
@@ -23,6 +24,8 @@ public class UIConfig {
 	private WorkflowStatus grantInitialStatus;
 	private WorkflowStatus submissionInitialStatus;
 	private List<Organization> granteeOrgs;
+	private List<WorkflowStatus> workflowStatuses;
+	private List<User> tenantUsers;
 
 	public String getLogoUrl() {
 		return logoUrl;
@@ -87,5 +90,21 @@ public class UIConfig {
 
 	public void setGranteeOrgs(List<Organization> granteeOrgs) {
 		this.granteeOrgs = granteeOrgs;
+	}
+
+	public List<WorkflowStatus> getWorkflowStatuses() {
+		return workflowStatuses;
+	}
+
+	public void setWorkflowStatuses(List<WorkflowStatus> workflowStatuses) {
+		this.workflowStatuses = workflowStatuses;
+	}
+
+	public List<User> getTenantUsers() {
+		return tenantUsers;
+	}
+
+	public void setTenantUsers(List<User> tenantUsers) {
+		this.tenantUsers = tenantUsers;
 	}
 }

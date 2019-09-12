@@ -35,7 +35,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -119,21 +118,19 @@ public class GrantController {
         assignment.setAssignments(userService.getUserById(userId).getId());
         assignment.setGrantId(grant.getId());
         assignment.setStateId(grant.getGrantStatus().getId());
-        grantService.createAssignmentForGrant(assignment);
+        grantService.saveAssignmentForGrant(assignment);
 
-        assignment = new GrantAssignments();
-        assignment.setAnchor(false);
-        assignment.setAssignments(userService.getUserByEmail("vineet@socialalpha.org").getId());
-        assignment.setGrantId(grant.getId());
-        assignment.setStateId(workflowStatusService.findById(2L).getId());
-        grantService.createAssignmentForGrant(assignment);
-
-        assignment = new GrantAssignments();
-        assignment.setAnchor(false);
-        assignment.setAssignments(userService.getUserByEmail("vineet_prasani@email.com").getId());
-        assignment.setGrantId(grant.getId());
-        assignment.setStateId(workflowStatusService.findById(3L).getId());
-        grantService.createAssignmentForGrant(assignment);
+        Organization granterOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        List<WorkflowStatus> statuses = workflowStatusService.getTenantWorkflowStatuses("GRANT",granterOrg.getId());
+        for(WorkflowStatus status : statuses){
+            if(!status.isInitial() && status.getInternalStatus().equalsIgnoreCase("DRAFT")){
+                assignment = new GrantAssignments();
+                assignment.setAnchor(false);
+                assignment.setGrantId(grant.getId());
+                assignment.setStateId(status.getId());
+                grantService.saveAssignmentForGrant(assignment);
+            }
+        }
 
         GranterGrantTemplate grantTemplate = granterGrantTemplateService.findByTemplateId(templateId);
 
@@ -202,6 +199,7 @@ public class GrantController {
         }
     }
 
+
     private Grant _grantToReturn(@PathVariable("userId") Long userId, Grant grant) {
         User user = userService.getUserById(userId);
 
@@ -226,6 +224,33 @@ public class GrantController {
         for (SectionVO section : grant.getGrantDetails().getSections()) {
             if (section.getAttributes() != null) {
                 section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+            }
+        }
+        List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
+        for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
+            GrantAssignmentsVO assignmentsVO = new GrantAssignmentsVO();
+            assignmentsVO.setId(assignment.getId());
+            assignmentsVO.setAnchor(assignment.isAnchor());
+            assignmentsVO.setAssignments(assignment.getAssignments());
+            if(assignment.getAssignments()!=null) {
+                assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
+            }
+            assignmentsVO.setGrantId(assignment.getGrantId());
+            assignmentsVO.setStateId(assignment.getStateId());
+            assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
+            workflowAssignments.add(assignmentsVO);
+        }
+        grant.setWorkflowAssignment(workflowAssignments);
+        List<GrantAssignments> grantAssignments = grantService.getGrantCurrentAssignments(grant);
+        if (grantAssignments != null) {
+            for (GrantAssignments assignment : grantAssignments) {
+                if (grant.getCurrentAssignment() == null) {
+                    List<AssignedTo> assignedToList = new ArrayList<>();
+                    grant.setCurrentAssignment(assignedToList);
+                }
+                AssignedTo newAssignedTo = new AssignedTo();
+                newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                grant.getCurrentAssignment().add(newAssignedTo);
             }
         }
         grant = grantService.saveGrant(grant);
@@ -664,6 +689,33 @@ public class GrantController {
                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
         grant.setGrantDetails(grantVO.getGrantDetails());
+        List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
+        for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
+            GrantAssignmentsVO assignmentsVO = new GrantAssignmentsVO();
+            assignmentsVO.setId(assignment.getId());
+            assignmentsVO.setAnchor(assignment.isAnchor());
+            assignmentsVO.setAssignments(assignment.getAssignments());
+            if(assignment.getAssignments()!=null) {
+                assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
+            }
+            assignmentsVO.setGrantId(assignment.getGrantId());
+            assignmentsVO.setStateId(assignment.getStateId());
+            assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
+            workflowAssignments.add(assignmentsVO);
+        }
+        grant.setWorkflowAssignment(workflowAssignments);
+        List<GrantAssignments> grantAssignments = grantService.getGrantCurrentAssignments(grant);
+        if (grantAssignments != null) {
+            for (GrantAssignments assignment : grantAssignments) {
+                if (grant.getCurrentAssignment() == null) {
+                    List<AssignedTo> assignedToList = new ArrayList<>();
+                    grant.setCurrentAssignment(assignedToList);
+                }
+                AssignedTo newAssignedTo = new AssignedTo();
+                newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                grant.getCurrentAssignment().add(newAssignedTo);
+            }
+        }
         GranterGrantTemplate templ = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
         if(templ!=null) {
             grant.setGrantTemplate(templ);
@@ -1292,6 +1344,33 @@ public class GrantController {
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
 
         grant.setGrantDetails(grantVO.getGrantDetails());
+        List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
+        for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
+            GrantAssignmentsVO assignmentsVO = new GrantAssignmentsVO();
+            assignmentsVO.setId(assignment.getId());
+            assignmentsVO.setAnchor(assignment.isAnchor());
+            if(assignment.getAssignments()!=null) {
+                assignmentsVO.setAssignments(assignment.getAssignments());
+            }
+            assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
+            assignmentsVO.setGrantId(assignment.getGrantId());
+            assignmentsVO.setStateId(assignment.getStateId());
+            assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
+            workflowAssignments.add(assignmentsVO);
+        }
+        grant.setWorkflowAssignment(workflowAssignments);
+        List<GrantAssignments> grantAssignments = grantService.getGrantCurrentAssignments(grant);
+        if (grantAssignments != null) {
+            for (GrantAssignments assignment : grantAssignments) {
+                if (grant.getCurrentAssignment() == null) {
+                    List<AssignedTo> assignedToList = new ArrayList<>();
+                    grant.setCurrentAssignment(assignedToList);
+                }
+                AssignedTo newAssignedTo = new AssignedTo();
+                newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                grant.getCurrentAssignment().add(newAssignedTo);
+            }
+        }
         grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
 
         grant.getSubmissions().sort((a, b) -> a.getSubmitBy().compareTo(b.getSubmitBy()));
@@ -1615,5 +1694,19 @@ public class GrantController {
     @GetMapping("/templates")
     public List<GranterGrantTemplate> getTenantPublishedGrantTemplates(@RequestHeader("X-TENANT-CODE") String tenantCode) {
         return granterGrantTemplateService.findByGranterIdAndPublishedStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(), true);
+    }
+
+    @PostMapping("/{grantId}/assignment")
+    public Grant saveGrantAssignments(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @RequestBody GrantAssignmentsVO[] assignmentsToSave) {
+        Grant grant = grantService.getById(grantId);
+        for (GrantAssignmentsVO assignmentsVO : assignmentsToSave) {
+            GrantAssignments assignment = grantService.getGrantAssignmentById(assignmentsVO.getId());
+            assignment.setAssignments(assignmentsVO.getAssignments());
+
+            grantService.saveAssignmentForGrant(assignment);
+        }
+
+        grant = _grantToReturn(userId,grant);
+        return grant;
     }
 }

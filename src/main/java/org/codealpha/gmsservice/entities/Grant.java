@@ -25,6 +25,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.models.AssignedTo;
+import org.codealpha.gmsservice.models.GrantAssignmentsVO;
 import org.codealpha.gmsservice.models.GrantDetailVO;
 import org.joda.time.DateTime;
 
@@ -126,6 +127,8 @@ public class Grant {
   private GrantDetailVO grantDetails;
   @Transient
   private List<AssignedTo> currentAssignment;
+  @Transient
+  private List<GrantAssignmentsVO> workflowAssignment;
 
   public Long getId() {
     return id;
@@ -362,5 +365,13 @@ public class Grant {
 
   public void setCurrentAssignment(List<AssignedTo> currentAssignment) {
     this.currentAssignment = currentAssignment;
+  }
+
+  public List<GrantAssignmentsVO> getWorkflowAssignment() {
+    return workflowAssignment;
+  }
+
+  public void setWorkflowAssignment(List<GrantAssignmentsVO> workflowAssignment) {
+    this.workflowAssignment = workflowAssignment;
   }
 }

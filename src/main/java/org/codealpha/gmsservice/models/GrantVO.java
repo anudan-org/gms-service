@@ -37,6 +37,7 @@ public class GrantVO {
   private String representative;
   private Double amount;
   private List<AssignedTo> currentAssignment;
+  private List<GrantAssignments> workflowAssignment;
   private List<Submission> submissions;
   private WorkflowActionPermission actionAuthorities;
   private List<WorkFlowPermission> flowAuthorities;
@@ -291,9 +292,17 @@ public class GrantVO {
         this.grantTemplate = grantTemplate;
     }
 
-    public GrantVO build(Grant grant, List<GrantSpecificSection> sections,
-                         WorkflowPermissionService workflowPermissionService,
-                         User user, AppConfig submissionWindow) {
+  public List<GrantAssignments> getWorkflowAssignment() {
+    return workflowAssignment;
+  }
+
+  public void setWorkflowAssignment(List<GrantAssignments> workflowAssignment) {
+    this.workflowAssignment = workflowAssignment;
+  }
+
+  public GrantVO build(Grant grant, List<GrantSpecificSection> sections,
+                       WorkflowPermissionService workflowPermissionService,
+                       User user, AppConfig submissionWindow) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
     GrantVO vo = new GrantVO();
     Submission submissionVOList = null;
