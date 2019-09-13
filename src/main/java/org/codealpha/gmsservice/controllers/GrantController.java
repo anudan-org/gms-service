@@ -226,19 +226,14 @@ public class GrantController {
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
         grant.setGrantDetails(grantVO.getGrantDetails());
 
-        grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
-        for (SectionVO section : grant.getGrantDetails().getSections()) {
-            if (section.getAttributes() != null) {
-                section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
-            }
-        }
+
         List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
         for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
             GrantAssignmentsVO assignmentsVO = new GrantAssignmentsVO();
             assignmentsVO.setId(assignment.getId());
             assignmentsVO.setAnchor(assignment.isAnchor());
             assignmentsVO.setAssignments(assignment.getAssignments());
-            if(assignment.getAssignments()!=null) {
+            if(assignment.getAssignments()!=null && assignment.getAssignments()>0) {
                 assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
             }
             assignmentsVO.setGrantId(assignment.getGrantId());
@@ -255,11 +250,21 @@ public class GrantController {
                     grant.setCurrentAssignment(assignedToList);
                 }
                 AssignedTo newAssignedTo = new AssignedTo();
-                newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                if(assignment.getAssignments()!=null && assignment.getAssignments()>0) {
+                    newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                }
                 grant.getCurrentAssignment().add(newAssignedTo);
             }
         }
         grant = grantService.saveGrant(grant);
+
+        grant.getWorkflowAssignment().sort((a,b) -> a.getId().compareTo(b.getId()));
+        grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+        for (SectionVO section : grant.getGrantDetails().getSections()) {
+            if (section.getAttributes() != null) {
+                section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+            }
+        }
         return grant;
     }
 
@@ -718,7 +723,7 @@ public class GrantController {
             assignmentsVO.setId(assignment.getId());
             assignmentsVO.setAnchor(assignment.isAnchor());
             assignmentsVO.setAssignments(assignment.getAssignments());
-            if(assignment.getAssignments()!=null) {
+            if(assignment.getAssignments()!=null && assignment.getAssignments()>0) {
                 assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
             }
             assignmentsVO.setGrantId(assignment.getGrantId());
@@ -735,7 +740,9 @@ public class GrantController {
                     grant.setCurrentAssignment(assignedToList);
                 }
                 AssignedTo newAssignedTo = new AssignedTo();
-                newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                if(assignment.getAssignments()!=null && assignment.getAssignments()>0) {
+                    newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                }
                 grant.getCurrentAssignment().add(newAssignedTo);
             }
         }
@@ -1375,7 +1382,9 @@ public class GrantController {
             if(assignment.getAssignments()!=null) {
                 assignmentsVO.setAssignments(assignment.getAssignments());
             }
-            assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
+            if(assignment.getAssignments()!=null && assignment.getAssignments()>0) {
+                assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
+            }
             assignmentsVO.setGrantId(assignment.getGrantId());
             assignmentsVO.setStateId(assignment.getStateId());
             assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
@@ -1390,12 +1399,15 @@ public class GrantController {
                     grant.setCurrentAssignment(assignedToList);
                 }
                 AssignedTo newAssignedTo = new AssignedTo();
-                newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                if(assignment.getAssignments()!=null && assignment.getAssignments()>0) {
+                    newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                }
                 grant.getCurrentAssignment().add(newAssignedTo);
             }
         }
         grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
 
+        grant.getWorkflowAssignment().sort((a,b) -> a.getId().compareTo(b.getId()));
         grant.getSubmissions().sort((a, b) -> a.getSubmitBy().compareTo(b.getSubmitBy()));
         grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
         for (SectionVO sec : grant.getGrantDetails().getSections()) {

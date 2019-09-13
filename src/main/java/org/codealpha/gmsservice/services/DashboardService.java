@@ -106,7 +106,7 @@ public class DashboardService {
                         assignmentsVO.setId(assignment.getId());
                         assignmentsVO.setAnchor(assignment.isAnchor());
                         assignmentsVO.setAssignments(assignment.getAssignments());
-                        if(assignment.getAssignments()!=null) {
+                        if(assignment.getAssignments()!=null && assignment.getAssignments()>0) {
                             assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
                         }
                         assignmentsVO.setGrantId(assignment.getGrantId());
@@ -124,12 +124,13 @@ public class DashboardService {
                                 grant.setCurrentAssignment(assignedToList);
                             }
                             AssignedTo newAssignedTo = new AssignedTo();
-                            if(assignment.getAssignments()!=null) {
+                            if(assignment.getAssignments()!=null && assignment.getAssignments()>0) {
                                 newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
                             }
                             grant.getCurrentAssignment().add(newAssignedTo);
                         }
                     }
+                    grant.getWorkflowAssignment().sort((a,b) -> a.getId().compareTo(b.getId()));
                     grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
                     for (SectionVO section : grant.getGrantDetails().getSections()) {
                         if (section.getAttributes() != null) {
