@@ -4,6 +4,8 @@ spring:
   #  url: jdbc:h2:mem:db
   #  username: sa
   #  password: sa
+  profiles:
+    active: dev
   jpa:
     hibernate:
       ddl-auto: none
