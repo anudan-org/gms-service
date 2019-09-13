@@ -72,6 +72,9 @@ public class ApplicationController {
     @Autowired
     private TemplateLibraryService templateLibraryService;
 
+    @Value("${spring.profiles.active}")
+    private String environment;
+
     @GetMapping(value = {"/config/{host}", "/config"})
     public UIConfig config(@PathVariable(name = "host", required = false) String host,
                            HttpServletRequest request) {
@@ -79,6 +82,11 @@ public class ApplicationController {
         UIConfig config;
 
         String url = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+        if(!environment.equalsIgnoreCase("dev")){
+            url = url.replace("http","https");
+        }else{
+            url = url.replace("http","http");
+        }
         if (null != host) {
             Organization org = organizationResolver.getOrganizationByHostedDomain(host);
             if (null != org) {
