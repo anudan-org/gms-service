@@ -87,7 +87,6 @@ public class ApplicationController {
         }else{
             url = url.replace("http","http");
         }
-        System.out.println("URL >>>>>>>>>>>>>>>>>>>>>>>>" + url);
         if (null != host) {
             Organization org = organizationResolver.getOrganizationByHostedDomain(host);
             if (null != org) {
