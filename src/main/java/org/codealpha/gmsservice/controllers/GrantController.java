@@ -114,19 +114,18 @@ public class GrantController {
 
         grant = grantService.saveGrant(grant);
 
-        GrantAssignments assignment = new GrantAssignments();
-        assignment.setAnchor(true);
-        assignment.setAssignments(userService.getUserById(userId).getId());
-        assignment.setGrantId(grant.getId());
-        assignment.setStateId(grant.getGrantStatus().getId());
-        grantService.saveAssignmentForGrant(assignment);
+        GrantAssignments assignment = null;
 
         Organization granterOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         List<WorkflowStatus> statuses = workflowStatusService.getTenantWorkflowStatuses("GRANT",granterOrg.getId());
         for(WorkflowStatus status : statuses){
-            if(!status.isInitial() && status.getInternalStatus().equalsIgnoreCase("DRAFT")){
+            if(!status.getTerminal()){
                 assignment = new GrantAssignments();
-                assignment.setAnchor(false);
+                if(status.isInitial()){
+                    assignment.setAnchor(true);
+                }else {
+                    assignment.setAnchor(false);
+                }
                 assignment.setGrantId(grant.getId());
                 assignment.setStateId(status.getId());
                 grantService.saveAssignmentForGrant(assignment);
