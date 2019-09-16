@@ -82,7 +82,7 @@ public class ApplicationController {
         UIConfig config;
 
         String url = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
-        if(!environment.equalsIgnoreCase("dev")){
+        if(!environment.equalsIgnoreCase("local")){
             url = url.replace("http","https");
         }else{
             url = url.replace("http","http");

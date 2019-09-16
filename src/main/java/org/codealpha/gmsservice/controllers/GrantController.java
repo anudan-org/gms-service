@@ -476,14 +476,13 @@ public class GrantController {
     }
 
     @GetMapping("/{id}")
-    public GrantVO getGrant(@PathVariable("id") Long grantId, @PathVariable("userId") Long userId) {
+    public Grant getGrant(@PathVariable("id") Long grantId, @PathVariable("userId") Long userId) {
 
         User user = userService.getUserById(userId);
         Grant grant = grantService.getById(grantId);
-        return new GrantVO()
-                .build(grant, grantService.getGrantSections(grant), workflowPermissionService, user,
-                        appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                                AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
+        grant = _grantToReturn(userId,grant);
+
+        return grant;
     }
 
     @PutMapping(value = "/kpi")
