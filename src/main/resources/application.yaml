@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: dev
+    active: local
   jpa:
     properties:
       hibernate:
@@ -17,7 +17,7 @@ logging:
 
 ---
 spring:
-  profiles: dev
+  profiles: local
   send-mail: false
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
@@ -26,6 +26,72 @@ spring:
     initialization-mode: always
     platform: pg
   jpa:
+    database: postgresql
+    hibernate:
+      jdbc:
+        lob:
+          non_contextual_creation: true
+      ddl-auto: none
+  jackson:
+    default-property-inclusion: non_null
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ranjit.victor@enstratify.com
+    password: enstratify123$
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+server:
+  servlet:
+    context-path: /api
+---
+spring:
+  profiles: qa
+  datasource:
+    url: jdbc:postgresql://localhost:5432/anudan
+    username: postgres
+    password: anudan123$
+    initialization-mode: always
+    platform: pg
+  jpa:
+    show-sql: true
+    database: postgresql
+    hibernate:
+      jdbc:
+        lob:
+          non_contextual_creation: true
+      ddl-auto: none
+  jackson:
+    default-property-inclusion: non_null
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ranjit.victor@enstratify.com
+    password: enstratify123$
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+server:
+  servlet:
+    context-path: /api
+---
+spring:
+  profiles: dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/gms
+    username: postgres
+    password: SA#1029
+    initialization-mode: always
+    platform: pg
+  jpa:
+    show-sql: false
     database: postgresql
     hibernate:
       jdbc:
@@ -59,39 +125,6 @@ spring:
     platform: pg
   jpa:
     show-sql: true
-    database: postgresql
-    hibernate:
-      jdbc:
-        lob:
-          non_contextual_creation: true
-      ddl-auto: none
-  jackson:
-    default-property-inclusion: non_null
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ranjit.victor@enstratify.com
-    password: enstratify123$
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-server:
-  servlet:
-    context-path: /api
----
-spring:
-  profiles: qa
-  datasource:
-    url: jdbc:postgresql://localhost:5432/gms
-    username: postgres
-    password: SA#1029
-    initialization-mode: always
-    platform: pg
-  jpa:
-    show-sql: false
     database: postgresql
     hibernate:
       jdbc:

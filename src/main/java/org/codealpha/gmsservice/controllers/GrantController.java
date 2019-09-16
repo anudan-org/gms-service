@@ -123,6 +123,7 @@ public class GrantController {
                 assignment = new GrantAssignments();
                 if(status.isInitial()){
                     assignment.setAnchor(true);
+                    assignment.setAssignments(userId);
                 }else {
                     assignment.setAnchor(false);
                 }
