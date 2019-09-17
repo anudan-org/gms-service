@@ -118,7 +118,7 @@ server:
 spring:
   profiles: uat
   datasource:
-    url: jdbc:postgresql://http://db-postgresql-uat-anudan-do-user-2489687-0.db.ondigitalocean.com:25060/anudan
+    url: jdbc:postgresql://db-postgresql-uat-anudan-do-user-2489687-0.db.ondigitalocean.com:25060/anudan
     username: doadmin
     password: b1kco73705ispui1
     initialization-mode: always
