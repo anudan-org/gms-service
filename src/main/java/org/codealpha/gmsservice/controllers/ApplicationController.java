@@ -80,6 +80,7 @@ public class ApplicationController {
                            HttpServletRequest request) {
 
         UIConfig config;
+        System.out.println(">>>>>>>>>>"+host);
 
         String url = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
         if(!environment.equalsIgnoreCase("local")){

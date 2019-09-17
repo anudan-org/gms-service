@@ -124,13 +124,13 @@ spring:
     initialization-mode: always
     platform: pg
   jpa:
-    show-sql: true
+    show-sql: false
     database: postgresql
     hibernate:
       jdbc:
         lob:
           non_contextual_creation: true
-      ddl-auto: create
+      ddl-auto: none
   jackson:
     default-property-inclusion: non_null
   mail:
