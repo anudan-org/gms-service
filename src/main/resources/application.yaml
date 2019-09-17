@@ -118,9 +118,9 @@ server:
 spring:
   profiles: uat
   datasource:
-    url: jdbc:postgresql://localhost:5432/anudan
-    username: postgres
-    password: anudan123$
+    url: jdbc:postgresql://http://db-postgresql-uat-anudan-do-user-2489687-0.db.ondigitalocean.com:25060/anudan
+    username: doadmin
+    password: b1kco73705ispui1
     initialization-mode: always
     platform: pg
   jpa:
@@ -130,7 +130,7 @@ spring:
       jdbc:
         lob:
           non_contextual_creation: true
-      ddl-auto: none
+      ddl-auto: create
   jackson:
     default-property-inclusion: non_null
   mail:
