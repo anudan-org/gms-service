@@ -41,7 +41,7 @@ public class UserService {
   }
 
   public List<User> getAllTenantUsers(Organization org){
-    return userRepository.findByOrganization(org);
+    return userRepository.findByOrganizationAndActive(org,true);
   }
 
 }

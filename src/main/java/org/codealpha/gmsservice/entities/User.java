@@ -43,6 +43,9 @@ public class User {
 	private String password;
 
 	@Column
+	private boolean active = true;
+
+	@Column
 	private Date createdAt;
 
 	@Column
@@ -143,5 +146,13 @@ public class User {
 
 	public void setUserRoles(List<UserRole> userRoles) {
 		this.userRoles = userRoles;
+	}
+
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
 	}
 }
