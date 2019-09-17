@@ -114,19 +114,19 @@ public class GrantController {
 
         grant = grantService.saveGrant(grant);
 
-        GrantAssignments assignment = new GrantAssignments();
-        assignment.setAnchor(true);
-        assignment.setAssignments(userService.getUserById(userId).getId());
-        assignment.setGrantId(grant.getId());
-        assignment.setStateId(grant.getGrantStatus().getId());
-        grantService.saveAssignmentForGrant(assignment);
+        GrantAssignments assignment = null;
 
         Organization granterOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         List<WorkflowStatus> statuses = workflowStatusService.getTenantWorkflowStatuses("GRANT",granterOrg.getId());
         for(WorkflowStatus status : statuses){
-            if(!status.isInitial() && status.getInternalStatus().equalsIgnoreCase("DRAFT")){
+            if(!status.getTerminal()){
                 assignment = new GrantAssignments();
-                assignment.setAnchor(false);
+                if(status.isInitial()){
+                    assignment.setAnchor(true);
+                    assignment.setAssignments(userId);
+                }else {
+                    assignment.setAnchor(false);
+                }
                 assignment.setGrantId(grant.getId());
                 assignment.setStateId(status.getId());
                 grantService.saveAssignmentForGrant(assignment);
@@ -476,14 +476,13 @@ public class GrantController {
     }
 
     @GetMapping("/{id}")
-    public GrantVO getGrant(@PathVariable("id") Long grantId, @PathVariable("userId") Long userId) {
+    public Grant getGrant(@PathVariable("id") Long grantId, @PathVariable("userId") Long userId) {
 
         User user = userService.getUserById(userId);
         Grant grant = grantService.getById(grantId);
-        return new GrantVO()
-                .build(grant, grantService.getGrantSections(grant), workflowPermissionService, user,
-                        appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                                AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
+        grant = _grantToReturn(userId,grant);
+
+        return grant;
     }
 
     @PutMapping(value = "/kpi")
