@@ -20,4 +20,6 @@ public interface UserRepository extends CrudRepository<User, Long> {
   public List<User> usersToNotifyOnWorkflowSateChangeTo(Long toStateId);
 
   public List<User> findByOrganization(Organization org);
+
+  public List<User> findByOrganizationAndActive(Organization org, boolean active);
 }
