@@ -80,7 +80,6 @@ public class ApplicationController {
                            HttpServletRequest request) {
 
         UIConfig config;
-        System.out.println(">>>>>>>>>>"+host);
 
         String url = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
         if(!environment.equalsIgnoreCase("local")){
@@ -249,7 +248,7 @@ public class ApplicationController {
                 servletResponse.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
         }
         servletResponse
-                .setHeader("Content-Disposition", "attachment; filename=" + templateLibrary.getName());
+                .setHeader("Content-Disposition", "attachment; filename=" + templateLibrary.getName()+"."+fileType);
 
         try {
             StreamUtils.copy(file.getInputStream(), servletResponse.getOutputStream());

@@ -1734,7 +1734,16 @@ public class GrantController {
     public Grant saveGrantAssignments(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @RequestBody GrantAssignmentsVO[] assignmentsToSave) {
         Grant grant = grantService.getById(grantId);
         for (GrantAssignmentsVO assignmentsVO : assignmentsToSave) {
-            GrantAssignments assignment = grantService.getGrantAssignmentById(assignmentsVO.getId());
+            GrantAssignments assignment = null;
+            if(assignmentsVO.getId()==null){
+                assignment = new GrantAssignments();
+                assignment.setStateId(assignmentsVO.getStateId());
+                assignment.setGrantId(assignmentsVO.getGrantId());
+            }else{
+                assignment = grantService.getGrantAssignmentById(assignmentsVO.getId());
+            }
+
+
             assignment.setAssignments(assignmentsVO.getAssignments());
 
             grantService.saveAssignmentForGrant(assignment);
