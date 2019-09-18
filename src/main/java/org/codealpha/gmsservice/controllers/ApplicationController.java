@@ -93,7 +93,7 @@ public class ApplicationController {
                 long orgId = org.getId();
                 config = service.getUiConfiguration(orgId);
 
-                config.setLogoUrl(url.concat("/public/images/")
+                config.setLogoUrl("/public/images/"
                         .concat(config.getLogoUrl()));
                 config.setTenantCode(org.getCode());
                 config.setNavbarTextColor(config.getNavbarTextColor());
