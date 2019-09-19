@@ -84,7 +84,7 @@ public class GrantDetailVO {
         } else if(sectionAttribute.getFieldType().equalsIgnoreCase("document")){
 
           ObjectMapper mapper = new ObjectMapper();
-          if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
+          /*if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
             sectionAttribute.setDocs(new ArrayList<>());
           }else{
             try {
@@ -93,7 +93,7 @@ public class GrantDetailVO {
             } catch (IOException e) {
               e.printStackTrace();
             }
-          }
+          }*/
 
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
             sectionAttribute.setAttachments(new ArrayList<>());

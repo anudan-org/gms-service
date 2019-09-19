@@ -1757,7 +1757,7 @@ public class GrantController {
     }
 
     @PostMapping("/{grantId}/field/{fieldId}/template/{templateId}")
-    public Grant createDocumentForGrantSectionField(@PathVariable("userId") Long userId,@PathVariable("grantId") Long grantId, @PathVariable("fieldId") Long fieldId, @PathVariable("templateId") Long templateId,@RequestHeader("X-TENANT-CODE") String tenantCode){
+    public DocInfo createDocumentForGrantSectionField(@PathVariable("userId") Long userId,@PathVariable("grantId") Long grantId, @PathVariable("fieldId") Long fieldId, @PathVariable("templateId") Long templateId,@RequestHeader("X-TENANT-CODE") String tenantCode){
         TemplateLibrary libraryDoc = templateLibraryService.getTemplateLibraryDocumentById(templateId);
 
         GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(fieldId);
@@ -1798,6 +1798,29 @@ public class GrantController {
         }
         Grant grant = grantService.getById(grantId);
         grant = _grantToReturn(userId,grant);
+        return new DocInfo(attachment.getId(),grant);
+    }
+
+
+    @DeleteMapping("{grantId}/attribute/{attributeId}/attachment/{attachmentId}")
+    public Grant deleteGrantStringAttributeAttachment(@PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId, @PathVariable("attachmentId") Long attachmentId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("attributeId") Long attributeId){
+        grantService.deleteStringAttributeAttachmentsByAttachmentId(attachmentId);
+        GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(attributeId);
+        List<GrantStringAttributeAttachments> stringAttributeAttachments = grantService.getStringAttributeAttachmentsByStringAttribute(stringAttribute);
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
+            stringAttribute = grantService.saveGrantStringAttribute(stringAttribute);
+        } catch (JsonProcessingException e) {
+            logger.error(e.getMessage(),e);
+        }
+
+
+
+        Grant grant = grantService.getById(grantId);
+
+        grant = _grantToReturn(userId,grant);
         return grant;
     }
+
 }

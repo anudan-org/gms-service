@@ -379,4 +379,12 @@ public class GrantService {
     public List<GrantStringAttributeAttachments> getStringAttributeAttachmentsByStringAttribute(GrantStringAttribute grantStringAttribute){
         return grantStringAttributeAttachmentRepository.findByGrantStringAttribute(grantStringAttribute);
     }
+
+    public GrantStringAttributeAttachments getStringAttributeAttachmentsByAttachmentId(Long attachmentId){
+        return grantStringAttributeAttachmentRepository.findById(attachmentId).get();
+    }
+
+    public void deleteStringAttributeAttachmentsByAttachmentId(Long attachmentId){
+        grantStringAttributeAttachmentRepository.deleteById(attachmentId);
+    }
 }
