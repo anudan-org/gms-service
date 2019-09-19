@@ -52,6 +52,8 @@ public class GrantService {
     private GranterGrantTemplateRepository granterGrantTemplateRepository;
     @Autowired
     private GrantAssignmentRepository grantAssignmentRepository;
+    @Autowired
+    private GrantStringAttributeAttachmentRepository grantStringAttributeAttachmentRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -252,6 +254,10 @@ public class GrantService {
         return grantStringAttributeRepository.findBySectionAndSectionIdAttributeIdAndGrantId(granterGrantSectionId,granterGrantSectionAttributeId,grantId);
     }
 
+    public GrantStringAttribute findGrantStringAttributeById(Long grantStringAttributeId){
+        return grantStringAttributeRepository.findById(grantStringAttributeId).get();
+    }
+
     public GrantDocumentAttributes findGrantDocumentBySectionAttribueAndGrant(GrantSpecificSection granterGrantSection,GrantSpecificSectionAttribute granterGrantSectionAttribute, Grant grant){
         return grantDocumentAttributesRepository.findBySectionAndSectionAttributeAndGrant(granterGrantSection,granterGrantSectionAttribute,grant);
     }
@@ -364,5 +370,13 @@ public class GrantService {
             return grantAssignmentRepository.findById(assignmentId).get();
         }
         return null;
+    }
+
+    public GrantStringAttributeAttachments saveGrantStringAttributeAttachment(GrantStringAttributeAttachments attachment) {
+        return grantStringAttributeAttachmentRepository.save(attachment);
+    }
+
+    public List<GrantStringAttributeAttachments> getStringAttributeAttachmentsByStringAttribute(GrantStringAttribute grantStringAttribute){
+        return grantStringAttributeAttachmentRepository.findByGrantStringAttribute(grantStringAttribute);
     }
 }

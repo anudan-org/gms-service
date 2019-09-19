@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.codealpha.gmsservice.entities.*;
+import org.springframework.web.bind.annotation.PostMapping;
 
 public class GrantDetailVO {
 
@@ -81,6 +82,7 @@ public class GrantDetailVO {
           }
           sectionAttribute.setFieldTableValue(tableData);
         } else if(sectionAttribute.getFieldType().equalsIgnoreCase("document")){
+
           ObjectMapper mapper = new ObjectMapper();
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
             sectionAttribute.setDocs(new ArrayList<>());
@@ -88,6 +90,17 @@ public class GrantDetailVO {
             try {
               List<TemplateLibrary> assignedTemplates = mapper.readValue(sectionAttribute.getFieldValue(),new TypeReference<List<TemplateLibrary>>(){});
               sectionAttribute.setDocs(assignedTemplates);
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+          }
+
+          if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
+            sectionAttribute.setAttachments(new ArrayList<>());
+          }else{
+            try {
+              List<GrantStringAttributeAttachments> assignedTemplates = mapper.readValue(sectionAttribute.getFieldValue(),new TypeReference<List<GrantStringAttributeAttachments>>(){});
+              sectionAttribute.setAttachments(assignedTemplates);
             } catch (IOException e) {
               e.printStackTrace();
             }
@@ -108,6 +121,7 @@ public class GrantDetailVO {
     }
     return this;
   }
+
 
   public GrantDetailVO buildDocumentAttributes(List<GrantDocumentAttributes> value) {
     sections = new ArrayList<>();

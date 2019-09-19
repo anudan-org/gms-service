@@ -1,9 +1,8 @@
 package org.codealpha.gmsservice.controllers;
 
 import java.awt.*;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -36,6 +35,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.util.FileSystemUtils;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -84,6 +85,8 @@ public class GrantController {
     private NotificationsService notificationsService;
     @Autowired
     private GranterGrantTemplateService granterGrantTemplateService;
+    @Autowired
+    private TemplateLibraryService templateLibraryService;
 
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
@@ -1749,6 +1752,51 @@ public class GrantController {
             grantService.saveAssignmentForGrant(assignment);
         }
 
+        grant = _grantToReturn(userId,grant);
+        return grant;
+    }
+
+    @PostMapping("/{grantId}/field/{fieldId}/template/{templateId}")
+    public Grant createDocumentForGrantSectionField(@PathVariable("userId") Long userId,@PathVariable("grantId") Long grantId, @PathVariable("fieldId") Long fieldId, @PathVariable("templateId") Long templateId,@RequestHeader("X-TENANT-CODE") String tenantCode){
+        TemplateLibrary libraryDoc = templateLibraryService.getTemplateLibraryDocumentById(templateId);
+
+        GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(fieldId);
+
+        Resource file = null;
+        String filePath = null;
+        try {
+            file = resourceLoader
+                    .getResource("file:" + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(),"UTF-8"));
+            filePath = uploadLocation+ tenantCode+"/grant-documents/"+grantId+"/"+stringAttribute.getSection().getId()+"/"+stringAttribute.getSectionAttribute().getId()+"/";
+
+            File dir = new File(filePath);
+            dir.mkdirs();
+            File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
+            FileWriter newJsp = new FileWriter(fileToCreate);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        GrantStringAttributeAttachments attachment = new GrantStringAttributeAttachments();
+        attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
+        attachment.setCreatedOn(new Date());
+        attachment.setDescription(libraryDoc.getDescription());
+        attachment.setGrantStringAttribute(stringAttribute);
+        attachment.setLocation(filePath);
+        attachment.setName(libraryDoc.getName());
+        attachment.setTitle("");
+        attachment.setType(libraryDoc.getType());
+        attachment.setVersion(1);
+        attachment = grantService.saveGrantStringAttributeAttachment(attachment);
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            List<GrantStringAttributeAttachments> stringAttributeAttachments =  grantService.getStringAttributeAttachmentsByStringAttribute(stringAttribute);
+            stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
+            stringAttribute = grantService.saveGrantStringAttribute(stringAttribute);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        Grant grant = grantService.getById(grantId);
         grant = _grantToReturn(userId,grant);
         return grant;
     }
