@@ -15,6 +15,7 @@ import javax.transaction.Transactional;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -37,7 +38,9 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.FileSystemUtils;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/user/{userId}/grant")
@@ -1821,6 +1824,67 @@ public class GrantController {
 
         grant = _grantToReturn(userId,grant);
         return grant;
+    }
+
+
+    @PostMapping(value = "/{grantId}/attribute/{attributeId}/upload")
+    public DocInfo saveUploadedFiles(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @PathVariable("attributeId") Long attributeId,@RequestParam(value = "file") MultipartFile[] files, @RequestHeader("X-TENANT-CODE") String tenantCode){
+
+        Grant grant = grantService.getById(grantId);
+
+        GrantStringAttribute attr = grantService.findGrantStringAttributeById(attributeId);
+        String filePath = uploadLocation+ tenantCode+"/grant-documents/"+grantId+"/"+attr.getSection().getId()+"/"+attr.getSectionAttribute().getId()+"/";
+        File dir = new File(filePath);
+        dir.mkdirs();
+        List<DocInfo> docInfos = new ArrayList<>();
+        List<GrantStringAttributeAttachments> attachments = new ArrayList<>();
+        for(MultipartFile file : files){
+            try {
+                File fileToCreate = new File(dir, file.getOriginalFilename());
+                file.transferTo(fileToCreate);
+                //FileWriter newJsp = new FileWriter(fileToCreate);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            GrantStringAttributeAttachments attachment = new GrantStringAttributeAttachments();
+            attachment.setVersion(1);
+            attachment.setType(FilenameUtils.getExtension(file.getOriginalFilename()));
+            attachment.setTitle(file.getOriginalFilename().replace("."+FilenameUtils.getExtension(file.getOriginalFilename()),""));
+            attachment.setLocation(filePath);
+            attachment.setName(file.getOriginalFilename().replace("."+FilenameUtils.getExtension(file.getOriginalFilename()),""));
+            attachment.setGrantStringAttribute(attr);
+            attachment.setDescription(file.getOriginalFilename().replace("."+FilenameUtils.getExtension(file.getOriginalFilename()),""));
+            attachment.setCreatedOn(new Date());
+            attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
+            attachment = grantService.saveGrantStringAttributeAttachment(attachment);
+            attachments.add(attachment);
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            List<GrantStringAttributeAttachments> currentAttachments = mapper.readValue(attr.getValue(),new TypeReference<List<GrantStringAttributeAttachments>>(){});
+            if(currentAttachments==null){
+                currentAttachments = new ArrayList<>();
+            }
+            currentAttachments.addAll(attachments);
+
+            attr.setValue(mapper.writeValueAsString(currentAttachments));
+            attr = grantService.saveStringAttribute(attr);
+            GrantStringAttribute finalAttr = attr;
+            GrantStringAttribute finalAttr1 = finalAttr;
+            finalAttr = grant.getStringAttributes().stream().filter(g -> g.getId()== finalAttr1.getId()).findFirst().get();
+            finalAttr.setValue(mapper.writeValueAsString(currentAttachments));
+            grantService.saveGrant(grant);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        grant = grantService.getById(grantId);
+        grant = _grantToReturn(userId,grant);
+
+        return new DocInfo(attachments.get(attachments.size()-1).getId(),grant);
     }
 
 }
