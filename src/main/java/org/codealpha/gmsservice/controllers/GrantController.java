@@ -8,6 +8,8 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
@@ -16,6 +18,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -39,6 +42,7 @@ import org.springframework.http.MediaType;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -311,14 +315,17 @@ public class GrantController {
 
     @PostMapping("/{id}/section/{sectionId}/field/{fieldId}")
     public Grant deleteField(@RequestBody Grant grantToSave,@PathVariable("userId") Long userId, @PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("fieldId") Long fieldId,@RequestHeader("X-TENANT-CODE") String tenantCode) {
-        //saveGrant(grantToSave,userId,tenantCode);
-        Grant grant = grantService.getById(grantId);
+        Grant grant = saveGrant(grantToSave,userId,tenantCode);
         GrantSpecificSectionAttribute attribute = grantService.getAttributeById(fieldId);
 
         GrantStringAttribute stringAttrib = grantService.findGrantStringBySectionIdAttribueIdAndGrantId(attribute.getSection().getId(), attribute.getId(), grantId);
 
         grantService.deleteStringAttribute(stringAttrib);
         grantService.deleteAtttribute(attribute);
+        GrantStringAttribute gsa2Delete = grant.getStringAttributes().stream().filter(g -> g.getId()==stringAttrib.getId()).findFirst().get();
+        grant.getStringAttributes().remove(gsa2Delete);
+        grant = grantService.saveGrant(grant);
+
 
         if (_checkIfGrantTemplateChanged(grant, attribute.getSection(), null)) {
             GranterGrantTemplate newTemplate = _createNewGrantTemplateFromExisiting(grant);
@@ -395,7 +402,6 @@ public class GrantController {
         return grant;
     }
 
-    @Transactional(Transactional.TxType.REQUIRED)
     private GranterGrantTemplate _createNewGrantTemplateFromExisiting(Grant grant) {
         GranterGrantTemplate currentGrantTemplate = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
         GranterGrantTemplate newTemplate = null;
@@ -459,6 +465,7 @@ public class GrantController {
         newTemplate.setSections(newSections);
         newTemplate = grantService.saveGrantTemplate(newTemplate);
 
+        //grant = grantService.getById(grant.getId());
         grant.setTemplateId(newTemplate.getId());
         grantService.saveGrant(grant);
         return newTemplate;
@@ -1862,6 +1869,9 @@ public class GrantController {
 
         ObjectMapper mapper = new ObjectMapper();
         try {
+            if(attr.getValue().equalsIgnoreCase("")){
+                attr.setValue("[]");
+            }
             List<GrantStringAttributeAttachments> currentAttachments = mapper.readValue(attr.getValue(),new TypeReference<List<GrantStringAttributeAttachments>>(){});
             if(currentAttachments==null){
                 currentAttachments = new ArrayList<>();
@@ -1887,4 +1897,49 @@ public class GrantController {
         return new DocInfo(attachments.get(attachments.size()-1).getId(),grant);
     }
 
+
+    @PostMapping(value = "/{grantId}/attachments",produces=MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public byte[] downloadSelectedAttachments(@PathVariable("userId") Long userId,@PathVariable("grantId") Long grantId,@RequestHeader("X-TENANT-CODE") String tenantCode,@RequestBody AttachmentDownloadRequest downloadRequest,HttpServletResponse response) throws IOException{
+
+            ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
+            //setting headers
+            response.setContentType("application/zip");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
+
+            //creating byteArray stream, make it bufforable and passing this buffor to ZipOutputStream
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+            ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+
+            //simple file list, just for tests
+
+            ArrayList<File> files = new ArrayList<>(2);
+            files.add(new File("README.md"));
+
+            //packing files
+            for (Long attachmentId : downloadRequest.getAttachmentIds()) {
+                GrantStringAttributeAttachments attachment = grantService.getStringAttributeAttachmentsByAttachmentId(attachmentId);
+                Long sectionId = attachment.getGrantStringAttribute().getSectionAttribute().getSection().getId();
+                Long attributeId = attachment.getGrantStringAttribute().getSectionAttribute().getId();
+                File file = resourceLoader.getResource("file:" + uploadLocation+ tenantCode+"/grant-documents/"+grantId+"/"+sectionId+"/"+attributeId+"/"+attachment.getName()+"."+attachment.getType()).getFile();
+                //new zip entry and copying inputstream with file to zipOutputStream, after all closing streams
+                zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+                FileInputStream fileInputStream = new FileInputStream(file);
+
+                IOUtils.copy(fileInputStream, zipOutputStream);
+
+                fileInputStream.close();
+                zipOutputStream.closeEntry();
+            }
+
+            if (zipOutputStream != null) {
+                zipOutputStream.finish();
+                zipOutputStream.flush();
+                IOUtils.closeQuietly(zipOutputStream);
+            }
+            IOUtils.closeQuietly(bufferedOutputStream);
+            IOUtils.closeQuietly(byteArrayOutputStream);
+            return byteArrayOutputStream.toByteArray();
+    }
 }
