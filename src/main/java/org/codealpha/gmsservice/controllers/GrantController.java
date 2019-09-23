@@ -1,14 +1,15 @@
 package org.codealpha.gmsservice.controllers;
 
 import java.awt.*;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
@@ -16,6 +17,8 @@ import javax.transaction.Transactional;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -36,7 +39,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.util.FileSystemUtils;
+import org.springframework.util.MultiValueMap;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/user/{userId}/grant")
@@ -84,6 +92,8 @@ public class GrantController {
     private NotificationsService notificationsService;
     @Autowired
     private GranterGrantTemplateService granterGrantTemplateService;
+    @Autowired
+    private TemplateLibraryService templateLibraryService;
 
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
@@ -305,14 +315,17 @@ public class GrantController {
 
     @PostMapping("/{id}/section/{sectionId}/field/{fieldId}")
     public Grant deleteField(@RequestBody Grant grantToSave,@PathVariable("userId") Long userId, @PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("fieldId") Long fieldId,@RequestHeader("X-TENANT-CODE") String tenantCode) {
-        //saveGrant(grantToSave,userId,tenantCode);
-        Grant grant = grantService.getById(grantId);
+        Grant grant = saveGrant(grantToSave,userId,tenantCode);
         GrantSpecificSectionAttribute attribute = grantService.getAttributeById(fieldId);
 
         GrantStringAttribute stringAttrib = grantService.findGrantStringBySectionIdAttribueIdAndGrantId(attribute.getSection().getId(), attribute.getId(), grantId);
 
         grantService.deleteStringAttribute(stringAttrib);
         grantService.deleteAtttribute(attribute);
+        GrantStringAttribute gsa2Delete = grant.getStringAttributes().stream().filter(g -> g.getId()==stringAttrib.getId()).findFirst().get();
+        grant.getStringAttributes().remove(gsa2Delete);
+        grant = grantService.saveGrant(grant);
+
 
         if (_checkIfGrantTemplateChanged(grant, attribute.getSection(), null)) {
             GranterGrantTemplate newTemplate = _createNewGrantTemplateFromExisiting(grant);
@@ -389,7 +402,6 @@ public class GrantController {
         return grant;
     }
 
-    @Transactional(Transactional.TxType.REQUIRED)
     private GranterGrantTemplate _createNewGrantTemplateFromExisiting(Grant grant) {
         GranterGrantTemplate currentGrantTemplate = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
         GranterGrantTemplate newTemplate = null;
@@ -453,6 +465,7 @@ public class GrantController {
         newTemplate.setSections(newSections);
         newTemplate = grantService.saveGrantTemplate(newTemplate);
 
+        //grant = grantService.getById(grant.getId());
         grant.setTemplateId(newTemplate.getId());
         grantService.saveGrant(grant);
         return newTemplate;
@@ -1734,7 +1747,16 @@ public class GrantController {
     public Grant saveGrantAssignments(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @RequestBody GrantAssignmentsVO[] assignmentsToSave) {
         Grant grant = grantService.getById(grantId);
         for (GrantAssignmentsVO assignmentsVO : assignmentsToSave) {
-            GrantAssignments assignment = grantService.getGrantAssignmentById(assignmentsVO.getId());
+            GrantAssignments assignment = null;
+            if(assignmentsVO.getId()==null){
+                assignment = new GrantAssignments();
+                assignment.setStateId(assignmentsVO.getStateId());
+                assignment.setGrantId(assignmentsVO.getGrantId());
+            }else{
+                assignment = grantService.getGrantAssignmentById(assignmentsVO.getId());
+            }
+
+
             assignment.setAssignments(assignmentsVO.getAssignments());
 
             grantService.saveAssignmentForGrant(assignment);
@@ -1742,5 +1764,182 @@ public class GrantController {
 
         grant = _grantToReturn(userId,grant);
         return grant;
+    }
+
+    @PostMapping("/{grantId}/field/{fieldId}/template/{templateId}")
+    public DocInfo createDocumentForGrantSectionField(@PathVariable("userId") Long userId,@PathVariable("grantId") Long grantId, @PathVariable("fieldId") Long fieldId, @PathVariable("templateId") Long templateId,@RequestHeader("X-TENANT-CODE") String tenantCode){
+        TemplateLibrary libraryDoc = templateLibraryService.getTemplateLibraryDocumentById(templateId);
+
+        GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(fieldId);
+
+        Resource file = null;
+        String filePath = null;
+        try {
+            file = resourceLoader
+                    .getResource("file:" + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(),"UTF-8"));
+            filePath = uploadLocation+ tenantCode+"/grant-documents/"+grantId+"/"+stringAttribute.getSection().getId()+"/"+stringAttribute.getSectionAttribute().getId()+"/";
+
+            File dir = new File(filePath);
+            dir.mkdirs();
+            File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
+            FileWriter newJsp = new FileWriter(fileToCreate);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        GrantStringAttributeAttachments attachment = new GrantStringAttributeAttachments();
+        attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
+        attachment.setCreatedOn(new Date());
+        attachment.setDescription(libraryDoc.getDescription());
+        attachment.setGrantStringAttribute(stringAttribute);
+        attachment.setLocation(filePath);
+        attachment.setName(libraryDoc.getName());
+        attachment.setTitle("");
+        attachment.setType(libraryDoc.getType());
+        attachment.setVersion(1);
+        attachment = grantService.saveGrantStringAttributeAttachment(attachment);
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            List<GrantStringAttributeAttachments> stringAttributeAttachments =  grantService.getStringAttributeAttachmentsByStringAttribute(stringAttribute);
+            stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
+            stringAttribute = grantService.saveGrantStringAttribute(stringAttribute);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        Grant grant = grantService.getById(grantId);
+        grant = _grantToReturn(userId,grant);
+        return new DocInfo(attachment.getId(),grant);
+    }
+
+
+    @DeleteMapping("{grantId}/attribute/{attributeId}/attachment/{attachmentId}")
+    public Grant deleteGrantStringAttributeAttachment(@PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId, @PathVariable("attachmentId") Long attachmentId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("attributeId") Long attributeId){
+        grantService.deleteStringAttributeAttachmentsByAttachmentId(attachmentId);
+        GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(attributeId);
+        List<GrantStringAttributeAttachments> stringAttributeAttachments = grantService.getStringAttributeAttachmentsByStringAttribute(stringAttribute);
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
+            stringAttribute = grantService.saveGrantStringAttribute(stringAttribute);
+        } catch (JsonProcessingException e) {
+            logger.error(e.getMessage(),e);
+        }
+
+
+
+        Grant grant = grantService.getById(grantId);
+
+        grant = _grantToReturn(userId,grant);
+        return grant;
+    }
+
+
+    @PostMapping(value = "/{grantId}/attribute/{attributeId}/upload")
+    public DocInfo saveUploadedFiles(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @PathVariable("attributeId") Long attributeId,@RequestParam(value = "file") MultipartFile[] files, @RequestHeader("X-TENANT-CODE") String tenantCode){
+
+        Grant grant = grantService.getById(grantId);
+
+        GrantStringAttribute attr = grantService.findGrantStringAttributeById(attributeId);
+        String filePath = uploadLocation+ tenantCode+"/grant-documents/"+grantId+"/"+attr.getSection().getId()+"/"+attr.getSectionAttribute().getId()+"/";
+        File dir = new File(filePath);
+        dir.mkdirs();
+        List<DocInfo> docInfos = new ArrayList<>();
+        List<GrantStringAttributeAttachments> attachments = new ArrayList<>();
+        for(MultipartFile file : files){
+            try {
+                File fileToCreate = new File(dir, file.getOriginalFilename());
+                file.transferTo(fileToCreate);
+                //FileWriter newJsp = new FileWriter(fileToCreate);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            GrantStringAttributeAttachments attachment = new GrantStringAttributeAttachments();
+            attachment.setVersion(1);
+            attachment.setType(FilenameUtils.getExtension(file.getOriginalFilename()));
+            attachment.setTitle(file.getOriginalFilename().replace("."+FilenameUtils.getExtension(file.getOriginalFilename()),""));
+            attachment.setLocation(filePath);
+            attachment.setName(file.getOriginalFilename().replace("."+FilenameUtils.getExtension(file.getOriginalFilename()),""));
+            attachment.setGrantStringAttribute(attr);
+            attachment.setDescription(file.getOriginalFilename().replace("."+FilenameUtils.getExtension(file.getOriginalFilename()),""));
+            attachment.setCreatedOn(new Date());
+            attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
+            attachment = grantService.saveGrantStringAttributeAttachment(attachment);
+            attachments.add(attachment);
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            if(attr.getValue().equalsIgnoreCase("")){
+                attr.setValue("[]");
+            }
+            List<GrantStringAttributeAttachments> currentAttachments = mapper.readValue(attr.getValue(),new TypeReference<List<GrantStringAttributeAttachments>>(){});
+            if(currentAttachments==null){
+                currentAttachments = new ArrayList<>();
+            }
+            currentAttachments.addAll(attachments);
+
+            attr.setValue(mapper.writeValueAsString(currentAttachments));
+            attr = grantService.saveStringAttribute(attr);
+            GrantStringAttribute finalAttr = attr;
+            GrantStringAttribute finalAttr1 = finalAttr;
+            finalAttr = grant.getStringAttributes().stream().filter(g -> g.getId()== finalAttr1.getId()).findFirst().get();
+            finalAttr.setValue(mapper.writeValueAsString(currentAttachments));
+            grantService.saveGrant(grant);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        grant = grantService.getById(grantId);
+        grant = _grantToReturn(userId,grant);
+
+        return new DocInfo(attachments.get(attachments.size()-1).getId(),grant);
+    }
+
+
+    @PostMapping(value = "/{grantId}/attachments",produces=MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public byte[] downloadSelectedAttachments(@PathVariable("userId") Long userId,@PathVariable("grantId") Long grantId,@RequestHeader("X-TENANT-CODE") String tenantCode,@RequestBody AttachmentDownloadRequest downloadRequest,HttpServletResponse response) throws IOException{
+
+            ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
+            //setting headers
+            response.setContentType("application/zip");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
+
+            //creating byteArray stream, make it bufforable and passing this buffor to ZipOutputStream
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+            ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+
+            //simple file list, just for tests
+
+            ArrayList<File> files = new ArrayList<>(2);
+            files.add(new File("README.md"));
+
+            //packing files
+            for (Long attachmentId : downloadRequest.getAttachmentIds()) {
+                GrantStringAttributeAttachments attachment = grantService.getStringAttributeAttachmentsByAttachmentId(attachmentId);
+                Long sectionId = attachment.getGrantStringAttribute().getSectionAttribute().getSection().getId();
+                Long attributeId = attachment.getGrantStringAttribute().getSectionAttribute().getId();
+                File file = resourceLoader.getResource("file:" + uploadLocation+ tenantCode+"/grant-documents/"+grantId+"/"+sectionId+"/"+attributeId+"/"+attachment.getName()+"."+attachment.getType()).getFile();
+                //new zip entry and copying inputstream with file to zipOutputStream, after all closing streams
+                zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+                FileInputStream fileInputStream = new FileInputStream(file);
+
+                IOUtils.copy(fileInputStream, zipOutputStream);
+
+                fileInputStream.close();
+                zipOutputStream.closeEntry();
+            }
+
+            if (zipOutputStream != null) {
+                zipOutputStream.finish();
+                zipOutputStream.flush();
+                IOUtils.closeQuietly(zipOutputStream);
+            }
+            IOUtils.closeQuietly(bufferedOutputStream);
+            IOUtils.closeQuietly(byteArrayOutputStream);
+            return byteArrayOutputStream.toByteArray();
     }
 }

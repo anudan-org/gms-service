@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity(name = "grant_string_attributes")
 public class GrantStringAttribute {
@@ -30,6 +31,8 @@ public class GrantStringAttribute {
   @JoinColumn(referencedColumnName = "id")
   @JsonProperty("sectionDetails")
   private GrantSpecificSection section;
+  @OneToMany(mappedBy = "grantStringAttribute")
+  private List<GrantStringAttributeAttachments> attachments;
 
   public Long getId() {
     return id;
@@ -72,19 +75,27 @@ public class GrantStringAttribute {
     this.section = section;
   }
 
-  public void setTarget(String tr){
+  public void setTarget(String tr) {
     this.target = tr;
   }
 
-  public String getTarget(){
+  public String getTarget() {
     return this.target;
   }
 
-  public void setFrequency(String fq){
+  public void setFrequency(String fq) {
     this.frequency = fq;
   }
 
-  public String getFrequency(){
+  public String getFrequency() {
     return this.frequency;
+  }
+
+  public List<GrantStringAttributeAttachments> getAttachments() {
+    return attachments;
+  }
+
+  public void setAttachments(List<GrantStringAttributeAttachments> attachments) {
+    this.attachments = attachments;
   }
 }

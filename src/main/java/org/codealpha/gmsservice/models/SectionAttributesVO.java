@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.models;
 
+import org.codealpha.gmsservice.entities.GrantStringAttributeAttachments;
 import org.codealpha.gmsservice.entities.TemplateLibrary;
 
 import java.util.List;
@@ -13,6 +14,7 @@ public class SectionAttributesVO {
   private String fieldValue;
   private List<TableData> fieldTableValue;
   private List<TemplateLibrary> docs;
+  private List<GrantStringAttributeAttachments> attachments;
   private int attributeOrder;
   private String target;
   private String frequency;
@@ -105,6 +107,14 @@ public class SectionAttributesVO {
 
   public void setDocs(List<TemplateLibrary> docs) {
     this.docs = docs;
+  }
+
+  public List<GrantStringAttributeAttachments> getAttachments() {
+    return attachments;
+  }
+
+  public void setAttachments(List<GrantStringAttributeAttachments> attachments) {
+    this.attachments = attachments;
   }
 
   @Override
