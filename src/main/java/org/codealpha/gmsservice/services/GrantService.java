@@ -387,4 +387,8 @@ public class GrantService {
     public void deleteStringAttributeAttachmentsByAttachmentId(Long attachmentId){
         grantStringAttributeAttachmentRepository.deleteById(attachmentId);
     }
+
+    public void deleteStringAttributeAttachments(List<GrantStringAttributeAttachments> attachments){
+        grantStringAttributeAttachmentRepository.deleteAll(attachments);
+    }
 }

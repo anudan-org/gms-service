@@ -56,7 +56,7 @@ public class SectionVO implements Comparable<SectionVO> {
       return false;
     }
     SectionVO sectionVO = (SectionVO) o;
-    return name.equals(sectionVO.name);
+    return id==sectionVO.id;
   }
 
   @Override
