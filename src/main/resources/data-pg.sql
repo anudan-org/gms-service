@@ -72,67 +72,67 @@ insert into roles_permission (permission, role_id) VALUES ('Manage Workflows',3)
 
 -- Users
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'grantee@grantee.com', 'Grantee', 'Customer',
-        'password', null, null, 1); -- 1
+        'password', null, null, 1,true); -- 1
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'vineet_prasani@email.com', 'Vineet', 'Prasani',
-        'password', null, null, 2); -- 2
+        'password', null, null, 2,true); -- 2
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'manasi.arora@gmail.com', 'Manasi', 'Grantee',
-        'password', null, null, 1); -- 3
+        'password', null, null, 1,true); -- 3
 
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'ranjitvictor@gmail.com', 'Ranjit', 'Victor',
         'password',
-        null, null, 2); -- 4
+        null, null, 2,true); -- 4
 
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'vineet.prasani@gmail.com', 'Vineet', 'Prasani',
         'password',
-        null, null, 2); -- 5
+        null, null, 2,true); -- 5
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'manasi.arora@enstratify.com', 'Manasi', 'PL',
         'password',
-        null, null, 2); -- 6
+        null, null, 2,true); -- 6
 
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'anudan-admin@ihf.com', 'Anudan', 'Admin',
-        'password', null, null, 3); -- 7
+        'password', null, null, 3,true); -- 7
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'admin@tatr.com', 'TATR', 'Admin',
-        'password', null, null, 4); -- 8
+        'password', null, null, 4,true); -- 8
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'jayeeta@indiahealthfund.org', 'Jayeeta', 'PM',
-        'password', null, null, 2); -- 9
+        'password', null, null, 2,true); -- 9
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'jchowdhury@tatatrusts.org', 'Chowdhury', 'PL',
-        'password', null, null, 2); -- 10
+        'password', null, null, 2,true); -- 10
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'shreyas@indiahealthfund.org', 'Shreyas', 'FM',
-        'password', null, null, 2); -- 11
+        'password', null, null, 2,true); -- 11
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'loknath@indiahealthfund.org', 'Loknath', 'FL',
-        'password', null, null, 2); -- 12
+        'password', null, null, 2,true); -- 12
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'vapte@tatatrusts.org', 'Vapte', 'Partner',
-        'password', null, null, 1); -- 13
+        'password', null, null, 1,true); -- 13
 INSERT INTO public.users (created_at, created_by, email_id, first_name, last_name, password,
-                          updated_at, updated_by, organization_id)
+                          updated_at, updated_by, organization_id,active)
 VALUES ('2019-04-08 03:00:16.545000', 'System', 'vineet@socialalpha.org', 'Vineet', 'Finance',
-        'password', null, null, 2); -- 14
+        'password', null, null, 2,true); -- 14
 
 insert into user_roles (role_id, user_id) VALUES (4,1);
 insert into user_roles (role_id, user_id) VALUES (1,2);
