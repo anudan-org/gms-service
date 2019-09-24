@@ -310,7 +310,7 @@ public class GrantController {
         }
 
         grant = _grantToReturn(userId, grant);
-        return new FieldInfo(newSectionAttribute.getId(), grant);
+        return new FieldInfo(newSectionAttribute.getId(),stringAttribute.getId(), grant);
     }
 
     @PostMapping("/{id}/section/{sectionId}/field/{fieldId}")
@@ -356,7 +356,7 @@ public class GrantController {
 
 
         grant = _grantToReturn(userId, grant);
-        return new FieldInfo(currentAttribute.getId(), grant);
+        return new FieldInfo(currentAttribute.getId(), stringAttribute.getId(), grant);
     }
 
     @GetMapping("/{id}/template/{templateId}/section/{sectionName}")
