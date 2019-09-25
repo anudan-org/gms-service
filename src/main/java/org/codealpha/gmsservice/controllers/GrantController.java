@@ -934,6 +934,7 @@ public class GrantController {
                     sectionAttribute.setFieldName(sectionAttributesVO.getFieldName());
                     sectionAttribute.setFieldType(sectionAttributesVO.getFieldType());
                     sectionAttribute.setGranter((Granter) tenant);
+                    sectionAttribute.setAttributeOrder(sectionAttributesVO.getAttributeOrder());
                     sectionAttribute.setRequired(true);
                     sectionAttribute.setSection(grantSpecificSection);
                     sectionAttribute = grantService.saveSectionAttribute(sectionAttribute);
