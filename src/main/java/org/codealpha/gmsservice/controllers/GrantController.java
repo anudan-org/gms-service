@@ -1331,7 +1331,7 @@ public class GrantController {
     @PostMapping("/{grantId}/flow/{fromState}/{toState}")
     public Grant MoveGrantState(@PathVariable("userId") Long userId,
                                 @PathVariable("grantId") Long grantId, @PathVariable("fromState") Long fromStateId,
-                                @PathVariable("toState") Long toStateId,@RequestBody String note) {
+                                @PathVariable("toState") Long toStateId,@RequestBody(required = false) String note) {
 
         Grant grant = grantService.getById(grantId);
         grant.setGrantStatus(workflowStatusService.findById(toStateId));
