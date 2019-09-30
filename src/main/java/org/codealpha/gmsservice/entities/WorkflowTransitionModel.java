@@ -22,6 +22,8 @@ public class WorkflowTransitionModel {
     private String _performedby;
     @Column
     private Long roleId;
+    @Column
+    private Boolean noteRequired;
 
     public Long getId() {
         return id;
@@ -85,5 +87,13 @@ public class WorkflowTransitionModel {
 
     public void setRoleId(Long roleId) {
         this.roleId = roleId;
+    }
+
+    public Boolean getNoteRequired() {
+        return noteRequired;
+    }
+
+    public void setNoteRequired(Boolean noteRequired) {
+        this.noteRequired = noteRequired;
     }
 }

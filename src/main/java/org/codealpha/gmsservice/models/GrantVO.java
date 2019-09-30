@@ -34,6 +34,7 @@ public class GrantVO {
   private String stDate;
   private Date endDate;
   private String enDate;
+  private String note;
   private String representative;
   private Double amount;
   private List<AssignedTo> currentAssignment;
@@ -71,6 +72,14 @@ public class GrantVO {
 
   public Organization getGrantorOrganization() {
     return grantorOrganization;
+  }
+
+  public String getNote() {
+    return note;
+  }
+
+  public void setNote(String note) {
+    this.note = note;
   }
 
   public void setGrantorOrganization(Granter grantorOrganization) {

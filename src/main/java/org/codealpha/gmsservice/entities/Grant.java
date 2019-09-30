@@ -114,6 +114,9 @@ public class Grant {
   @Column
   private String representative;
 
+  @Column
+  private String note;
+
   @OneToMany(mappedBy = "grant", cascade = CascadeType.ALL)
   @OrderBy("submitBy ASC")
   @JsonManagedReference
@@ -373,5 +376,13 @@ public class Grant {
 
   public void setWorkflowAssignment(List<GrantAssignmentsVO> workflowAssignment) {
     this.workflowAssignment = workflowAssignment;
+  }
+
+  public String getNote() {
+    return note;
+  }
+
+  public void setNote(String note) {
+    this.note = note;
   }
 }

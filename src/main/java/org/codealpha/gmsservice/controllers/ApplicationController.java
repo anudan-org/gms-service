@@ -72,6 +72,9 @@ public class ApplicationController {
     @Autowired
     private TemplateLibraryService templateLibraryService;
 
+    @Autowired
+    private WorkflowTransitionModelService workflowTransitionModelService;
+
     @Value("${spring.profiles.active}")
     private String environment;
 
@@ -106,6 +109,7 @@ public class ApplicationController {
             config.setSubmissionInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", org.getId()));
             config.setWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANT",org.getId()));
             config.setTenantUsers(userService.getAllTenantUsers(org));
+            config.setTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"GRANT"));
             config.setGranteeOrgs(organizationService.getGranteeOrgs());
         } else {
             Organization org = organizationService.getPlatformOrg();

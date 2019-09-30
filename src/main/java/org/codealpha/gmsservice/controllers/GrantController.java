@@ -811,6 +811,7 @@ public class GrantController {
         grant.setAmount(grantToSave.getAmount());
         grant.setDescription(grantToSave.getDescription());
         grant.setRepresentative(grantToSave.getRepresentative());
+        grant.setNote(grantToSave.getNote());
         if (grantToSave.getEndDate() != null) {
             grant.setEnDate(grantToSave.getEnDate());
             grant.setEndDate(grantToSave.getEndDate());
@@ -1330,10 +1331,11 @@ public class GrantController {
     @PostMapping("/{grantId}/flow/{fromState}/{toState}")
     public Grant MoveGrantState(@PathVariable("userId") Long userId,
                                 @PathVariable("grantId") Long grantId, @PathVariable("fromState") Long fromStateId,
-                                @PathVariable("toState") Long toStateId) {
+                                @PathVariable("toState") Long toStateId,@RequestBody String note) {
 
         Grant grant = grantService.getById(grantId);
         grant.setGrantStatus(workflowStatusService.findById(toStateId));
+        grant.setNote(note);
         grant.setUpdatedAt(DateTime.now().toDate());
         grant.setUpdatedBy(userService.getUserById(userId).getEmailId());
         grant = grantService.saveGrant(grant);
