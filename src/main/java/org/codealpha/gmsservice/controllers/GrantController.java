@@ -1749,7 +1749,8 @@ public class GrantController {
     }
 
     @PostMapping("/{grantId}/field/{fieldId}/template/{templateId}")
-    public DocInfo createDocumentForGrantSectionField(@PathVariable("userId") Long userId,@PathVariable("grantId") Long grantId, @PathVariable("fieldId") Long fieldId, @PathVariable("templateId") Long templateId,@RequestHeader("X-TENANT-CODE") String tenantCode){
+    public DocInfo createDocumentForGrantSectionField(@RequestBody Grant grantToSave, @PathVariable("userId") Long userId,@PathVariable("grantId") Long grantId, @PathVariable("fieldId") Long fieldId, @PathVariable("templateId") Long templateId,@RequestHeader("X-TENANT-CODE") String tenantCode){
+        saveGrant(grantToSave,userId,tenantCode);
         TemplateLibrary libraryDoc = templateLibraryService.getTemplateLibraryDocumentById(templateId);
 
         GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(fieldId);
@@ -1795,7 +1796,8 @@ public class GrantController {
 
 
     @DeleteMapping("{grantId}/attribute/{attributeId}/attachment/{attachmentId}")
-    public Grant deleteGrantStringAttributeAttachment(@PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId, @PathVariable("attachmentId") Long attachmentId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("attributeId") Long attributeId){
+    public Grant deleteGrantStringAttributeAttachment(@RequestBody Grant grantToSave, @PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId, @PathVariable("attachmentId") Long attachmentId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("attributeId") Long attributeId){
+        saveGrant(grantToSave,userId,tenantCode);
         grantService.deleteStringAttributeAttachmentsByAttachmentId(attachmentId);
         GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(attributeId);
         List<GrantStringAttributeAttachments> stringAttributeAttachments = grantService.getStringAttributeAttachmentsByStringAttribute(stringAttribute);
