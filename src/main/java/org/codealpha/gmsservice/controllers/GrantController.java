@@ -1795,7 +1795,7 @@ public class GrantController {
     }
 
 
-    @DeleteMapping("{grantId}/attribute/{attributeId}/attachment/{attachmentId}")
+    @PostMapping("{grantId}/attribute/{attributeId}/attachment/{attachmentId}")
     public Grant deleteGrantStringAttributeAttachment(@RequestBody Grant grantToSave, @PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId, @PathVariable("attachmentId") Long attachmentId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("attributeId") Long attributeId){
         saveGrant(grantToSave,userId,tenantCode);
         grantService.deleteStringAttributeAttachmentsByAttachmentId(attachmentId);
