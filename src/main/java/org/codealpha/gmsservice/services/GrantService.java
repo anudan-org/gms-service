@@ -54,6 +54,8 @@ public class GrantService {
     private GrantAssignmentRepository grantAssignmentRepository;
     @Autowired
     private GrantStringAttributeAttachmentRepository grantStringAttributeAttachmentRepository;
+    @Autowired
+    private GrantHistoryRepository grantHistoryRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -390,5 +392,9 @@ public class GrantService {
 
     public void deleteStringAttributeAttachments(List<GrantStringAttributeAttachments> attachments){
         grantStringAttributeAttachmentRepository.deleteAll(attachments);
+    }
+
+    public List<GrantHistory> getGrantHistory(Long grantId){
+        return grantHistoryRepository.findByGrantId(grantId);
     }
 }

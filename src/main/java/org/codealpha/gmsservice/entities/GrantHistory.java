@@ -2,40 +2,32 @@ package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.OrderBy;
-import javax.persistence.Table;
-import javax.persistence.Transient;
 import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.GrantAssignmentsVO;
 import org.codealpha.gmsservice.models.GrantDetailVO;
+import org.codealpha.gmsservice.services.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.persistence.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author Developer <developer@enstratify.com>
  **/
 @Entity
-@Table(name = "grants")
-public class Grant {
+@Table(name = "grantHistory")
+public class GrantHistory {
+
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @OrderBy("id ASC")
+  private Long seqid;
+
+  @Column
   private Long id;
 
   @ManyToOne
@@ -398,6 +390,7 @@ public class Grant {
   }
 
   public User getNoteAddedBy() {
+
     return noteAddedBy;
   }
 
