@@ -731,6 +731,7 @@ public class GrantController {
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),userService);
         grant.setGrantDetails(grantVO.getGrantDetails());
         grant.setNoteAddedBy(grantVO.getNoteAddedBy());
+        grant.setNoteAddedByUser(grantVO.getNoteAddedByUser());
         List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
         for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
             GrantAssignmentsVO assignmentsVO = new GrantAssignmentsVO();
@@ -808,7 +809,7 @@ public class GrantController {
         grant.setAmount(grantToSave.getAmount());
         grant.setDescription(grantToSave.getDescription());
         grant.setRepresentative(grantToSave.getRepresentative());
-        grant.setNote(grantToSave.getNote());
+
         if (grantToSave.getEndDate() != null) {
             grant.setEnDate(grantToSave.getEnDate());
             grant.setEndDate(grantToSave.getEndDate());
@@ -1335,6 +1336,7 @@ public class GrantController {
         if (!note.trim().equalsIgnoreCase("")){
             grant.setNote(note);
             grant.setNoteAdded(new Date());
+            grant.setNoteAddedBy(userService.getUserById(userId).getEmailId());
         }
         grant.setUpdatedAt(DateTime.now().toDate());
         grant.setUpdatedBy(userService.getUserById(userId).getEmailId());
@@ -1368,7 +1370,7 @@ public class GrantController {
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),userService);
 
         grant.setGrantDetails(grantVO.getGrantDetails());
-        grant.setNoteAddedBy(grantVO.getNoteAddedBy());
+        grant.setNoteAddedByUser(userService.getUserByEmail(grant.getNoteAddedBy()));
         List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
         for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
             GrantAssignmentsVO assignmentsVO = new GrantAssignmentsVO();
@@ -1584,6 +1586,7 @@ public class GrantController {
                             AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),userService);
             grant.setGrantDetails(grantVO.getGrantDetails());
             grant.setNoteAddedBy(grantVO.getNoteAddedBy());
+            grant.setNoteAddedByUser(grantVO.getNoteAddedByUser());
             for (SectionVO section : grant.getGrantDetails().getSections()) {
                 _writeContent(contentStream, "Header", section.getName());
 
@@ -1934,7 +1937,7 @@ public class GrantController {
 
         List<GrantHistory> history = grantService.getGrantHistory(grantId);
         for(GrantHistory historyEntry : history){
-            historyEntry.setNoteAddedBy(userService.getUserByEmail(historyEntry.getUpdatedBy()));
+            historyEntry.setNoteAddedByUser(userService.getUserByEmail(historyEntry.getNoteAddedBy()));
         }
         return history;
     }

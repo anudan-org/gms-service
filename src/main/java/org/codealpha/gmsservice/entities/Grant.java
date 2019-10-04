@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -25,6 +26,7 @@ import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.GrantAssignmentsVO;
 import org.codealpha.gmsservice.models.GrantDetailVO;
+import org.hibernate.validator.constraints.CodePointLength;
 
 /**
  * @author Developer <developer@enstratify.com>
@@ -117,8 +119,12 @@ public class Grant {
   @Column
   private Date noteAdded;
 
+  @Column
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private String noteAddedBy;
+
   @Transient
-  private User noteAddedBy;
+  private User noteAddedByUser;
 
   @OneToMany(mappedBy = "grant", cascade = CascadeType.ALL)
   @OrderBy("submitBy ASC")
@@ -397,11 +403,19 @@ public class Grant {
     this.noteAdded = noteAdded;
   }
 
-  public User getNoteAddedBy() {
+  public String getNoteAddedBy() {
     return noteAddedBy;
   }
 
-  public void setNoteAddedBy(User noteAddedBy) {
+  public void setNoteAddedBy(String noteAddedBy) {
     this.noteAddedBy = noteAddedBy;
+  }
+
+  public User getNoteAddedByUser() {
+    return noteAddedByUser;
+  }
+
+  public void setNoteAddedByUser(User noteAddedByUser) {
+    this.noteAddedByUser = noteAddedByUser;
   }
 }

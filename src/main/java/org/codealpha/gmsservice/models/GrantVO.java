@@ -37,7 +37,8 @@ public class GrantVO {
   private String enDate;
   private String note;
   private Date noteAdded;
-  private User noteAddedBy;
+  private String noteAddedBy;
+  private User noteAddedByUser;
   private String representative;
   private Double amount;
   private List<AssignedTo> currentAssignment;
@@ -333,7 +334,7 @@ public class GrantVO {
             grantDetailVO = grantDetailVO.buildStringAttributes(sections, (List<GrantStringAttribute>) value);
             vo.setGrantDetails(grantDetailVO);
           }else if (voPd.getName().equalsIgnoreCase("noteAddedBy")) {
-             vo.setNoteAddedBy(userService.getUserByEmail(grant.getUpdatedBy()));
+             vo.setNoteAddedByUser(userService.getUserByEmail(grant.getNoteAddedBy()));
 
           }else if (voPd.getName().equalsIgnoreCase("documentAttributes")) {
             GrantDetailVO grantDetailVO = null;
@@ -372,11 +373,19 @@ public class GrantVO {
     this.noteAdded = noteAdded;
   }
 
-  public User getNoteAddedBy() {
+  public String getNoteAddedBy() {
     return noteAddedBy;
   }
 
-  public void setNoteAddedBy(User noteAddedBy) {
+  public void setNoteAddedBy(String noteAddedBy) {
     this.noteAddedBy = noteAddedBy;
+  }
+
+  public User getNoteAddedByUser() {
+    return noteAddedByUser;
+  }
+
+  public void setNoteAddedByUser(User noteAddedByUser) {
+    this.noteAddedByUser = noteAddedByUser;
   }
 }

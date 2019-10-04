@@ -109,8 +109,11 @@ public class GrantHistory {
   @Column
   private Date noteAdded;
 
+  @Column
+  private String noteAddedBy;
+
   @Transient
-  private User noteAddedBy;
+  private User noteAddedByUser;
 
   @OneToMany(mappedBy = "grant", cascade = CascadeType.ALL)
   @OrderBy("submitBy ASC")
@@ -389,12 +392,21 @@ public class GrantHistory {
     this.noteAdded = noteAdded;
   }
 
-  public User getNoteAddedBy() {
+  public String getNoteAddedBy() {
 
     return noteAddedBy;
   }
 
-  public void setNoteAddedBy(User noteAddedBy) {
+  public void setNoteAddedBy(String noteAddedBy) {
     this.noteAddedBy = noteAddedBy;
+  }
+
+
+  public User getNoteAddedByUser() {
+    return noteAddedByUser;
+  }
+
+  public void setNoteAddedByUser(User noteAddedByUser) {
+    this.noteAddedByUser = noteAddedByUser;
   }
 }
