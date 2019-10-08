@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.services.UserService;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,10 @@ public class GrantVO {
   private String stDate;
   private Date endDate;
   private String enDate;
+  private String note;
+  private Date noteAdded;
+  private String noteAddedBy;
+  private User noteAddedByUser;
   private String representative;
   private Double amount;
   private List<AssignedTo> currentAssignment;
@@ -71,6 +76,14 @@ public class GrantVO {
 
   public Organization getGrantorOrganization() {
     return grantorOrganization;
+  }
+
+  public String getNote() {
+    return note;
+  }
+
+  public void setNote(String note) {
+    this.note = note;
   }
 
   public void setGrantorOrganization(Granter grantorOrganization) {
@@ -302,7 +315,7 @@ public class GrantVO {
 
   public GrantVO build(Grant grant, List<GrantSpecificSection> sections,
                        WorkflowPermissionService workflowPermissionService,
-                       User user, AppConfig submissionWindow) {
+                       User user, AppConfig submissionWindow, UserService userService) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
     GrantVO vo = new GrantVO();
     Submission submissionVOList = null;
@@ -320,7 +333,10 @@ public class GrantVO {
             }
             grantDetailVO = grantDetailVO.buildStringAttributes(sections, (List<GrantStringAttribute>) value);
             vo.setGrantDetails(grantDetailVO);
-          } else if (voPd.getName().equalsIgnoreCase("documentAttributes")) {
+          }else if (voPd.getName().equalsIgnoreCase("noteAddedBy")) {
+             vo.setNoteAddedByUser(userService.getUserByEmail(grant.getNoteAddedBy()));
+
+          }else if (voPd.getName().equalsIgnoreCase("documentAttributes")) {
             GrantDetailVO grantDetailVO = null;
             grantDetailVO = vo.getGrantDetails();
             if(grantDetailVO == null){
@@ -349,5 +365,27 @@ public class GrantVO {
     return vo;
   }
 
+  public Date getNoteAdded() {
+    return noteAdded;
+  }
 
+  public void setNoteAdded(Date noteAdded) {
+    this.noteAdded = noteAdded;
+  }
+
+  public String getNoteAddedBy() {
+    return noteAddedBy;
+  }
+
+  public void setNoteAddedBy(String noteAddedBy) {
+    this.noteAddedBy = noteAddedBy;
+  }
+
+  public User getNoteAddedByUser() {
+    return noteAddedByUser;
+  }
+
+  public void setNoteAddedByUser(User noteAddedByUser) {
+    this.noteAddedByUser = noteAddedByUser;
+  }
 }

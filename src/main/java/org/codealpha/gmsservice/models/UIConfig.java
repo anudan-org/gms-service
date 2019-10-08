@@ -1,10 +1,8 @@
 package org.codealpha.gmsservice.models;
 
 import java.util.List;
-import org.codealpha.gmsservice.entities.GrantSection;
-import org.codealpha.gmsservice.entities.Organization;
-import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.entities.WorkflowStatus;
+
+import org.codealpha.gmsservice.entities.*;
 
 /**
  * @author Developer <developer@enstratify.com>
@@ -25,6 +23,7 @@ public class UIConfig {
 	private WorkflowStatus submissionInitialStatus;
 	private List<Organization> granteeOrgs;
 	private List<WorkflowStatus> workflowStatuses;
+	private List<WorkflowTransitionModel> transitions;
 	private List<User> tenantUsers;
 
 	public String getLogoUrl() {
@@ -106,5 +105,13 @@ public class UIConfig {
 
 	public void setTenantUsers(List<User> tenantUsers) {
 		this.tenantUsers = tenantUsers;
+	}
+
+	public List<WorkflowTransitionModel> getTransitions() {
+		return transitions;
+	}
+
+	public void setTransitions(List<WorkflowTransitionModel> transitions) {
+		this.transitions = transitions;
 	}
 }

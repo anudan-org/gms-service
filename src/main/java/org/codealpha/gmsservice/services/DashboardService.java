@@ -97,8 +97,10 @@ public class DashboardService {
                     GrantVO grantVO = new GrantVO();
                     grantVO = grantVO.build(grant, grantService.getGrantSections(grant), workflowPermissionService, user, appConfigService
                             .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                                    AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS));
+                                    AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),userService);
                     grant.setGrantDetails(grantVO.getGrantDetails());
+                    //grant.setNoteAddedBy(grantVO.getNoteAddedBy());
+                    grant.setNoteAddedByUser(userService.getUserByEmail(grant.getNoteAddedBy()));
                     grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
                     List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
                     for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
