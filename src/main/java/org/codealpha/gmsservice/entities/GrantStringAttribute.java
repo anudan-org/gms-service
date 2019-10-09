@@ -31,7 +31,7 @@ public class GrantStringAttribute {
   @JoinColumn(referencedColumnName = "id")
   @JsonProperty("sectionDetails")
   private GrantSpecificSection section;
-  @OneToMany(mappedBy = "grantStringAttribute")
+  @OneToMany(mappedBy = "grantStringAttribute",cascade = CascadeType.ALL)
   private List<GrantStringAttributeAttachments> attachments;
 
   public Long getId() {
