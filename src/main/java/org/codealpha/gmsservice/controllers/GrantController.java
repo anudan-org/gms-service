@@ -1333,7 +1333,7 @@ public class GrantController {
 
         Grant grant = grantService.getById(grantId);
         grant.setGrantStatus(workflowStatusService.findById(toStateId));
-        if (!note.trim().equalsIgnoreCase("")){
+        if (note!=null && !note.trim().equalsIgnoreCase("")){
             grant.setNote(note);
             grant.setNoteAdded(new Date());
             grant.setNoteAddedBy(userService.getUserById(userId).getEmailId());
