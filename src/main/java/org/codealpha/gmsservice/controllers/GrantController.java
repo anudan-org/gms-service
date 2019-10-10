@@ -1733,7 +1733,7 @@ public class GrantController {
     @PostMapping("/{grantId}/assignment")
     public Grant saveGrantAssignments(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @RequestBody GrantAssignmentModel assignmentModel,@RequestHeader("X-TENANT-CODE") String tenantCode) {
         Grant grant = saveGrant(assignmentModel.getGrant(),userId,tenantCode);
-        for (GrantAssignmentsVO assignmentsVO : assignmentModel.getGrantAssignmentsVO()) {
+        for (GrantAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
             GrantAssignments assignment = null;
             if (assignmentsVO.getId() == null) {
                 assignment = new GrantAssignments();

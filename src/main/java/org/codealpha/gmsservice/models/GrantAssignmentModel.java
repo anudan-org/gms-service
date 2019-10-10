@@ -4,7 +4,7 @@ import org.codealpha.gmsservice.entities.Grant;
 
 public class GrantAssignmentModel {
     private Grant grant;
-    private GrantAssignmentsVO[] grantAssignmentsVO;
+    private GrantAssignmentsVO[] assignments;
 
     public Grant getGrant() {
         return grant;
@@ -14,11 +14,11 @@ public class GrantAssignmentModel {
         this.grant = grant;
     }
 
-    public GrantAssignmentsVO[] getGrantAssignmentsVO() {
-        return grantAssignmentsVO;
+    public GrantAssignmentsVO[] getAssignments() {
+        return assignments;
     }
 
-    public void setGrantAssignmentsVO(GrantAssignmentsVO[] grantAssignmentsVO) {
-        this.grantAssignmentsVO = grantAssignmentsVO;
+    public void setAssignments(GrantAssignmentsVO[] grantAssignmentsVO) {
+        this.assignments = grantAssignmentsVO;
     }
 }
