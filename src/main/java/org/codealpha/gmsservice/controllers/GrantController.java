@@ -1731,9 +1731,9 @@ public class GrantController {
     }
 
     @PostMapping("/{grantId}/assignment")
-    public Grant saveGrantAssignments(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @RequestBody GrantAssignmentsVO[] assignmentsToSave) {
-        Grant grant = grantService.getById(grantId);
-        for (GrantAssignmentsVO assignmentsVO : assignmentsToSave) {
+    public Grant saveGrantAssignments(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @RequestBody GrantAssignmentModel assignmentModel,@RequestHeader("X-TENANT-CODE") String tenantCode) {
+        Grant grant = saveGrant(assignmentModel.getGrant(),userId,tenantCode);
+        for (GrantAssignmentsVO assignmentsVO : assignmentModel.getGrantAssignmentsVO()) {
             GrantAssignments assignment = null;
             if (assignmentsVO.getId() == null) {
                 assignment = new GrantAssignments();
@@ -1749,6 +1749,7 @@ public class GrantController {
             grantService.saveAssignmentForGrant(assignment);
         }
 
+        grant = grantService.getById(grantId);
         grant = _grantToReturn(userId, grant);
         return grant;
     }
