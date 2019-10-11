@@ -96,4 +96,12 @@ public class WorkflowStatePermission {
   public void setUpdatedBy(String updatedBy) {
     this.updatedBy = updatedBy;
   }
+
+  public Role getRole() {
+    return role;
+  }
+
+  public void setRole(Role role) {
+    this.role = role;
+  }
 }

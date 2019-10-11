@@ -6,6 +6,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
+
+import org.codealpha.gmsservice.repositories.OrganizationRepository;
 import org.codealpha.gmsservice.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +27,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
   private AuthProvider authProvider;
   @Autowired
   private UserRepository userRepository;
+  @Autowired
+  private OrganizationRepository organizationRepository;
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
@@ -32,7 +36,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         .antMatchers("/api/users/**").permitAll()
         .antMatchers("/**").fullyAuthenticated().and()
         .addFilterBefore(
-            new JWTLoginFilter("/authenticate", authenticationManager(), userRepository),
+            new JWTLoginFilter("/authenticate", authenticationManager(), userRepository, organizationRepository),
             UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(new ExceptionHandlingFilter(),JWTLoginFilter.class)
         .addFilterAfter(new JWTAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)

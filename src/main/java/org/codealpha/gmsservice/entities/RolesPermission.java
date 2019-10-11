@@ -22,6 +22,14 @@ public class RolesPermission {
   @Column
   private String permission;
 
+  public RolesPermission() {
+  }
+
+  public RolesPermission(Role role, String permission) {
+    this.role = role;
+    this.permission = permission;
+  }
+
   public Long getId() {
     return id;
   }

@@ -1370,7 +1370,7 @@ public class GrantController {
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),userService);
 
         grant.setGrantDetails(grantVO.getGrantDetails());
-        grant.setNoteAddedByUser(userService.getUserByEmail(grant.getNoteAddedBy()));
+        grant.setNoteAddedByUser(userService.getUserByEmailAndOrg(grant.getNoteAddedBy(),grant.getGrantorOrganization()));
         List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
         for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
             GrantAssignmentsVO assignmentsVO = new GrantAssignmentsVO();
@@ -1938,7 +1938,7 @@ public class GrantController {
 
         List<GrantHistory> history = grantService.getGrantHistory(grantId);
         for(GrantHistory historyEntry : history){
-            historyEntry.setNoteAddedByUser(userService.getUserByEmail(historyEntry.getNoteAddedBy()));
+            historyEntry.setNoteAddedByUser(userService.getUserByEmailAndOrg(historyEntry.getNoteAddedBy(),historyEntry.getGrantorOrganization()));
         }
         return history;
     }

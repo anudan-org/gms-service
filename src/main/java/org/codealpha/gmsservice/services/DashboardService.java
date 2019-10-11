@@ -100,7 +100,7 @@ public class DashboardService {
                                     AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),userService);
                     grant.setGrantDetails(grantVO.getGrantDetails());
                     //grant.setNoteAddedBy(grantVO.getNoteAddedBy());
-                    grant.setNoteAddedByUser(userService.getUserByEmail(grant.getNoteAddedBy()));
+                    grant.setNoteAddedByUser(userService.getUserByEmailAndOrg(grant.getNoteAddedBy(),grant.getGrantorOrganization()));
                     grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
                     List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
                     for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {

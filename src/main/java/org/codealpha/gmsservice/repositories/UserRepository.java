@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 public interface UserRepository extends CrudRepository<User, Long> {
 
   public User findByEmailId(String email);
+  public User findByEmailIdAndOrganization(String email, Organization org);
 
   @Query(value = "select distinct users.* from workflow_status_transitions A inner join roles r on A.role_id = r.id inner join user_roles u on r.id = u.role_id inner join users users on users.id=u.user_id where A.from_state_id=?1",nativeQuery = true)
   public List<User> usersToNotifyOnWorkflowSateChangeTo(Long toStateId);
