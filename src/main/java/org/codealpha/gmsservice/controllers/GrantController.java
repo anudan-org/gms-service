@@ -90,6 +90,8 @@ public class GrantController {
     private GranterGrantTemplateService granterGrantTemplateService;
     @Autowired
     private TemplateLibraryService templateLibraryService;
+    @Autowired
+    private GrantSnapshotService grantSnapshotService;
 
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
@@ -232,6 +234,7 @@ public class GrantController {
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),userService);
         grant.setGrantDetails(grantVO.getGrantDetails());
         grant.setNoteAddedBy(grantVO.getNoteAddedBy());
+        grant.setNoteAddedByUser(grantVO.getNoteAddedByUser());
 
         List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
         for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
@@ -1412,7 +1415,35 @@ public class GrantController {
                 sec.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
             }
         }
+
+        //Save Snapshot
+        _saveSnapShot(grant);
         return grant;
+
+    }
+
+    private void _saveSnapShot(Grant grant) {
+
+        try {
+            for (AssignedTo assignment : grant.getCurrentAssignment()) {
+                GrantSnapshot snapshot = new GrantSnapshot();
+                snapshot.setAmount(grant.getAmount());
+                snapshot.setAssignedToId(assignment.getUser().getId());
+                snapshot.setDescription(grant.getDescription());
+                snapshot.setEndDate(grant.getEndDate());
+                snapshot.setGrantee(grant.getOrganization()!=null?grant.getOrganization().getName():"");
+                snapshot.setGrantId(grant.getId());
+                snapshot.setName(grant.getName());
+                snapshot.setRepresentative(grant.getRepresentative());
+                snapshot.setStartDate(grant.getStartDate());
+                snapshot.setGrantStatusId(grant.getGrantStatus().getId());
+                snapshot.setStringAttributes(new ObjectMapper().writeValueAsString(grant.getGrantDetails()));
+                grantSnapshotService.saveGrantSnapshot(snapshot);
+            }
+        } catch (JsonProcessingException e) {
+            logger.error(e.getMessage(),e);
+        }
+
 
     }
 
@@ -1941,5 +1972,12 @@ public class GrantController {
             historyEntry.setNoteAddedByUser(userService.getUserByEmailAndOrg(historyEntry.getNoteAddedBy(),historyEntry.getGrantorOrganization()));
         }
         return history;
+    }
+
+    @GetMapping("{grantId}/changeHistory")
+    public GrantSnapshot getGrantHistory(@PathVariable("grantId") Long grantId,@PathVariable("userId") Long userId){
+        Grant grant = grantService.getById(grantId);
+
+        return grantSnapshotService.getSnapshotByGrantIdAndAssignedToIdAndStatusId(grantId,userId,grant.getGrantStatus().getId());
     }
 }
