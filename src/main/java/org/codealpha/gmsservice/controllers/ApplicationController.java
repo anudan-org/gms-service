@@ -100,17 +100,20 @@ public class ApplicationController {
                         .concat(config.getLogoUrl()));
                 config.setTenantCode(org.getCode());
                 config.setNavbarTextColor(config.getNavbarTextColor());
+                config.setGrantInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", org.getId()));
+                config.setSubmissionInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", org.getId()));
+                config.setWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANT",org.getId()));
+                config.setTenantUsers(userService.getAllTenantUsers(org));
+                config.setTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"GRANT"));
+                config.setGranteeOrgs(organizationService.getGranteeOrgs());
             } else {
+                org = organizationService.getPlatformOrg();
                 config = new UIConfig();
                 config.setLogoUrl(url.concat("/public/images/ANUDAN/anudan.png"));
                 config.setNavbarColor("#e3f2fd");
+                config.setTenantCode(org.getCode());
             }
-            config.setGrantInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", org.getId()));
-            config.setSubmissionInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", org.getId()));
-            config.setWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANT",org.getId()));
-            config.setTenantUsers(userService.getAllTenantUsers(org));
-            config.setTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"GRANT"));
-            config.setGranteeOrgs(organizationService.getGranteeOrgs());
+
         } else {
             Organization org = organizationService.getPlatformOrg();
             config = new UIConfig();
