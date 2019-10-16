@@ -333,8 +333,9 @@ public class GrantVO {
             }
             grantDetailVO = grantDetailVO.buildStringAttributes(sections, (List<GrantStringAttribute>) value);
             vo.setGrantDetails(grantDetailVO);
-          }else if (voPd.getName().equalsIgnoreCase("noteAddedBy")) {
-             vo.setNoteAddedByUser(userService.getUserByEmail(grant.getNoteAddedBy()));
+          }else if (voPd.getName().equalsIgnoreCase("noteAddedBy") || voPd.getName().equalsIgnoreCase("noteAddedByUser")) {
+             vo.setNoteAddedBy(grant.getNoteAddedBy());
+             vo.setNoteAddedByUser(userService.getUserByEmailAndOrg(grant.getNoteAddedBy(),grant.getGrantorOrganization()));
 
           }else if (voPd.getName().equalsIgnoreCase("documentAttributes")) {
             GrantDetailVO grantDetailVO = null;
@@ -360,7 +361,7 @@ public class GrantVO {
         .getGrantFlowPermissions(vo.grantorOrganization.getId(), user.getUserRoles(),vo.grantStatus.getId()));
     vo.setActionAuthorities(workflowPermissionService
         .getGrantActionPermissions(vo.getGrantorOrganization().getId(),
-            user.getUserRoles(),vo.getGrantStatus().getId()));
+            user.getUserRoles(),vo.getGrantStatus().getId(),user.getId(),grant.getId()));
 
     return vo;
   }

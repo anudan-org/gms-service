@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.exceptions.InvalidCredentialsException;
 import org.codealpha.gmsservice.exceptions.InvalidHeadersException;
+import org.codealpha.gmsservice.repositories.OrganizationRepository;
 import org.codealpha.gmsservice.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,13 +31,15 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
 
   @Autowired
   private UserRepository userRepository;
+  private OrganizationRepository organizationRepository;
   AccountCredentials creds;
 
   public JWTLoginFilter(String url, AuthenticationManager authManager,
-      UserRepository userRepository) {
+                        UserRepository userRepository, OrganizationRepository organizationRepository) {
     super(new AntPathRequestMatcher(url));
     setAuthenticationManager(authManager);
     this.userRepository = userRepository;
+    this.organizationRepository = organizationRepository;
   }
 
   @Override
@@ -66,7 +69,7 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
   @Override
   protected void successfulAuthentication(HttpServletRequest req, HttpServletResponse res,
       FilterChain chain, Authentication auth) throws IOException, ServletException {
-    User user = userRepository.findByEmailId(auth.getName());
+    User user = userRepository.findByEmailIdAndOrganization(auth.getName(),organizationRepository.findByCode(auth.getDetails().toString()));
     Long userId = user.getId();
 
 

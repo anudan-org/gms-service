@@ -96,25 +96,28 @@ public class ApplicationController {
                 long orgId = org.getId();
                 config = service.getUiConfiguration(orgId);
 
-                config.setLogoUrl(url.concat("/public/images/")
+                config.setLogoUrl(url.concat("/public/images/").concat(org.getCode()).concat("/")
                         .concat(config.getLogoUrl()));
                 config.setTenantCode(org.getCode());
                 config.setNavbarTextColor(config.getNavbarTextColor());
+                config.setGrantInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", org.getId()));
+                config.setSubmissionInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", org.getId()));
+                config.setWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANT",org.getId()));
+                config.setTenantUsers(userService.getAllTenantUsers(org));
+                config.setTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"GRANT"));
+                config.setGranteeOrgs(organizationService.getAssociatedGranteesForTenant(org));
             } else {
+                org = organizationService.getPlatformOrg();
                 config = new UIConfig();
-                config.setLogoUrl(url.concat("/public/images/anudan.png"));
+                config.setLogoUrl(url.concat("/public/images/ANUDAN/anudan.png"));
                 config.setNavbarColor("#e3f2fd");
+                config.setTenantCode(org.getCode());
             }
-            config.setGrantInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", org.getId()));
-            config.setSubmissionInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", org.getId()));
-            config.setWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANT",org.getId()));
-            config.setTenantUsers(userService.getAllTenantUsers(org));
-            config.setTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"GRANT"));
-            config.setGranteeOrgs(organizationService.getGranteeOrgs());
+
         } else {
             Organization org = organizationService.getPlatformOrg();
             config = new UIConfig();
-            config.setLogoUrl(url.concat("/public/images/anudan.png"));
+            config.setLogoUrl(url.concat("/public/images/ANUDAN/anudan.png"));
             config.setNavbarColor("#e3f2fd");
             config.setTenantCode(org.getCode());
         }
@@ -122,11 +125,11 @@ public class ApplicationController {
         return config;
     }
 
-    @GetMapping("/images/{img}")
+    @GetMapping("/images/{tenant}/{img}")
     public void getLogoImage(@PathVariable("img") String imageName,
-                             HttpServletResponse servletResponse) {
+                             HttpServletResponse servletResponse,@PathVariable("tenant") String tenant) {
 
-        Resource image = resourceLoader.getResource("classpath:static/images/" + imageName);
+        Resource image = resourceLoader.getResource("file:" + uploadLocation + "/" + tenant + "/logo/"+imageName);
         servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
         try {
             StreamUtils.copy(image.getInputStream(), servletResponse.getOutputStream());

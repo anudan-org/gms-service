@@ -29,5 +29,7 @@ public class WorkflowStatusService {
     return workflowStatusRepository.getById(id);
   }
 
-
+  public WorkflowStatus saveWorkflowStatus(WorkflowStatus status){
+    return workflowStatusRepository.save(status);
+  }
 }

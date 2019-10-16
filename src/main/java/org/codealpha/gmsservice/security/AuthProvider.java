@@ -41,7 +41,7 @@ public class AuthProvider implements AuthenticationProvider {
       if (org == null) {
         throw new InvalidTenantException("Invalid tenant code " + tenantCode);
       }
-      User user = userService.getUserByEmail(username);
+      User user = userService.getUserByEmailAndOrg(username,org);
 
       if (user != null) {
 
@@ -65,7 +65,7 @@ public class AuthProvider implements AuthenticationProvider {
       if (org == null) {
         throw new InvalidTenantException("Invalid tenant code " + tenantCode);
       }
-      User user = userService.getUserByEmail(username);
+      User user = userService.getUserByEmailAndOrg(username,org);
 
       if (user != null) {
 

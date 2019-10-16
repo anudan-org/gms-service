@@ -121,4 +121,16 @@ public class WorkflowStatusTransition {
   public void setNoteRequired(boolean noteRequired) {
     this.noteRequired = noteRequired;
   }
+
+  public Workflow getWorkflow() {
+    return workflow;
+  }
+
+  public void setWorkflow(Workflow workflow) {
+    this.workflow = workflow;
+  }
+
+  public boolean isNoteRequired() {
+    return noteRequired;
+  }
 }

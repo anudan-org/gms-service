@@ -335,6 +335,7 @@ public class GrantService {
         return granterGrantSectionAttributeRepository.save(attribute);
     }
 
+
     public void deleteGrantTemplateSections(List<GranterGrantSection> sections){
         granterGrantSectionRepository.deleteAll(sections);
     }

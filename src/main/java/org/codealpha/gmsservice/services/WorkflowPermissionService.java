@@ -48,12 +48,12 @@ public class WorkflowPermissionService {
 
 
     public WorkflowActionPermission getGrantActionPermissions(Long granterOrgId,
-                                                              List<UserRole> userRoles, Long grantStatusId) {
+                                                              List<UserRole> userRoles, Long grantStatusId, Long userId, Long grantId) {
 
         List<Long> userRoleIds = userRoles.stream().map(e -> new Long(e.getRole().getId())).collect(
                 Collectors.toList());
         return workflowActionPermissionRepository
-                .getActionPermissionsForGrant(granterOrgId, userRoleIds, grantStatusId);
+                .getActionPermissionsForGrant(granterOrgId, userRoleIds, grantStatusId,userId, grantId);
     }
 
     public WorkflowActionPermission getSubmissionActionPermission(Long granterOrgId,

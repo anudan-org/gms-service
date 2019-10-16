@@ -9,8 +9,10 @@ import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.repositories.GrantRepository;
 import org.codealpha.gmsservice.repositories.GranterGrantSectionRepository;
 import org.codealpha.gmsservice.repositories.GranterRepository;
+import org.codealpha.gmsservice.repositories.OrganizationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class GranterService {
@@ -19,6 +21,9 @@ public class GranterService {
   private GranterRepository granterRepository;
   @Autowired
   private GrantRepository grantRepository;
+  @Autowired
+  private OrganizationRepository organizationRepository;
+
 
 
   public List<Granter> getAllGranters() {
@@ -36,6 +41,22 @@ public class GranterService {
       allGrants.addAll(grantRepository.findGrantsOfGranter(granterOrgId));
     }
     return allGrants;
+  }
+
+  public Organization createGranter(Granter granterOrg, MultipartFile image){
+    //granterOrg = organizationRepository.save(granterOrg);
+    //Granter granter = new Granter();
+
+      granterOrg.setHostUrl(granterOrg.getCode().toLowerCase());
+      granterOrg.setId(granterOrg.getId());
+      granterOrg.setImageName(image.getOriginalFilename());
+      granterOrg.setNavbarColor("#232323");
+      granterOrg.setNavbarTextColor("#fff");
+    return granterRepository.save(granterOrg);
+  }
+
+  public Granter getGranterById(Long grnaterId){
+    return granterRepository.findById(grnaterId).get();
   }
 
 }

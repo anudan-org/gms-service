@@ -25,4 +25,8 @@ public class UserRoleService {
         .collect(Collectors.toList());
     return roles;
   }
+
+  public UserRole saveUserRole(UserRole userRole){
+    return userRoleRepository.save(userRole);
+  }
 }

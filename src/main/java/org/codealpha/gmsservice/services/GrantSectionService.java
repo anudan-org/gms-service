@@ -15,4 +15,8 @@ public class GrantSectionService {
   public List<GrantSection> getAllDefaultSections(){
     return grantSectionRepository.getAllDefaultSections();
   }
+
+  public GrantSection saveGrantSection(GrantSection section){
+    return grantSectionRepository.save(section);
+  }
 }
