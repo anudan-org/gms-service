@@ -219,7 +219,7 @@ public class GrantController {
 
         grant.setActionAuthorities(workflowPermissionService
                 .getGrantActionPermissions(grant.getGrantorOrganization().getId(),
-                        user.getUserRoles(), grant.getGrantStatus().getId()));
+                        user.getUserRoles(), grant.getGrantStatus().getId(),userId,grant.getId()));
 
         grant.setFlowAuthorities(workflowPermissionService
                 .getGrantFlowPermissions(grant.getGrantorOrganization().getId(),
@@ -694,7 +694,7 @@ public class GrantController {
 
         grant.setActionAuthorities(workflowPermissionService
                 .getGrantActionPermissions(grant.getGrantorOrganization().getId(),
-                        user.getUserRoles(), grant.getGrantStatus().getId()));
+                        user.getUserRoles(), grant.getGrantStatus().getId(),userId,grant.getId()));
 
         grant.setFlowAuthorities(workflowPermissionService
                 .getGrantFlowPermissions(grant.getGrantorOrganization().getId(),
@@ -1363,7 +1363,7 @@ public class GrantController {
 
         grant.setActionAuthorities(workflowPermissionService
                 .getGrantActionPermissions(grant.getGrantorOrganization().getId(),
-                        user.getUserRoles(), grant.getGrantStatus().getId()));
+                        user.getUserRoles(), grant.getGrantStatus().getId(),userId,grantId));
 
         grant.setFlowAuthorities(workflowPermissionService
                 .getGrantFlowPermissions(grant.getGrantorOrganization().getId(),
@@ -1451,10 +1451,12 @@ public class GrantController {
     public Grant updateTemplateName(@PathVariable("userId") Long userId,
                                     @PathVariable("grantId") Long grantId,
                                     @PathVariable("templateId") Long templateId,
-                                    @PathVariable("templateName") String templateName) {
+                                    @PathVariable("templateName") String templateName,
+                                    @RequestBody String templateDesc) {
 
         GranterGrantTemplate template = granterGrantTemplateService.findByTemplateId(templateId);
         template.setName(templateName);
+        template.setDescription(templateDesc);
         template.setPublished(true);
         grantService.saveGrantTemplate(template);
 

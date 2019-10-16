@@ -361,7 +361,7 @@ public class GrantVO {
         .getGrantFlowPermissions(vo.grantorOrganization.getId(), user.getUserRoles(),vo.grantStatus.getId()));
     vo.setActionAuthorities(workflowPermissionService
         .getGrantActionPermissions(vo.getGrantorOrganization().getId(),
-            user.getUserRoles(),vo.getGrantStatus().getId()));
+            user.getUserRoles(),vo.getGrantStatus().getId(),user.getId(),grant.getId()));
 
     return vo;
   }
