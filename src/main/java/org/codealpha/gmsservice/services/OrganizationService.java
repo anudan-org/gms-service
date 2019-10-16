@@ -53,4 +53,8 @@ public class OrganizationService {
 	public Organization findByNameAndOrganizationType(String name, String type){
 		return repository.findByNameAndOrganizationType(name, type);
 	}
+
+	public List<Organization>  getAssociatedGranteesForTenant(Organization tenantOrg){
+		return repository.getAssociatedGranteesForTenant(tenantOrg.getId());
+	}
 }

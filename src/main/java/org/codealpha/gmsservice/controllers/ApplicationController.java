@@ -105,7 +105,7 @@ public class ApplicationController {
                 config.setWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANT",org.getId()));
                 config.setTenantUsers(userService.getAllTenantUsers(org));
                 config.setTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"GRANT"));
-                config.setGranteeOrgs(organizationService.getGranteeOrgs());
+                config.setGranteeOrgs(organizationService.getAssociatedGranteesForTenant(org));
             } else {
                 org = organizationService.getPlatformOrg();
                 config = new UIConfig();
