@@ -1452,11 +1452,13 @@ public class GrantController {
                                     @PathVariable("grantId") Long grantId,
                                     @PathVariable("templateId") Long templateId,
                                     @PathVariable("templateName") String templateName,
-                                    @RequestBody String templateDesc) {
+                                    @RequestBody TemplateMetaData templateData) {
 
         GranterGrantTemplate template = granterGrantTemplateService.findByTemplateId(templateId);
         template.setName(templateName);
-        template.setDescription(templateDesc);
+        template.setDescription(templateData.getDescription());
+        template.setPublished(templateData.isPublish());
+        template.setPrivateToGrant(templateData.isPrivateToGrant());
         template.setPublished(true);
         grantService.saveGrantTemplate(template);
 

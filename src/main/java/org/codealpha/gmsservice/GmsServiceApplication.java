@@ -13,10 +13,12 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @SpringBootApplication(exclude = ErrorMvcAutoConfiguration.class)
 @EnableScheduling
 @EnableAsync
+@EnableSwagger2
 public class GmsServiceApplication {
 
   public static void main(String[] args) {
