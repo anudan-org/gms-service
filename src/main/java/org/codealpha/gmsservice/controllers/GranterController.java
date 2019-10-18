@@ -9,6 +9,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codealpha.gmsservice.constants.WorkflowObject;
@@ -22,12 +25,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import springfox.documentation.annotations.ApiIgnore;
 
 /**
  * @author Developer <developer@enstratify.com>
  **/
 @RestController
 @RequestMapping(value = "/granter", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+@Api(value = "Granters",description = "Granter API endpoints")
 public class GranterController {
 
 	@Autowired
@@ -79,6 +84,7 @@ public class GranterController {
     private String uploadLocation;
 
 	@PostMapping(value = "/")
+	@ApiIgnore
 	public void create(@RequestBody Granter granter) {
 
 		System.out.println("Create Granter");
@@ -89,6 +95,7 @@ public class GranterController {
 	}
 
 	@PostMapping("/{granterId}/rfps/")
+	@ApiIgnore
 	public Rfp createRfp(@PathVariable(name = "granterId") Long organizationId,
 			@RequestBody Rfp rfp) {
 
@@ -100,7 +107,8 @@ public class GranterController {
 	}
 
 	@PostMapping("/user/{userId}/onboard/{grantName}/slug/{tenantSlug}/granterUser/{granterUserEmail}")
-	public Organization onBoardGranter(@PathVariable("grantName") String granterName,@PathVariable("tenantSlug") String slug,@RequestParam(value = "file") MultipartFile image,@PathVariable("userId") Long userId,@PathVariable("granterUserEmail") String userEmail){
+	@ApiOperation(value = "Onboard new granter with basic details",notes = "Currently harcoded users and roles for the newly created Granter is implemented. This feature will be enhanced in the future")
+	public Organization onBoardGranter(@ApiParam(name = "granterName",value = "Name of new granter being onboarded") @PathVariable("grantName") String granterName,@ApiParam(name="slug",value = "Name of granter slug. This will be used to create the Tenant Code as well us the subdomain") @PathVariable("tenantSlug") String slug,@ApiParam(name = "image",value = "Uploaded image file to be used as granter's logo") @RequestParam(value = "file") MultipartFile image,@ApiParam(name="userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "userEmail",value = "Email Id of primary admin of Granter organization to whom email invite will be sent") @PathVariable("granterUserEmail") String userEmail){
 
 
 		Organization org = new Granter();

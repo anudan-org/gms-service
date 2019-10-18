@@ -21,6 +21,9 @@ public class GranterGrantTemplateService {
     public List<GranterGrantTemplate> findByGranterIdAndPublishedStatus(Long granterId, boolean published){
         return granterGrantTemplateRepository.findByGranterIdAndPublished(granterId,published);
     }
+    public List<GranterGrantTemplate> findByGranterIdAndPublishedStatusAndPrivateStatus(Long granterId, boolean published, boolean _private){
+        return granterGrantTemplateRepository.findByGranterIdAndPublishedAndPrivateToGrant(granterId,published,_private);
+    }
 
     public GranterGrantTemplate findByTemplateId(Long templateId){
         if(granterGrantTemplateRepository.findById(templateId).isPresent()) {

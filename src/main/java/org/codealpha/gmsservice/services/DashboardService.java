@@ -48,7 +48,7 @@ public class DashboardService {
             tenant.setName(name);
             List<Grant> grantsList = new ArrayList<>();
             tenant.setGrants(grantsList);
-            tenant.setGrantTemplates(granterGrantTemplateService.findByGranterId(user.getOrganization().getId()));
+            tenant.setGrantTemplates(granterGrantTemplateService.findByGranterIdAndPublishedStatusAndPrivateStatus(user.getOrganization().getId(),true,false));
             tenant.setTemplateLibrary(templateLibraryService.getTemplateLibraryForGranter((Granter) user.getOrganization()));
             tenants.add(tenant);
         }

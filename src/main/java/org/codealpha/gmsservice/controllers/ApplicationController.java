@@ -7,6 +7,7 @@ import java.net.URLEncoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import io.swagger.annotations.*;
 import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Template;
@@ -26,12 +27,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import springfox.documentation.annotations.ApiIgnore;
 
 /**
  * @author Developer <developer@enstratify.com>
  **/
 @RestController
 @RequestMapping(value = "/public")
+@Api(value="Application Configuration",tags = {"Application Configuration"})
 public class ApplicationController {
 
     private static Logger logger = LoggerFactory.getLogger(ApplicationController.class);
@@ -79,7 +82,8 @@ public class ApplicationController {
     private String environment;
 
     @GetMapping(value = {"/config/{host}", "/config"})
-    public UIConfig config(@PathVariable(name = "host", required = false) String host,
+    @ApiOperation(value = "Application Configuration for tenant and Anudan platform.",notes = "Publicly available application configuration for tenant.\nIf host is passed then tenant specific configuration is retrieved. If tenant is not passed then Anudan platform level configuration is retrieved.",response = UIConfig.class)
+    public UIConfig config(@ApiParam(name="host",value = "Sub-domain of tenant in url. <Blank> for Anudan platform") @PathVariable(name = "host", required = false) String host,
                            HttpServletRequest request) {
 
         UIConfig config;
@@ -126,8 +130,9 @@ public class ApplicationController {
     }
 
     @GetMapping("/images/{tenant}/{img}")
-    public void getLogoImage(@PathVariable("img") String imageName,
-                             HttpServletResponse servletResponse,@PathVariable("tenant") String tenant) {
+    @ApiOperation(value = "Get tenant logo image for <img> tag 'src' property")
+    public void getLogoImage(@ApiParam(name="imageName",value="Name of the image name as returned from Application configuration") @PathVariable("img") String imageName,
+                             HttpServletResponse servletResponse,@ApiParam(name="tenant",value="Tenant code")@PathVariable("tenant") String tenant) {
 
         Resource image = resourceLoader.getResource("file:" + uploadLocation + "/" + tenant + "/logo/"+imageName);
         servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
@@ -140,6 +145,7 @@ public class ApplicationController {
     }
 
     @GetMapping("/grants/{grantId}/kpi-templates/{fileName}")
+    @ApiIgnore
     public void getTemplate(@PathVariable("grantId") Long grantId,@PathVariable("fileName") String fileName,
                             HttpServletResponse servletResponse) {
 
@@ -178,6 +184,7 @@ public class ApplicationController {
 
 
     @GetMapping("/grants/{grantId}/kpi-documents/{fileName}")
+    @ApiIgnore
     public void getKpiDataDoc(@PathVariable("grantId") Long grantId, @PathVariable("fileName") String fileName, HttpServletResponse servletResponse){
 
       Resource file = resourceLoader
@@ -215,8 +222,9 @@ public class ApplicationController {
     }
 
     @GetMapping("/grants/{grantId}/file/{fileId}")
-    public void getGrantFile(@PathVariable("grantId") Long grantId,
-                             @PathVariable("fileId") Long fileId,
+    @ApiOperation("Download template library document")
+    public void getGrantFile(@ApiParam(name="grantId",value="Unique identifier of the selected grant")@PathVariable("grantId") Long grantId,
+                             @ApiParam(name="fileId",value="Unique identifier of file to be downloaded")@PathVariable("fileId") Long fileId,
                              HttpServletResponse servletResponse) {
 
         TemplateLibrary templateLibrary = templateLibraryService.getTemplateLibraryDocumentById(fileId);

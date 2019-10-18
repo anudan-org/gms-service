@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,6 +23,9 @@ import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.GrantAssignmentsVO;
@@ -33,113 +37,148 @@ import org.hibernate.validator.constraints.CodePointLength;
  **/
 @Entity
 @Table(name = "grants")
+@ApiModel(value = "Grant Model",description = "Data model of a Grant")
 public class Grant {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @OrderBy("id ASC")
+  @ApiModelProperty(name = "id",value = "Unique identifier of the grant",dataType = "Long")
   private Long id;
 
   @ManyToOne
   @JoinColumn(name = "organization_id")
+  @ApiModelProperty(name = "organization",value = "Grantee organization associated with the grant",dataType = "Organization")
   private Grantee organization;
 
   @ManyToOne
   @JoinColumn(name = "grantor_org_id")
+  @ApiModelProperty(name = "grantorOrganization",value = "Granter or tenant organization associated with the grant",dataType = "Granter")
   private Granter grantorOrganization;
 
   @OneToMany(mappedBy = "grant")
   @JsonProperty("kpis")
   @OrderBy("kpiType ASC")
+  @JsonIgnore
   private List<GrantKpi> kpis;
 
   @OneToMany(mappedBy = "grant")
   @JsonProperty("stringAttribute")
+  @ApiModelProperty(name = "stringAttributes",value = "Grant template structure with values",dataType = "List<GrantStringAttributes>")
   private List<GrantStringAttribute> stringAttributes;
 
   @OneToMany(mappedBy = "grant")
   @JsonProperty("docAttribute")
+  @JsonIgnore
   private List<GrantDocumentAttributes> documentAttributes;
 
   @Column(name = "name",columnDefinition = "text")
+  @ApiModelProperty(name = "name",value = "Title of the grant",dataType = "String")
   private String name;
 
   @Column(name = "description",columnDefinition = "text")
+  @ApiModelProperty(name = "description",value = "Description of the grant",dataType = "String")
   private String description;
 
   @Column
+  @ApiModelProperty(name = "templateId",value = "Unique identified of teamplte associated with the grant",dataType = "Long")
   private Long templateId;
 
   @Transient
+  @ApiModelProperty(name = "grantTemplate",value = "Template associated with the grant",dataType = "GranterGrantTemplate")
   private GranterGrantTemplate grantTemplate;
 
   @Column
+  @ApiModelProperty(name = "amount",value = "Grant amount",dataType = "Double")
   private Double amount;
 
   @Column
+  @ApiModelProperty(name = "createdAt",value = "Date when grant was created",dataType = "Date")
   private Date createdAt;
 
   @Column
+  @ApiModelProperty(name = "createdBy",value = "Email id of user who created the grant",dataType = "String")
   private String createdBy;
 
   @Column
+  @ApiModelProperty(name = "updatedAt",value = "Date when grant was updated",dataType = "Date")
   private Date updatedAt;
 
   @Column
+  @ApiModelProperty(name = "updatedBy",value = "Email id of user who updated the grant",dataType = "String")
   private String updatedBy;
 
   @OneToOne
   @JoinColumn(referencedColumnName = "id")
+  @ApiModelProperty(name = "grantStatus",value = "Grant workflow status",dataType = "WorkflowStatus")
   private WorkflowStatus grantStatus;
 
   @Column
   @Enumerated(EnumType.STRING)
+  @ApiModelProperty(name = "statusName",value = "Grant status in text format",dataType = "String")
   private GrantStatus statusName;
 
   @OneToOne
   @JoinColumn(referencedColumnName = "id")
+  @JsonIgnore
   private WorkflowStatus substatus;
 
   @Column
+  @ApiModelProperty(name = "startDate",value = "Start date of the grant",dataType = "Date")
   private Date startDate;
+
   @Transient
+  @ApiModelProperty(name = "stDate",value = "Formatted start date of the grant ",dataType = "String")
   private String stDate;
 
   @Column
+  @ApiModelProperty(name = "endDate",value = "End date of the grant",dataType = "Date")
   private Date endDate;
   @Transient
+  @ApiModelProperty(name = "enDate",value = "Formatted end date of the grant",dataType = "Date")
   private String enDate;
 
   @Column
+  @ApiModelProperty(name = "representative",value = "Name of representative from Grantee organization",dataType = "String")
   private String representative;
 
   @Column
+  @ApiModelProperty(name = "note",value = "Current note associated with the grant",dataType = "String")
   private String note;
 
   @Column
+  @ApiModelProperty(name = "noteAdded",value = "Date when current note was associated with the grant",dataType = "Date")
   private Date noteAdded;
 
   @Column
   @JsonInclude(JsonInclude.Include.NON_NULL)
+  @ApiModelProperty(name = "noteAddedBy",value = "Email id of the user who added the current note",dataType = "String")
   private String noteAddedBy;
 
   @Transient
+  @ApiModelProperty(name = "noteAddedByUser",value = "User who added the current note",dataType = "User")
   private User noteAddedByUser;
 
   @OneToMany(mappedBy = "grant", cascade = CascadeType.ALL)
   @OrderBy("submitBy ASC")
   @JsonManagedReference
+  @JsonIgnore
   private List<Submission> submissions;
 
   @Transient
+  @ApiModelProperty(name = "actionAuthorities",value = "Allowed actions that can be performed by the user for current grant status",dataType = "List<WorkflowActionPermission>")
   private WorkflowActionPermission actionAuthorities;
   @Transient
+  @ApiModelProperty(name = "actionAuthorities",value = "Allowed workflow status changes that can be performed by the user for current grant status",dataType = "List<WorkflowPermission>")
   private List<WorkFlowPermission> flowAuthorities;
   @Transient
+  @ApiModelProperty(name = "grantDetails",value = "All grant section and section attributes and values of the grant",dataType = "GrantDetailVO")
   private GrantDetailVO grantDetails;
   @Transient
+  @ApiModelProperty(name = "currentAssignment",value = "Current owner of grant based on grant status",dataType = "List<AssignedTo>")
   private List<AssignedTo> currentAssignment;
   @Transient
+  @ApiModelProperty(name = "workflowAssignment",value = "Allowed workflow ownership assignments for the grant",dataType = "List<GrantAssignmentsVO>")
   private List<GrantAssignmentsVO> workflowAssignment;
 
   public Long getId() {

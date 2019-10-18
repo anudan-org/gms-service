@@ -1,5 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -100,6 +102,7 @@ public class User {
 		this.emailId = emailId;
 	}
 
+	@JsonIgnore
 	public String getPassword() {
 		return password;
 	}

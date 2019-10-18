@@ -22,6 +22,8 @@ public class GranterGrantTemplate {
 
     @Column
     private boolean published;
+    @Column
+    private boolean privateToGrant;
 
     @Column
     private Long granterId;
@@ -72,5 +74,13 @@ public class GranterGrantTemplate {
 
     public void setPublished(boolean published) {
         this.published = published;
+    }
+
+    public boolean isPrivateToGrant() {
+        return privateToGrant;
+    }
+
+    public void setPrivateToGrant(boolean privateToGrant) {
+        this.privateToGrant = privateToGrant;
     }
 }

@@ -17,6 +17,9 @@ import javax.transaction.Transactional;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.text.WordUtils;
@@ -41,9 +44,11 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
 @RequestMapping("/user/{userId}/grant")
+@Api(value = "Grants",description = "API end points for Grants",tags = {"Grants"})
 public class GrantController {
 
     private static Logger logger = LoggerFactory.getLogger(GrantController.class);
@@ -100,7 +105,8 @@ public class GrantController {
     private CommonEmailSevice commonEmailSevice;
 
     @GetMapping("/create/{templateId}")
-    public Grant createGrant(@PathVariable("templateId") Long templateId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @ApiOperation("Create new grant with a template")
+    public Grant createGrant(@ApiParam(name="templateId",value = "Unique identifier for the selected template") @PathVariable("templateId") Long templateId, @PathVariable("userId") Long userId,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Grant grant = new Grant();
 
         grant.setName("");
@@ -194,7 +200,8 @@ public class GrantController {
     }
 
     @DeleteMapping("/{grantId}")
-    public void deleteGrant(@PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @ApiOperation("Delete grant")
+    public void deleteGrant(@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name="userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name="X-TENANT-CODE", value = "Tenant code ") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Grant grant = grantService.getById(grantId);
         for (GrantSpecificSection section : grantService.getGrantSections(grant)) {
             List<GrantSpecificSectionAttribute> attribs = grantService.getAttributesBySection(section);
@@ -278,7 +285,8 @@ public class GrantController {
     }
 
     @PostMapping("/{id}/section/{sectionId}/field")
-    public FieldInfo createFieldInSection(@RequestBody Grant grantToSave, @PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @ApiOperation("Added new field to section")
+    public FieldInfo createFieldInSection(@ApiParam(name = "grantToSave",value = "Grant to save if in edit mode passed in Body of request") @RequestBody Grant grantToSave,@ApiParam(name="grantId", value="Unique identifier of the grant") @PathVariable("id") Long grantId,@ApiParam(name="sectionId",value = "Unique identifier of the section to which the field is being added") @PathVariable("sectionId") Long sectionId,@ApiParam(name="userId",value = "Unique identifier of the logged in user")  @PathVariable("userId") Long userId,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         //grantService.saveGrant(grantToSave);
         saveGrant(grantToSave, userId, tenantCode);
         Grant grant = grantService.getById(grantId);
@@ -312,7 +320,8 @@ public class GrantController {
     }
 
     @PostMapping("/{id}/section/{sectionId}/field/{fieldId}")
-    public Grant deleteField(@RequestBody Grant grantToSave, @PathVariable("userId") Long userId, @PathVariable("id") Long grantId, @PathVariable("sectionId") Long sectionId, @PathVariable("fieldId") Long fieldId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @ApiOperation("Delete field in a section")
+    public Grant deleteField(@ApiParam(name = "grantToSave",value = "Grant to save if in edit mode, passed in Body of request") @RequestBody Grant grantToSave,@ApiParam(name = "userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name="grantId",value = "Unique identifier of the grant") @PathVariable("id") Long grantId,@ApiParam(name = "sectionId",value = "Unique identifier of the section being modified") @PathVariable("sectionId") Long sectionId,@ApiParam(name = "fieldId",value = "Unique identifier of the field being deleted") @PathVariable("fieldId") Long fieldId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Grant grant = saveGrant(grantToSave, userId, tenantCode);
         GrantSpecificSectionAttribute attribute = grantService.findGrantStringAttributeById(fieldId).getSectionAttribute();
 
@@ -337,7 +346,8 @@ public class GrantController {
     }
 
     @PostMapping("/{id}/field/{fieldId}")
-    public FieldInfo updateField(@RequestBody AttributeToSaveVO attributeToSave, @PathVariable("id") Long grantId, @PathVariable("fieldId") Long fieldId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @ApiOperation("Update field information")
+    public FieldInfo updateField(@ApiParam(name="attributeToSave",value = "Updated attribute to be saved") @RequestBody AttributeToSaveVO attributeToSave,@ApiParam(name="grantId",value = "Unique identifier of the grant") @PathVariable("id") Long grantId,@ApiParam(name = "fieldId",value = "Unique identifier of the field being updated") @PathVariable("fieldId") Long fieldId,@ApiParam(name="userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Grant grant = saveGrant(attributeToSave.getGrant(), userId, tenantCode);
         GrantSpecificSectionAttribute currentAttribute = grantService.findGrantStringAttributeById(fieldId).getSectionAttribute();
         currentAttribute.setFieldName(attributeToSave.getAttr().getFieldName());
@@ -358,7 +368,8 @@ public class GrantController {
     }
 
     @GetMapping("/{id}/template/{templateId}/section/{sectionName}")
-    public SectionInfo createSection(@PathVariable("id") Long grantId, @PathVariable("templateId") Long templateId, @PathVariable("sectionName") String sectionName, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @ApiOperation("Create new section in grant")
+    public SectionInfo createSection(@ApiParam(name="grantId",value = "Unique identifier of the grant") @PathVariable("id") Long grantId,@ApiParam(name="temaplteId",value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId,@ApiParam(name="sectionName",value = "Name of the new section") @PathVariable("sectionName") String sectionName,@ApiParam(name="userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         Grant grant = grantService.getById(grantId);
 
@@ -383,7 +394,8 @@ public class GrantController {
     }
 
     @DeleteMapping("/{id}/template/{templateId}/section/{sectionId}")
-    public Grant deleteSection(@PathVariable("id") Long grantId, @PathVariable("templateId") Long templateId, @PathVariable("sectionId") Long sectionId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @ApiOperation("Delete existing section in grant")
+    public Grant deleteSection(@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("id") Long grantId,@ApiParam(name="templateId",value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId,@ApiParam(name = "sectionId",value = "Unique identifier of the section being deleted") @PathVariable("sectionId") Long sectionId,@ApiParam(name = "userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         GrantSpecificSection section = grantService.getGrantSectionBySectionId(sectionId);
         Grant grant = grantService.getById(grantId);
 
@@ -493,7 +505,8 @@ public class GrantController {
     }
 
     @GetMapping("/{id}")
-    public Grant getGrant(@PathVariable("id") Long grantId, @PathVariable("userId") Long userId) {
+    @ApiOperation("Get grant details")
+    public Grant getGrant(@ApiParam(name="grantId",value = "Unique identifier of the grant") @PathVariable("id") Long grantId,@ApiParam(name = "userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId) {
 
         User user = userService.getUserById(userId);
         Grant grant = grantService.getById(grantId);
@@ -504,6 +517,7 @@ public class GrantController {
 
     @PutMapping(value = "/kpi")
     @Transactional
+    @ApiIgnore
     public GrantVO saveKpiSubmissions(@RequestBody SubmissionData submissionData,
                                       @PathVariable("userId") Long userId) {
 
@@ -679,8 +693,9 @@ public class GrantController {
 
 
     @PutMapping("/")
-    public Grant saveGrant(@RequestBody Grant grantToSave, @PathVariable("userId") Long userId,
-                           @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @ApiOperation("Save grant")
+    public Grant saveGrant(@ApiParam(name="grantToSave",value = "Grant to save in edit mode, passed in Body of request") @RequestBody Grant grantToSave,@ApiParam(name="userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+                           @ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
 
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
@@ -1330,9 +1345,10 @@ public class GrantController {
     }
 
     @PostMapping("/{grantId}/flow/{fromState}/{toState}")
-    public Grant MoveGrantState(@PathVariable("userId") Long userId,
-                                @PathVariable("grantId") Long grantId, @PathVariable("fromState") Long fromStateId,
-                                @PathVariable("toState") Long toStateId, @RequestBody(required = false) String note) {
+    @ApiOperation("Move grant through workflow")
+    public Grant MoveGrantState(@ApiParam(name = "userId",value = "Unique identified of logged in user") @PathVariable("userId") Long userId,
+                                @ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "fromStateId",value = "Unique identifier of the starting state of the grant in the workflow") @PathVariable("fromState") Long fromStateId,
+                                @ApiParam(name="toStateId",value = "Unique identifier of the ending state of the grant in the workflow") @PathVariable("toState") Long toStateId,@ApiParam(name = "note",value = "Note associated with the grant's state change request") @RequestBody(required = false) String note) {
 
         Grant grant = grantService.getById(grantId);
         grant.setGrantStatus(workflowStatusService.findById(toStateId));
@@ -1448,15 +1464,18 @@ public class GrantController {
     }
 
     @PutMapping("/{grantId}/template/{templateId}/{templateName}")
-    public Grant updateTemplateName(@PathVariable("userId") Long userId,
-                                    @PathVariable("grantId") Long grantId,
-                                    @PathVariable("templateId") Long templateId,
-                                    @PathVariable("templateName") String templateName,
-                                    @RequestBody String templateDesc) {
+    @ApiOperation("Save custom grant template with name and description")
+    public Grant updateTemplateName(@ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+                                    @ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,
+                                    @ApiParam(name = "templateId",value = "Unique identfier of the grant template") @PathVariable("templateId") Long templateId,
+                                    @ApiParam(name = "templateName",value = "NName of the template to be saved") @PathVariable("templateName") String templateName,
+                                    @ApiParam(name = "templateDate",value = "Additional information about the template such as descriptio, publish or save as private") @RequestBody TemplateMetaData templateData) {
 
         GranterGrantTemplate template = granterGrantTemplateService.findByTemplateId(templateId);
         template.setName(templateName);
-        template.setDescription(templateDesc);
+        template.setDescription(templateData.getDescription());
+        template.setPublished(templateData.isPublish());
+        template.setPrivateToGrant(templateData.isPrivateToGrant());
         template.setPublished(true);
         grantService.saveGrantTemplate(template);
 
@@ -1467,6 +1486,7 @@ public class GrantController {
     }
 
     @PutMapping("/{grantId}/submission/flow/{fromState}/{toState}")
+    @ApiIgnore
     public SubmissionVO saveAndMoveSubmissionState(@RequestBody SubmissionVO submissionVO,
                                                    @PathVariable("userId") Long userId,
                                                    @PathVariable("grantId") Long grantId, @PathVariable("fromState") Long fromStateId,
@@ -1578,7 +1598,8 @@ public class GrantController {
 */
 
     @PostMapping(value = "/{grantId}/pdf")
-    public PdfDocument getPDFExport(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @RequestBody String htmlContent, HttpServletRequest request, HttpServletResponse response) {
+    @ApiIgnore
+    public PdfDocument getPDFExport(@ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name="grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name="htmlContent",value ="" ) @RequestBody String htmlContent, HttpServletRequest request, HttpServletResponse response) {
 
         Grant grant = grantService.getById(grantId);
         String fileName = grant.getName().replaceAll("[^A-Za-z0-9]", "_") + ".pdf";
@@ -1759,12 +1780,14 @@ public class GrantController {
 
 
     @GetMapping("/templates")
-    public List<GranterGrantTemplate> getTenantPublishedGrantTemplates(@RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @ApiOperation("Get all published grant templates for tenant")
+    public List<GranterGrantTemplate> getTenantPublishedGrantTemplates(@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         return granterGrantTemplateService.findByGranterIdAndPublishedStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(), true);
     }
 
     @PostMapping("/{grantId}/assignment")
-    public Grant saveGrantAssignments(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @RequestBody GrantAssignmentModel assignmentModel,@RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @ApiOperation("Set owners for grant workflow states")
+    public Grant saveGrantAssignments(@ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "assignmentModel",value = "Set assignment for grant per workflow state") @RequestBody GrantAssignmentModel assignmentModel,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Grant grant = saveGrant(assignmentModel.getGrant(),userId,tenantCode);
         for (GrantAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
             GrantAssignments assignment = null;
@@ -1788,7 +1811,8 @@ public class GrantController {
     }
 
     @PostMapping("/{grantId}/field/{fieldId}/template/{templateId}")
-    public DocInfo createDocumentForGrantSectionField(@RequestBody Grant grantToSave, @PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @PathVariable("fieldId") Long fieldId, @PathVariable("templateId") Long templateId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @ApiOperation(value = "Attach document to field", notes = "Valid for Document field types only")
+    public DocInfo createDocumentForGrantSectionField(@ApiParam(name = "grantToSave",value = "Grant to save in edit mode, passed in Body of request") @RequestBody Grant grantToSave,@ApiParam(name="userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "fieldId",value = "Unique identifier of the field to which document is being attached") @PathVariable("fieldId") Long fieldId,@ApiParam(name = "temaplteId",value = "Unique identified of the document template being attached") @PathVariable("templateId") Long templateId,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         saveGrant(grantToSave, userId, tenantCode);
         TemplateLibrary libraryDoc = templateLibraryService.getTemplateLibraryDocumentById(templateId);
 
@@ -1835,7 +1859,8 @@ public class GrantController {
 
 
     @PostMapping("{grantId}/attribute/{attributeId}/attachment/{attachmentId}")
-    public Grant deleteGrantStringAttributeAttachment(@RequestBody Grant grantToSave, @PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId, @PathVariable("attachmentId") Long attachmentId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("attributeId") Long attributeId) {
+    @ApiOperation("Delete attachment from document field")
+    public Grant deleteGrantStringAttributeAttachment(@ApiParam(name = "grantToSave",value = "Grant to save in edit mode, pass in Body of request") @RequestBody Grant grantToSave,@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "userId",value = "Unique identifier og logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "attachmentId",value = "Unique identifier of the document attachment being deleted") @PathVariable("attachmentId") Long attachmentId,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode,@ApiParam(name = "attributeId",value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId) {
         saveGrant(grantToSave, userId, tenantCode);
         grantService.deleteStringAttributeAttachmentsByAttachmentId(attachmentId);
         GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(attributeId);
@@ -1857,7 +1882,8 @@ public class GrantController {
 
 
     @PostMapping(value = "/{grantId}/attribute/{attributeId}/upload")
-    public DocInfo saveUploadedFiles(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId, @PathVariable("attributeId") Long attributeId, @RequestParam(value = "file") MultipartFile[] files, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @ApiOperation("Upload and attach files to Document field from disk")
+    public DocInfo saveUploadedFiles(@ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "attributeId",value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId,@ApiParam(name = "file", value = "File attachment uploaded from disk") @RequestParam(value = "file") MultipartFile[] files,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         Grant grant = grantService.getById(grantId);
 
