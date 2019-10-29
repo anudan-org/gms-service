@@ -24,6 +24,8 @@ public class NotificationsController{
 	@GetMapping("/")
 	@ApiOperation("Get notifications for logged in user")
 	public List<Notifications> getUserNotifications(@ApiParam(name = "userId",value = "Unique identifier of logger in user") @PathVariable("userId") Long userId){
+		/*List<Notifications> notifications = notificationsService.getUserNotifications(userId, false);
+		notifications.sort((a,b)->a.getPostedOn().compareTo(b.getPostedOn()));*/
 		return notificationsService.getUserNotifications(userId, false);
 	}
 

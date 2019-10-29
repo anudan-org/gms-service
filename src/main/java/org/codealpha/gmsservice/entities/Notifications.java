@@ -45,6 +45,8 @@ public class Notifications {
     @Column
     private Date postedOn;
 
+    @Column
+    private Long grantId;
 
   	@Column
   	private Long userId;
@@ -87,5 +89,14 @@ public class Notifications {
 
     public Date getPostedOn(){
       return this.postedOn;
+    }
+
+
+    public Long getGrantId() {
+        return grantId;
+    }
+
+    public void setGrantId(Long grantId) {
+        this.grantId = grantId;
     }
 }

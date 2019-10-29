@@ -1373,7 +1373,8 @@ public class GrantController {
 
         String message = grantService.buildNotificationContent(grant, toStatus, notificationMessageTemplate);
 
-        usersToNotify.stream().forEach(u -> notificationsService.saveNotification(message, u.getId()));
+        Grant finalGrant = grant;
+        usersToNotify.stream().forEach(u -> notificationsService.saveNotification(message, u.getId(), finalGrant.getId()));
 
         //}
 

@@ -1,0 +1,1 @@
+alter table notifications add column grant_id bigint;
