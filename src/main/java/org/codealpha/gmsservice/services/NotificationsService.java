@@ -18,14 +18,26 @@ public class NotificationsService{
   public List<Notifications> getUserNotifications(Long userId, boolean read){
   	return notificationsRepository.findByUserIdAndReadOrderByPostedOnDesc(userId, read);
   }
+public List<Notifications> getAllUserNotifications(Long userId){
+  	return notificationsRepository.findByUserIdOrderByPostedOnDesc(userId);
+  }
 
-  public Notifications saveNotification (String message, Long userId, Long grantId){
+  public Notifications saveNotification (String[] message, Long userId, Long grantId){
       Notifications notification = new Notifications();
-      notification.setMessage(message);
+      notification.setMessage(message[1]);
+      notification.setTitle(message[0]);
       notification.setPostedOn(new Date());
       notification.setRead(false);
       notification.setUserId(userId);
       notification.setGrantId(grantId);
       return notificationsRepository.save(notification);
+  }
+
+    public Notifications saveNotification (Notifications notif){
+      return notificationsRepository.save(notif);
+    }
+
+  public Notifications getNotificationById(Long notificationId){
+      return notificationsRepository.findById(notificationId).get();
   }
 }

@@ -40,6 +40,9 @@ public class Notifications {
   	private String message;
 
   	@Column
+	private String title;
+
+  	@Column
   	private boolean read;
 
     @Column
@@ -99,4 +102,16 @@ public class Notifications {
     public void setGrantId(Long grantId) {
         this.grantId = grantId;
     }
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public boolean isRead() {
+		return read;
+	}
 }

@@ -8,6 +8,7 @@ import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 public class GrantService {
@@ -397,5 +398,13 @@ public class GrantService {
 
     public List<GrantHistory> getGrantHistory(Long grantId){
         return grantHistoryRepository.findByGrantId(grantId);
+    }
+
+    public String[] buildNotificationContent(Grant finalGrant, String userName,String action, String date, String subConfigValue, String msgConfigValue) {
+
+        String message = msgConfigValue.replace("%TITLE%", finalGrant.getName().toUpperCase()).replace("%ACTION%", action).replace("%USER%",(userName)).replace("%DATE%",(date));
+        String subject = subConfigValue.replace("%TITLE%",finalGrant.getName().toUpperCase()).replace("%ACTION%", action);
+
+        return new String[]{subject,message};
     }
 }

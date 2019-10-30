@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -1366,15 +1367,26 @@ public class GrantController {
 
         //List<WorkFlowPermission> permissions = workflowPermissionService.getFlowPermisionsOfRoleForStateTransition(grant.getId(),user.getUserRoles(),toStateId);
         //if(!permissions.isEmpty()){
-        List<User> usersToNotify = userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
-        String notificationMessageTemplate = appConfigService
-                .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                        AppConfiguration.GRANT_ALERT_NOTIFICATION_MESSAGE).getConfigValue();
-
-        String message = grantService.buildNotificationContent(grant, toStatus, notificationMessageTemplate);
-
+        List<User> usersToNotify = new ArrayList<>();//userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
         Grant finalGrant = grant;
-        usersToNotify.stream().forEach(u -> notificationsService.saveNotification(message, u.getId(), finalGrant.getId()));
+        List<GrantAssignments> assigments = grantService.getGrantCurrentAssignments(grant).stream().filter(g -> g.getGrantId()==finalGrant.getId() && g.getStateId()==toStateId).collect(Collectors.toList());
+        assigments.forEach(ass -> usersToNotify.add(userService.getUserById(ass.getAssignments())));
+       /* String notificationMessageTemplate = appConfigService
+                .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                        AppConfiguration.GRANT_ALERT_NOTIFICATION_MESSAGE).getConfigValue();*/
+
+
+        String notificationContent[] = grantService.buildNotificationContent(finalGrant,user.getFirstName().concat(" ").concat(user.getLastName()),toStatus.getVerb(),new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),appConfigService
+                .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
+                        AppConfiguration.GRANT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(), appConfigService
+                .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
+                        AppConfiguration.GRANT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue());
+        usersToNotify.stream().forEach(u -> {
+
+
+            commonEmailSevice.sendMail(u.getEmailId(),notificationContent[0],notificationContent[1]);
+        });
+        usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(), finalGrant.getId()));
 
         //}
 
