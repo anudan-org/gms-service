@@ -5,8 +5,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 
 @Component
 @ComponentScan
@@ -24,11 +28,17 @@ public class CommonEmailSevice {
       return;
     }
 
-    SimpleMailMessage message = new SimpleMailMessage();
-    message.setTo(to);
-    message.setSubject(subject);
-    message.setText(messageText);
-    mailSender.send(message);
+    try {
+      MimeMessage message = mailSender.createMimeMessage();
+      MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message);
+      //SimpleMailMessage message = new SimpleMailMessage();
+      mimeMessageHelper.setTo(to);
+      mimeMessageHelper.setSubject(subject);
+      mimeMessageHelper.setText(messageText,true);
+      mailSender.send(message);
+    }catch (MessagingException mse){
+      mse.printStackTrace();
+    }
   }
 
 }

@@ -71,6 +71,8 @@ public class GrantController {
     @Autowired
     private SubmissionService submissionService;
     @Autowired
+    private WorkflowStatusTransitionService workflowStatusTransitionService;
+    @Autowired
     private GrantDocumentDataService grantDocumentDataService;
     @Autowired
     private QuantitativeKpiNotesService quantitativeKpiNotesService;
@@ -1352,6 +1354,9 @@ public class GrantController {
                                 @ApiParam(name="toStateId",value = "Unique identifier of the ending state of the grant in the workflow") @PathVariable("toState") Long toStateId,@ApiParam(name = "note",value = "Note associated with the grant's state change request") @RequestBody(required = false) String note) {
 
         Grant grant = grantService.getById(grantId);
+        Grant finalGrant = grant;
+        WorkflowStatus previousState = grant.getGrantStatus();
+        User previousOwner = userService.getUserById(grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getGrantId()==grantId && ass.getStateId()==finalGrant.getGrantStatus().getId()).collect(Collectors.toList()).get(0).getAssignments());
         grant.setGrantStatus(workflowStatusService.findById(toStateId));
         if (note!=null && !note.trim().equalsIgnoreCase("")){
             grant.setNote(note);
@@ -1368,19 +1373,30 @@ public class GrantController {
         //List<WorkFlowPermission> permissions = workflowPermissionService.getFlowPermisionsOfRoleForStateTransition(grant.getId(),user.getUserRoles(),toStateId);
         //if(!permissions.isEmpty()){
         List<User> usersToNotify = new ArrayList<>();//userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
-        Grant finalGrant = grant;
-        List<GrantAssignments> assigments = grantService.getGrantCurrentAssignments(grant).stream().filter(g -> g.getGrantId()==finalGrant.getId() && g.getStateId()==toStateId).collect(Collectors.toList());
+
+        List<GrantAssignments> assigments = grantService.getGrantWorkflowAssignments(grant);
         assigments.forEach(ass -> usersToNotify.add(userService.getUserById(ass.getAssignments())));
        /* String notificationMessageTemplate = appConfigService
                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.GRANT_ALERT_NOTIFICATION_MESSAGE).getConfigValue();*/
 
 
+        User currentOwner = userService.getUserById(grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getGrantId()==grantId && ass.getStateId()==toStateId).collect(Collectors.toList()).get(0).getAssignments());
+
+        WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState,toStatus);
+
         String notificationContent[] = grantService.buildNotificationContent(finalGrant,user.getFirstName().concat(" ").concat(user.getLastName()),toStatus.getVerb(),new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),appConfigService
                 .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                         AppConfiguration.GRANT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(), appConfigService
                 .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                        AppConfiguration.GRANT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue());
+                        AppConfiguration.GRANT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
+                workflowStatusService.findById(toStateId).getName(),currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()),
+                previousState.getName(),
+                previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                transition.getAction(),"Yes",
+                "Please review",
+                note!=null && !note.trim().equalsIgnoreCase("")?"Yes":"",
+                note!=null && !note.trim().equalsIgnoreCase("")?"Please review":"");
         usersToNotify.stream().forEach(u -> {
 
 
