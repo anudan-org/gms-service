@@ -681,7 +681,7 @@ public class GrantController {
                                     AppConfiguration.SUBMISSION_ALTER_MAIL_SUBJECT).getConfigValue(),
                     submissionService.buildMailContent(submission, appConfigService
                             .getAppConfigForGranterOrg(submission.getGrant().getGrantorOrganization().getId(),
-                                    AppConfiguration.SUBMISSION_ALTER_MAIL_CONTENT).getConfigValue()));
+                                    AppConfiguration.SUBMISSION_ALTER_MAIL_CONTENT).getConfigValue()),null);
         }
 
         Grant grant = submission.getGrant();
@@ -1394,13 +1394,15 @@ public class GrantController {
                 previousState.getName(),
                 previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
                 transition.getAction(),"Yes",
-                "Please review",
-                note!=null && !note.trim().equalsIgnoreCase("")?"Yes":"",
-                note!=null && !note.trim().equalsIgnoreCase("")?"Please review":"");
+                "Please review.",
+                note!=null && !note.trim().equalsIgnoreCase("")?"Yes":"No",
+                note!=null && !note.trim().equalsIgnoreCase("")?"Please review.":"");
         usersToNotify.stream().forEach(u -> {
 
 
-            commonEmailSevice.sendMail(u.getEmailId(),notificationContent[0],notificationContent[1]);
+            commonEmailSevice.sendMail(u.getEmailId(),notificationContent[0],notificationContent[1],new String[]{appConfigService
+                    .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
+                            AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
         });
         usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(), finalGrant.getId()));
 

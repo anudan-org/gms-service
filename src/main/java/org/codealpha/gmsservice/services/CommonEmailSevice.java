@@ -23,7 +23,7 @@ public class CommonEmailSevice {
   private boolean sendMail;
 
   @Async("threadPoolTaskExecutor")
-  public void sendMail(String to, String subject, String messageText){
+  public void sendMail(String to, String subject, String messageText, String footer[]){
     if(!sendMail){
       return;
     }
@@ -33,7 +33,11 @@ public class CommonEmailSevice {
       MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message);
       //SimpleMailMessage message = new SimpleMailMessage();
       mimeMessageHelper.setTo(to);
+      mimeMessageHelper.setFrom("admin@anudan.org");
       mimeMessageHelper.setSubject(subject);
+      for(String footerBlock: footer){
+          messageText = messageText.concat(footerBlock);
+      }
       mimeMessageHelper.setText(messageText,true);
       mailSender.send(message);
     }catch (MessagingException mse){
