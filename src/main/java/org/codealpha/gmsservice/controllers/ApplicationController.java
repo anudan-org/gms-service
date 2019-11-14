@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import io.swagger.annotations.*;
+import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Template;
@@ -81,6 +82,8 @@ public class ApplicationController {
     @Value("${spring.profiles.active}")
     private String environment;
 
+    @Autowired private AppConfigService appConfigService;
+
     @GetMapping(value = {"/config/{host}", "/config"})
     @ApiOperation(value = "Application Configuration for tenant and Anudan platform.",notes = "Publicly available application configuration for tenant.\nIf host is passed then tenant specific configuration is retrieved. If tenant is not passed then Anudan platform level configuration is retrieved.",response = UIConfig.class)
     public UIConfig config(@ApiParam(name="host",value = "Sub-domain of tenant in url. <Blank> for Anudan platform") @PathVariable(name = "host", required = false) String host,
@@ -110,6 +113,7 @@ public class ApplicationController {
                 config.setTenantUsers(userService.getAllTenantUsers(org));
                 config.setTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"GRANT"));
                 config.setGranteeOrgs(organizationService.getAssociatedGranteesForTenant(org));
+                config.setDaysBeforePublishingReport(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(orgId, AppConfiguration.REPORT_SETUP_INTERVAL).getConfigValue()));
             } else {
                 org = organizationService.getPlatformOrg();
                 config = new UIConfig();

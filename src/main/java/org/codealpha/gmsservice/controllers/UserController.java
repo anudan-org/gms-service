@@ -61,8 +61,8 @@ public class UserController {
   @Autowired
   private DashboardService dashboardService;
 
-  @GetMapping(value = "/{id}")
-  public User get(@PathVariable(name = "id") Long id,
+  @GetMapping(value = "/{userId}")
+  public User get(@PathVariable(name = "userId") Long id,
       @RequestHeader("X-TENANT-CODE") String tenantCode) {
     User user = userService.getUserById(id);
 
@@ -147,9 +147,9 @@ public class UserController {
     return HttpStatus.OK;
   }
 
-  @GetMapping("/{id}/dashboard")
+  @GetMapping("/{userId}/dashboard")
   public ResponseEntity<DashboardService> getDashbaord(
-      @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("id") Long userId) {
+      @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
     User user = userService.getUserById(userId);
     Organization userOrg = user.getOrganization();
     Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
@@ -167,8 +167,8 @@ public class UserController {
     return new ResponseEntity<>(null, HttpStatus.OK);
   }
 
-  @PostMapping("/{id}/validate-pwd")
-  public ResponseEntity<ErrorMessage> validatePassword(@PathVariable("id") Long userId,
+  @PostMapping("/{userId}/validate-pwd")
+  public ResponseEntity<ErrorMessage> validatePassword(@PathVariable("userId") Long userId,
       @RequestBody String pwd) {
     User user = userService.getUserById(userId);
     if (user.getPassword().equalsIgnoreCase(pwd)) {
@@ -178,8 +178,8 @@ public class UserController {
     }
   }
 
-  @PostMapping("/{id}/pwd")
-  public ResponseEntity<User> changePassword(@PathVariable("id") Long userId,
+  @PostMapping("/{userId}/pwd")
+  public ResponseEntity<User> changePassword(@PathVariable("userId") Long userId,
       @RequestBody String pwd) {
     User user = userService.getUserById(userId);
     user.setPassword(pwd);

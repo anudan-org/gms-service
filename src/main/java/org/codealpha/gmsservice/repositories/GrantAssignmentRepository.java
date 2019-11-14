@@ -9,4 +9,6 @@ public interface GrantAssignmentRepository  extends CrudRepository<GrantAssignme
 
 public List<GrantAssignments> findByGrantIdAndStateId(Long grantId,Long stateId);
 public List<GrantAssignments> findByGrantId(Long grantId);
+public GrantAssignments findByGrantIdAndStateIdAndAssignments(Long grantId,Long stateId,Long userId);
+public GrantAssignments findByGrantIdAndAnchor(Long grantId, boolean anchor);
 }

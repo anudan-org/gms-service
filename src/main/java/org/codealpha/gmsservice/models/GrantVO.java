@@ -53,8 +53,7 @@ public class GrantVO {
   private Long grantId;
   @JsonIgnore
   private List<GrantStringAttribute> stringAttributes;
-  @JsonIgnore
-  private List<GrantDocumentAttributes> documentAttributes;
+
 
   private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
@@ -247,14 +246,6 @@ public class GrantVO {
     this.stringAttributes = stringAttributes;
   }
 
-  public List<GrantDocumentAttributes> getDocumentAttributes() {
-    return documentAttributes;
-  }
-
-  public void setDocumentAttributes(
-      List<GrantDocumentAttributes> documentAttributes) {
-    this.documentAttributes = documentAttributes;
-  }
 
   public List<GrantKpi> getKpis() {
     return kpis;
@@ -337,14 +328,6 @@ public class GrantVO {
              vo.setNoteAddedBy(grant.getNoteAddedBy());
              vo.setNoteAddedByUser(userService.getUserByEmailAndOrg(grant.getNoteAddedBy(),grant.getGrantorOrganization()));
 
-          }else if (voPd.getName().equalsIgnoreCase("documentAttributes")) {
-            GrantDetailVO grantDetailVO = null;
-            grantDetailVO = vo.getGrantDetails();
-            if(grantDetailVO == null){
-              grantDetailVO = new GrantDetailVO();
-            }
-            grantDetailVO = grantDetailVO.buildDocumentAttributes((List<GrantDocumentAttributes>) value);
-            vo.setGrantDetails(grantDetailVO);
           } else {
             voPd.getWriteMethod().invoke(vo, value);
           }

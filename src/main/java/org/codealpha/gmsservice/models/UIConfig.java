@@ -41,6 +41,8 @@ public class UIConfig {
 	private List<WorkflowTransitionModel> transitions;
 	@ApiModelProperty("Tenant users")
 	private List<User> tenantUsers;
+	@ApiModelProperty("Days before opening Report for publishing")
+	private Integer daysBeforePublishingReport;
 
 	public String getLogoUrl() {
 		return logoUrl;
@@ -129,5 +131,13 @@ public class UIConfig {
 
 	public void setTransitions(List<WorkflowTransitionModel> transitions) {
 		this.transitions = transitions;
+	}
+
+	public Integer getDaysBeforePublishingReport() {
+		return daysBeforePublishingReport;
+	}
+
+	public void setDaysBeforePublishingReport(Integer daysBeforePublishingReport) {
+		this.daysBeforePublishingReport = daysBeforePublishingReport;
 	}
 }

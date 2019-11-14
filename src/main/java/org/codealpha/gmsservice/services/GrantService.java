@@ -366,6 +366,10 @@ public class GrantService {
         return grantAssignmentRepository.findByGrantIdAndStateId(grant.getId(), grant.getGrantStatus().getId());
     }
 
+    public GrantAssignments getGrantAssignmentForGrantStateAndUser(Grant grant, WorkflowStatus status, User user){
+        return grantAssignmentRepository.findByGrantIdAndStateIdAndAssignments(grant.getId(),status.getId(),user.getId());
+    }
+
     public List<GrantAssignments> getGrantWorkflowAssignments(Grant grant) {
         return grantAssignmentRepository.findByGrantId(grant.getId());
     }

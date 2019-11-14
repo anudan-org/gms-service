@@ -35,7 +35,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
   protected void configure(HttpSecurity http) throws Exception {
     http.csrf().disable().authorizeRequests()
             .antMatchers("/public/**").permitAll()
-        .antMatchers("/api/users/**").permitAll()
         .antMatchers("/**").fullyAuthenticated().and()
         .addFilterBefore(
             new JWTLoginFilter("/authenticate", authenticationManager(), userRepository, organizationRepository),
@@ -55,5 +54,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
   protected void configure(AuthenticationManagerBuilder auth) throws Exception {
     auth.authenticationProvider(authProvider);
   }
+
+
 
 }
