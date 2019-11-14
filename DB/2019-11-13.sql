@@ -61,3 +61,19 @@ $BODY$ LANGUAGE plpgsql;
 
 
 alter table reports add column type text;
+
+CREATE SEQUENCE report_assignments_id_seq
+    INCREMENT 1
+    START 768
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+CREATE TABLE report_assignments
+(
+    id bigint NOT NULL DEFAULT nextval('report_assignments_id_seq'::regclass),
+    report_id bigint,
+    state_id bigint,
+    assignment bigint,
+    anchor boolean
+);
