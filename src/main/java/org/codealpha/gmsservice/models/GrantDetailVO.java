@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -43,7 +44,12 @@ public class GrantDetailVO {
     if(value!=null) {
       for (GrantStringAttribute stringAttribute : value) {
 
-        sectionVO = sections.stream().filter(a -> a.getId()==stringAttribute.getSection().getId()).findFirst().get();
+        Optional<SectionVO> so = sections.stream().filter(a -> a.getId()==stringAttribute.getSection().getId()).findFirst();
+        if(so.isPresent()) {
+          sectionVO = so.get();
+        }else{
+          continue;
+        }
         List<SectionAttributesVO> sectionAttributes = sectionVO.getAttributes();
         SectionAttributesVO sectionAttribute = new SectionAttributesVO();
         sectionAttribute.setId(stringAttribute.getId());

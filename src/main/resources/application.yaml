@@ -20,7 +20,7 @@ spring:
   profiles: local
   send-mail: false
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/anudan-qa
     username: postgres
     password: postgres
     initialization-mode: always

@@ -21,6 +21,7 @@ import org.codealpha.gmsservice.services.GranterService;
 import org.codealpha.gmsservice.services.OrganizationService;
 import org.codealpha.gmsservice.services.RoleService;
 import org.codealpha.gmsservice.services.UserService;
+import org.codealpha.gmsservice.validators.DashboardValidator;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -60,6 +61,7 @@ public class UserController {
   private RoleService roleService;
   @Autowired
   private DashboardService dashboardService;
+  @Autowired DashboardValidator dashboardValidator;
 
   @GetMapping(value = "/{id}")
   public User get(@PathVariable(name = "id") Long id,
@@ -150,6 +152,8 @@ public class UserController {
   @GetMapping("/{id}/dashboard")
   public ResponseEntity<DashboardService> getDashbaord(
       @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("id") Long userId) {
+
+    dashboardValidator.validate(userId,tenantCode);
     User user = userService.getUserById(userId);
     Organization userOrg = user.getOrganization();
     Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);

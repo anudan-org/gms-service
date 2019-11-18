@@ -26,6 +26,7 @@ import javax.persistence.Transient;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.annotations.ApiParam;
 import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.GrantAssignmentsVO;
@@ -180,6 +181,10 @@ public class Grant {
   @Transient
   @ApiModelProperty(name = "workflowAssignment",value = "Allowed workflow ownership assignments for the grant",dataType = "List<GrantAssignmentsVO>")
   private List<GrantAssignmentsVO> workflowAssignment;
+
+  @Transient
+  @ApiModelProperty(name = "securityCode",value = "Secure code for grant")
+  private String securityCode;
 
   public Long getId() {
     return id;
@@ -456,5 +461,13 @@ public class Grant {
 
   public void setNoteAddedByUser(User noteAddedByUser) {
     this.noteAddedByUser = noteAddedByUser;
+  }
+
+  public String getSecurityCode() {
+    return securityCode;
+  }
+
+  public void setSecurityCode(String securityCode) {
+    this.securityCode = securityCode;
   }
 }

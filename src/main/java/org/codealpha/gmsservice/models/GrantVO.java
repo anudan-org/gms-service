@@ -55,6 +55,8 @@ public class GrantVO {
   private List<GrantStringAttribute> stringAttributes;
   @JsonIgnore
   private List<GrantDocumentAttributes> documentAttributes;
+  private String securityCode;
+
 
   private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
@@ -388,5 +390,13 @@ public class GrantVO {
 
   public void setNoteAddedByUser(User noteAddedByUser) {
     this.noteAddedByUser = noteAddedByUser;
+  }
+
+  public String getSecurityCode() {
+    return securityCode;
+  }
+
+  public void setSecurityCode(String securityCode) {
+    this.securityCode = securityCode;
   }
 }
