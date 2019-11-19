@@ -12,6 +12,8 @@ import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.codealpha.gmsservice.exceptions.InvalidCredentialsException;
 import org.codealpha.gmsservice.exceptions.TokenExpiredException;
 import org.springframework.boot.web.servlet.error.DefaultErrorAttributes;
 import org.springframework.http.HttpStatus;
@@ -66,7 +68,8 @@ public class TokenAuthenticationService {
       List<GrantedAuthority> list = new ArrayList<>();
       list.add(new SimpleGrantedAuthority("ADMIN"));
       return user != null ? new UsernamePasswordAuthenticationToken(user, null, list) : null;
+    }else{
+      throw new InvalidCredentialsException("You are not authorized to perform this action");
     }
-    return null;
   }
 }

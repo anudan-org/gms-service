@@ -33,11 +33,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
-    http.csrf().disable().authorizeRequests()
-            .antMatchers("/api/public/**").permitAll()
-        .antMatchers("/api/users/**").permitAll()
-            .antMatchers("/api/secure").permitAll()
+    http.csrf().disable().authorizeRequests().antMatchers("/public/images/**/logo").permitAll()
+
         .and()
+            .authorizeRequests().anyRequest().authenticated().and()
         .addFilterBefore(
             new JWTLoginFilter("/authenticate", authenticationManager(), userRepository, organizationRepository),
             UsernamePasswordAuthenticationFilter.class)
