@@ -7,6 +7,7 @@ public class AccountCredentials {
   private String role;
   private String tenant;
   private String provider;
+  private String recaptchaToken;
 
   public String getUsername() {
     return username;
@@ -46,5 +47,13 @@ public class AccountCredentials {
 
   public void setProvider(String provider) {
     this.provider = provider;
+  }
+
+  public String getRecaptchaToken() {
+    return recaptchaToken;
+  }
+
+  public void setRecaptchaToken(String recaptchaToken) {
+    this.recaptchaToken = recaptchaToken;
   }
 }
