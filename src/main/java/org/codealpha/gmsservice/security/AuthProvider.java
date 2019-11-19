@@ -16,6 +16,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
 @Component
 public class AuthProvider implements AuthenticationProvider {
@@ -39,7 +41,7 @@ public class AuthProvider implements AuthenticationProvider {
     if ("ANUDAN".equalsIgnoreCase(provider.toUpperCase())) {
       Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
       if (org == null) {
-        throw new InvalidTenantException("Invalid tenant code " + tenantCode);
+        throw new BadCredentialsException("Invalid login credentials");
       }
       User user = userService.getUserByEmailAndOrg(username,org);
 
@@ -47,7 +49,7 @@ public class AuthProvider implements AuthenticationProvider {
 
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")
             && !((Granter) user.getOrganization()).getCode().equalsIgnoreCase(tenantCode)) {
-          throw new BadCredentialsException("Invalid login for Granter organization.");
+          throw new BadCredentialsException("Invalid login credentials");
         }
         if (password.equalsIgnoreCase(user.getPassword())
             && username.equalsIgnoreCase(user.getEmailId())) {
@@ -55,15 +57,15 @@ public class AuthProvider implements AuthenticationProvider {
           return new UsernamePasswordAuthenticationToken(username, password, new ArrayList());
         } else {
           //TODO - Read messages from a resource bundle
-          throw new InvalidCredentialsException("Invalid password for " + user.getEmailId());
+          throw new BadCredentialsException("Invalid login credentials");
         }
       }else{
-        throw new InvalidCredentialsException("Invalid username " + username);
+        throw new BadCredentialsException("Invalid login credentials");
       }
     } else if ("GOOGLE".equalsIgnoreCase(provider.toUpperCase())) {
       Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
       if (org == null) {
-        throw new InvalidTenantException("Invalid tenant code " + tenantCode);
+        throw new BadCredentialsException("Invalid login credentials");
       }
       User user = userService.getUserByEmailAndOrg(username,org);
 
@@ -71,12 +73,12 @@ public class AuthProvider implements AuthenticationProvider {
 
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")
             && !((Granter) user.getOrganization()).getCode().equalsIgnoreCase(tenantCode)) {
-          throw new InvalidCredentialsException("Invalid login for Granter organization.");
+          throw new BadCredentialsException("Invalid login credentials");
         }
 
         return new UsernamePasswordAuthenticationToken(username, password, new ArrayList());
       } else {
-        throw new InvalidCredentialsException("User Name and password does not match.");
+        throw new BadCredentialsException("Invalid login credentials");
       }
 
     }
