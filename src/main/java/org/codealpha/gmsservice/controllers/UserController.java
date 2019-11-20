@@ -206,7 +206,7 @@ public class UserController {
       throw new ResourceNotFoundException("New passwords do not match");
     }
     if(!pwds[1].matches("((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,20})") && !pwds[2].matches("((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,20})")){
-      throw new ResourceNotFoundException("Password must contain at least one digit, one lowercase character, one uppercase character, one special symbols in the list \"@#$%\" and between 6-20 characters ");
+      throw new ResourceNotFoundException("Password must contain at least one digit, one lowercase character, one uppercase character, one special symbols in the list \"@#$%\" and between 6-20 characters.");
     }
     if (!userService.getUserById(userId).getPassword().equalsIgnoreCase(pwds[0])) {
       throw new ResourceNotFoundException("You have entered an invalid previous password");

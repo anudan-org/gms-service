@@ -47,27 +47,29 @@ public class AuthProvider implements AuthenticationProvider {
     String tenantCode = ((Map<String,String>) authentication.getDetails()).get("TOKEN");
     String captcha = ((Map<String,String>) authentication.getDetails()).get("CAPTCHA");
 
-    UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("https://www.google.com/recaptcha/api/siteverify");
-    LinkedMultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
+    if(provider.equalsIgnoreCase("ANUDAN")) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("https://www.google.com/recaptcha/api/siteverify");
+        LinkedMultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
 
-    params.add("secret","6Lf5a8MUAAAAAKzpZvN2yKoLoE7O0E64bcgyl3de");
-    params.add("response",captcha);
-    HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity =
-            new HttpEntity<>(params);
+        params.add("secret", "6Lf5a8MUAAAAAKzpZvN2yKoLoE7O0E64bcgyl3de");
+        params.add("response", captcha);
+        HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity =
+                new HttpEntity<>(params);
 
-    RestTemplate restTemplate = new RestTemplate();
-    ResponseEntity<String> responseEntity = restTemplate.exchange(
-            builder.build().encode().toUri(),
-            HttpMethod.POST,
-            requestEntity,
-            String.class);
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> responseEntity = restTemplate.exchange(
+                builder.build().encode().toUri(),
+                HttpMethod.POST,
+                requestEntity,
+                String.class);
 
-    try {
-      if(!((JsonNode)new ObjectMapper().readValue(responseEntity.getBody(),JsonNode.class)).get("success").asBoolean()){
-        throw new BadCredentialsException("Invalid login credentials");
-      }
-    } catch (IOException e) {
-      throw new BadCredentialsException("Invalid login credentials");
+        try {
+            if (!((JsonNode) new ObjectMapper().readValue(responseEntity.getBody(), JsonNode.class)).get("success").asBoolean()) {
+                throw new BadCredentialsException("Invalid login credentials");
+            }
+        } catch (IOException e) {
+            throw new BadCredentialsException("Invalid login credentials");
+        }
     }
 
     if(tenantCode == null){

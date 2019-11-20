@@ -16,6 +16,7 @@ import javax.transaction.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -102,6 +103,8 @@ public class GrantController {
 
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
+    @Value("${spring.supported-file-types}")
+    private String[] supportedFileTypes;
 
     @Autowired
     private CommonEmailSevice commonEmailSevice;
@@ -1906,9 +1909,22 @@ public class GrantController {
     }
 
 
-    @PostMapping(value = "/{grantId}/attribute/{attributeId}/upload")
+    @PostMapping(value = "/{grantId}/section/{sectionId}/attribute/{attributeId}/upload",consumes = {"multipart/form-data"})
     @ApiOperation("Upload and attach files to Document field from disk")
-    public DocInfo saveUploadedFiles(@ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "attributeId",value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId,@ApiParam(name = "file", value = "File attachment uploaded from disk") @RequestParam(value = "file") MultipartFile[] files,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public DocInfo saveUploadedFiles(@ApiParam(name="sectionId",value = "Unique identifier of section") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "attributeId",value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId,@ApiParam(name = "grantData", value = "Grant data") @RequestParam("grantToSave") String grantToSaveStr,@RequestParam("file") MultipartFile[] files, @ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
+        Grant grantToSave = null;
+        try {
+            grantToSave = mapper.readValue(grantToSaveStr,Grant.class);
+        } catch (IOException e) {
+           logger.error(e.getMessage());
+        }
+        grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
+        grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
+        grantValidator.validateFieldExists(grantService,grantToSave,sectionId,attributeId);
+        grantValidator.validateFiles(files,supportedFileTypes);
 
         Grant grant = grantService.getById(grantId);
 
@@ -1940,7 +1956,7 @@ public class GrantController {
             attachments.add(attachment);
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        mapper = new ObjectMapper();
         try {
             if (attr.getValue().equalsIgnoreCase("")) {
                 attr.setValue("[]");

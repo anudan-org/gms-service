@@ -1,6 +1,8 @@
 package org.codealpha.gmsservice.validators;
 
+import org.apache.commons.io.FilenameUtils;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.exceptions.InvalidFileTypeException;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.models.SecureEntity;
 import org.codealpha.gmsservice.repositories.*;
@@ -9,7 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -128,5 +132,14 @@ public class GrantValidator {
             throw new ResourceNotFoundException("Invalid authorization");
         }
 
+    }
+
+    public void validateFiles(MultipartFile[] files, String[] supportedFileTypes) {
+        for (int i = 0; i < files.length; i++) {
+            int finalI = i;
+            if(!Arrays.stream(supportedFileTypes).filter(type -> type.equalsIgnoreCase(FilenameUtils.getExtension(files[finalI].getOriginalFilename()))).findAny().isPresent()){
+                throw new InvalidFileTypeException("Invalid file type extension");
+            }
+        }
     }
 }
