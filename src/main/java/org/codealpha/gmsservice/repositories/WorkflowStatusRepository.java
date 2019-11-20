@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.repositories;
 
+import org.codealpha.gmsservice.entities.Workflow;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -16,6 +17,8 @@ public interface WorkflowStatusRepository extends CrudRepository<WorkflowStatus,
 
   @Query(value = "select * from workflow_statuses where id=?1", nativeQuery = true)
   public WorkflowStatus getById(Long statusId);
+
+  public List<WorkflowStatus> findByWorkflow(Workflow workflow);
 
 
 }

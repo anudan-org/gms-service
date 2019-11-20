@@ -5,6 +5,7 @@ import java.util.List;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.exceptions.UserNotFoundException;
+import org.codealpha.gmsservice.repositories.OrganizationRepository;
 import org.codealpha.gmsservice.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,8 @@ public class UserService {
 
   @Autowired
   private UserRepository userRepository;
+  @Autowired
+  private OrganizationRepository organizationRepository;
 
 
 
@@ -27,7 +30,7 @@ public class UserService {
   }
 
   public User getUserByEmailAndTenant(String email,String tenant){
-    User user = userRepository.findByEmailId(email);
+    User user = userRepository.findByEmailIdAndOrganization(email,organizationRepository.findByCode(tenant));
     if(user==null){
       throw new UserNotFoundException();
     }

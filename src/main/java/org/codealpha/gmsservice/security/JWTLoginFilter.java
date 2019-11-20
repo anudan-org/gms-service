@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.UUID;
+import java.util.*;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -60,16 +58,22 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
       }
     });
 
+
+
     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
         creds.getUsername(), creds.getPassword(), authorities);
-    authToken.setDetails(request.getHeader("X-TENANT-CODE"));
+    Map<String,String> detailsMap = new HashMap<>();
+    detailsMap.put("TOKEN",request.getHeader("X-TENANT-CODE"));
+    detailsMap.put("CAPTCHA",creds.getRecaptchaToken());
+    authToken.setDetails(detailsMap);
     return getAuthenticationManager().authenticate(authToken);
   }
 
   @Override
   protected void successfulAuthentication(HttpServletRequest req, HttpServletResponse res,
       FilterChain chain, Authentication auth) throws IOException, ServletException {
-    User user = userRepository.findByEmailIdAndOrganization(auth.getName(),organizationRepository.findByCode(auth.getDetails().toString()));
+
+    User user = userRepository.findByEmailIdAndOrganization(auth.getName(),organizationRepository.findByCode(((Map<String,String>) auth.getDetails()).get("TOKEN")));
     Long userId = user.getId();
 
 

@@ -1,10 +1,18 @@
 package org.codealpha.gmsservice.services;
 
-import java.util.List;
-import java.util.Optional;
+import java.io.IOException;
+import java.util.*;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import org.codealpha.gmsservice.constants.KpiType;
+import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.models.SecureEntity;
 import org.codealpha.gmsservice.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +21,7 @@ import org.springframework.util.StringUtils;
 @Service
 public class GrantService {
 
+    private static final String SECRET = "bhjgsdf788778hsdfhgsdf777werghsbdfjhdsf88yw3r7t7yt^%^%%@#Ghj";
     @Autowired
     private GrantRepository grantRepository;
     @Autowired
@@ -57,6 +66,14 @@ public class GrantService {
     private GrantStringAttributeAttachmentRepository grantStringAttributeAttachmentRepository;
     @Autowired
     private GrantHistoryRepository grantHistoryRepository;
+    @Autowired
+    private WorkflowRepository workflowRepository;
+    @Autowired
+    private WorkflowStatusTransitionRepository workflowStatusTransitionRepository;
+    @Autowired
+    private WorkflowStatusRepository workflowStatusRepository;
+    @Autowired
+    private TemplateLibraryRepository templateLibraryRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -411,5 +428,91 @@ public class GrantService {
         String subject = subConfigValue.replace("%GRANT_NAME%", finalGrant.getName());
 
         return new String[]{subject, message};
+    }
+
+    public String buildHashCode(Grant grant) {
+        SecureEntity secureEntity = new SecureEntity();
+        secureEntity.setGrantId(grant.getId());
+        secureEntity.setTemplateId(grant.getTemplateId());
+        secureEntity.setSectionAndAtrribIds(new HashMap<>());
+        secureEntity.setGranterId(grant.getGrantorOrganization().getId());
+        Map<Long, List<Long>> map = new HashMap<>();
+        grant.getGrantDetails().getSections().forEach(sec -> {
+            List<Long> attribIds = new ArrayList<>();
+            if(sec.getAttributes()!=null) {
+                sec.getAttributes().forEach(a -> {
+                    attribIds.add(a.getId());
+                });
+            }
+
+            map.put(sec.getId(), attribIds);
+        });
+        secureEntity.setSectionAndAtrribIds(map);
+        List<Long> templateIds = new ArrayList<>();
+        granterGrantTemplateRepository.findByGranterId(grant.getGrantorOrganization().getId()).forEach(t ->{
+            templateIds.add(t.getId());
+        });
+        secureEntity.setGrantTemplateIds(templateIds);
+
+        List<Long> grantWorkflowIds = new ArrayList<>();
+        Map<Long,List<Long>> grantWorkflowStatusIds = new HashMap<>();
+        Map<Long,Long[][]> grantWorkflowTransitionIds = new HashMap<>();
+        workflowRepository.findByGranterAndObject(grant.getGrantorOrganization(), WorkflowObject.GRANT).forEach(w -> {
+            grantWorkflowIds.add(w.getId());
+            List<Long> wfStatusIds = new ArrayList<>();
+            workflowStatusRepository.findByWorkflow(w).forEach(ws -> {
+                wfStatusIds.add(ws.getId());
+            });
+            grantWorkflowStatusIds.put(w.getId(),wfStatusIds);
+
+            List<WorkflowStatusTransition> transitions = workflowStatusTransitionRepository.findByWorkflow(w);
+            Long[][] stransitions = new Long[transitions.size()][2];
+            final int[] counter = {0};
+            workflowStatusTransitionRepository.findByWorkflow(w).forEach(st -> {
+                stransitions[counter[0]][0]=st.getFromState().getId();
+                stransitions[counter[0]][1]=st.getToState().getId();
+                counter[0]++;
+            });
+            grantWorkflowTransitionIds.put(w.getId(),stransitions);
+        });
+
+
+        secureEntity.setGrantWorkflowIds(grantWorkflowIds);
+        secureEntity.setWorkflowStatusIds(grantWorkflowStatusIds);
+        secureEntity.setWorkflowStatusTransitionIds(grantWorkflowTransitionIds);
+        secureEntity.setTenantCode(grant.getGrantorOrganization().getCode());
+
+        List<Long> tLibraryIds = new ArrayList<>();
+        templateLibraryRepository.findByGranterId(grant.getGrantorOrganization().getId()).forEach(tl -> {
+            tLibraryIds.add(tl.getId());
+        });
+        secureEntity.setTemplateLibraryIds(tLibraryIds);
+
+        try {
+            String secureCode = Jwts.builder().setSubject(new ObjectMapper().writeValueAsString(secureEntity))
+                    .signWith(SignatureAlgorithm.HS512, SECRET).compact();
+            return secureCode;
+        }catch (JsonProcessingException e){
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public SecureEntity unBuildGrantHashCode(Grant grant){
+        String grantSecureCode = Jwts.parser().setSigningKey(SECRET)
+                .parseClaimsJws(grant.getSecurityCode()).getBody().getSubject();
+        SecureEntity secureHash = null;
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            secureHash = mapper.readValue(grantSecureCode, SecureEntity.class);
+        } catch (JsonParseException e) {
+
+        } catch (JsonMappingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            return secureHash;
+        }
     }
 }

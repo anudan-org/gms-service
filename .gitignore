@@ -5,6 +5,7 @@ HELP.md
 *.log
 gms.log*
 .DS_Store
+*.yaml
 
 ### STS ###
 .apt_generated

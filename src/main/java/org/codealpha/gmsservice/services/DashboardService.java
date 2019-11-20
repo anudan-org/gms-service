@@ -133,12 +133,14 @@ public class DashboardService {
                         }
                     }
                     grant.getWorkflowAssignment().sort((a,b) -> a.getId().compareTo(b.getId()));
+
                     grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
                     for (SectionVO section : grant.getGrantDetails().getSections()) {
                         if (section.getAttributes() != null) {
                             section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
                         }
                     }
+                    grant.setSecurityCode(grantService.buildHashCode(grant));
                     grantList.add(grant);
                     tenant.setGrants(grantList);
                 }

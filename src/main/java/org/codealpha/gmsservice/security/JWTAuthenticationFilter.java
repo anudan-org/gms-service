@@ -21,7 +21,10 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
       throws IOException, ServletException, RuntimeException {
-    if(new UrlPathHelper().getPathWithinApplication((HttpServletRequest) request).equalsIgnoreCase("/favicon.ico")){
+    String pathWithinApplication = new UrlPathHelper().getPathWithinApplication((HttpServletRequest) request);
+    if(pathWithinApplication.equalsIgnoreCase("/favicon.ico")){
+      filterChain.doFilter(request, response);
+    }else if(pathWithinApplication.contains("/public/images/")){
       filterChain.doFilter(request, response);
     }else {
       Authentication authentication = null;
@@ -31,7 +34,9 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
                 .getAuthentication((HttpServletRequest) request, (HttpServletResponse) response);
 
 
-      SecurityContextHolder.getContext().setAuthentication(authentication);
+        if(authentication!=null) {
+          SecurityContextHolder.getContext().setAuthentication(authentication);
+        }
       filterChain.doFilter(request, response);
     }
   }

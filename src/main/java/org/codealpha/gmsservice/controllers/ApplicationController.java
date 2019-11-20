@@ -34,7 +34,7 @@ import springfox.documentation.annotations.ApiIgnore;
  * @author Developer <developer@enstratify.com>
  **/
 @RestController
-@RequestMapping(value = "/public")
+@RequestMapping(value = "/app")
 @Api(value="Application Configuration",tags = {"Application Configuration"})
 public class ApplicationController {
 
@@ -133,20 +133,7 @@ public class ApplicationController {
         return config;
     }
 
-    @GetMapping("/images/{tenant}/{img}")
-    @ApiOperation(value = "Get tenant logo image for <img> tag 'src' property")
-    public void getLogoImage(@ApiParam(name="imageName",value="Name of the image name as returned from Application configuration") @PathVariable("img") String imageName,
-                             HttpServletResponse servletResponse,@ApiParam(name="tenant",value="Tenant code")@PathVariable("tenant") String tenant) {
 
-        Resource image = resourceLoader.getResource("file:" + uploadLocation + "/" + tenant + "/logo/"+imageName);
-        servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
-        try {
-            StreamUtils.copy(image.getInputStream(), servletResponse.getOutputStream());
-
-        } catch (IOException ex) {
-            logger.error(ex.getMessage(), ex);
-        }
-    }
 
     @GetMapping("/grants/{grantId}/kpi-templates/{fileName}")
     @ApiIgnore

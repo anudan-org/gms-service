@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.transaction.Transactional;
 import javax.xml.ws.Response;
+
+import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Grantee;
@@ -12,6 +14,7 @@ import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Role;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.UserRole;
+import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.models.ErrorMessage;
 import org.codealpha.gmsservice.models.UserVO;
 import org.codealpha.gmsservice.services.DashboardService;
@@ -21,11 +24,13 @@ import org.codealpha.gmsservice.services.GranterService;
 import org.codealpha.gmsservice.services.OrganizationService;
 import org.codealpha.gmsservice.services.RoleService;
 import org.codealpha.gmsservice.services.UserService;
+import org.codealpha.gmsservice.validators.DashboardValidator;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -60,6 +65,7 @@ public class UserController {
   private RoleService roleService;
   @Autowired
   private DashboardService dashboardService;
+  @Autowired DashboardValidator dashboardValidator;
 
   @GetMapping(value = "/{userId}")
   public User get(@PathVariable(name = "userId") Long id,
@@ -122,9 +128,17 @@ public class UserController {
     return newUser;
   }
 
-  @PutMapping(value = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-  public User update(@RequestBody UserVO user) {
+  @PutMapping(value = "/{userId}", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+  public User update(@ApiParam(name = "user",value = "User details") @RequestBody UserVO user,@ApiParam(name = "userId",value = "Unique identifier of user") @PathVariable("userId") Long userId,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
     //BCryptPasswordEncoder a  = new BCryptPasswordEncoder
+    dashboardValidator.validate(userId,tenantCode);
+    if(userService.getUserById(userId).getOrganization().getId().longValue()!=user.getOrganization().getId()){
+      throw new ResourceNotFoundException("Invalid credentials");
+    }
+
+    if(userId.longValue()!=user.getId().longValue()){
+      throw new ResourceNotFoundException("Invalid credentials");
+    }
     User savedUser = userService.getUserById(user.getId());
     savedUser.setFirstName(user.getFirstName());
     savedUser.setLastName(user.getLastName());
@@ -149,7 +163,9 @@ public class UserController {
 
   @GetMapping("/{userId}/dashboard")
   public ResponseEntity<DashboardService> getDashbaord(
-      @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
+      @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("id") Long userId) {
+
+    dashboardValidator.validate(userId,tenantCode);
     User user = userService.getUserById(userId);
     Organization userOrg = user.getOrganization();
     Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
@@ -167,22 +183,36 @@ public class UserController {
     return new ResponseEntity<>(null, HttpStatus.OK);
   }
 
-  @PostMapping("/{userId}/validate-pwd")
-  public ResponseEntity<ErrorMessage> validatePassword(@PathVariable("userId") Long userId,
-      @RequestBody String pwd) {
+  @PostMapping("/{id}/validate-pwd")
+  public ResponseEntity<ErrorMessage> validatePassword(@PathVariable("id") Long userId,
+      @RequestBody String pwd,@RequestHeader("X-TENANT-CODE") String tenantCode) {
+    dashboardValidator.validate(userId,tenantCode);
     User user = userService.getUserById(userId);
     if (user.getPassword().equalsIgnoreCase(pwd)) {
       return new ResponseEntity<>(new ErrorMessage(true,""), HttpStatus.OK);
     } else {
-      return new ResponseEntity<>(new ErrorMessage(false,"You have entered an invalid previous password"), HttpStatus.OK);
+      throw new ResourceNotFoundException("You have entered an invalid previous password");
     }
   }
 
-  @PostMapping("/{userId}/pwd")
-  public ResponseEntity<User> changePassword(@PathVariable("userId") Long userId,
-      @RequestBody String pwd) {
+  @PostMapping("/{id}/pwd")
+  public ResponseEntity<User> changePassword(@PathVariable("id") Long userId,
+      @RequestBody String[] pwds,@RequestHeader("X-TENANT-CODE") String tenantCode) {
+    dashboardValidator.validate(userId,tenantCode);
+    if(pwds.length!=3){
+      throw new ResourceNotFoundException("Invalid information sent for setting password");
+    }
+    if(!pwds[1].equalsIgnoreCase(pwds[2])){
+      throw new ResourceNotFoundException("New passwords do not match");
+    }
+    if(!pwds[1].matches("((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,20})") && !pwds[2].matches("((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,20})")){
+      throw new ResourceNotFoundException("Password must contain at least one digit, one lowercase character, one uppercase character, one special symbols in the list \"@#$%\" and between 6-20 characters.");
+    }
+    if (!userService.getUserById(userId).getPassword().equalsIgnoreCase(pwds[0])) {
+      throw new ResourceNotFoundException("You have entered an invalid previous password");
+    }
     User user = userService.getUserById(userId);
-    user.setPassword(pwd);
+    user.setPassword(pwds[1]);
     user = userService.save(user);
     return new ResponseEntity<>(user, HttpStatus.OK);
   }
