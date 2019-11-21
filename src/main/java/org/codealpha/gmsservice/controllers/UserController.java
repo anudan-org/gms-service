@@ -163,7 +163,7 @@ public class UserController {
 
   @GetMapping("/{userId}/dashboard")
   public ResponseEntity<DashboardService> getDashbaord(
-      @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("id") Long userId) {
+      @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
 
     dashboardValidator.validate(userId,tenantCode);
     User user = userService.getUserById(userId);

@@ -22,9 +22,10 @@ public class NotificationsController{
 
 	@GetMapping("/")
 	@ApiOperation("Get notifications for logged in user")
-	public List<Notifications> getUserNotifications(@ApiParam(name = "userId",value = "Unique identifier of logger in user") @PathVariable("userId") Long userId){
+	public List<Notifications> getUserNotifications(@ApiParam(name = "userId",value = "Unique identifier of logger in user") @PathVariable("userId") Long userId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode){
 		/*List<Notifications> notifications = notificationsService.getUserNotifications(userId, false);
 		notifications.sort((a,b)->a.getPostedOn().compareTo(b.getPostedOn()));*/
+		notificationValidator.validate(userId,tenantCode);
 		return notificationsService.getAllUserNotifications(userId);
 	}
 
@@ -37,9 +38,5 @@ public class NotificationsController{
 		notif.setRead(true);
 		notif = notificationsService.saveNotification(notif);
 		return notif;
-	public List<Notifications> getUserNotifications(@RequestHeader("X-TENANT-CODE") String tenantCode, @ApiParam(name = "userId",value = "Unique identifier of logger in user") @PathVariable("userId") Long userId){
-		notificationValidator.validate(userId,tenantCode);
-		return notificationsService.getUserNotifications(userId, false);
 	}
-
 }

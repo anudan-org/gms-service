@@ -14,6 +14,7 @@ import org.codealpha.gmsservice.exceptions.InvalidTenantException;
 import org.codealpha.gmsservice.services.OrganizationService;
 import org.codealpha.gmsservice.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +38,8 @@ public class AuthProvider implements AuthenticationProvider {
   private UserService userService;
   @Autowired
   private OrganizationService organizationService;
+    @Value("${spring.recaptcha-secret-key}")
+    private String reCaptchaKey;
 
 
   @Override
@@ -51,7 +54,7 @@ public class AuthProvider implements AuthenticationProvider {
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("https://www.google.com/recaptcha/api/siteverify");
         LinkedMultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
 
-        params.add("secret", "6Lf5a8MUAAAAAKzpZvN2yKoLoE7O0E64bcgyl3de");
+        params.add("secret", reCaptchaKey);
         params.add("response", captcha);
         HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity =
                 new HttpEntity<>(params);

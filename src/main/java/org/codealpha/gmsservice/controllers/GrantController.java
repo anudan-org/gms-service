@@ -1429,8 +1429,8 @@ public class GrantController {
                 previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
                 transition.getAction(), "Yes",
                 "Please review.",
-                note != null && !note.trim().equalsIgnoreCase("") ? "Yes" : "No",
-                note != null && !note.trim().equalsIgnoreCase("") ? "Please review." : "");
+                grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
+                grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "");
         usersToNotify.stream().forEach(u -> {
 
 
