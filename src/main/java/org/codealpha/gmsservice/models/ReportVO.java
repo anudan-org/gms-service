@@ -1,72 +1,50 @@
-package org.codealpha.gmsservice.entities;
+package org.codealpha.gmsservice.models;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModelProperty;
-import org.codealpha.gmsservice.models.AssignedTo;
-import org.codealpha.gmsservice.models.ReportAssignmentsVO;
-import org.codealpha.gmsservice.models.ReportDetailVO;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.services.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 
-import javax.persistence.*;
-import java.text.SimpleDateFormat;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-@Entity(name = "reports")
-public class Report {
+public class ReportVO {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private static Logger logger = LoggerFactory.getLogger(ReportVO.class);
+    
     private Long id;
-    @Column(columnDefinition = "text") private String name;
-    @Column private Date startDate;
-    @Transient private String stDate;
-    @Column private Date endDate;
-    @Transient private String enDate;
-    @Column private Date dueDate;
-    @Transient private String dDate;
-    @OneToOne @JoinColumn(referencedColumnName = "id") private WorkflowStatus status;
-    @Column private Date createdAt;
-    @Column private Long createdBy;
-    @Column private Date updatedAt;
-    @Column private Long updatedBy;
-    @Column private String type;
-    @OneToOne @JoinColumn(referencedColumnName = "id") private GranterReportTemplate template;
-    @Transient ReportDetailVO reportDetails;
-    @Transient private List<ReportAssignmentsVO> workflowAssignments;
-    @OneToMany(mappedBy = "report",fetch = FetchType.EAGER)
-    @JsonProperty("stringAttribute")
-    @ApiModelProperty(name = "stringAttributes",value = "Report template structure with values",dataType = "List<ReportStringAttributes>")
+    private String name;
+    private Date startDate;
+    private Date endDate;
+    private Date dueDate;
+    private WorkflowStatus status;
+    private Date createdAt;
+    private Long createdBy;
+    private Date updatedAt;
+    private Long updatedBy;
+    private String type;
+    private GranterReportTemplate template;
+    private ReportDetailVO reportDetails;
+    private List<ReportAssignment> assignments;
+    @JsonIgnore
     private List<ReportStringAttribute> stringAttributes;
-    @ManyToOne
-    @JoinColumn(referencedColumnName = "id")
     private Grant grant;
-    @Transient
-    @ApiModelProperty(name = "securityCode",value = "Secure code for report")
     private String securityCode;
-
-    @Column(columnDefinition = "text")
-    @ApiModelProperty(name = "note",value = "Current note associated with the grant",dataType = "String")
     private String note;
-
-    @Column
-    @ApiModelProperty(name = "noteAdded",value = "Date when current note was associated with the grant",dataType = "Date")
     private Date noteAdded;
-
-    @Column
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @ApiModelProperty(name = "noteAddedBy",value = "Email id of the user who added the current note",dataType = "String")
     private String noteAddedBy;
-
-    @Transient
-    @ApiModelProperty(name = "noteAddedByUser",value = "User who added the current note",dataType = "User")
     private User noteAddedByUser;
-
-    @Transient
-    @ApiModelProperty(name = "currentAssignment",value = "Current owner of grant based on grant status",dataType = "List<AssignedTo>")
     private List<AssignedTo> currentAssignment;
-    @Transient
+    private List<ReportAssignmentsVO> workflowAssignments;
     private boolean canManage;
-
+    private String stDate;
+    private String enDate;
+    private String dDate;
 
     public Long getId() {
         return id;
@@ -156,12 +134,12 @@ public class Report {
         this.grant = grant;
     }
 
-    public void setWorkflowAssignments(List<ReportAssignmentsVO> workflowAssignments) {
-        this.workflowAssignments = workflowAssignments;
+    public void setAssignments(List<ReportAssignment> assignments) {
+        this.assignments = assignments;
     }
 
-    public List<ReportAssignmentsVO> getWorkflowAssignments() {
-        return workflowAssignments;
+    public List<ReportAssignment> getAssignments() {
+        return assignments;
     }
 
     public String getType() {
@@ -244,20 +222,24 @@ public class Report {
         this.currentAssignment = currentAssignment;
     }
 
+    public List<ReportAssignmentsVO> getWorkflowAssignments() {
+        return workflowAssignments;
+    }
+
+    public void setWorkflowAssignments(List<ReportAssignmentsVO> workflowAssignments) {
+        this.workflowAssignments = workflowAssignments;
+    }
+
+    public boolean isCanManage() {
+        return canManage;
+    }
 
     public void setCanManage(boolean canManage) {
         this.canManage = canManage;
     }
 
-    public boolean getCanManage() {
-        return canManage;
-    }
-
     public String getStDate() {
-        if(startDate==null){
-            return "";
-        }
-        return new SimpleDateFormat("yyyy-MM-dd").format(startDate);
+        return stDate;
     }
 
     public void setStDate(String stDate) {
@@ -265,10 +247,7 @@ public class Report {
     }
 
     public String getEnDate() {
-        if(endDate==null){
-            return "";
-        }
-        return new SimpleDateFormat("yyyy-MM-dd").format(endDate);
+        return enDate;
     }
 
     public void setEnDate(String enDate) {
@@ -276,13 +255,50 @@ public class Report {
     }
 
     public String getdDate() {
-        if(dueDate==null){
-            return "";
-        }
-        return new SimpleDateFormat("yyyy-MM-dd").format(dueDate);
+        return dDate;
     }
 
     public void setdDate(String dDate) {
         this.dDate = dDate;
+    }
+
+    // BUILD THE VO
+
+    public ReportVO build(Report report, List<ReportSpecificSection> sections,UserService userService) {
+        PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(report.getClass());
+        ReportVO vo = new ReportVO();
+        for (PropertyDescriptor descriptor : propertyDescriptors) {
+            if (!descriptor.getName().equalsIgnoreCase("class")) {
+                try {
+                    Object value = descriptor.getReadMethod().invoke(report);
+                    PropertyDescriptor voPd = BeanUtils
+                            .getPropertyDescriptor(vo.getClass(), descriptor.getName());
+                    if (voPd.getName().equalsIgnoreCase("stringAttributes")) {
+                        ReportDetailVO reportDetailVO = null;
+                        reportDetailVO = vo.getReportDetails();
+                        if(reportDetailVO == null){
+                            reportDetailVO = new ReportDetailVO();
+                        }
+                        reportDetailVO = reportDetailVO.buildStringAttributes(sections, (List<ReportStringAttribute>) value);
+                        vo.setReportDetails(reportDetailVO);
+                    }else if (voPd.getName().equalsIgnoreCase("noteAddedBy") || voPd.getName().equalsIgnoreCase("noteAddedByUser")) {
+                        vo.setNoteAddedBy(report.getNoteAddedBy());
+                        vo.setNoteAddedByUser(userService.getUserByEmailAndOrg(report.getNoteAddedBy(),report.getGrant().getGrantorOrganization()));
+
+                    } else {
+                        voPd.getWriteMethod().invoke(vo, value);
+                    }
+                } catch (IllegalAccessException e) {
+                    logger.error(e.getMessage(), e);
+                } catch (InvocationTargetException e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
+        }
+
+        Collections.sort(vo.getReportDetails().getSections());
+
+
+        return vo;
     }
 }

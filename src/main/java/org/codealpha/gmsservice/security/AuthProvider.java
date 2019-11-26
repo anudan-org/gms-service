@@ -40,6 +40,8 @@ public class AuthProvider implements AuthenticationProvider {
   private OrganizationService organizationService;
     @Value("${spring.recaptcha-secret-key}")
     private String reCaptchaKey;
+  @Value("${spring.use-captcha}")
+  private Boolean useCaptcha;
 
 
   @Override
@@ -50,7 +52,7 @@ public class AuthProvider implements AuthenticationProvider {
     String tenantCode = ((Map<String,String>) authentication.getDetails()).get("TOKEN");
     String captcha = ((Map<String,String>) authentication.getDetails()).get("CAPTCHA");
 
-    if(provider.equalsIgnoreCase("ANUDAN")) {
+    if(provider.equalsIgnoreCase("ANUDAN") && useCaptcha) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("https://www.google.com/recaptcha/api/siteverify");
         LinkedMultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
 

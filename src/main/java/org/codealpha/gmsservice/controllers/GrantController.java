@@ -368,7 +368,7 @@ public class GrantController {
 
     @PutMapping("/{grantId}/section/{sectionId}/field/{fieldId}")
     @ApiOperation("Update field information")
-    public FieldInfo updateField(@ApiParam(name = "sectionId",value = "Unique identifier of section")@PathVariable("sectionId") Long sectionId,@ApiParam(name="attributeToSave",value = "Updated attribute to be saved") @RequestBody AttributeToSaveVO attributeToSave,@ApiParam(name="grantId",value = "Unique identifier of the grant") @PathVariable("id") Long grantId,@ApiParam(name = "fieldId",value = "Unique identifier of the field being updated") @PathVariable("fieldId") Long fieldId,@ApiParam(name="userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public FieldInfo updateField(@ApiParam(name = "sectionId",value = "Unique identifier of section")@PathVariable("sectionId") Long sectionId,@ApiParam(name="attributeToSave",value = "Updated attribute to be saved") @RequestBody AttributeToSaveVO attributeToSave,@ApiParam(name="grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "fieldId",value = "Unique identifier of the field being updated") @PathVariable("fieldId") Long fieldId,@ApiParam(name="userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         grantValidator.validate(grantService,grantId,attributeToSave.getGrant(),userId,tenantCode);
         grantValidator.validateSectionExists(grantService,attributeToSave.getGrant(),sectionId);
         grantValidator.validateFieldExists(grantService,attributeToSave.getGrant(),sectionId,fieldId);
@@ -1611,11 +1611,12 @@ public class GrantController {
 
         Date now = DateTime.now().toDate();
 
-        TreeMap<Date,List> yrTree = new TreeMap(yearlyPeriods);
-        TreeMap<Date,List> hyTree = new TreeMap(halfyearlyPeriods);
-        TreeMap<Date,List> qTree = new TreeMap(quarterlyPeriods);
-        TreeMap<Date,List> mtTree = new TreeMap(monthlyPeriods);
+        TreeMap<Date,List<SectionAttributesVO>> yrTree = new TreeMap(yearlyPeriods);
+        TreeMap<Date,List<SectionAttributesVO>> hyTree = new TreeMap(halfyearlyPeriods);
+        TreeMap<Date,List<SectionAttributesVO>> qTree = new TreeMap(quarterlyPeriods);
+        TreeMap<Date,List<SectionAttributesVO>> mtTree = new TreeMap(monthlyPeriods);
         final int[] i = {1};
+        GranterReportTemplate reportTemplate = reportService.getDefaultTemplate();
 
         yrTree.forEach((entry,val) -> {
             Report report = new Report();
@@ -1625,11 +1626,16 @@ public class GrantController {
             report.setEndDate(entry);
             report.setGrant(grant);
             report.setName("Yearly Progress Report");
+            report.setTemplate(reportTemplate);
             report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.YEARLY.value()).toDate());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",grant.getGrantorOrganization().getId()));
             report.setType("Yearly");
+
             report = reportService.saveReport(report);
-            report.setAssignments(reportService.saveAssignments(report,tenantCode,user.getId()));
+
+            _createSectionsForReports(reportTemplate, val, report);
+
+            reportService.saveAssignments(report,tenantCode,user.getId());
             i[0]++;
         });
 
@@ -1643,11 +1649,13 @@ public class GrantController {
             report.setEndDate(entry);
             report.setGrant(grant);
             report.setName("Half-Yearly Progress Report");
+            report.setTemplate(reportTemplate);
             report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.HALF_YEARLY.value()).toDate());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",grant.getGrantorOrganization().getId()));
             report.setType("Half-Yearly");
             report = reportService.saveReport(report);
-            report.setAssignments(reportService.saveAssignments(report,tenantCode,user.getId()));
+            _createSectionsForReports(reportTemplate, val, report);
+            reportService.saveAssignments(report,tenantCode,user.getId());
             i[0]++;
         });
 
@@ -1661,11 +1669,13 @@ public class GrantController {
             report.setEndDate(entry);
             report.setGrant(grant);
             report.setName("Quarterly Progress Report");
+            report.setTemplate(reportTemplate);
             report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.QUARTER.value()).toDate());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",grant.getGrantorOrganization().getId()));
             report.setType("Quarterly");
             report = reportService.saveReport(report);
-            report.setAssignments(reportService.saveAssignments(report,tenantCode,user.getId()));
+            _createSectionsForReports(reportTemplate, val, report);
+            reportService.saveAssignments(report,tenantCode,user.getId());
             i[0]++;
         });
 
@@ -1679,16 +1689,59 @@ public class GrantController {
             report.setEndDate(entry);
             report.setGrant(grant);
             report.setName("Monthly Progress Report");
+            report.setTemplate(reportTemplate);
             report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.MONTHLY.value()).toDate());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",grant.getGrantorOrganization().getId()));
             report.setType("Monthly");
             report = reportService.saveReport(report);
-            report.setAssignments(reportService.saveAssignments(report,tenantCode,user.getId()));
+            _createSectionsForReports(reportTemplate, val, report);
+            reportService.saveAssignments(report,tenantCode,user.getId());
             i[0]++;
         });
 
 
         System.out.println("here");
+    }
+
+    private void _createSectionsForReports(GranterReportTemplate reportTemplate, List<SectionAttributesVO> val, Report report) {
+        List<GranterReportSection> granterReportSections = reportTemplate.getSections();
+        report.setStringAttributes(new ArrayList<>());
+
+        for (GranterReportSection reportSection : granterReportSections) {
+            ReportSpecificSection specificSection = new ReportSpecificSection();
+            specificSection.setDeletable(true);
+            specificSection.setGranter((Granter)report.getGrant().getGrantorOrganization());
+            specificSection.setReportId(report.getId());
+            specificSection.setReportTemplateId(reportTemplate.getId());
+            specificSection.setSectionName(reportSection.getSectionName());
+            specificSection.setSectionOrder(reportSection.getSectionOrder());
+
+            specificSection = reportService.saveReportSpecificSection(specificSection);
+            ReportSpecificSection finalSpecificSection = specificSection;
+            Report finalReport = report;
+            val.forEach(attribVo -> {
+                ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
+                sectionAttribute.setAttributeOrder(attribVo.getAttributeOrder());
+                sectionAttribute.setDeletable(attribVo.isDeletable());
+                sectionAttribute.setFieldName(attribVo.getFieldName());
+                sectionAttribute.setFieldType(attribVo.getFieldType());
+                sectionAttribute.setGranter(finalSpecificSection.getGranter());
+                sectionAttribute.setRequired(attribVo.isRequired());
+                sectionAttribute.setSection(finalSpecificSection);
+                sectionAttribute.setCanEdit(false);
+                sectionAttribute = reportService.saveReportSpecificSectionAttribute(sectionAttribute);
+
+                ReportStringAttribute stringAttribute = new ReportStringAttribute();
+
+                stringAttribute.setSection(finalSpecificSection);
+                stringAttribute.setReport(finalReport);
+                stringAttribute.setSectionAttribute(sectionAttribute);
+                stringAttribute.setGrantLevelTarget(attribVo.getTarget());
+                stringAttribute.setFrequency(attribVo.getFrequency());
+
+                stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
+            });
+        }
     }
 
 

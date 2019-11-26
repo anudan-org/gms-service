@@ -20,6 +20,8 @@ public class SectionAttributesVO {
   private String frequency;
   private boolean deletable;
   private boolean required;
+  private boolean canEdit;
+  private String grantLevelTarget;
 
   public String getFieldName() {
     return fieldName;
@@ -115,6 +117,22 @@ public class SectionAttributesVO {
 
   public void setAttachments(List<GrantStringAttributeAttachments> attachments) {
     this.attachments = attachments;
+  }
+
+  public boolean isCanEdit() {
+    return canEdit;
+  }
+
+  public void setCanEdit(boolean canEdit) {
+    this.canEdit = canEdit;
+  }
+
+  public String getGrantLevelTarget() {
+    return grantLevelTarget;
+  }
+
+  public void setGrantLevelTarget(String grantLevelTarget) {
+    this.grantLevelTarget = grantLevelTarget;
   }
 
   @Override
