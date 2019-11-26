@@ -13,4 +13,5 @@ spring:
   supported-file-types: pdf
   recaptcha-secret-key: changeit
   send-mail: false
+  use-captcha: false
 
