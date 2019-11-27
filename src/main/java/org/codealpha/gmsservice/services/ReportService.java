@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ReportService {
@@ -280,5 +281,42 @@ public class ReportService {
 
     public void deleteSection(ReportSpecificSection section) {
         reportSpecificSectionRepository.delete(section);
+    }
+
+    public List<WorkFlowPermission> getFlowAuthority(Report report, Long userId) {
+        List<WorkFlowPermission> permissions = new ArrayList<>();
+        if(reportAssignmentRepository.findByReportId(report.getId()).stream().filter(ass -> ass.getStateId()==report.getStatus().getId() && ass.getAssignment()==userId).findFirst().isPresent()){
+            List<WorkflowStatusTransition> allowedTransitions = workflowStatusTransitionRepository.findByWorkflow(workflowStatusRepository.getById(report.getStatus().getId()).getWorkflow()).stream().filter(st -> st.getFromState().getId()==report.getStatus().getId()).collect(Collectors.toList());
+            if(allowedTransitions!=null && allowedTransitions.size()>0){
+                allowedTransitions.forEach(tr ->{
+                    WorkFlowPermission workFlowPermission = new WorkFlowPermission();
+                    workFlowPermission.setAction(tr.getAction());
+                    workFlowPermission.setFromName(tr.getFromState().getName());
+                    workFlowPermission.setFromStateId(tr.getFromState().getId());
+                    workFlowPermission.setId(tr.getId());
+                    workFlowPermission.setNoteRequired(tr.getNoteRequired());
+                    workFlowPermission.setToName(tr.getToState().getName());
+                    workFlowPermission.setToStateId(tr.getToState().getId());
+                    permissions.add(workFlowPermission);
+                });
+            }
+        }
+        return permissions;
+    }
+
+    public ReportAssignment getReportAssignmentById(Long id) {
+        return reportAssignmentRepository.findById(id).get();
+    }
+
+    public void saveAssignmentForReport(ReportAssignment assignment) {
+        reportAssignmentRepository.save(assignment);
+    }
+
+    public String[] buildNotificationContent(Report finalReport, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment,String hasNotes,String hasNotesComment) {
+
+        String message = msgConfigValue.replace("%GRANT_NAME%", finalReport.getName()).replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner).replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner).replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges).replace("%HAS_CHANGES_COMMENT%", hasChangesComment).replace("%HAS_NOTES%",hasNotes).replace("%HAS_NOTES_COMMENT%",hasNotesComment);
+        String subject = subConfigValue.replace("%GRANT_NAME%", finalReport.getName());
+
+        return new String[]{subject, message};
     }
 }

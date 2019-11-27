@@ -43,6 +43,8 @@ public class Report {
     @Transient
     @ApiModelProperty(name = "securityCode",value = "Secure code for report")
     private String securityCode;
+    @Transient
+    private List<User> granteeUsers;
 
     @Column(columnDefinition = "text")
     @ApiModelProperty(name = "note",value = "Current note associated with the grant",dataType = "String")
@@ -66,6 +68,8 @@ public class Report {
     private List<AssignedTo> currentAssignment;
     @Transient
     private boolean canManage;
+    @Transient
+    private List<WorkFlowPermission> flowAuthorities;
 
 
     public Long getId() {
@@ -284,5 +288,21 @@ public class Report {
 
     public void setdDate(String dDate) {
         this.dDate = dDate;
+    }
+
+    public List<WorkFlowPermission> getFlowAuthorities() {
+        return flowAuthorities;
+    }
+
+    public void setFlowAuthorities(List<WorkFlowPermission> flowAuthorities) {
+        this.flowAuthorities = flowAuthorities;
+    }
+
+    public List<User> getGranteeUsers() {
+        return granteeUsers;
+    }
+
+    public void setGranteeUsers(List<User> granteeUsers) {
+        this.granteeUsers = granteeUsers;
     }
 }

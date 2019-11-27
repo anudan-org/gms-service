@@ -45,6 +45,8 @@ public class ReportVO {
     private String stDate;
     private String enDate;
     private String dDate;
+    private List<WorkFlowPermission> flowAuthorities;
+    private List<User> granteeUsers;
 
     public Long getId() {
         return id;
@@ -260,6 +262,22 @@ public class ReportVO {
 
     public void setdDate(String dDate) {
         this.dDate = dDate;
+    }
+
+    public List<WorkFlowPermission> getFlowAuthorities() {
+        return flowAuthorities;
+    }
+
+    public void setFlowAuthorities(List<WorkFlowPermission> flowAuthorities) {
+        this.flowAuthorities = flowAuthorities;
+    }
+
+    public List<User> getGranteeUsers() {
+        return granteeUsers;
+    }
+
+    public void setGranteeUsers(List<User> granteeUsers) {
+        this.granteeUsers = granteeUsers;
     }
 
     // BUILD THE VO

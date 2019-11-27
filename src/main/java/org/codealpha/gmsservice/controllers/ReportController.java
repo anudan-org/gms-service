@@ -8,6 +8,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
+import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
@@ -25,10 +26,12 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/user/{userId}/report")
@@ -49,10 +52,17 @@ public class ReportController {
     private TemplateLibraryService templateLibraryService;
     @Autowired
     private ResourceLoader resourceLoader;
+    @Autowired ReportSnapshotService reportSnapshotService;
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
     @Value("${spring.supported-file-types}")
     private String[] supportedFileTypes;
+    @Autowired
+    private WorkflowStatusTransitionService workflowStatusTransitionService;
+    @Autowired
+    private AppConfigService appConfigService;
+    @Autowired private CommonEmailSevice commonEmailSevice;
+    @Autowired private NotificationsService notificationsService;
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -64,6 +74,14 @@ public class ReportController {
 
         }
         return reports;
+    }
+
+    @GetMapping("/{reportId}")
+    public Report getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable("reportId") Long reportId) {
+        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        Report report = reportService.getReportById(reportId);
+
+        return _ReportToReturn(report,userId);
     }
 
     private Report _ReportToReturn(Report report, Long userId) {
@@ -110,6 +128,7 @@ public class ReportController {
 
         report.setNoteAddedBy(reportVO.getNoteAddedBy());
         report.setNoteAddedByUser(reportVO.getNoteAddedByUser());
+        report.setGranteeUsers(userService.getGranteeUsers(report.getGrant().getOrganization()));
 
         report.getWorkflowAssignments().sort((a, b) -> a.getId().compareTo(b.getId()));
         report.getReportDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
@@ -120,6 +139,7 @@ public class ReportController {
         }
 
         report.setSecurityCode(reportService.buildHashCode(report));
+        report.setFlowAuthorities(reportService.getFlowAuthority(report,userId));
         return report;
     }
 
@@ -542,5 +562,124 @@ public class ReportController {
         }
         report = _ReportToReturn(report,userId);
         return report;
+    }
+
+    @PostMapping("/{reportId}/assignment")
+    @ApiOperation("Set owners for report workflow states")
+    public Report saveReportAssignments(@ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "reportId",value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,@ApiParam(name = "assignmentModel",value = "Set assignment for report per workflow state") @RequestBody ReportAssignmentModel assignmentModel,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        Report report = saveReport(reportId,assignmentModel.getReport(),userId,tenantCode);
+        for (ReportAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
+            ReportAssignment assignment = null;
+            if (assignmentsVO.getId() == null) {
+                assignment = new ReportAssignment();
+                assignment.setStateId(assignmentsVO.getStateId());
+                assignment.setReportId(assignmentsVO.getReportId());
+            } else {
+                assignment = reportService.getReportAssignmentById(assignmentsVO.getId());
+            }
+
+
+            assignment.setAssignment(assignmentsVO.getAssignmentId());
+
+            reportService.saveAssignmentForReport(assignment);
+        }
+
+        report = _ReportToReturn(report,userId);
+        return report;
+    }
+
+    @GetMapping("{reportId}/changeHistory")
+    public ReportSnapshot getReportHistory(@PathVariable("reportId") Long reportId,@PathVariable("userId") Long userId){
+        Report report = reportService.getReportById(reportId);
+
+        return reportSnapshotService.getSnapshotByReportIdAndAssignedToIdAndStatusId(reportId,userId,report.getStatus().getId());
+    }
+
+    @PostMapping("/{reportId}/flow/{fromState}/{toState}")
+    @ApiOperation("Move report through workflow")
+    public Report MoveReportState(@RequestBody ReportWithNote reportWithNote, @ApiParam(name = "userId",value = "Unique identified of logged in user") @PathVariable("userId") Long userId,
+                                @ApiParam(name = "reportId",value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,@ApiParam(name = "fromStateId",value = "Unique identifier of the starting state of the report in the workflow") @PathVariable("fromState") Long fromStateId,
+                                @ApiParam(name="toStateId",value = "Unique identifier of the ending state of the report in the workflow") @PathVariable("toState") Long toStateId,
+                                @ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+
+        /*grantValidator.validate(grantService,grantId,reportWithNote.getGrant(),userId,tenantCode);
+        grantValidator.validateFlow(grantService,reportWithNote.getGrant(),grantId,userId,fromStateId,toStateId);*/
+
+        Report report = reportService.getReportById(reportId);
+        Report finalReport = report;
+        WorkflowStatus previousState = report.getStatus();
+        User previousOwner = userService.getUserById(reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == finalReport.getStatus().getId().longValue()).collect(Collectors.toList()).get(0).getAssignment());
+        report.setStatus(workflowStatusService.findById(toStateId));
+        if (reportWithNote.getNote()!=null && !reportWithNote.getNote().trim().equalsIgnoreCase("")){
+            report.setNote(reportWithNote.getNote());
+            report.setNoteAdded(new Date());
+            report.setNoteAddedBy(userService.getUserById(userId).getEmailId());
+        }
+        report.setUpdatedAt(DateTime.now().toDate());
+        report.setUpdatedBy(userId);
+        report = reportService.saveReport(report);
+
+        User user = userService.getUserById(userId);
+        WorkflowStatus toStatus = workflowStatusService.findById(toStateId);
+
+        List<User> usersToNotify = new ArrayList<>();//userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
+
+        List<ReportAssignment> assigments = reportService.getAssignmentsForReport(report);
+        assigments.forEach(ass -> usersToNotify.add(userService.getUserById(ass.getAssignment())));
+
+        User currentOwner = userService.getUserById(reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == toStateId.longValue()).collect(Collectors.toList()).get(0).getAssignment());
+
+        WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState, toStatus);
+
+        String notificationContent[] = reportService.buildNotificationContent(finalReport, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
+                        .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(), appConfigService
+                        .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
+                workflowStatusService.findById(toStateId).getName(), currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()),
+                previousState.getName(),
+                previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                transition.getAction(), "Yes",
+                "Please review.",
+                reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
+                reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "");
+        usersToNotify.stream().forEach(u -> {
+
+
+            commonEmailSevice.sendMail(u.getEmailId(), notificationContent[0], notificationContent[1], new String[]{appConfigService
+                    .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+        });
+        usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(), finalReport.getId()));
+
+        //}
+
+        report = _ReportToReturn(report,userId);
+        _saveSnapShot(report);
+
+        return report;
+
+    }
+
+    private void _saveSnapShot(Report report) {
+
+        try {
+            for (AssignedTo assignment : report.getCurrentAssignment()) {
+                ReportSnapshot snapshot = new ReportSnapshot();
+                snapshot.setAssignedToId(assignment.getUser().getId());
+                snapshot.setEndDate(report.getEndDate());
+                snapshot.setDueDate(report.getDueDate());
+                snapshot.setReportId(report.getId());
+                snapshot.setName(report.getName());
+                snapshot.setStartDate(report.getStartDate());
+                snapshot.setStatusId(report.getStatus().getId());
+                snapshot.setStringAttributes(new ObjectMapper().writeValueAsString(report.getReportDetails()));
+                reportSnapshotService.saveReportSnapshot(snapshot);
+            }
+        } catch (JsonProcessingException e) {
+            logger.error(e.getMessage(),e);
+        }
+
+
     }
 }

@@ -110,8 +110,10 @@ public class ApplicationController {
                 config.setGrantInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", org.getId()));
                 config.setSubmissionInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", org.getId()));
                 config.setWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANT",org.getId()));
+                config.setReportWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("REPORT",org.getId()));
                 config.setTenantUsers(userService.getAllTenantUsers(org));
                 config.setTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"GRANT"));
+                config.setReportTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"REPORT"));
                 config.setGranteeOrgs(organizationService.getAssociatedGranteesForTenant(org));
                 config.setDaysBeforePublishingReport(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(orgId, AppConfiguration.REPORT_SETUP_INTERVAL).getConfigValue()));
             } else {
