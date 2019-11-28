@@ -679,7 +679,15 @@ public class ReportController {
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(),e);
         }
+    }
 
+    @GetMapping("/{reportId}/history/")
+    public List<ReportHistory> getReportHistory(@PathVariable("reportId") Long reportId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
+        List<ReportHistory> history = reportService.getReportHistory(reportId);
+        for(ReportHistory historyEntry : history){
+            historyEntry.setNoteAddedByUser(userService.getUserByEmailAndOrg(historyEntry.getNoteAddedBy(),historyEntry.getGrant().getGrantorOrganization()));
+        }
+        return history;
     }
 }

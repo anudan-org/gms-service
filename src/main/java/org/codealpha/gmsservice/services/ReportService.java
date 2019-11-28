@@ -40,6 +40,7 @@ public class ReportService {
     @Autowired private TemplateLibraryRepository templateLibraryRepository;
     @Autowired private GranterReportSectionAttributeRepository granterReportSectionAttributeRepository;
     @Autowired private ReportStringAttributeAttachmentsRepository reportStringAttributeAttachmentsRepository;
+    @Autowired private ReportHistoryRepository reportHistoryRepository;
 
     public Report saveReport(Report report){
         return reportRepository.save(report);
@@ -318,5 +319,9 @@ public class ReportService {
         String subject = subConfigValue.replace("%GRANT_NAME%", finalReport.getName());
 
         return new String[]{subject, message};
+    }
+
+    public List<ReportHistory> getReportHistory(Long reportId) {
+        return reportHistoryRepository.findByReportId(reportId);
     }
 }
