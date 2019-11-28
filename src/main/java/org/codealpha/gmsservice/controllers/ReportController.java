@@ -30,6 +30,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -608,12 +609,13 @@ public class ReportController {
         Report report = reportService.getReportById(reportId);
         Report finalReport = report;
         WorkflowStatus previousState = report.getStatus();
+
         User previousOwner = userService.getUserById(reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == finalReport.getStatus().getId().longValue()).collect(Collectors.toList()).get(0).getAssignment());
         report.setStatus(workflowStatusService.findById(toStateId));
         if (reportWithNote.getNote()!=null && !reportWithNote.getNote().trim().equalsIgnoreCase("")){
             report.setNote(reportWithNote.getNote());
             report.setNoteAdded(new Date());
-            report.setNoteAddedBy(userService.getUserById(userId).getEmailId());
+            report.setNoteAddedBy(userId);
         }
         report.setUpdatedAt(DateTime.now().toDate());
         report.setUpdatedBy(userId);
@@ -627,7 +629,13 @@ public class ReportController {
         List<ReportAssignment> assigments = reportService.getAssignmentsForReport(report);
         assigments.forEach(ass -> usersToNotify.add(userService.getUserById(ass.getAssignment())));
 
-        User currentOwner = userService.getUserById(reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == toStateId.longValue()).collect(Collectors.toList()).get(0).getAssignment());
+        Optional<ReportAssignment> repAss = reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == toStateId.longValue()).findAny();
+        User currentOwner = null;
+        String currentOwnerName="";
+        if(repAss.isPresent()) {
+            currentOwner = userService.getUserById(repAss.get().getAssignment());
+            currentOwnerName = currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName());
+        }
 
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState, toStatus);
 
@@ -636,7 +644,7 @@ public class ReportController {
                                 AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(), appConfigService
                         .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
-                workflowStatusService.findById(toStateId).getName(), currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()),
+                workflowStatusService.findById(toStateId).getName(), currentOwnerName,
                 previousState.getName(),
                 previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
                 transition.getAction(), "Yes",
@@ -656,6 +664,30 @@ public class ReportController {
 
         report = _ReportToReturn(report,userId);
         _saveSnapShot(report);
+
+        //Temporary block to continue testing as Grantee has submitted the report
+        if(toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")){
+            ReportWithNote withNote = new ReportWithNote();
+
+            report.getReportDetails().getSections().forEach(sec ->{
+                if(sec.getAttributes()!=null){
+                    sec.getAttributes().forEach(attr -> {
+                        if(attr.getFieldType().equalsIgnoreCase("kpi")) {
+                            attr.setActualTarget(String.valueOf(Math.round(Math.random() * 100)));
+                        }
+                    });
+                }
+            });
+
+            report = saveReport(reportId,report,userId,tenantCode);
+
+            withNote.setNote("Grantee has submitted");
+            withNote.setReport(report);
+            final Report fReport = report;
+            ReportAssignmentsVO ass = report.getWorkflowAssignments().stream().filter(a -> a.getStateId().longValue()==fReport.getStatus().getId().longValue()).findFirst().get();
+
+            MoveReportState(withNote,userService.getUserById(ass.getAssignmentId()).getId(),reportId,report.getStatus().getId(),workflowStatusTransitionService.getByFromStatus(report.getStatus()).getToState().getId(),tenantCode);
+        }
 
         return report;
 
@@ -686,7 +718,7 @@ public class ReportController {
 
         List<ReportHistory> history = reportService.getReportHistory(reportId);
         for(ReportHistory historyEntry : history){
-            historyEntry.setNoteAddedByUser(userService.getUserByEmailAndOrg(historyEntry.getNoteAddedBy(),historyEntry.getGrant().getGrantorOrganization()));
+            historyEntry.setNoteAddedByUser(userService.getUserById(historyEntry.getNoteAddedBy()));
         }
         return history;
     }

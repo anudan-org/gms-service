@@ -57,7 +57,7 @@ public class Report {
     @Column
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @ApiModelProperty(name = "noteAddedBy",value = "Email id of the user who added the current note",dataType = "String")
-    private String noteAddedBy;
+    private Long noteAddedBy;
 
     @Transient
     @ApiModelProperty(name = "noteAddedByUser",value = "User who added the current note",dataType = "User")
@@ -224,11 +224,11 @@ public class Report {
         this.noteAdded = noteAdded;
     }
 
-    public String getNoteAddedBy() {
+    public Long getNoteAddedBy() {
         return noteAddedBy;
     }
 
-    public void setNoteAddedBy(String noteAddedBy) {
+    public void setNoteAddedBy(Long noteAddedBy) {
         this.noteAddedBy = noteAddedBy;
     }
 

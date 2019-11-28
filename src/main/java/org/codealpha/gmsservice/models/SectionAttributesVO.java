@@ -17,6 +17,7 @@ public class SectionAttributesVO {
   private List<GrantStringAttributeAttachments> attachments;
   private int attributeOrder;
   private String target;
+  private String actualTarget;
   private String frequency;
   private boolean deletable;
   private boolean required;
@@ -133,6 +134,14 @@ public class SectionAttributesVO {
 
   public void setGrantLevelTarget(String grantLevelTarget) {
     this.grantLevelTarget = grantLevelTarget;
+  }
+
+  public String getActualTarget() {
+    return actualTarget;
+  }
+
+  public void setActualTarget(String actualTarget) {
+    this.actualTarget = actualTarget;
   }
 
   @Override

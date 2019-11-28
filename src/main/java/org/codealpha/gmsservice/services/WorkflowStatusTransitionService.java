@@ -25,4 +25,8 @@ public class WorkflowStatusTransitionService {
     public List<WorkflowStatusTransition> getStatusTransitionsForWorkflow(Workflow workflow){
         return workflowStatusTransitionRepository.findByWorkflow(workflow);
     }
+
+    public WorkflowStatusTransition getByFromStatus(WorkflowStatus fromState){
+        return workflowStatusTransitionRepository.findByFromState(fromState);
+    }
 }

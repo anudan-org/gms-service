@@ -22,3 +22,8 @@ $report_audit$ LANGUAGE plpgsql;
 
 CREATE TRIGGER report_audit AFTER UPDATE ON reports FOR EACH ROW EXECUTE PROCEDURE process_report_state_change();
 
+alter table report_string_attributes add column actual_target text;
+update reports set note_added_by=null;
+alter table reports alter column note_added_by type bigint using note_added_by::bigint;
+update report_history set note_added_by=null;
+alter table report_history alter column note_added_by type bigint using note_added_by::bigint;

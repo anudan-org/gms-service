@@ -37,7 +37,7 @@ public class ReportVO {
     private String securityCode;
     private String note;
     private Date noteAdded;
-    private String noteAddedBy;
+    private Long noteAddedBy;
     private User noteAddedByUser;
     private List<AssignedTo> currentAssignment;
     private List<ReportAssignmentsVO> workflowAssignments;
@@ -200,11 +200,11 @@ public class ReportVO {
         this.noteAdded = noteAdded;
     }
 
-    public String getNoteAddedBy() {
+    public Long getNoteAddedBy() {
         return noteAddedBy;
     }
 
-    public void setNoteAddedBy(String noteAddedBy) {
+    public void setNoteAddedBy(Long noteAddedBy) {
         this.noteAddedBy = noteAddedBy;
     }
 
@@ -301,7 +301,9 @@ public class ReportVO {
                         vo.setReportDetails(reportDetailVO);
                     }else if (voPd.getName().equalsIgnoreCase("noteAddedBy") || voPd.getName().equalsIgnoreCase("noteAddedByUser")) {
                         vo.setNoteAddedBy(report.getNoteAddedBy());
-                        vo.setNoteAddedByUser(userService.getUserByEmailAndOrg(report.getNoteAddedBy(),report.getGrant().getGrantorOrganization()));
+                        if(report.getNoteAddedBy()!=null) {
+                            vo.setNoteAddedByUser(userService.getUserById(report.getNoteAddedBy()));
+                        }
 
                     } else {
                         voPd.getWriteMethod().invoke(vo, value);

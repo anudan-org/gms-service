@@ -113,6 +113,7 @@ public class ReportDetailVO {
         }
         sectionAttribute.setTarget(stringAttribute.getTarget());
         sectionAttribute.setFrequency(stringAttribute.getFrequency());
+        sectionAttribute.setActualTarget(stringAttribute.getActualTarget());
         
         if (sectionAttributes == null) {
           sectionAttributes = new ArrayList<>();

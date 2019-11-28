@@ -22,6 +22,8 @@ public class ReportStringAttribute {
   @Column
   private String target;
   @Column
+  private String actualTarget;
+  @Column
   private String frequency;
   @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(referencedColumnName = "id")
@@ -108,4 +110,12 @@ public class ReportStringAttribute {
     public void setGrantLevelTarget(String grantLevelTarget) {
         this.grantLevelTarget = grantLevelTarget;
     }
+
+  public String getActualTarget() {
+    return actualTarget;
+  }
+
+  public void setActualTarget(String actualTarget) {
+    this.actualTarget = actualTarget;
+  }
 }

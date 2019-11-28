@@ -45,6 +45,10 @@ public class UserService {
     return userRepository.usersToNotifyOnWorkflowSateChangeTo(toStateId);
   }
 
+  public List<User> getUsersByEmail(String email){
+    return userRepository.findByEmailId(email);
+  }
+
   public List<User> getAllTenantUsers(Organization org){
     return userRepository.findByOrganizationAndActive(org,true);
   }
