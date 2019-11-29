@@ -2,6 +2,9 @@ package org.codealpha.gmsservice.controllers;
 
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
+import org.codealpha.gmsservice.services.OrganizationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +31,8 @@ public class PublicController {
     private ResourceLoader resourceLoader;
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
+    @Autowired
+    private OrganizationService organizationService;
 
     @GetMapping("/images/{tenant}/logo")
     @ApiOperation(value = "Get tenant logo image for <img> tag 'src' property")
@@ -41,5 +46,16 @@ public class PublicController {
         } catch (IOException ex) {
             logger.error(ex.getMessage(), ex);
         }
+    }
+
+    @GetMapping("/tenant/{domain}")
+    public String getTenantCode(@PathVariable("domain") String domain){
+        Organization org = organizationService.findOrganizationByTenantCode(domain);
+        if(org!=null){
+            return org.getCode();
+        }else{
+            throw new ResourceNotFoundException("Invalid request to access Anudan");
+        }
+
     }
 }
