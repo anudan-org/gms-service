@@ -213,6 +213,7 @@ public class ReportController {
 
                     reportStringAttribute.setTarget(sectionAttributesVO.getTarget());
                     reportStringAttribute.setFrequency(sectionAttributesVO.getFrequency());
+                    reportStringAttribute.setActualTarget(sectionAttributesVO.getActualTarget());
                     if (sectionAttribute.getFieldType().equalsIgnoreCase("table")) {
                         List<TableData> tableData = sectionAttributesVO.getFieldTableValue();
                         ObjectMapper mapper = new ObjectMapper();
@@ -368,6 +369,9 @@ public class ReportController {
         currentAttribute = reportService.saveReportSpecificSectionAttribute(currentAttribute);
         ReportStringAttribute stringAttribute = reportService.getReportStringAttributeBySectionAttributeAndSection(currentAttribute,currentAttribute.getSection());
         stringAttribute.setValue("");
+        if(currentAttribute.getFieldType().equalsIgnoreCase("kpi")){
+            stringAttribute.setFrequency(report.getType().toLowerCase());
+        }
         stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
 
         report = reportService.getReportById(reportId);
