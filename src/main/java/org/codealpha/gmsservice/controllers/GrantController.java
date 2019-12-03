@@ -1721,28 +1721,30 @@ public class GrantController {
             ReportSpecificSection finalSpecificSection = specificSection;
             Report finalReport = report;
             final AtomicInteger[] attribVOOrder = {new AtomicInteger(1)};
-            val.forEach(attribVo -> {
-                ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
-                sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
-                sectionAttribute.setDeletable(attribVo.isDeletable());
-                sectionAttribute.setFieldName(attribVo.getFieldName());
-                sectionAttribute.setFieldType(attribVo.getFieldType());
-                sectionAttribute.setGranter(finalSpecificSection.getGranter());
-                sectionAttribute.setRequired(attribVo.isRequired());
-                sectionAttribute.setSection(finalSpecificSection);
-                sectionAttribute.setCanEdit(false);
-                sectionAttribute = reportService.saveReportSpecificSectionAttribute(sectionAttribute);
+            if(specificSection.getSectionName().equalsIgnoreCase("Project Indicators")) {
+                val.forEach(attribVo -> {
+                    ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
+                    sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
+                    sectionAttribute.setDeletable(attribVo.isDeletable());
+                    sectionAttribute.setFieldName(attribVo.getFieldName());
+                    sectionAttribute.setFieldType(attribVo.getFieldType());
+                    sectionAttribute.setGranter(finalSpecificSection.getGranter());
+                    sectionAttribute.setRequired(attribVo.isRequired());
+                    sectionAttribute.setSection(finalSpecificSection);
+                    sectionAttribute.setCanEdit(false);
+                    sectionAttribute = reportService.saveReportSpecificSectionAttribute(sectionAttribute);
 
-                ReportStringAttribute stringAttribute = new ReportStringAttribute();
+                    ReportStringAttribute stringAttribute = new ReportStringAttribute();
 
-                stringAttribute.setSection(finalSpecificSection);
-                stringAttribute.setReport(finalReport);
-                stringAttribute.setSectionAttribute(sectionAttribute);
-                stringAttribute.setGrantLevelTarget(attribVo.getTarget());
-                stringAttribute.setFrequency(attribVo.getFrequency());
+                    stringAttribute.setSection(finalSpecificSection);
+                    stringAttribute.setReport(finalReport);
+                    stringAttribute.setSectionAttribute(sectionAttribute);
+                    stringAttribute.setGrantLevelTarget(attribVo.getTarget());
+                    stringAttribute.setFrequency(attribVo.getFrequency());
 
-                stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
-            });
+                    stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
+                });
+            }
             reportSection.getAttributes().forEach(a ->{
                 ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
                 sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
