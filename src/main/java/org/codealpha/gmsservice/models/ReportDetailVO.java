@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.services.GrantService;
+import org.codealpha.gmsservice.services.ReportService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,7 +26,7 @@ public class ReportDetailVO {
     this.sections = sections;
   }
 
-  public ReportDetailVO buildStringAttributes(List<ReportSpecificSection> grantSections, List<ReportStringAttribute> value) {
+  public ReportDetailVO buildStringAttributes(List<ReportSpecificSection> grantSections, List<ReportStringAttribute> value, ReportService reportService, Long grantId) {
 
     SectionVO sectionVO = null;
     sections = new ArrayList<>();
@@ -60,6 +62,7 @@ public class ReportDetailVO {
         sectionAttribute.setCanEdit(stringAttribute.getSectionAttribute().getCanEdit());
         sectionAttribute.setGrantLevelTarget(stringAttribute.getGrantLevelTarget());
         sectionAttribute.setFieldValue(stringAttribute.getValue());
+        sectionAttribute.setCumulativeActuals(reportService.getApprovedReportsActualSumForGrant(grantId,sectionAttribute.getFieldName()));
         if(sectionAttribute.getFieldType().equalsIgnoreCase("table")){
             ObjectMapper mapper = new ObjectMapper();
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){

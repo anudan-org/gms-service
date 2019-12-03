@@ -2,6 +2,7 @@ package org.codealpha.gmsservice.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.services.ReportService;
 import org.codealpha.gmsservice.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -280,9 +281,10 @@ public class ReportVO {
         this.granteeUsers = granteeUsers;
     }
 
+
     // BUILD THE VO
 
-    public ReportVO build(Report report, List<ReportSpecificSection> sections,UserService userService) {
+    public ReportVO build(Report report, List<ReportSpecificSection> sections, UserService userService, ReportService reportService) {
         PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(report.getClass());
         ReportVO vo = new ReportVO();
         for (PropertyDescriptor descriptor : propertyDescriptors) {
@@ -297,7 +299,7 @@ public class ReportVO {
                         if(reportDetailVO == null){
                             reportDetailVO = new ReportDetailVO();
                         }
-                        reportDetailVO = reportDetailVO.buildStringAttributes(sections, (List<ReportStringAttribute>) value);
+                        reportDetailVO = reportDetailVO.buildStringAttributes(sections, (List<ReportStringAttribute>) value,reportService,report.getGrant().getId());
                         vo.setReportDetails(reportDetailVO);
                     }else if (voPd.getName().equalsIgnoreCase("noteAddedBy") || voPd.getName().equalsIgnoreCase("noteAddedByUser")) {
                         vo.setNoteAddedBy(report.getNoteAddedBy());

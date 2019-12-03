@@ -124,7 +124,7 @@ public class ReportController {
             }
         }
 
-        ReportVO reportVO = new ReportVO().build(report, reportService.getReportSections(report), userService);
+        ReportVO reportVO = new ReportVO().build(report, reportService.getReportSections(report), userService,reportService);
         report.setReportDetails(reportVO.getReportDetails());
 
         report.setNoteAddedBy(reportVO.getNoteAddedBy());

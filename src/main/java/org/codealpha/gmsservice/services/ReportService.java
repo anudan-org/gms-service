@@ -332,4 +332,8 @@ public class ReportService {
     public void deleteSectionAttribute(ReportSpecificSectionAttribute attribute) {
         reportSpecificSectionAttributeRepository.delete(attribute);
     }
+
+    public Long getApprovedReportsActualSumForGrant(Long grantId, String attributeName){
+        return reportRepository.getApprovedReportsActualSumForGrantAndAttribute(grantId,attributeName);
+    }
 }

@@ -71,7 +71,6 @@ public class Report {
     @Transient
     private List<WorkFlowPermission> flowAuthorities;
 
-
     public Long getId() {
         return id;
     }
@@ -305,4 +304,5 @@ public class Report {
     public void setGranteeUsers(List<User> granteeUsers) {
         this.granteeUsers = granteeUsers;
     }
+
 }

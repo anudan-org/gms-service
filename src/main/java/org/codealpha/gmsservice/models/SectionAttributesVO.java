@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.models;
 import org.codealpha.gmsservice.entities.GrantStringAttributeAttachments;
 import org.codealpha.gmsservice.entities.TemplateLibrary;
 
+import javax.persistence.Transient;
 import java.util.List;
 import java.util.Objects;
 
@@ -23,6 +24,7 @@ public class SectionAttributesVO {
   private boolean required;
   private boolean canEdit;
   private String grantLevelTarget;
+  private Long cumulativeActuals;
 
   public String getFieldName() {
     return fieldName;
@@ -142,6 +144,14 @@ public class SectionAttributesVO {
 
   public void setActualTarget(String actualTarget) {
     this.actualTarget = actualTarget;
+  }
+
+  public Long getCumulativeActuals() {
+    return cumulativeActuals;
+  }
+
+  public void setCumulativeActuals(Long cumulativeActuals) {
+    this.cumulativeActuals = cumulativeActuals;
   }
 
   @Override
