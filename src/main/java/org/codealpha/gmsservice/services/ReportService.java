@@ -324,4 +324,12 @@ public class ReportService {
     public List<ReportHistory> getReportHistory(Long reportId) {
         return reportHistoryRepository.findByReportId(reportId);
     }
+
+    public void deleteStringAttributeAttachments(List<ReportStringAttributeAttachments> attachments) {
+        reportStringAttributeAttachmentsRepository.deleteAll(attachments);
+    }
+
+    public void deleteSectionAttribute(ReportSpecificSectionAttribute attribute) {
+        reportSpecificSectionAttributeRepository.delete(attribute);
+    }
 }

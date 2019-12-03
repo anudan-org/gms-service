@@ -726,4 +726,34 @@ public class ReportController {
         }
         return history;
     }
+
+    @PostMapping("/{reportId}/section/{sectionId}/field/{fieldId}")
+    @ApiOperation("Delete field in a section")
+    public Report deleteField(@ApiParam(name = "reportToSave",value = "Report to save if in edit mode, passed in Body of request") @RequestBody Report reportToSave,@ApiParam(name = "userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name="reportId",value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,@ApiParam(name = "sectionId",value = "Unique identifier of the section being modified") @PathVariable("sectionId") Long sectionId,@ApiParam(name = "fieldId",value = "Unique identifier of the field being deleted") @PathVariable("fieldId") Long fieldId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        /*grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
+        grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
+        grantValidator.validateFieldExists(grantService,grantToSave,sectionId,fieldId);*/
+        Report report = saveReport(reportId,reportToSave,userId,tenantCode);
+
+
+        ReportStringAttribute stringAttrib = reportService.getReportStringByStringAttributeId(fieldId);
+        ReportSpecificSectionAttribute attribute = stringAttrib.getSectionAttribute();
+
+        if (stringAttrib.getSectionAttribute().getFieldType().equalsIgnoreCase("document")) {
+            List<ReportStringAttributeAttachments> attachments = reportService.getStringAttributeAttachmentsByStringAttribute(stringAttrib);
+            reportService.deleteStringAttributeAttachments(attachments);
+        }
+        reportService.deleteStringAttribute(stringAttrib);
+        reportService.deleteSectionAttribute(attribute);
+        ReportStringAttribute rsa2Delete = report.getStringAttributes().stream().filter(g -> g.getId() == stringAttrib.getId()).findFirst().get();
+        report.getStringAttributes().remove(rsa2Delete);
+        report = reportService.saveReport(report);
+
+
+        if (_checkIfReportTemplateChanged(report, attribute.getSection(), null)) {
+            GranterReportTemplate newTemplate = _createNewReportTemplateFromExisiting(report);
+        }
+        report = _ReportToReturn(report,userId);
+        return report;
+    }
 }
