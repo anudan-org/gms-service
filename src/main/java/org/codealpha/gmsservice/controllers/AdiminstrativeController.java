@@ -1,14 +1,15 @@
 package org.codealpha.gmsservice.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.codealpha.gmsservice.constants.WorkflowObject;
-import org.codealpha.gmsservice.entities.Organization;
-import org.codealpha.gmsservice.entities.Workflow;
-import org.codealpha.gmsservice.entities.WorkflowStatus;
-import org.codealpha.gmsservice.entities.WorkflowTransitionModel;
+import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.WorkFlowDataModel;
 import org.codealpha.gmsservice.models.WorkflowTransitionDataModel;
+import org.codealpha.gmsservice.models.templateVO;
+import org.codealpha.gmsservice.services.GranterReportTemplateService;
 import org.codealpha.gmsservice.services.OrganizationService;
 import org.codealpha.gmsservice.services.WorkflowService;
 import org.codealpha.gmsservice.services.WorkflowTransitionModelService;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,8 @@ public class AdiminstrativeController {
     private WorkflowTransitionModelService workflowTransitionModelService;
     @Autowired
     private WorkflowService workflowService;
+    @Autowired
+    private GranterReportTemplateService reportTemplateService;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -77,5 +81,68 @@ public class AdiminstrativeController {
     private boolean _checkIfTerminal(WorkflowTransitionDataModel transition, List<WorkflowTransitionDataModel> transitions) {
         transitions.stream().filter(t -> t.getFrom().equalsIgnoreCase(transition.getFrom()));
         return true;
+    }
+
+    @PostMapping("/template")
+    public void createTemplate(@RequestBody templateVO template,@RequestHeader("X-TENANT-CODE") String tenantCode){
+
+        Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
+        switch (template.getType()){
+            case "report":
+                GranterReportTemplate reportTemplate = _extractReportTemplate(org,template);
+                reportTemplateService.saveReportTemplate(reportTemplate);
+        }
+
+
+    }
+
+    private GranterReportTemplate _extractReportTemplate(Organization granter ,templateVO template) {
+
+        reportTemplateService.markAllAsNotDefault();
+        GranterReportTemplate reportTemplate = new GranterReportTemplate();
+        reportTemplate.setDefaultTemplate(template.is_default());
+        reportTemplate.setDescription(template.getDescription());
+        reportTemplate.setGranterId(granter.getId());
+        reportTemplate.setName(template.getName());
+        reportTemplate.setPrivateToReport(false);
+        reportTemplate.setPublished(true);
+        if(template.getSections()!=null){
+            List<GranterReportSection> sectionsList = new ArrayList<>();
+            template.getSections().forEach(s ->{
+                GranterReportSection section = new GranterReportSection();
+                section.setReportTemplate(reportTemplate);
+                section.setDeletable(true);
+                section.setGranter((Granter)granter);
+                section.setSectionName(s.getName());
+                section.setSectionOrder(s.getOrder());
+                sectionsList.add(section);
+                if(s.getAttributes()!=null){
+                    List<GranterReportSectionAttribute> attributesList = new ArrayList<>();
+                    s.getAttributes().forEach(a -> {
+                        GranterReportSectionAttribute attribute = new GranterReportSectionAttribute();
+                        attribute.setAttributeOrder(a.getOrder());
+                        attribute.setDeletable(true);
+                        if(a.getType().equalsIgnoreCase("table")) {
+                            try {
+                                attribute.setExtras(new ObjectMapper().writeValueAsString(a.getTableValue()));
+                            } catch (JsonProcessingException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        attribute.setFieldName(a.getName());
+                        attribute.setFieldType(a.getType());
+                        attribute.setGranter((Granter)granter);
+                        attribute.setRequired(false);
+                        attribute.setSection(section);
+                        attributesList.add(attribute);
+                    });
+                    section.setAttributes(attributesList);
+                }
+
+            });
+
+            reportTemplate.setSections(sectionsList);
+        }
+        return reportTemplate;
     }
 }

@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -1719,9 +1720,10 @@ public class GrantController {
             specificSection = reportService.saveReportSpecificSection(specificSection);
             ReportSpecificSection finalSpecificSection = specificSection;
             Report finalReport = report;
+            final AtomicInteger[] attribVOOrder = {new AtomicInteger(1)};
             val.forEach(attribVo -> {
                 ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
-                sectionAttribute.setAttributeOrder(attribVo.getAttributeOrder());
+                sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
                 sectionAttribute.setDeletable(attribVo.isDeletable());
                 sectionAttribute.setFieldName(attribVo.getFieldName());
                 sectionAttribute.setFieldType(attribVo.getFieldType());
@@ -1741,6 +1743,37 @@ public class GrantController {
 
                 stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
             });
+            reportSection.getAttributes().forEach(a ->{
+                ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
+                sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
+                sectionAttribute.setDeletable(a.getDeletable());
+                sectionAttribute.setFieldName(a.getFieldName());
+                sectionAttribute.setFieldType(a.getFieldType());
+                sectionAttribute.setGranter(finalSpecificSection.getGranter());
+                sectionAttribute.setRequired(a.getRequired());
+                sectionAttribute.setSection(finalSpecificSection);
+                sectionAttribute.setCanEdit(true);
+                sectionAttribute.setExtras(a.getExtras());
+                sectionAttribute = reportService.saveReportSpecificSectionAttribute(sectionAttribute);
+
+                ReportStringAttribute stringAttribute = new ReportStringAttribute();
+
+                stringAttribute.setSection(finalSpecificSection);
+                stringAttribute.setReport(finalReport);
+                stringAttribute.setSectionAttribute(sectionAttribute);
+                if(sectionAttribute.getFieldType().equalsIgnoreCase("kpi")) {
+                    stringAttribute.setGrantLevelTarget(null);
+                    stringAttribute.setFrequency(report.getType().toLowerCase());
+                }else if(sectionAttribute.getFieldType().equalsIgnoreCase("table")){
+                    stringAttribute.setValue(a.getExtras());
+                }
+
+
+
+
+                stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
+            });
+
         }
     }
 
