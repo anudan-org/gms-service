@@ -62,7 +62,9 @@ public class ReportDetailVO {
         sectionAttribute.setCanEdit(stringAttribute.getSectionAttribute().getCanEdit());
         sectionAttribute.setGrantLevelTarget(stringAttribute.getGrantLevelTarget());
         sectionAttribute.setFieldValue(stringAttribute.getValue());
-        sectionAttribute.setCumulativeActuals(reportService.getApprovedReportsActualSumForGrant(grantId,sectionAttribute.getFieldName()));
+        if(grantId!=0) {
+          sectionAttribute.setCumulativeActuals(reportService.getApprovedReportsActualSumForGrant(grantId, sectionAttribute.getFieldName()));
+        }
         if(sectionAttribute.getFieldType().equalsIgnoreCase("table")){
             ObjectMapper mapper = new ObjectMapper();
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){

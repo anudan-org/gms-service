@@ -515,4 +515,8 @@ public class GrantService {
             return secureHash;
         }
     }
+
+    public List<Grant> getActiveGrantsForTenant(Organization organization) {
+        return grantRepository.findActiveGrants(organization.getId());
+    }
 }

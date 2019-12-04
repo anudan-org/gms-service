@@ -299,7 +299,7 @@ public class ReportVO {
                         if(reportDetailVO == null){
                             reportDetailVO = new ReportDetailVO();
                         }
-                        reportDetailVO = reportDetailVO.buildStringAttributes(sections, (List<ReportStringAttribute>) value,reportService,report.getGrant().getId());
+                        reportDetailVO = reportDetailVO.buildStringAttributes(sections, (List<ReportStringAttribute>) value,reportService,report.getGrant()==null?0:report.getGrant().getId());
                         vo.setReportDetails(reportDetailVO);
                     }else if (voPd.getName().equalsIgnoreCase("noteAddedBy") || voPd.getName().equalsIgnoreCase("noteAddedByUser")) {
                         vo.setNoteAddedBy(report.getNoteAddedBy());

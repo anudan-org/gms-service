@@ -118,7 +118,9 @@ public class ReportService {
         secureEntity.setReportId(report.getId());
         secureEntity.setTemplateId(report.getTemplate().getId());
         secureEntity.setSectionAndAtrribIds(new HashMap<>());
-        secureEntity.setGranterId(report.getGrant().getGrantorOrganization().getId());
+        if(report.getGrant()!=null) {
+            secureEntity.setGranterId(report.getGrant().getGrantorOrganization().getId());
+        }
         Map<Long, List<Long>> map = new HashMap<>();
         report.getReportDetails().getSections().forEach(sec -> {
             List<Long> attribIds = new ArrayList<>();
@@ -132,43 +134,50 @@ public class ReportService {
         });
         secureEntity.setSectionAndAtrribIds(map);
         List<Long> templateIds = new ArrayList<>();
-        granterReportTemplateRepository.findByGranterId(report.getGrant().getGrantorOrganization().getId()).forEach(t ->{
-            templateIds.add(t.getId());
-        });
+        if(report.getGrant()!=null) {
+            granterReportTemplateRepository.findByGranterId(report.getGrant().getGrantorOrganization().getId()).forEach(t -> {
+                templateIds.add(t.getId());
+            });
+        }
         secureEntity.setGrantTemplateIds(templateIds);
 
         List<Long> grantWorkflowIds = new ArrayList<>();
         Map<Long,List<Long>> grantWorkflowStatusIds = new HashMap<>();
         Map<Long,Long[][]> grantWorkflowTransitionIds = new HashMap<>();
-        workflowRepository.findByGranterAndObject(report.getGrant().getGrantorOrganization(), WorkflowObject.REPORT).forEach(w -> {
-            grantWorkflowIds.add(w.getId());
-            List<Long> wfStatusIds = new ArrayList<>();
-            workflowStatusRepository.findByWorkflow(w).forEach(ws -> {
-                wfStatusIds.add(ws.getId());
-            });
-            grantWorkflowStatusIds.put(w.getId(),wfStatusIds);
+        if(report.getGrant()!=null) {
+            workflowRepository.findByGranterAndObject(report.getGrant().getGrantorOrganization(), WorkflowObject.REPORT).forEach(w -> {
+                grantWorkflowIds.add(w.getId());
+                List<Long> wfStatusIds = new ArrayList<>();
+                workflowStatusRepository.findByWorkflow(w).forEach(ws -> {
+                    wfStatusIds.add(ws.getId());
+                });
+                grantWorkflowStatusIds.put(w.getId(), wfStatusIds);
 
-            List<WorkflowStatusTransition> transitions = workflowStatusTransitionRepository.findByWorkflow(w);
-            Long[][] stransitions = new Long[transitions.size()][2];
-            final int[] counter = {0};
-            workflowStatusTransitionRepository.findByWorkflow(w).forEach(st -> {
-                stransitions[counter[0]][0]=st.getFromState().getId();
-                stransitions[counter[0]][1]=st.getToState().getId();
-                counter[0]++;
+                List<WorkflowStatusTransition> transitions = workflowStatusTransitionRepository.findByWorkflow(w);
+                Long[][] stransitions = new Long[transitions.size()][2];
+                final int[] counter = {0};
+                workflowStatusTransitionRepository.findByWorkflow(w).forEach(st -> {
+                    stransitions[counter[0]][0] = st.getFromState().getId();
+                    stransitions[counter[0]][1] = st.getToState().getId();
+                    counter[0]++;
+                });
+                grantWorkflowTransitionIds.put(w.getId(), stransitions);
             });
-            grantWorkflowTransitionIds.put(w.getId(),stransitions);
-        });
-
+        }
 
         secureEntity.setGrantWorkflowIds(grantWorkflowIds);
         secureEntity.setWorkflowStatusIds(grantWorkflowStatusIds);
         secureEntity.setWorkflowStatusTransitionIds(grantWorkflowTransitionIds);
-        secureEntity.setTenantCode(report.getGrant().getGrantorOrganization().getCode());
+        if(report.getGrant()!=null) {
+            secureEntity.setTenantCode(report.getGrant().getGrantorOrganization().getCode());
+        }
 
         List<Long> tLibraryIds = new ArrayList<>();
-        templateLibraryRepository.findByGranterId(report.getGrant().getGrantorOrganization().getId()).forEach(tl -> {
-            tLibraryIds.add(tl.getId());
-        });
+        if(report.getGrant()!=null) {
+            templateLibraryRepository.findByGranterId(report.getGrant().getGrantorOrganization().getId()).forEach(tl -> {
+                tLibraryIds.add(tl.getId());
+            });
+        }
         secureEntity.setTemplateLibraryIds(tLibraryIds);
 
         try {
@@ -336,4 +345,9 @@ public class ReportService {
     public Long getApprovedReportsActualSumForGrant(Long grantId, String attributeName){
         return reportRepository.getApprovedReportsActualSumForGrantAndAttribute(grantId,attributeName);
     }
+
+    public List<GranterReportTemplate> findByGranterIdAndPublishedStatus(Long id, boolean publishedStatus) {
+        return granterReportTemplateRepository.findByGranterIdAndPublished(id,publishedStatus);
+    }
+
 }

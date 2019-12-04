@@ -2373,4 +2373,12 @@ public class GrantController {
 
         return grantSnapshotService.getSnapshotByGrantIdAndAssignedToIdAndStatusId(grantId,userId,grant.getGrantStatus().getId());
     }
+
+    @GetMapping("/active")
+    public List<Grant> getAllActiveGrants(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode){
+        List<Grant> activeGrants = grantService.getActiveGrantsForTenant(organizationService.findOrganizationByTenantCode(tenantCode));
+
+
+        return activeGrants;
+    }
 }

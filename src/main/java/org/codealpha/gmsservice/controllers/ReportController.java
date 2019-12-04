@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -50,10 +51,13 @@ public class ReportController {
     @Autowired
     private WorkflowStatusService workflowStatusService;
     @Autowired
+    private GrantService grantService;
+    @Autowired
     private TemplateLibraryService templateLibraryService;
     @Autowired
     private ResourceLoader resourceLoader;
-    @Autowired ReportSnapshotService reportSnapshotService;
+    @Autowired
+    ReportSnapshotService reportSnapshotService;
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
     @Value("${spring.supported-file-types}")
@@ -62,8 +66,10 @@ public class ReportController {
     private WorkflowStatusTransitionService workflowStatusTransitionService;
     @Autowired
     private AppConfigService appConfigService;
-    @Autowired private CommonEmailSevice commonEmailSevice;
-    @Autowired private NotificationsService notificationsService;
+    @Autowired
+    private CommonEmailSevice commonEmailSevice;
+    @Autowired
+    private NotificationsService notificationsService;
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -78,11 +84,11 @@ public class ReportController {
     }
 
     @GetMapping("/{reportId}")
-    public Report getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable("reportId") Long reportId) {
+    public Report getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("reportId") Long reportId) {
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         Report report = reportService.getReportById(reportId);
 
-        return _ReportToReturn(report,userId);
+        return _ReportToReturn(report, userId);
     }
 
     private Report _ReportToReturn(Report report, Long userId) {
@@ -124,12 +130,11 @@ public class ReportController {
             }
         }
 
-        ReportVO reportVO = new ReportVO().build(report, reportService.getReportSections(report), userService,reportService);
+        ReportVO reportVO = new ReportVO().build(report, reportService.getReportSections(report), userService, reportService);
         report.setReportDetails(reportVO.getReportDetails());
 
         report.setNoteAddedBy(reportVO.getNoteAddedBy());
         report.setNoteAddedByUser(reportVO.getNoteAddedByUser());
-        report.setGranteeUsers(userService.getGranteeUsers(report.getGrant().getOrganization()));
 
         report.getWorkflowAssignments().sort((a, b) -> a.getId().compareTo(b.getId()));
         report.getReportDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
@@ -140,7 +145,7 @@ public class ReportController {
         }
 
         report.setSecurityCode(reportService.buildHashCode(report));
-        report.setFlowAuthorities(reportService.getFlowAuthority(report,userId));
+        report.setFlowAuthorities(reportService.getFlowAuthority(report, userId));
         return report;
     }
 
@@ -238,7 +243,7 @@ public class ReportController {
         //grantService.saveGrant(grantToSave);
         /*grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
         grantValidator.validateSectionExists(grantService,grantToSave,sectionId);*/
-        saveReport(reportId,reportToSave, userId, tenantCode);
+        saveReport(reportId, reportToSave, userId, tenantCode);
         Report report = reportService.getReportById(reportId);
         ReportSpecificSection reportSection = reportService.getReportSpecificSectionById(sectionId);
 
@@ -265,7 +270,7 @@ public class ReportController {
             _createNewReportTemplateFromExisiting(report);
         }
 
-        report = _ReportToReturn(report,userId);
+        report = _ReportToReturn(report, userId);
         return new ReportFieldInfo(newSectionAttribute.getId(), stringAttribute.getId(), report);
     }
 
@@ -324,7 +329,7 @@ public class ReportController {
                 newAttribute.setAttributeOrder(currentAttribute.getAttributeOrder());
                 newAttribute.setSection(newSection);
                 if (currentAttribute.getFieldType().equalsIgnoreCase("table")) {
-                    ReportStringAttribute stringAttribute = reportService.getReportStringAttributeBySectionAttributeAndSection(currentAttribute,currentSection);
+                    ReportStringAttribute stringAttribute = reportService.getReportStringAttributeBySectionAttributeAndSection(currentAttribute, currentSection);
 
                     ObjectMapper mapper = new ObjectMapper();
                     try {
@@ -358,18 +363,18 @@ public class ReportController {
 
     @PutMapping("/{reportId}/section/{sectionId}/field/{fieldId}")
     @ApiOperation("Update field information")
-    public ReportFieldInfo updateField(@ApiParam(name = "sectionId",value = "Unique identifier of section")@PathVariable("sectionId") Long sectionId,@ApiParam(name="attributeToSave",value = "Updated attribute to be saved") @RequestBody ReportAttributeToSaveVO attributeToSave,@ApiParam(name="reportId",value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,@ApiParam(name = "fieldId",value = "Unique identifier of the field being updated") @PathVariable("fieldId") Long fieldId,@ApiParam(name="userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public ReportFieldInfo updateField(@ApiParam(name = "sectionId", value = "Unique identifier of section") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "attributeToSave", value = "Updated attribute to be saved") @RequestBody ReportAttributeToSaveVO attributeToSave, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "fieldId", value = "Unique identifier of the field being updated") @PathVariable("fieldId") Long fieldId, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         /*grantValidator.validate(grantService,grantId,attributeToSave.getGrant(),userId,tenantCode);
         grantValidator.validateSectionExists(grantService,attributeToSave.getGrant(),sectionId);
         grantValidator.validateFieldExists(grantService,attributeToSave.getGrant(),sectionId,fieldId);*/
-        Report report = saveReport(reportId,attributeToSave.getReport(), userId, tenantCode);
+        Report report = saveReport(reportId, attributeToSave.getReport(), userId, tenantCode);
         ReportSpecificSectionAttribute currentAttribute = reportService.getReportStringByStringAttributeId(fieldId).getSectionAttribute();
         currentAttribute.setFieldName(attributeToSave.getAttr().getFieldName());
         currentAttribute.setFieldType(attributeToSave.getAttr().getFieldType());
         currentAttribute = reportService.saveReportSpecificSectionAttribute(currentAttribute);
-        ReportStringAttribute stringAttribute = reportService.getReportStringAttributeBySectionAttributeAndSection(currentAttribute,currentAttribute.getSection());
+        ReportStringAttribute stringAttribute = reportService.getReportStringAttributeBySectionAttributeAndSection(currentAttribute, currentAttribute.getSection());
         stringAttribute.setValue("");
-        if(currentAttribute.getFieldType().equalsIgnoreCase("kpi")){
+        if (currentAttribute.getFieldType().equalsIgnoreCase("kpi")) {
             stringAttribute.setFrequency(report.getType().toLowerCase());
         }
         stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
@@ -380,14 +385,14 @@ public class ReportController {
         }
 
 
-        report = _ReportToReturn(report,userId);
+        report = _ReportToReturn(report, userId);
         return new ReportFieldInfo(currentAttribute.getId(), stringAttribute.getId(), report);
     }
 
     @PostMapping("/{reportId}/field/{fieldId}/template/{templateId}")
     @ApiOperation(value = "Attach document to field", notes = "Valid for Document field types only")
-    public ReportDocInfo createDocumentForReportSectionField(@ApiParam(name = "reportToSave",value = "Report to save in edit mode, passed in Body of request") @RequestBody Report reportToSave,@ApiParam(name="userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "reportId",value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,@ApiParam(name = "fieldId",value = "Unique identifier of the field to which document is being attached") @PathVariable("fieldId") Long fieldId,@ApiParam(name = "temaplteId",value = "Unique identified of the document template being attached") @PathVariable("templateId") Long templateId,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        saveReport(reportId,reportToSave,userId,tenantCode);
+    public ReportDocInfo createDocumentForReportSectionField(@ApiParam(name = "reportToSave", value = "Report to save in edit mode, passed in Body of request") @RequestBody Report reportToSave, @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "fieldId", value = "Unique identifier of the field to which document is being attached") @PathVariable("fieldId") Long fieldId, @ApiParam(name = "temaplteId", value = "Unique identified of the document template being attached") @PathVariable("templateId") Long templateId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        saveReport(reportId, reportToSave, userId, tenantCode);
         TemplateLibrary libraryDoc = templateLibraryService.getTemplateLibraryDocumentById(templateId);
 
         ReportStringAttribute stringAttribute = reportService.getReportStringByStringAttributeId(fieldId);
@@ -427,19 +432,19 @@ public class ReportController {
             e.printStackTrace();
         }
         Report report = reportService.getReportById(reportId);
-        report = _ReportToReturn(report,userId);
+        report = _ReportToReturn(report, userId);
         return new ReportDocInfo(attachment.getId(), report);
     }
 
-    @PostMapping(value = "/{reportId}/section/{sectionId}/attribute/{attributeId}/upload",consumes = {"multipart/form-data"})
+    @PostMapping(value = "/{reportId}/section/{sectionId}/attribute/{attributeId}/upload", consumes = {"multipart/form-data"})
     @ApiOperation("Upload and attach files to Document field from disk")
-    public ReportDocInfo saveUploadedFiles(@ApiParam(name="sectionId",value = "Unique identifier of section") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "reportId",value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "attributeId",value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId, @ApiParam(name = "reportData", value = "Report data") @RequestParam("reportToSave") String reportToSaveStr, @RequestParam("file") MultipartFile[] files, @ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public ReportDocInfo saveUploadedFiles(@ApiParam(name = "sectionId", value = "Unique identifier of section") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "attributeId", value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId, @ApiParam(name = "reportData", value = "Report data") @RequestParam("reportToSave") String reportToSaveStr, @RequestParam("file") MultipartFile[] files, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         Report reportToSave = null;
         try {
-            reportToSave = mapper.readValue(reportToSaveStr,Report.class);
+            reportToSave = mapper.readValue(reportToSaveStr, Report.class);
         } catch (IOException e) {
             logger.error(e.getMessage());
         }
@@ -504,7 +509,7 @@ public class ReportController {
 
 
         report = reportService.getReportById(reportId);
-        report = _ReportToReturn(report,userId);
+        report = _ReportToReturn(report, userId);
 
         return new ReportDocInfo(attachments.get(attachments.size() - 1).getId(), report);
     }
@@ -512,10 +517,10 @@ public class ReportController {
 
     @PostMapping("/{reportId}/template/{templateId}/section/{sectionName}")
     @ApiOperation("Create new section in grant")
-    public ReportSectionInfo createSection(@RequestBody Report reportToSave,@ApiParam(name="reportId",value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,@ApiParam(name="templateId",value = "Unique identifier of the report template") @PathVariable("templateId") Long templateId,@ApiParam(name="sectionName",value = "Name of the new section") @PathVariable("sectionName") String sectionName,@ApiParam(name="userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public ReportSectionInfo createSection(@RequestBody Report reportToSave, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "templateId", value = "Unique identifier of the report template") @PathVariable("templateId") Long templateId, @ApiParam(name = "sectionName", value = "Name of the new section") @PathVariable("sectionName") String sectionName, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
        /* grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
         grantValidator.validateTemplateExists(grantService,grantToSave,templateId);*/
-        Report report = saveReport(reportId,reportToSave,userId,tenantCode);
+        Report report = saveReport(reportId, reportToSave, userId, tenantCode);
 
         ReportSpecificSection specificSection = new ReportSpecificSection();
         specificSection.setGranter((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
@@ -532,14 +537,14 @@ public class ReportController {
             templateId = newTemplate.getId();
         }
 
-        report = _ReportToReturn(report,userId);
+        report = _ReportToReturn(report, userId);
         return new ReportSectionInfo(specificSection.getId(), specificSection.getSectionName(), report);
 
     }
 
     @PutMapping("/{reportId}/template/{templateId}/section/{sectionId}")
     @ApiOperation("Delete existing section in report")
-    public Report deleteSection(@RequestBody Report reportToSave,@ApiParam(name = "reportId",value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,@ApiParam(name="templateId",value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId,@ApiParam(name = "sectionId",value = "Unique identifier of the section being deleted") @PathVariable("sectionId") Long sectionId,@ApiParam(name = "userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public Report deleteSection(@RequestBody Report reportToSave, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "templateId", value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId, @ApiParam(name = "sectionId", value = "Unique identifier of the section being deleted") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         /*grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
         grantValidator.validateTemplateExists(grantService,grantToSave,templateId);
         grantValidator.validateSectionExists(grantService,grantToSave,sectionId);*/
@@ -552,7 +557,7 @@ public class ReportController {
                 if (stringAttrib != null) {
                     reportService.deleteStringAttribute(stringAttrib);
 
-                    report.getStringAttributes().removeIf(e -> e.getId()==stringAttrib.getId());
+                    report.getStringAttributes().removeIf(e -> e.getId() == stringAttrib.getId());
                 }
             }
         }
@@ -565,14 +570,14 @@ public class ReportController {
             GranterReportTemplate newTemplate = _createNewReportTemplateFromExisiting(report);
             templateId = newTemplate.getId();
         }
-        report = _ReportToReturn(report,userId);
+        report = _ReportToReturn(report, userId);
         return report;
     }
 
     @PostMapping("/{reportId}/assignment")
     @ApiOperation("Set owners for report workflow states")
-    public Report saveReportAssignments(@ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "reportId",value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,@ApiParam(name = "assignmentModel",value = "Set assignment for report per workflow state") @RequestBody ReportAssignmentModel assignmentModel,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        Report report = saveReport(reportId,assignmentModel.getReport(),userId,tenantCode);
+    public Report saveReportAssignments(@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "assignmentModel", value = "Set assignment for report per workflow state") @RequestBody ReportAssignmentModel assignmentModel, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        Report report = saveReport(reportId, assignmentModel.getReport(), userId, tenantCode);
         for (ReportAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
             ReportAssignment assignment = null;
             if (assignmentsVO.getId() == null) {
@@ -589,23 +594,23 @@ public class ReportController {
             reportService.saveAssignmentForReport(assignment);
         }
 
-        report = _ReportToReturn(report,userId);
+        report = _ReportToReturn(report, userId);
         return report;
     }
 
     @GetMapping("{reportId}/changeHistory")
-    public ReportSnapshot getReportHistory(@PathVariable("reportId") Long reportId,@PathVariable("userId") Long userId){
+    public ReportSnapshot getReportHistory(@PathVariable("reportId") Long reportId, @PathVariable("userId") Long userId) {
         Report report = reportService.getReportById(reportId);
 
-        return reportSnapshotService.getSnapshotByReportIdAndAssignedToIdAndStatusId(reportId,userId,report.getStatus().getId());
+        return reportSnapshotService.getSnapshotByReportIdAndAssignedToIdAndStatusId(reportId, userId, report.getStatus().getId());
     }
 
     @PostMapping("/{reportId}/flow/{fromState}/{toState}")
     @ApiOperation("Move report through workflow")
-    public Report MoveReportState(@RequestBody ReportWithNote reportWithNote, @ApiParam(name = "userId",value = "Unique identified of logged in user") @PathVariable("userId") Long userId,
-                                @ApiParam(name = "reportId",value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,@ApiParam(name = "fromStateId",value = "Unique identifier of the starting state of the report in the workflow") @PathVariable("fromState") Long fromStateId,
-                                @ApiParam(name="toStateId",value = "Unique identifier of the ending state of the report in the workflow") @PathVariable("toState") Long toStateId,
-                                @ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public Report MoveReportState(@RequestBody ReportWithNote reportWithNote, @ApiParam(name = "userId", value = "Unique identified of logged in user") @PathVariable("userId") Long userId,
+                                  @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "fromStateId", value = "Unique identifier of the starting state of the report in the workflow") @PathVariable("fromState") Long fromStateId,
+                                  @ApiParam(name = "toStateId", value = "Unique identifier of the ending state of the report in the workflow") @PathVariable("toState") Long toStateId,
+                                  @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         /*grantValidator.validate(grantService,grantId,reportWithNote.getGrant(),userId,tenantCode);
         grantValidator.validateFlow(grantService,reportWithNote.getGrant(),grantId,userId,fromStateId,toStateId);*/
@@ -616,7 +621,7 @@ public class ReportController {
 
         User previousOwner = userService.getUserById(reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == finalReport.getStatus().getId().longValue()).collect(Collectors.toList()).get(0).getAssignment());
         report.setStatus(workflowStatusService.findById(toStateId));
-        if (reportWithNote.getNote()!=null && !reportWithNote.getNote().trim().equalsIgnoreCase("")){
+        if (reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")) {
             report.setNote(reportWithNote.getNote());
             report.setNoteAdded(new Date());
             report.setNoteAddedBy(userId);
@@ -635,8 +640,8 @@ public class ReportController {
 
         Optional<ReportAssignment> repAss = reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == toStateId.longValue()).findAny();
         User currentOwner = null;
-        String currentOwnerName="";
-        if(repAss.isPresent()) {
+        String currentOwnerName = "";
+        if (repAss.isPresent()) {
             currentOwner = userService.getUserById(repAss.get().getAssignment());
             currentOwnerName = currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName());
         }
@@ -666,31 +671,31 @@ public class ReportController {
 
         //}
 
-        report = _ReportToReturn(report,userId);
+        report = _ReportToReturn(report, userId);
         _saveSnapShot(report);
 
         //Temporary block to continue testing as Grantee has submitted the report
-        if(toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")){
+        if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
             ReportWithNote withNote = new ReportWithNote();
 
-            report.getReportDetails().getSections().forEach(sec ->{
-                if(sec.getAttributes()!=null){
+            report.getReportDetails().getSections().forEach(sec -> {
+                if (sec.getAttributes() != null) {
                     sec.getAttributes().forEach(attr -> {
-                        if(attr.getFieldType().equalsIgnoreCase("kpi")) {
+                        if (attr.getFieldType().equalsIgnoreCase("kpi")) {
                             attr.setActualTarget(String.valueOf(Math.round(Math.random() * 100)));
                         }
                     });
                 }
             });
 
-            report = saveReport(reportId,report,userId,tenantCode);
+            report = saveReport(reportId, report, userId, tenantCode);
 
             withNote.setNote("Grantee has submitted");
             withNote.setReport(report);
             final Report fReport = report;
-            ReportAssignmentsVO ass = report.getWorkflowAssignments().stream().filter(a -> a.getStateId().longValue()==fReport.getStatus().getId().longValue()).findFirst().get();
+            ReportAssignmentsVO ass = report.getWorkflowAssignments().stream().filter(a -> a.getStateId().longValue() == fReport.getStatus().getId().longValue()).findFirst().get();
 
-            MoveReportState(withNote,userService.getUserById(ass.getAssignmentId()).getId(),reportId,report.getStatus().getId(),workflowStatusTransitionService.getByFromStatus(report.getStatus()).getToState().getId(),tenantCode);
+            MoveReportState(withNote, userService.getUserById(ass.getAssignmentId()).getId(), reportId, report.getStatus().getId(), workflowStatusTransitionService.getByFromStatus(report.getStatus()).getToState().getId(), tenantCode);
         }
 
         return report;
@@ -713,7 +718,7 @@ public class ReportController {
                 reportSnapshotService.saveReportSnapshot(snapshot);
             }
         } catch (JsonProcessingException e) {
-            logger.error(e.getMessage(),e);
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -721,7 +726,7 @@ public class ReportController {
     public List<ReportHistory> getReportHistory(@PathVariable("reportId") Long reportId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         List<ReportHistory> history = reportService.getReportHistory(reportId);
-        for(ReportHistory historyEntry : history){
+        for (ReportHistory historyEntry : history) {
             historyEntry.setNoteAddedByUser(userService.getUserById(historyEntry.getNoteAddedBy()));
         }
         return history;
@@ -729,11 +734,11 @@ public class ReportController {
 
     @PostMapping("/{reportId}/section/{sectionId}/field/{fieldId}")
     @ApiOperation("Delete field in a section")
-    public Report deleteField(@ApiParam(name = "reportToSave",value = "Report to save if in edit mode, passed in Body of request") @RequestBody Report reportToSave,@ApiParam(name = "userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name="reportId",value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,@ApiParam(name = "sectionId",value = "Unique identifier of the section being modified") @PathVariable("sectionId") Long sectionId,@ApiParam(name = "fieldId",value = "Unique identifier of the field being deleted") @PathVariable("fieldId") Long fieldId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public Report deleteField(@ApiParam(name = "reportToSave", value = "Report to save if in edit mode, passed in Body of request") @RequestBody Report reportToSave, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "sectionId", value = "Unique identifier of the section being modified") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "fieldId", value = "Unique identifier of the field being deleted") @PathVariable("fieldId") Long fieldId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         /*grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
         grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
         grantValidator.validateFieldExists(grantService,grantToSave,sectionId,fieldId);*/
-        Report report = saveReport(reportId,reportToSave,userId,tenantCode);
+        Report report = saveReport(reportId, reportToSave, userId, tenantCode);
 
 
         ReportStringAttribute stringAttrib = reportService.getReportStringByStringAttributeId(fieldId);
@@ -753,6 +758,103 @@ public class ReportController {
         if (_checkIfReportTemplateChanged(report, attribute.getSection(), null)) {
             GranterReportTemplate newTemplate = _createNewReportTemplateFromExisiting(report);
         }
+        report = _ReportToReturn(report, userId);
+        return report;
+    }
+
+    @GetMapping("/templates")
+    @ApiOperation("Get all published grant templates for tenant")
+    public List<GranterReportTemplate> getTenantPublishedReportTemplates(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
+        return reportService.findByGranterIdAndPublishedStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(), true);
+    }
+
+    @GetMapping("/create/grant/{grantId}/template/{templateId}")
+    @ApiOperation("Create new report with a template")
+    public Report createReport(@ApiParam(name = "grantId", value = "Unique identifier for the selected grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "templateId", value = "Unique identifier for the selected template") @PathVariable("templateId") Long templateId, @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        Report report = new Report();
+        Grant reportForGrant = grantService.getById(grantId);
+        GranterReportTemplate reportTemplate = reportService.findByTemplateId(templateId);
+
+        report.setName("");
+        report.setStartDate(null);
+        report.setStDate("");
+        report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT", organizationService.findOrganizationByTenantCode(tenantCode).getId()));
+        report.setEndDate(null);
+        report.setEnDate("");
+        report.setGrant(reportForGrant);
+        report.setType("adhoc");
+        report.setCreatedAt(new Date());
+        report.setTemplate(reportTemplate);
+        report.setCreatedBy(userService.getUserById(userId).getId());
+
+        report = reportService.saveReport(report);
+
+        ReportAssignment assignment = null;
+
+        Organization granterOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        List<WorkflowStatus> statuses = workflowStatusService.getTenantWorkflowStatuses("REPORT", granterOrg.getId());
+        for (WorkflowStatus status : statuses) {
+            if (!status.getTerminal()) {
+                assignment = new ReportAssignment();
+                if (status.isInitial()) {
+                    assignment.setAnchor(true);
+                    assignment.setAssignment(userId);
+                } else {
+                    assignment.setAnchor(false);
+                }
+                assignment.setReportId(report.getId());
+                assignment.setStateId(status.getId());
+                reportService.saveAssignmentForReport(assignment);
+            }
+        }
+
+
+
+        List<GranterReportSection> granterReportSections = reportTemplate.getSections();
+        report.setStringAttributes(new ArrayList<>());
+
+        for (GranterReportSection reportSection : granterReportSections) {
+            ReportSpecificSection specificSection = new ReportSpecificSection();
+            specificSection.setDeletable(true);
+            specificSection.setGranter((Granter)organizationService.findOrganizationByTenantCode(tenantCode));
+            specificSection.setReportId(report.getId());
+            specificSection.setReportTemplateId(reportTemplate.getId());
+            specificSection.setSectionName(reportSection.getSectionName());
+            specificSection.setSectionOrder(reportSection.getSectionOrder());
+
+            specificSection = reportService.saveReportSpecificSection(specificSection);
+            ReportSpecificSection finalSpecificSection = specificSection;
+            Report finalReport = report;
+            final AtomicInteger[] attribVOOrder = {new AtomicInteger(1)};
+            Report finalReport1 = report;
+            reportSection.getAttributes().forEach(a -> {
+                ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
+                sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
+                sectionAttribute.setDeletable(a.getDeletable());
+                sectionAttribute.setFieldName(a.getFieldName());
+                sectionAttribute.setFieldType(a.getFieldType());
+                sectionAttribute.setGranter(finalSpecificSection.getGranter());
+                sectionAttribute.setRequired(a.getRequired());
+                sectionAttribute.setSection(finalSpecificSection);
+                sectionAttribute.setCanEdit(true);
+                sectionAttribute.setExtras(a.getExtras());
+                sectionAttribute = reportService.saveReportSpecificSectionAttribute(sectionAttribute);
+
+                ReportStringAttribute stringAttribute = new ReportStringAttribute();
+
+                stringAttribute.setSection(finalSpecificSection);
+                stringAttribute.setReport(finalReport);
+                stringAttribute.setSectionAttribute(sectionAttribute);
+                if (sectionAttribute.getFieldType().equalsIgnoreCase("kpi")) {
+                    stringAttribute.setGrantLevelTarget(null);
+                    stringAttribute.setFrequency(finalReport1.getType().toLowerCase());
+                } else if (sectionAttribute.getFieldType().equalsIgnoreCase("table")) {
+                    stringAttribute.setValue(a.getExtras());
+                }
+                stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
+            });
+        }
+
         report = _ReportToReturn(report,userId);
         return report;
     }
