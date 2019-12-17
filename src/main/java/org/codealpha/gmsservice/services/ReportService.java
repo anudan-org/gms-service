@@ -73,6 +73,31 @@ public class ReportService {
                 assignments.add(assignment);
             }
         }
+
+        return assignments;
+    }
+
+    public List<ReportAssignment> saveNewAssignmentForGrantee(Report report, String tenantCode,Long granteeUserId) {
+        ReportAssignment assignment = null;
+
+        Organization granterOrg = organizationRepository.findByCode(tenantCode);
+        List<WorkflowStatus> statuses = workflowStatusRepository.getAllTenantStatuses("REPORT", report.getGrant().getGrantorOrganization().getId());
+
+        List<ReportAssignment> assignments = new ArrayList<>();
+        for (WorkflowStatus status : statuses) {
+            if (!status.getTerminal()) {
+                assignment = new ReportAssignment();
+                if (status.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
+                    assignment.setAssignment(granteeUserId);
+                    assignment.setAnchor(false);
+                    assignment.setReportId(report.getId());
+                    assignment.setStateId(status.getId());
+                    assignment = _saveAssignmentForReport(assignment);
+                    assignments.add(assignment);
+                }
+
+            }
+        }
         return assignments;
     }
 
@@ -318,8 +343,8 @@ public class ReportService {
         return reportAssignmentRepository.findById(id).get();
     }
 
-    public void saveAssignmentForReport(ReportAssignment assignment) {
-        reportAssignmentRepository.save(assignment);
+    public ReportAssignment saveAssignmentForReport(ReportAssignment assignment) {
+        return reportAssignmentRepository.save(assignment);
     }
 
     public String[] buildNotificationContent(Report finalReport, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment,String hasNotes,String hasNotesComment) {

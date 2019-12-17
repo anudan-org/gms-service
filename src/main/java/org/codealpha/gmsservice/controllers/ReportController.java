@@ -70,6 +70,8 @@ public class ReportController {
     private CommonEmailSevice commonEmailSevice;
     @Autowired
     private NotificationsService notificationsService;
+    @Autowired
+    private RoleService roleService;
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -143,6 +145,8 @@ public class ReportController {
                 section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
             }
         }
+
+        report.setGranteeUsers(userService.getAllGranteeUsers(report.getGrant().getOrganization()));
 
         report.setSecurityCode(reportService.buildHashCode(report));
         report.setFlowAuthorities(reportService.getFlowAuthority(report, userId));
@@ -578,7 +582,11 @@ public class ReportController {
     @ApiOperation("Set owners for report workflow states")
     public Report saveReportAssignments(@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "assignmentModel", value = "Set assignment for report per workflow state") @RequestBody ReportAssignmentModel assignmentModel, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Report report = saveReport(reportId, assignmentModel.getReport(), userId, tenantCode);
+        String customAss = null;
         for (ReportAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
+            if(customAss==null && assignmentsVO.getCustomAssignments()!=null){
+                customAss = assignmentsVO.getCustomAssignments();
+            }
             ReportAssignment assignment = null;
             if (assignmentsVO.getId() == null) {
                 assignment = new ReportAssignment();
@@ -588,11 +596,48 @@ public class ReportController {
                 assignment = reportService.getReportAssignmentById(assignmentsVO.getId());
             }
 
-
             assignment.setAssignment(assignmentsVO.getAssignmentId());
 
-            reportService.saveAssignmentForReport(assignment);
+            if((customAss!=null && !"".equalsIgnoreCase(customAss.trim()))  && workflowStatusService.getById(assignmentsVO.getStateId()).getInternalStatus().equalsIgnoreCase("ACTIVE")){
+                String[] customAssignments = customAss.split(",");
+                for (String customAssignment : customAssignments) {
+                    User granteeUser = new User();
+                    Role newRole = new Role();
+                    newRole.setName("Admin");
+                    newRole.setOrganization(report.getGrant().getOrganization());
+                    newRole.setCreatedAt(DateTime.now().toDate());
+                    newRole.setCreatedBy("System");
+
+                    newRole = roleService.saveRole(newRole);
+                    UserRole userRole = new UserRole();
+                    userRole.setRole(newRole);
+                    userRole.setUser(granteeUser);
+                    List<UserRole> userRoles = new ArrayList<>();
+                    userRoles.add(userRole);
+                    granteeUser.setUserRoles(userRoles);
+                    granteeUser.setFirstName("To be set");
+                    granteeUser.setLastName("To be set");
+                    granteeUser.setEmailId(customAss);
+                    granteeUser.setOrganization(report.getGrant().getOrganization());
+                    granteeUser = userService.save(granteeUser);
+
+                    if(assignmentsVO.getAssignmentId()==0){
+                        assignment.setAssignment(granteeUser.getId());
+                    }else{
+                        ReportAssignment ass = new ReportAssignment();
+                        ass.setAssignment(granteeUser.getId());
+                        ass.setReportId(reportId);
+                        ass.setStateId(assignmentsVO.getStateId());
+                        ass.setAnchor(false);
+                        reportService.saveAssignmentForReport(ass);
+                    }
+                }
+            }
+
+            assignment = reportService.saveAssignmentForReport(assignment);
         }
+
+
 
         report = _ReportToReturn(report, userId);
         return report;

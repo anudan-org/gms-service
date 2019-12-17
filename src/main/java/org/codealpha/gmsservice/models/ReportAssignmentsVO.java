@@ -12,6 +12,7 @@ public class ReportAssignmentsVO {
     private Long assignmentId;
     private User assignmentUser;
     private boolean anchor = false;
+    private String customAssignments;
 
     public Long getId() {
         return id;
@@ -67,5 +68,13 @@ public class ReportAssignmentsVO {
 
     public void setAnchor(boolean anchor) {
         this.anchor = anchor;
+    }
+
+    public String getCustomAssignments() {
+        return customAssignments;
+    }
+
+    public void setCustomAssignments(String customAssignments) {
+        this.customAssignments = customAssignments;
     }
 }
