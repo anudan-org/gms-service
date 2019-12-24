@@ -73,7 +73,20 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
   protected void successfulAuthentication(HttpServletRequest req, HttpServletResponse res,
       FilterChain chain, Authentication auth) throws IOException, ServletException {
 
-    User user = userRepository.findByEmailIdAndOrganization(auth.getName(),organizationRepository.findByCode(((Map<String,String>) auth.getDetails()).get("TOKEN")));
+    User user = null;
+    String token = ((Map<String,String>) auth.getDetails()).get("TOKEN");
+    if(!"ANUDAN".equalsIgnoreCase(token)){
+      user = userRepository.findByEmailIdAndOrganization(auth.getName(),organizationRepository.findByCode(token));
+    }else if("ANUDAN".equalsIgnoreCase(token)){
+      List<User> users = userRepository.findByEmailId(auth.getName());
+      for (User user1 : users) {
+        if(user1.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
+          user = user1;
+          break;
+        }
+      }
+    }
+
     Long userId = user.getId();
 
 

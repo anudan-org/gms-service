@@ -2,6 +2,7 @@ package org.codealpha.gmsservice.security;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -81,12 +82,25 @@ public class AuthProvider implements AuthenticationProvider {
       throw new InvalidCredentialsException("Missing required header X-TENANT-CODE");
     }
     if ("ANUDAN".equalsIgnoreCase(provider.toUpperCase())) {
-      Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
-      if (org == null) {
+      Organization org = null;
+      /*if (org == null) {
         throw new BadCredentialsException("Invalid login credentials");
-      }
-      User user = userService.getUserByEmailAndOrg(username,org);
+      }*/
 
+      User user = null;
+      if(!"ANUDAN".equalsIgnoreCase(tenantCode)) {
+        org = organizationService.findOrganizationByTenantCode(tenantCode);
+        user = userService.getUserByEmailAndOrg(username, org);
+      }else if ("ANUDAN".equalsIgnoreCase(tenantCode)){
+        List<User> users = userService.getUsersByEmail(username);
+        for (User eachUser : users) {
+          if(eachUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
+            user = eachUser;
+            org = user.getOrganization();
+            break;
+          }
+        }
+      }
       if (user != null) {
 
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")

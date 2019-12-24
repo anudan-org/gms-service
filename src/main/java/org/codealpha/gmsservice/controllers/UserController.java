@@ -168,7 +168,8 @@ public class UserController {
     dashboardValidator.validate(userId,tenantCode);
     User user = userService.getUserById(userId);
     Organization userOrg = user.getOrganization();
-    Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+    Organization tenantOrg = null;
+      tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
     List<Grant> grants = null;
     switch (userOrg.getType()) {
       case "GRANTEE":

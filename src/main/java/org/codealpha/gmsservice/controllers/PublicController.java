@@ -39,7 +39,9 @@ public class PublicController {
     public void getLogoImage(HttpServletResponse servletResponse, @ApiParam(name="tenant",value="Tenant code")@PathVariable("tenant") String tenant) {
 
         Resource image = resourceLoader.getResource("file:" + uploadLocation + "/" + tenant + "/logo/logo.png");
+
         servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
+        servletResponse.setHeader("org-name",organizationService.findOrganizationByTenantCode(tenant).getName());
         try {
             StreamUtils.copy(image.getInputStream(), servletResponse.getOutputStream());
 
@@ -48,11 +50,22 @@ public class PublicController {
         }
     }
 
-    @GetMapping("/tenant/{domain}")
+    /*@GetMapping("/tenant/{domain}")
     public String getTenantCode(@PathVariable("domain") String domain){
         Organization org = organizationService.findOrganizationByTenantCode(domain);
         if(org!=null){
             return org.getCode();
+        }else{
+            throw new ResourceNotFoundException("Invalid request to access Anudan");
+        }
+
+    }*/
+
+    @GetMapping("/tenant/{domain}")
+    public String getTenantName(@PathVariable("domain") String domain){
+        Organization org = organizationService.findOrganizationByTenantCode(domain.toUpperCase());
+        if(org!=null){
+            return org.getName();
         }else{
             throw new ResourceNotFoundException("Invalid request to access Anudan");
         }
