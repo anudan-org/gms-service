@@ -430,6 +430,12 @@ public class GrantService {
         return new String[]{subject, message};
     }
 
+    public String[] buildGrantInvitationContent(Grant grant,User user, String sub,String msg,String url){
+        sub = sub.replace("%GRANT_NAME%",grant.getName());
+        msg = msg.replace("%GRANT_NAME%",grant.getName()).replace("%TENANT_NAME%",grant.getGrantorOrganization().getName()).replace("%LINK%",url);
+        return new String[]{sub,msg};
+    }
+
     public String buildHashCode(Grant grant) {
         SecureEntity secureEntity = new SecureEntity();
         secureEntity.setGrantId(grant.getId());

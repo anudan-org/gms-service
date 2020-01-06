@@ -22,11 +22,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
+import com.google.common.hash.HashCode;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.text.WordUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -51,11 +53,13 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.*;
 import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
 @RequestMapping("/user/{userId}/grant")
-@Api(value = "Grants",description = "API end points for Grants",tags = {"Grants"})
+@Api(value = "Grants", description = "API end points for Grants", tags = {"Grants"})
 public class GrantController {
 
     private static Logger logger = LoggerFactory.getLogger(GrantController.class);
@@ -106,7 +110,10 @@ public class GrantController {
     private TemplateLibraryService templateLibraryService;
     @Autowired
     private GrantSnapshotService grantSnapshotService;
-    @Autowired private GrantValidator grantValidator;
+    @Autowired
+    private GrantValidator grantValidator;
+    @Autowired
+    private RoleService roleService;
 
     @Autowired
     private ReportService reportService;
@@ -305,9 +312,9 @@ public class GrantController {
     @ApiOperation("Added new field to section")
     public FieldInfo createFieldInSection(@ApiParam(name = "grantToSave", value = "Grant to save if in edit mode passed in Body of request") @RequestBody Grant grantToSave, @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "sectionId", value = "Unique identifier of the section to which the field is being added") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         //grantService.saveGrant(grantToSave);
-        grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
-        grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
-        saveGrant(grantId,grantToSave, userId, tenantCode);
+        grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
+        grantValidator.validateSectionExists(grantService, grantToSave, sectionId);
+        saveGrant(grantId, grantToSave, userId, tenantCode);
         Grant grant = grantService.getById(grantId);
         GrantSpecificSection grantSection = grantService.getGrantSectionBySectionId(sectionId);
 
@@ -340,11 +347,11 @@ public class GrantController {
 
     @PostMapping("/{grantId}/section/{sectionId}/field/{fieldId}")
     @ApiOperation("Delete field in a section")
-    public Grant deleteField(@ApiParam(name = "grantToSave",value = "Grant to save if in edit mode, passed in Body of request") @RequestBody Grant grantToSave,@ApiParam(name = "userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name="grantId",value = "Unique identifier of the grant") @PathVariable("id") Long grantId,@ApiParam(name = "sectionId",value = "Unique identifier of the section being modified") @PathVariable("sectionId") Long sectionId,@ApiParam(name = "fieldId",value = "Unique identifier of the field being deleted") @PathVariable("fieldId") Long fieldId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
-        grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
-        grantValidator.validateFieldExists(grantService,grantToSave,sectionId,fieldId);
-        Grant grant = saveGrant(grantId,grantToSave, userId, tenantCode);
+    public Grant deleteField(@ApiParam(name = "grantToSave", value = "Grant to save if in edit mode, passed in Body of request") @RequestBody Grant grantToSave, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("id") Long grantId, @ApiParam(name = "sectionId", value = "Unique identifier of the section being modified") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "fieldId", value = "Unique identifier of the field being deleted") @PathVariable("fieldId") Long fieldId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
+        grantValidator.validateSectionExists(grantService, grantToSave, sectionId);
+        grantValidator.validateFieldExists(grantService, grantToSave, sectionId, fieldId);
+        Grant grant = saveGrant(grantId, grantToSave, userId, tenantCode);
         GrantSpecificSectionAttribute attribute = grantService.findGrantStringAttributeById(fieldId).getSectionAttribute();
 
         GrantStringAttribute stringAttrib = grantService.findGrantStringAttributeById(fieldId);
@@ -369,11 +376,11 @@ public class GrantController {
 
     @PutMapping("/{grantId}/section/{sectionId}/field/{fieldId}")
     @ApiOperation("Update field information")
-    public FieldInfo updateField(@ApiParam(name = "sectionId",value = "Unique identifier of section")@PathVariable("sectionId") Long sectionId,@ApiParam(name="attributeToSave",value = "Updated attribute to be saved") @RequestBody AttributeToSaveVO attributeToSave,@ApiParam(name="grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "fieldId",value = "Unique identifier of the field being updated") @PathVariable("fieldId") Long fieldId,@ApiParam(name="userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        grantValidator.validate(grantService,grantId,attributeToSave.getGrant(),userId,tenantCode);
-        grantValidator.validateSectionExists(grantService,attributeToSave.getGrant(),sectionId);
-        grantValidator.validateFieldExists(grantService,attributeToSave.getGrant(),sectionId,fieldId);
-        Grant grant = saveGrant(grantId,attributeToSave.getGrant(), userId, tenantCode);
+    public FieldInfo updateField(@ApiParam(name = "sectionId", value = "Unique identifier of section") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "attributeToSave", value = "Updated attribute to be saved") @RequestBody AttributeToSaveVO attributeToSave, @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "fieldId", value = "Unique identifier of the field being updated") @PathVariable("fieldId") Long fieldId, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        grantValidator.validate(grantService, grantId, attributeToSave.getGrant(), userId, tenantCode);
+        grantValidator.validateSectionExists(grantService, attributeToSave.getGrant(), sectionId);
+        grantValidator.validateFieldExists(grantService, attributeToSave.getGrant(), sectionId, fieldId);
+        Grant grant = saveGrant(grantId, attributeToSave.getGrant(), userId, tenantCode);
         GrantSpecificSectionAttribute currentAttribute = grantService.findGrantStringAttributeById(fieldId).getSectionAttribute();
         currentAttribute.setFieldName(attributeToSave.getAttr().getFieldName());
         currentAttribute.setFieldType(attributeToSave.getAttr().getFieldType());
@@ -394,10 +401,10 @@ public class GrantController {
 
     @PostMapping("/{id}/template/{templateId}/section/{sectionName}")
     @ApiOperation("Create new section in grant")
-    public SectionInfo createSection(@RequestBody Grant grantToSave,@ApiParam(name="grantId",value = "Unique identifier of the grant") @PathVariable("id") Long grantId,@ApiParam(name="temaplteId",value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId,@ApiParam(name="sectionName",value = "Name of the new section") @PathVariable("sectionName") String sectionName,@ApiParam(name="userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
-        grantValidator.validateTemplateExists(grantService,grantToSave,templateId);
-        saveGrant(grantId,grantToSave,userId,tenantCode);
+    public SectionInfo createSection(@RequestBody Grant grantToSave, @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("id") Long grantId, @ApiParam(name = "temaplteId", value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId, @ApiParam(name = "sectionName", value = "Name of the new section") @PathVariable("sectionName") String sectionName, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
+        grantValidator.validateTemplateExists(grantService, grantToSave, templateId);
+        saveGrant(grantId, grantToSave, userId, tenantCode);
         Grant grant = grantService.getById(grantId);
 
         GrantSpecificSection specificSection = new GrantSpecificSection();
@@ -422,10 +429,10 @@ public class GrantController {
 
     @PutMapping("/{id}/template/{templateId}/section/{sectionId}")
     @ApiOperation("Delete existing section in grant")
-    public Grant deleteSection(@RequestBody Grant grantToSave,@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("id") Long grantId,@ApiParam(name="templateId",value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId,@ApiParam(name = "sectionId",value = "Unique identifier of the section being deleted") @PathVariable("sectionId") Long sectionId,@ApiParam(name = "userId",value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
-        grantValidator.validateTemplateExists(grantService,grantToSave,templateId);
-        grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
+    public Grant deleteSection(@RequestBody Grant grantToSave, @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("id") Long grantId, @ApiParam(name = "templateId", value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId, @ApiParam(name = "sectionId", value = "Unique identifier of the section being deleted") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
+        grantValidator.validateTemplateExists(grantService, grantToSave, templateId);
+        grantValidator.validateSectionExists(grantService, grantToSave, sectionId);
         GrantSpecificSection section = grantService.getGrantSectionBySectionId(sectionId);
         Grant grant = grantService.getById(grantId);
 
@@ -724,10 +731,10 @@ public class GrantController {
 
     @PutMapping("/{grantId}")
     @ApiOperation("Save grant")
-    public Grant saveGrant(@ApiParam(name = "grantId",value = "Unique identifier of grant")@PathVariable("grantId")Long grantId, @ApiParam(name="grantToSave",value = "Grant to save in edit mode, passed in Body of request") @RequestBody Grant grantToSave,@ApiParam(name="userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
-                           @ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public Grant saveGrant(@ApiParam(name = "grantId", value = "Unique identifier of grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "grantToSave", value = "Grant to save in edit mode, passed in Body of request") @RequestBody Grant grantToSave, @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+                           @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
+        grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
 
 
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
@@ -1380,20 +1387,20 @@ public class GrantController {
 
     @PostMapping("/{grantId}/flow/{fromState}/{toState}")
     @ApiOperation("Move grant through workflow")
-    public Grant MoveGrantState(@RequestBody GrantWithNote grantwithNote, @ApiParam(name = "userId",value = "Unique identified of logged in user") @PathVariable("userId") Long userId,
-                                @ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "fromStateId",value = "Unique identifier of the starting state of the grant in the workflow") @PathVariable("fromState") Long fromStateId,
-                                @ApiParam(name="toStateId",value = "Unique identifier of the ending state of the grant in the workflow") @PathVariable("toState") Long toStateId,
-                                @ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public Grant MoveGrantState(@RequestBody GrantWithNote grantwithNote, @ApiParam(name = "userId", value = "Unique identified of logged in user") @PathVariable("userId") Long userId,
+                                @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "fromStateId", value = "Unique identifier of the starting state of the grant in the workflow") @PathVariable("fromState") Long fromStateId,
+                                @ApiParam(name = "toStateId", value = "Unique identifier of the ending state of the grant in the workflow") @PathVariable("toState") Long toStateId,
+                                @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        grantValidator.validate(grantService,grantId,grantwithNote.getGrant(),userId,tenantCode);
-        grantValidator.validateFlow(grantService,grantwithNote.getGrant(),grantId,userId,fromStateId,toStateId);
+        grantValidator.validate(grantService, grantId, grantwithNote.getGrant(), userId, tenantCode);
+        grantValidator.validateFlow(grantService, grantwithNote.getGrant(), grantId, userId, fromStateId, toStateId);
 
         Grant grant = grantService.getById(grantId);
         Grant finalGrant = grant;
         WorkflowStatus previousState = grant.getGrantStatus();
         User previousOwner = userService.getUserById(grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getGrantId() == grantId && ass.getStateId() == finalGrant.getGrantStatus().getId()).collect(Collectors.toList()).get(0).getAssignments());
         grant.setGrantStatus(workflowStatusService.findById(toStateId));
-        if (grantwithNote.getNote()!=null && !grantwithNote.getNote().trim().equalsIgnoreCase("")){
+        if (grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("")) {
             grant.setNote(grantwithNote.getNote());
             grant.setNoteAdded(new Date());
             grant.setNoteAddedBy(userService.getUserById(userId).getEmailId());
@@ -1501,22 +1508,22 @@ public class GrantController {
         //Save Snapshot
         _saveSnapShot(grant);
         if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
-            _createReportingPeriods(grant,user,tenantCode);
+            _createReportingPeriods(grant, user, tenantCode);
         }
         return grant;
 
     }
 
-    private void _createReportingPeriods(Grant grant, User user,String tenantCode) {
-        Map<Date,List<SectionAttributesVO>> quarterlyPeriods = new HashMap<>();
-        Map<Date,List<SectionAttributesVO>> halfyearlyPeriods = new HashMap<>();
-        Map<Date,List<SectionAttributesVO>> monthlyPeriods = new HashMap<>();
-        Map<Date,List<SectionAttributesVO>> yearlyPeriods = new HashMap<>();
+    private void _createReportingPeriods(Grant grant, User user, String tenantCode) {
+        Map<Date, List<SectionAttributesVO>> quarterlyPeriods = new HashMap<>();
+        Map<Date, List<SectionAttributesVO>> halfyearlyPeriods = new HashMap<>();
+        Map<Date, List<SectionAttributesVO>> monthlyPeriods = new HashMap<>();
+        Map<Date, List<SectionAttributesVO>> yearlyPeriods = new HashMap<>();
         if (grant.getStartDate() != null && grant.getEndDate() != null) {
             grant.getGrantDetails().getSections().forEach(sec -> {
-                if(sec.getAttributes()!=null && sec.getAttributes().size()>0){
+                if (sec.getAttributes() != null && sec.getAttributes().size() > 0) {
                     List<SectionAttributesVO> attribs = new ArrayList<>();
-                    List order = ImmutableList.of("YEARLY","HALF-YEARLY","QUARTERLY","MONTHLY");
+                    List order = ImmutableList.of("YEARLY", "HALF-YEARLY", "QUARTERLY", "MONTHLY");
                     final Ordering<String> colorOrdering = Ordering.explicit(order);
                     Comparator<SectionAttributesVO> attrComparator = Comparator.comparing(
                             c -> order.indexOf(c.getFrequency().toUpperCase()));
@@ -1525,81 +1532,81 @@ public class GrantController {
                     sec.getAttributes().forEach(attr -> {
                         if (attr.getFieldType().equalsIgnoreCase("KPI")) {
 
-                            if(attr.getFrequency().equalsIgnoreCase("YEARLY")){
-                                    DateTime st = new DateTime(grant.getStartDate());
-                                    DateTime en = new DateTime(grant.getEnDate());
-                                    while (st.isBefore(en)){
-                                        st = st.plusMonths(12);
-                                        if(st.isAfter(en)){
-                                            continue;
-                                        }
-                                        if(yearlyPeriods.containsKey(st.toDate())) {
-                                            yearlyPeriods.get(st.toDate()).add(attr);
-                                        }else{
-                                            List attrList = new ArrayList<SectionAttributesVO>();
-                                            attrList.add(attr);
-                                            yearlyPeriods.put(st.toDate(),attrList);
-                                        }
+                            if (attr.getFrequency().equalsIgnoreCase("YEARLY")) {
+                                DateTime st = new DateTime(grant.getStartDate());
+                                DateTime en = new DateTime(grant.getEnDate());
+                                while (st.isBefore(en)) {
+                                    st = st.plusMonths(12);
+                                    if (st.isAfter(en)) {
+                                        continue;
                                     }
+                                    if (yearlyPeriods.containsKey(st.toDate())) {
+                                        yearlyPeriods.get(st.toDate()).add(attr);
+                                    } else {
+                                        List attrList = new ArrayList<SectionAttributesVO>();
+                                        attrList.add(attr);
+                                        yearlyPeriods.put(st.toDate(), attrList);
+                                    }
+                                }
                             }
 
-                            if(attr.getFrequency().equalsIgnoreCase("HALF-YEARLY")){
+                            if (attr.getFrequency().equalsIgnoreCase("HALF-YEARLY")) {
 
-                                    DateTime st = new DateTime(grant.getStartDate());
-                                    DateTime en = new DateTime(grant.getEnDate());
-                                while (st.isBefore(en)){
+                                DateTime st = new DateTime(grant.getStartDate());
+                                DateTime en = new DateTime(grant.getEnDate());
+                                while (st.isBefore(en)) {
                                     st = st.plusMonths(6);
-                                    if(st.isAfter(en)){
+                                    if (st.isAfter(en)) {
                                         continue;
                                     }
-                                    if(yearlyPeriods.containsKey(st.toDate())) {
+                                    if (yearlyPeriods.containsKey(st.toDate())) {
                                         yearlyPeriods.get(st.toDate()).add(attr);
-                                    }else{
+                                    } else {
                                         List attrList = new ArrayList<SectionAttributesVO>();
                                         attrList.add(attr);
-                                        halfyearlyPeriods.put(st.toDate(),attrList);
+                                        halfyearlyPeriods.put(st.toDate(), attrList);
                                     }
                                 }
                             }
 
-                            if(attr.getFrequency().equalsIgnoreCase("QUARTERLY")){
-                                    DateTime st = new DateTime(grant.getStartDate());
-                                    DateTime en = new DateTime(grant.getEnDate());
-                                while (st.isBefore(en)){
+                            if (attr.getFrequency().equalsIgnoreCase("QUARTERLY")) {
+                                DateTime st = new DateTime(grant.getStartDate());
+                                DateTime en = new DateTime(grant.getEnDate());
+                                while (st.isBefore(en)) {
                                     st = st.plusMonths(3);
-                                    if(st.isAfter(en)){
+                                    if (st.isAfter(en)) {
                                         continue;
                                     }
-                                    if(yearlyPeriods.containsKey(st.toDate())) {
+                                    if (yearlyPeriods.containsKey(st.toDate())) {
                                         yearlyPeriods.get(st.toDate()).add(attr);
-                                    }else if(halfyearlyPeriods.containsKey(st.toDate())) {
+                                    } else if (halfyearlyPeriods.containsKey(st.toDate())) {
                                         halfyearlyPeriods.get(st.toDate()).add(attr);
-                                    } else{
+                                    } else {
                                         List attrList = new ArrayList<SectionAttributesVO>();
                                         attrList.add(attr);
-                                        quarterlyPeriods.put(st.toDate(),attrList);
+                                        quarterlyPeriods.put(st.toDate(), attrList);
                                     }
                                 }
                             }
 
-                            if(attr.getFrequency().equalsIgnoreCase("MONTHLY")){
-                                    DateTime st = new DateTime(grant.getStartDate());
-                                    DateTime en = new DateTime(grant.getEnDate());
-                                while (st.isBefore(en)){
+                            if (attr.getFrequency().equalsIgnoreCase("MONTHLY")) {
+                                DateTime st = new DateTime(grant.getStartDate());
+                                DateTime en = new DateTime(grant.getEnDate());
+                                while (st.isBefore(en)) {
                                     st = st.plusMonths(1);
-                                    if(st.isAfter(en)){
+                                    if (st.isAfter(en)) {
                                         continue;
                                     }
-                                    if(yearlyPeriods.containsKey(st.toDate())) {
+                                    if (yearlyPeriods.containsKey(st.toDate())) {
                                         yearlyPeriods.get(st.toDate()).add(attr);
-                                    }else if(halfyearlyPeriods.containsKey(st.toDate())) {
+                                    } else if (halfyearlyPeriods.containsKey(st.toDate())) {
                                         halfyearlyPeriods.get(st.toDate()).add(attr);
-                                    }else if(quarterlyPeriods.containsKey(st.toDate())) {
+                                    } else if (quarterlyPeriods.containsKey(st.toDate())) {
                                         quarterlyPeriods.get(st.toDate()).add(attr);
-                                    } else{
+                                    } else {
                                         List attrList = new ArrayList<SectionAttributesVO>();
                                         attrList.add(attr);
-                                        monthlyPeriods.put(st.toDate(),attrList);
+                                        monthlyPeriods.put(st.toDate(), attrList);
                                     }
                                 }
                             }
@@ -1612,91 +1619,91 @@ public class GrantController {
 
         Date now = DateTime.now().toDate();
 
-        TreeMap<Date,List<SectionAttributesVO>> yrTree = new TreeMap(yearlyPeriods);
-        TreeMap<Date,List<SectionAttributesVO>> hyTree = new TreeMap(halfyearlyPeriods);
-        TreeMap<Date,List<SectionAttributesVO>> qTree = new TreeMap(quarterlyPeriods);
-        TreeMap<Date,List<SectionAttributesVO>> mtTree = new TreeMap(monthlyPeriods);
+        TreeMap<Date, List<SectionAttributesVO>> yrTree = new TreeMap(yearlyPeriods);
+        TreeMap<Date, List<SectionAttributesVO>> hyTree = new TreeMap(halfyearlyPeriods);
+        TreeMap<Date, List<SectionAttributesVO>> qTree = new TreeMap(quarterlyPeriods);
+        TreeMap<Date, List<SectionAttributesVO>> mtTree = new TreeMap(monthlyPeriods);
         final int[] i = {1};
         GranterReportTemplate reportTemplate = reportService.getDefaultTemplate();
 
-        yrTree.forEach((entry,val) -> {
+        yrTree.forEach((entry, val) -> {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
+            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
             report.setEndDate(entry);
             report.setGrant(grant);
             report.setName("Yearly Progress Report");
             report.setTemplate(reportTemplate);
             report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.YEARLY.value()).toDate());
-            report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",grant.getGrantorOrganization().getId()));
+            report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT", grant.getGrantorOrganization().getId()));
             report.setType("Yearly");
 
             report = reportService.saveReport(report);
 
             _createSectionsForReports(reportTemplate, val, report);
 
-            reportService.saveAssignments(report,tenantCode,user.getId());
+            reportService.saveAssignments(report, tenantCode, user.getId());
             i[0]++;
         });
 
-        i[0]=1;
+        i[0] = 1;
 
-        hyTree.forEach((entry,val) -> {
+        hyTree.forEach((entry, val) -> {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
+            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
             report.setEndDate(entry);
             report.setGrant(grant);
             report.setName("Half-Yearly Progress Report");
             report.setTemplate(reportTemplate);
             report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.HALF_YEARLY.value()).toDate());
-            report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",grant.getGrantorOrganization().getId()));
+            report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT", grant.getGrantorOrganization().getId()));
             report.setType("Half-Yearly");
             report = reportService.saveReport(report);
             _createSectionsForReports(reportTemplate, val, report);
-            reportService.saveAssignments(report,tenantCode,user.getId());
+            reportService.saveAssignments(report, tenantCode, user.getId());
             i[0]++;
         });
 
-        i[0]=1;
+        i[0] = 1;
 
-        qTree.forEach((entry,val) -> {
+        qTree.forEach((entry, val) -> {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
+            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
             report.setEndDate(entry);
             report.setGrant(grant);
             report.setName("Quarterly Progress Report");
             report.setTemplate(reportTemplate);
             report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.QUARTER.value()).toDate());
-            report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",grant.getGrantorOrganization().getId()));
+            report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT", grant.getGrantorOrganization().getId()));
             report.setType("Quarterly");
             report = reportService.saveReport(report);
             _createSectionsForReports(reportTemplate, val, report);
-            reportService.saveAssignments(report,tenantCode,user.getId());
+            reportService.saveAssignments(report, tenantCode, user.getId());
             i[0]++;
         });
 
-        i[0]=1;
+        i[0] = 1;
 
-        mtTree.forEach((entry,val) -> {
+        mtTree.forEach((entry, val) -> {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
+            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
             report.setEndDate(entry);
             report.setGrant(grant);
             report.setName("Monthly Progress Report");
             report.setTemplate(reportTemplate);
             report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.MONTHLY.value()).toDate());
-            report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",grant.getGrantorOrganization().getId()));
+            report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT", grant.getGrantorOrganization().getId()));
             report.setType("Monthly");
             report = reportService.saveReport(report);
             _createSectionsForReports(reportTemplate, val, report);
-            reportService.saveAssignments(report,tenantCode,user.getId());
+            reportService.saveAssignments(report, tenantCode, user.getId());
             i[0]++;
         });
 
@@ -1711,7 +1718,7 @@ public class GrantController {
         for (GranterReportSection reportSection : granterReportSections) {
             ReportSpecificSection specificSection = new ReportSpecificSection();
             specificSection.setDeletable(true);
-            specificSection.setGranter((Granter)report.getGrant().getGrantorOrganization());
+            specificSection.setGranter((Granter) report.getGrant().getGrantorOrganization());
             specificSection.setReportId(report.getId());
             specificSection.setReportTemplateId(reportTemplate.getId());
             specificSection.setSectionName(reportSection.getSectionName());
@@ -1721,7 +1728,7 @@ public class GrantController {
             ReportSpecificSection finalSpecificSection = specificSection;
             Report finalReport = report;
             final AtomicInteger[] attribVOOrder = {new AtomicInteger(1)};
-            if(specificSection.getSectionName().equalsIgnoreCase("Project Indicators")) {
+            if (specificSection.getSectionName().equalsIgnoreCase("Project Indicators")) {
                 val.forEach(attribVo -> {
                     ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
                     sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
@@ -1745,7 +1752,7 @@ public class GrantController {
                     stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
                 });
             }
-            reportSection.getAttributes().forEach(a ->{
+            reportSection.getAttributes().forEach(a -> {
                 ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
                 sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
                 sectionAttribute.setDeletable(a.getDeletable());
@@ -1763,14 +1770,12 @@ public class GrantController {
                 stringAttribute.setSection(finalSpecificSection);
                 stringAttribute.setReport(finalReport);
                 stringAttribute.setSectionAttribute(sectionAttribute);
-                if(sectionAttribute.getFieldType().equalsIgnoreCase("kpi")) {
+                if (sectionAttribute.getFieldType().equalsIgnoreCase("kpi")) {
                     stringAttribute.setGrantLevelTarget(null);
                     stringAttribute.setFrequency(report.getType().toLowerCase());
-                }else if(sectionAttribute.getFieldType().equalsIgnoreCase("table")){
+                } else if (sectionAttribute.getFieldType().equalsIgnoreCase("table")) {
                     stringAttribute.setValue(a.getExtras());
                 }
-
-
 
 
                 stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
@@ -1783,10 +1788,14 @@ public class GrantController {
     private String _getSuffix(final int n) {
 
         switch (n % 10) {
-            case 1:  return "st";
-            case 2:  return "nd";
-            case 3:  return "rd";
-            default: return "th";
+            case 1:
+                return "st";
+            case 2:
+                return "nd";
+            case 3:
+                return "rd";
+            default:
+                return "th";
         }
     }
 
@@ -1799,7 +1808,7 @@ public class GrantController {
                 snapshot.setAssignedToId(assignment.getUser().getId());
                 snapshot.setDescription(grant.getDescription());
                 snapshot.setEndDate(grant.getEndDate());
-                snapshot.setGrantee(grant.getOrganization()!=null?grant.getOrganization().getName():"");
+                snapshot.setGrantee(grant.getOrganization() != null ? grant.getOrganization().getName() : "");
                 snapshot.setGrantId(grant.getId());
                 snapshot.setName(grant.getName());
                 snapshot.setRepresentative(grant.getRepresentative());
@@ -1809,7 +1818,7 @@ public class GrantController {
                 grantSnapshotService.saveGrantSnapshot(snapshot);
             }
         } catch (JsonProcessingException e) {
-            logger.error(e.getMessage(),e);
+            logger.error(e.getMessage(), e);
         }
 
 
@@ -1817,11 +1826,11 @@ public class GrantController {
 
     @PutMapping("/{grantId}/template/{templateId}/{templateName}")
     @ApiOperation("Save custom grant template with name and description")
-    public Grant updateTemplateName(@ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
-                                    @ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,
-                                    @ApiParam(name = "templateId",value = "Unique identfier of the grant template") @PathVariable("templateId") Long templateId,
-                                    @ApiParam(name = "templateName",value = "NName of the template to be saved") @PathVariable("templateName") String templateName,
-                                    @ApiParam(name = "templateDate",value = "Additional information about the template such as descriptio, publish or save as private") @RequestBody TemplateMetaData templateData) {
+    public Grant updateTemplateName(@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+                                    @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,
+                                    @ApiParam(name = "templateId", value = "Unique identfier of the grant template") @PathVariable("templateId") Long templateId,
+                                    @ApiParam(name = "templateName", value = "NName of the template to be saved") @PathVariable("templateName") String templateName,
+                                    @ApiParam(name = "templateDate", value = "Additional information about the template such as descriptio, publish or save as private") @RequestBody TemplateMetaData templateData) {
 
         GranterGrantTemplate template = granterGrantTemplateService.findByTemplateId(templateId);
         template.setName(templateName);
@@ -1951,7 +1960,7 @@ public class GrantController {
 
     @PostMapping(value = "/{grantId}/pdf")
     @ApiIgnore
-    public PdfDocument getPDFExport(@ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name="grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name="htmlContent",value ="" ) @RequestBody String htmlContent, HttpServletRequest request, HttpServletResponse response) {
+    public PdfDocument getPDFExport(@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "htmlContent", value = "") @RequestBody String htmlContent, HttpServletRequest request, HttpServletResponse response) {
 
         Grant grant = grantService.getById(grantId);
         String fileName = grant.getName().replaceAll("[^A-Za-z0-9]", "_") + ".pdf";
@@ -1989,7 +1998,7 @@ public class GrantController {
             GrantVO grantVO = new GrantVO();
             grantVO = grantVO.build(grant, grantService.getGrantSections(grant), workflowPermissionService, user, appConfigService
                     .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                            AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),userService);
+                            AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS), userService);
             grant.setGrantDetails(grantVO.getGrantDetails());
             grant.setNoteAddedBy(grantVO.getNoteAddedBy());
             grant.setNoteAddedByUser(grantVO.getNoteAddedByUser());
@@ -2133,14 +2142,14 @@ public class GrantController {
 
     @GetMapping("/templates")
     @ApiOperation("Get all published grant templates for tenant")
-    public List<GranterGrantTemplate> getTenantPublishedGrantTemplates(@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
+    public List<GranterGrantTemplate> getTenantPublishedGrantTemplates(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
         return granterGrantTemplateService.findByGranterIdAndPublishedStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(), true);
     }
 
     @PostMapping("/{grantId}/assignment")
     @ApiOperation("Set owners for grant workflow states")
-    public Grant saveGrantAssignments(@ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "assignmentModel",value = "Set assignment for grant per workflow state") @RequestBody GrantAssignmentModel assignmentModel,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        Grant grant = saveGrant(assignmentModel.getGrant().getId(),assignmentModel.getGrant(),userId,tenantCode);
+    public Grant saveGrantAssignments(@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "assignmentModel", value = "Set assignment for grant per workflow state") @RequestBody GrantAssignmentModel assignmentModel, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        Grant grant = saveGrant(assignmentModel.getGrant().getId(), assignmentModel.getGrant(), userId, tenantCode);
         for (GrantAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
             GrantAssignments assignment = null;
             if (assignmentsVO.getId() == null) {
@@ -2164,8 +2173,8 @@ public class GrantController {
 
     @PostMapping("/{grantId}/field/{fieldId}/template/{templateId}")
     @ApiOperation(value = "Attach document to field", notes = "Valid for Document field types only")
-    public DocInfo createDocumentForGrantSectionField(@ApiParam(name = "grantToSave",value = "Grant to save in edit mode, passed in Body of request") @RequestBody Grant grantToSave,@ApiParam(name="userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "fieldId",value = "Unique identifier of the field to which document is being attached") @PathVariable("fieldId") Long fieldId,@ApiParam(name = "temaplteId",value = "Unique identified of the document template being attached") @PathVariable("templateId") Long templateId,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        saveGrant(grantToSave.getId(),grantToSave, userId, tenantCode);
+    public DocInfo createDocumentForGrantSectionField(@ApiParam(name = "grantToSave", value = "Grant to save in edit mode, passed in Body of request") @RequestBody Grant grantToSave, @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "fieldId", value = "Unique identifier of the field to which document is being attached") @PathVariable("fieldId") Long fieldId, @ApiParam(name = "temaplteId", value = "Unique identified of the document template being attached") @PathVariable("templateId") Long templateId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        saveGrant(grantToSave.getId(), grantToSave, userId, tenantCode);
         TemplateLibrary libraryDoc = templateLibraryService.getTemplateLibraryDocumentById(templateId);
 
         GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(fieldId);
@@ -2212,8 +2221,8 @@ public class GrantController {
 
     @PostMapping("{grantId}/attribute/{attributeId}/attachment/{attachmentId}")
     @ApiOperation("Delete attachment from document field")
-    public Grant deleteGrantStringAttributeAttachment(@ApiParam(name = "grantToSave",value = "Grant to save in edit mode, pass in Body of request") @RequestBody Grant grantToSave,@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "userId",value = "Unique identifier og logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "attachmentId",value = "Unique identifier of the document attachment being deleted") @PathVariable("attachmentId") Long attachmentId,@ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode,@ApiParam(name = "attributeId",value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId) {
-        saveGrant(grantToSave.getId(),grantToSave, userId, tenantCode);
+    public Grant deleteGrantStringAttributeAttachment(@ApiParam(name = "grantToSave", value = "Grant to save in edit mode, pass in Body of request") @RequestBody Grant grantToSave, @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "userId", value = "Unique identifier og logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "attachmentId", value = "Unique identifier of the document attachment being deleted") @PathVariable("attachmentId") Long attachmentId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode, @ApiParam(name = "attributeId", value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId) {
+        saveGrant(grantToSave.getId(), grantToSave, userId, tenantCode);
         grantService.deleteStringAttributeAttachmentsByAttachmentId(attachmentId);
         GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(attributeId);
         List<GrantStringAttributeAttachments> stringAttributeAttachments = grantService.getStringAttributeAttachmentsByStringAttribute(stringAttribute);
@@ -2233,22 +2242,22 @@ public class GrantController {
     }
 
 
-    @PostMapping(value = "/{grantId}/section/{sectionId}/attribute/{attributeId}/upload",consumes = {"multipart/form-data"})
+    @PostMapping(value = "/{grantId}/section/{sectionId}/attribute/{attributeId}/upload", consumes = {"multipart/form-data"})
     @ApiOperation("Upload and attach files to Document field from disk")
-    public DocInfo saveUploadedFiles(@ApiParam(name="sectionId",value = "Unique identifier of section") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "userId",value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,@ApiParam(name = "grantId",value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "attributeId",value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId,@ApiParam(name = "grantData", value = "Grant data") @RequestParam("grantToSave") String grantToSaveStr,@RequestParam("file") MultipartFile[] files, @ApiParam(name = "X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public DocInfo saveUploadedFiles(@ApiParam(name = "sectionId", value = "Unique identifier of section") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "attributeId", value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId, @ApiParam(name = "grantData", value = "Grant data") @RequestParam("grantToSave") String grantToSaveStr, @RequestParam("file") MultipartFile[] files, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         Grant grantToSave = null;
         try {
-            grantToSave = mapper.readValue(grantToSaveStr,Grant.class);
+            grantToSave = mapper.readValue(grantToSaveStr, Grant.class);
         } catch (IOException e) {
-           logger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
-        grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
-        grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
-        grantValidator.validateFieldExists(grantService,grantToSave,sectionId,attributeId);
-        grantValidator.validateFiles(files,supportedFileTypes);
+        grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
+        grantValidator.validateSectionExists(grantService, grantToSave, sectionId);
+        grantValidator.validateFieldExists(grantService, grantToSave, sectionId, attributeId);
+        grantValidator.validateFiles(files, supportedFileTypes);
 
         Grant grant = grantService.getById(grantId);
 
@@ -2361,24 +2370,86 @@ public class GrantController {
     public List<GrantHistory> getGrantHistory(@PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         List<GrantHistory> history = grantService.getGrantHistory(grantId);
-        for(GrantHistory historyEntry : history){
-            historyEntry.setNoteAddedByUser(userService.getUserByEmailAndOrg(historyEntry.getNoteAddedBy(),historyEntry.getGrantorOrganization()));
+        for (GrantHistory historyEntry : history) {
+            historyEntry.setNoteAddedByUser(userService.getUserByEmailAndOrg(historyEntry.getNoteAddedBy(), historyEntry.getGrantorOrganization()));
         }
         return history;
     }
 
     @GetMapping("{grantId}/changeHistory")
-    public GrantSnapshot getGrantHistory(@PathVariable("grantId") Long grantId,@PathVariable("userId") Long userId){
+    public GrantSnapshot getGrantHistory(@PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId) {
         Grant grant = grantService.getById(grantId);
 
-        return grantSnapshotService.getSnapshotByGrantIdAndAssignedToIdAndStatusId(grantId,userId,grant.getGrantStatus().getId());
+        return grantSnapshotService.getSnapshotByGrantIdAndAssignedToIdAndStatusId(grantId, userId, grant.getGrantStatus().getId());
     }
 
     @GetMapping("/active")
-    public List<Grant> getAllActiveGrants(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode){
+    public List<Grant> getAllActiveGrants(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
         List<Grant> activeGrants = grantService.getActiveGrantsForTenant(organizationService.findOrganizationByTenantCode(tenantCode));
 
 
         return activeGrants;
+    }
+
+    @PostMapping("{grantId}/invite")
+    public Grant saveGrantInvites(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("grantId") Long grantId, @RequestBody GrantInvite grantInvite) {
+        grantValidator.validate(grantService, grantId, grantInvite.getGrant(), userId, tenantCode);
+        Grant grant = saveGrant(grantId, grantInvite.getGrant(), userId, tenantCode);
+        UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
+        String host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".")+1);
+        UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
+        String url = uriBuilder.toUriString();
+        for (InviteEntry invite : grantInvite.getInvites()) {
+            User granteeUser = null;
+            User existingUser = userService.getUserByEmailAndOrg(invite.getName(), grant.getOrganization());
+            ObjectMapper mapper = new ObjectMapper();
+            String code = null;
+            try {
+                code = Base64.getEncoder().encode(mapper.writeValueAsString(grant).getBytes()).toString();
+            } catch (JsonProcessingException e) {
+                logger.error(e.getMessage(), e);
+            }
+            if (existingUser != null && existingUser.isActive()) {
+                granteeUser = existingUser;
+
+
+                url = url+"/home/?action=login&org="+grant.getOrganization().getName()+"&g=" + code+"&email="+invite.getName()+"&type=grant";
+
+
+            } else if(existingUser!=null && !existingUser.isActive()){
+                granteeUser = existingUser;
+                url = url+"/home/?action=registration&org="+grant.getOrganization().getName()+"&g=" + code+"&email="+invite.getName()+"&type=grant";
+
+            } else {
+                granteeUser = new User();
+                Role newRole = roleService.findByOrganizationAndName(grant.getOrganization(), "Admin");
+
+
+                UserRole userRole = new UserRole();
+                userRole.setRole(newRole);
+                userRole.setUser(granteeUser);
+                List<UserRole> userRoles = new ArrayList<>();
+                userRoles.add(userRole);
+                granteeUser.setUserRoles(userRoles);
+                granteeUser.setFirstName("To be set");
+                granteeUser.setLastName("To be set");
+                granteeUser.setEmailId(invite.getName());
+                granteeUser.setOrganization(grant.getOrganization());
+                granteeUser.setActive(false);
+                granteeUser = userService.save(granteeUser);
+                url = url+"/home/?action=registration&org="+grant.getOrganization().getName()+"&g=" + code+"&email="+invite.getName()+"&type=grant";
+            }
+
+            String[] notifications = grantService.buildGrantInvitationContent(grant,
+                    userService.getUserById(userId),
+                    appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.GRANT_INVITE_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.GRANT_INVITE_MESSAGE).getConfigValue(),
+                    url);
+             commonEmailSevice.sendMail(granteeUser.getEmailId(),notifications[0],notifications[1],new String[]{appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+        }
+
+
+        grant = _grantToReturn(userId, grant);
+        return grant;
     }
 }

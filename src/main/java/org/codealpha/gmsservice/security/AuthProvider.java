@@ -94,7 +94,7 @@ public class AuthProvider implements AuthenticationProvider {
       }else if ("ANUDAN".equalsIgnoreCase(tenantCode)){
         List<User> users = userService.getUsersByEmail(username);
         for (User eachUser : users) {
-          if(eachUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
+          if(eachUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") || eachUser.getOrganization().getOrganizationType().equalsIgnoreCase("PLATFORM")){
             user = eachUser;
             org = user.getOrganization();
             break;

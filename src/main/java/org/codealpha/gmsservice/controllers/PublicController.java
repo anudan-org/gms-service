@@ -1,7 +1,9 @@
 package org.codealpha.gmsservice.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.services.OrganizationService;
@@ -13,13 +15,11 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
 import org.springframework.util.StreamUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Base64;
 
 @RestController
 @RequestMapping("/public")
@@ -71,4 +71,19 @@ public class PublicController {
         }
 
     }
+
+    /*@GetMapping("/grant/invite")
+    public void processInvite(@RequestParam("t") String type,@RequestParam("g")String grantCode,){
+
+        String grantJSON = Base64.getDecoder().decode(grantCode).toString();
+        ObjectMapper mapper = new ObjectMapper();
+        Grant grant = null;
+        try {
+            grant = mapper.readValue(grantJSON, Grant.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return
+    }*/
 }

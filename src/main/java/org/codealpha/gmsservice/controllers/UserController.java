@@ -79,52 +79,64 @@ public class UserController {
   @Transactional
   public User create(@RequestBody UserVO user) {
 
-    User newUser = new User();
+    Organization granteeOrg = organizationService.findByNameAndOrganizationType(user.getOrganizationName(),"GRANTEE");
 
-    //BCryptPasswordEncoder a  = new BCryptPasswordEncoder
-    newUser.setCreatedAt(DateTime.now().toDate());
-    newUser.setCreatedBy("Api");
-    newUser.setEmailId(user.getEmailId());
-    Organization newGranteeOrg = new Grantee();
-    newGranteeOrg.setOrganizationType("GRANTEE");
-    newGranteeOrg.setCreatedAt(DateTime.now().toDate());
-    newGranteeOrg.setCreatedBy("System");
-    newGranteeOrg.setName("To be set");
+    User newUser = userService.getUserByEmailAndOrg(user.getEmailId(),granteeOrg);
+    if(newUser==null) {
+      newUser = new User();
 
-    newGranteeOrg = organizationService.save(newGranteeOrg);
-    newUser.setOrganization(newGranteeOrg);
-    newUser.setPassword(user.getPassword());
+      //BCryptPasswordEncoder a  = new BCryptPasswordEncoder
+      newUser.setCreatedAt(DateTime.now().toDate());
+      newUser.setCreatedBy("Api");
+      newUser.setEmailId(user.getEmailId());
+      Organization newGranteeOrg = new Grantee();
+      newGranteeOrg.setOrganizationType("GRANTEE");
+      newGranteeOrg.setCreatedAt(DateTime.now().toDate());
+      newGranteeOrg.setCreatedBy("System");
+      newGranteeOrg.setName("To be set");
 
-    Role newRole = new Role();
-    newRole.setName("Admin");
-    newRole.setOrganization(newGranteeOrg);
-    newRole.setCreatedAt(DateTime.now().toDate());
-    newRole.setCreatedBy("System");
+      newGranteeOrg = organizationService.save(newGranteeOrg);
+      newUser.setOrganization(newGranteeOrg);
+      newUser.setPassword(user.getPassword());
 
-    newRole = roleService.saveRole(newRole);
-    UserRole userRole = new UserRole();
-    userRole.setRole(newRole);
-    userRole.setUser(newUser);
-    List<UserRole> userRoles = new ArrayList<>();
-    userRoles.add(userRole);
-    newUser.setUserRoles(userRoles);
-    newUser.setFirstName("To be set");
-    newUser.setLastName("To be set");
-    newUser = userService.save(newUser);
+      Role newRole = new Role();
+      newRole.setName("Admin");
+      newRole.setOrganization(newGranteeOrg);
+      newRole.setCreatedAt(DateTime.now().toDate());
+      newRole.setCreatedBy("System");
 
-    UriComponents urlComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
+      newRole = roleService.saveRole(newRole);
+      UserRole userRole = new UserRole();
+      userRole.setRole(newRole);
+      userRole.setUser(newUser);
+      List<UserRole> userRoles = new ArrayList<>();
+      userRoles.add(userRole);
+      newUser.setUserRoles(userRoles);
+      newUser.setFirstName("To be set");
+      newUser.setLastName("To be set");
+      newUser = userService.save(newUser);
 
-    String scheme = urlComponents.getScheme();
-    String host = urlComponents.getHost();
-    int port = urlComponents.getPort();
+      UriComponents urlComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
 
-    String verificationLink =
-        scheme + "://" + host + (port != -1 ? ":" + port : "") + "/grantee/verification?emailId="
-            + user.getEmailId() + "&code=" + RandomStringUtils.randomAlphanumeric(127);
+      String scheme = urlComponents.getScheme();
+      String host = urlComponents.getHost();
+      int port = urlComponents.getPort();
 
-    System.out.println(verificationLink);
-    commonEmailSevice
-        .sendMail(user.getEmailId(), "Anudan.org - Verification Link", verificationLink,null);
+      String verificationLink =
+              scheme + "://" + host + (port != -1 ? ":" + port : "") + "/grantee/verification?emailId="
+                      + user.getEmailId() + "&code=" + RandomStringUtils.randomAlphanumeric(127);
+
+      System.out.println(verificationLink);
+      commonEmailSevice
+              .sendMail(user.getEmailId(), "Anudan.org - Verification Link", verificationLink,null);
+    }else{
+      newUser.setActive(true);
+      newUser.setFirstName(user.getFirstName());
+      newUser.setLastName(user.getLastName());
+      newUser.setPassword(user.getPassword());
+      newUser = userService.save(newUser);
+    }
+
     return newUser;
   }
 

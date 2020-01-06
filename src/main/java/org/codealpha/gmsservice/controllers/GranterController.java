@@ -112,7 +112,7 @@ public class GranterController {
 
 
 		Organization org = new Granter();
-		/*org.setCode(slug.toUpperCase());
+		org.setCode(slug.toUpperCase());
 		org.setCreatedAt(DateTime.now().toDate());
 		org.setCreatedBy(userService.getUserById(userId).getEmailId());
 		org.setName(granterName);
@@ -124,7 +124,7 @@ public class GranterController {
             File dir = new File(filePath);
             dir.mkdirs();
 
-            File fileToCreate = new File(dir, image.getOriginalFilename());
+            File fileToCreate = new File(dir, "logo.png");
             image.transferTo(fileToCreate);
 
         } catch (IOException e) {
@@ -733,7 +733,6 @@ public class GranterController {
 		permission.setWorkflowStatus(workflowStatusClosed);
 		permission.setRole(role);
 		permission = workflowStatePermissionService.saveWorkflowStatePermission(permission);
-*/
 
 		return org;
 	}

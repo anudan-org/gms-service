@@ -25,7 +25,12 @@ public class NotificationValidator {
         String[] authTokens = auth.getPrincipal().toString().split("\\^");
 
         Organization tenant = organizationRepository.findByCode(authTokens[1]);
-        User user = userRepository.findByEmailIdAndOrganization(authTokens[0],tenant);
+        User user = null;
+        if (!"ANUDAN".equalsIgnoreCase(tenantCode)){
+            user = userRepository.findByEmailIdAndOrganization(authTokens[0], tenant);
+        }else if ("ANUDAN".equalsIgnoreCase(tenantCode)){
+            user = userRepository.findById(userId).get();
+        }
 
         try {
             _validateUser(userId, user);

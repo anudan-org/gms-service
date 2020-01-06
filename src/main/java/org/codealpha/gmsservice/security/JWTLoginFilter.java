@@ -80,7 +80,7 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
     }else if("ANUDAN".equalsIgnoreCase(token)){
       List<User> users = userRepository.findByEmailId(auth.getName());
       for (User user1 : users) {
-        if(user1.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
+        if(user1.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") || user1.getOrganization().getOrganizationType().equalsIgnoreCase("PLATFORM")){
           user = user1;
           break;
         }
