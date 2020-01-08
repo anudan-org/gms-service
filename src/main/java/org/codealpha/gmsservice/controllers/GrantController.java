@@ -114,6 +114,8 @@ public class GrantController {
     private GrantValidator grantValidator;
     @Autowired
     private RoleService roleService;
+    @Autowired
+    private UserRoleService userRoleService;
 
     @Autowired
     private ReportService reportService;
@@ -2428,6 +2430,7 @@ public class GrantController {
                 UserRole userRole = new UserRole();
                 userRole.setRole(newRole);
                 userRole.setUser(granteeUser);
+
                 List<UserRole> userRoles = new ArrayList<>();
                 userRoles.add(userRole);
                 granteeUser.setUserRoles(userRoles);
@@ -2437,6 +2440,7 @@ public class GrantController {
                 granteeUser.setOrganization(grant.getOrganization());
                 granteeUser.setActive(false);
                 granteeUser = userService.save(granteeUser);
+                userRole = userRoleService.saveUserRole(userRole);
                 url = url+"/home/?action=registration&org="+grant.getOrganization().getName()+"&g=" + code+"&email="+invite.getName()+"&type=grant";
             }
 

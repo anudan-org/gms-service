@@ -57,7 +57,8 @@ public class DashboardService {
 
         for (Grant grant : grants) {
             for (Tenant tenant : tenants) {
-                if (tenant.getName().equalsIgnoreCase(grant.getGrantorOrganization().getCode())) {
+                if ((user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER") && tenant.getName().equalsIgnoreCase(grant.getGrantorOrganization().getCode()))
+                || (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"))) {
                     List<Grant> grantList = tenant.getGrants();
 
                     grant.setActionAuthorities(workflowPermissionService
