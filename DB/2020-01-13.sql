@@ -1,0 +1,2 @@
+insert into app_config(config_name,config_value) values('REPORT_INVITE_SUBJECT','Intivation to Report: %REPORT_NAME% for Grant: %GRANT_NAME%');
+insert into app_config(config_name,config_value) values('REPORT_INVITE_MESSAGE','You have been invited to access Report: %REPORT_NAME% for Grant: %GRANT_NAME% from %TENANT_NAME%.<br><br>Please sign up or login to view the grant ply clicking on the link below.<br><br>%LINK%');

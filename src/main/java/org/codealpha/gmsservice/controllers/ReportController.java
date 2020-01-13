@@ -21,16 +21,16 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -72,6 +72,8 @@ public class ReportController {
     private NotificationsService notificationsService;
     @Autowired
     private RoleService roleService;
+    @Autowired
+    private UserRoleService userRoleService;
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -583,6 +585,10 @@ public class ReportController {
     public Report saveReportAssignments(@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "assignmentModel", value = "Set assignment for report per workflow state") @RequestBody ReportAssignmentModel assignmentModel, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Report report = saveReport(reportId, assignmentModel.getReport(), userId, tenantCode);
         String customAss = null;
+        UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
+        String host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".")+1);
+        UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
+        String url = uriBuilder.toUriString();
         for (ReportAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
             if(customAss==null && assignmentsVO.getCustomAssignments()!=null){
                 customAss = assignmentsVO.getCustomAssignments();
@@ -600,7 +606,62 @@ public class ReportController {
 
             if((customAss!=null && !"".equalsIgnoreCase(customAss.trim()))  && workflowStatusService.getById(assignmentsVO.getStateId()).getInternalStatus().equalsIgnoreCase("ACTIVE")){
                 String[] customAssignments = customAss.split(",");
-                for (String customAssignment : customAssignments) {
+                User granteeUser = null;
+                User existingUser = userService.getUserByEmailAndOrg(customAss,report.getGrant().getOrganization());
+                ObjectMapper mapper = new ObjectMapper();
+                String code = null;
+                try {
+                    code = Base64.getEncoder().encode(mapper.writeValueAsString(report).getBytes()).toString();
+                } catch (JsonProcessingException e) {
+                    logger.error(e.getMessage(), e);
+                }
+                if(existingUser != null && existingUser.isActive()){
+                    granteeUser = existingUser;
+                    url = url+"/home/?action=login&org="+report.getGrant().getOrganization().getName()+"&r=" + code+"&email="+granteeUser.getEmailId()+"&type=report";
+                }else if(existingUser!=null && !existingUser.isActive()){
+                    granteeUser = existingUser;
+                    url = url+"/home/?action=registration&org="+report.getGrant().getOrganization().getName()+"&r=" + code+"&email="+granteeUser.getEmailId()+"&type=report";
+
+                } else {
+                    granteeUser = new User();
+                    Role newRole = roleService.findByOrganizationAndName(report.getGrant().getOrganization(), "Admin");
+
+
+                    UserRole userRole = new UserRole();
+                    userRole.setRole(newRole);
+                    userRole.setUser(granteeUser);
+
+                    List<UserRole> userRoles = new ArrayList<>();
+                    userRoles.add(userRole);
+                    granteeUser.setUserRoles(userRoles);
+                    granteeUser.setFirstName("To be set");
+                    granteeUser.setLastName("To be set");
+                    granteeUser.setEmailId(customAss);
+                    granteeUser.setOrganization(report.getGrant().getOrganization());
+                    granteeUser.setActive(false);
+                    granteeUser = userService.save(granteeUser);
+                    userRole = userRoleService.saveUserRole(userRole);
+                    url = url+"/home/?action=registration&org="+report.getGrant().getOrganization().getName()+"&r=" + code+"&email="+granteeUser.getEmailId()+"&type=report";
+                }
+
+                String[] notifications = reportService.buildReportInvitationContent(report,
+                        userService.getUserById(userId),
+                        appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(), AppConfiguration.REPORT_INVITE_SUBJECT).getConfigValue(),
+                        appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(), AppConfiguration.REPORT_INVITE_MESSAGE).getConfigValue(),
+                        url);
+                commonEmailSevice.sendMail(granteeUser.getEmailId(),notifications[0],notifications[1],new String[]{appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+
+                if(assignmentsVO.getAssignmentId()==0){
+                    assignment.setAssignment(granteeUser.getId());
+                }else{
+                    ReportAssignment ass = new ReportAssignment();
+                    ass.setAssignment(granteeUser.getId());
+                    ass.setReportId(reportId);
+                    ass.setStateId(assignmentsVO.getStateId());
+                    ass.setAnchor(false);
+                    reportService.saveAssignmentForReport(ass);
+                }
+                /*for (String customAssignment : customAssignments) {
                     User granteeUser = new User();
                     Role newRole = new Role();
                     newRole.setName("Admin");
@@ -631,7 +692,7 @@ public class ReportController {
                         ass.setAnchor(false);
                         reportService.saveAssignmentForReport(ass);
                     }
-                }
+                }*/
             }
 
             assignment = reportService.saveAssignmentForReport(assignment);

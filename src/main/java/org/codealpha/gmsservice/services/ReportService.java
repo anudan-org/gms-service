@@ -375,4 +375,12 @@ public class ReportService {
         return granterReportTemplateRepository.findByGranterIdAndPublished(id,publishedStatus);
     }
 
+    public String[] buildReportInvitationContent(Report report,User user, String sub,String msg,String url){
+        sub = sub.replace("%GRANT_NAME%",report.getGrant().getName());
+        sub = sub.replace("%REPORT_NAME%",report.getName());
+        msg = msg.replace("%GRANT_NAME%",report.getGrant().getName()).replace("%TENANT_NAME%",report.getGrant().getGrantorOrganization().getName()).replace("%LINK%",url);
+        msg = msg.replace("%REPORT_NAME%",report.getName());
+        return new String[]{sub,msg};
+    }
+
 }
