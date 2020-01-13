@@ -5,6 +5,7 @@ import java.util.concurrent.Executor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
+import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -12,8 +13,10 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.util.unit.DataSize;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
+import javax.servlet.MultipartConfigElement;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
@@ -56,6 +59,21 @@ public class GmsServiceApplication {
         public Executor threadPoolTaskExecutor() {
             return new ThreadPoolTaskExecutor();
         }
+    }
+
+    @Bean
+    public MultipartConfigElement multipartConfigElement() {
+
+        MultipartConfigFactory factory = new MultipartConfigFactory();
+
+        factory.setMaxFileSize("200MB");
+
+        factory.setMaxRequestSize("200MB");
+        factory.setMaxFileSize(DataSize.ofMegabytes(200));
+        factory.setFileSizeThreshold(DataSize.ofMegabytes(200));
+
+        return factory.createMultipartConfig();
+
     }
 
 }
