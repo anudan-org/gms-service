@@ -9,10 +9,7 @@ import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.WorkFlowDataModel;
 import org.codealpha.gmsservice.models.WorkflowTransitionDataModel;
 import org.codealpha.gmsservice.models.templateVO;
-import org.codealpha.gmsservice.services.GranterReportTemplateService;
-import org.codealpha.gmsservice.services.OrganizationService;
-import org.codealpha.gmsservice.services.WorkflowService;
-import org.codealpha.gmsservice.services.WorkflowTransitionModelService;
+import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -36,6 +33,12 @@ public class AdiminstrativeController {
     private WorkflowService workflowService;
     @Autowired
     private GranterReportTemplateService reportTemplateService;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private RoleService roleService;
+    @Autowired
+    private UserRoleService userRoleService;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -144,5 +147,20 @@ public class AdiminstrativeController {
             reportTemplate.setSections(sectionsList);
         }
         return reportTemplate;
+    }
+
+    @GetMapping("/user/{userId}/role")
+    public List<Role> getRolesForOrg(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId){
+
+        User user = userService.getUserById(userId);
+
+        List<Role> roles = roleService.getByOrganization(user.getOrganization());
+        for (Role role : roles) {
+            List<UserRole> userRoles = userRoleService.findUsersForRole(role);
+            if(userRoles!=null && userRoles.size()>0){
+                role.setHasUsers(true);
+            }
+        }
+        return roles;
     }
 }

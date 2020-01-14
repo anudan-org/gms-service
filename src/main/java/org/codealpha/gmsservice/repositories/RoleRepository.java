@@ -9,4 +9,6 @@ import java.util.List;
 public interface RoleRepository extends CrudRepository<Role,Long> {
 
     public List<Role> findByOrganizationAndName(Organization org, String name);
+
+    List<Role> findByOrganization(Organization organization);
 }

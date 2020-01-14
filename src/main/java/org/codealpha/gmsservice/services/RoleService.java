@@ -23,4 +23,8 @@ public class RoleService {
 
     return roles.get(0);
   }
+
+  public List<Role> getByOrganization(Organization organization){
+    return roleRepository.findByOrganization(organization);
+  }
 }

@@ -29,4 +29,8 @@ public class UserRoleService {
   public UserRole saveUserRole(UserRole userRole){
     return userRoleRepository.save(userRole);
   }
+
+  public List<UserRole> findUsersForRole(Role role){
+    return userRoleRepository.findByRole(role);
+  }
 }

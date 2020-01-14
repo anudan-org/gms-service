@@ -3,15 +3,8 @@ package org.codealpha.gmsservice.entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Date;
 import java.util.List;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
+import javax.persistence.*;
+
 import net.bytebuddy.agent.builder.AgentBuilder.LambdaInstrumentationStrategy;
 import org.hibernate.annotations.Columns;
 
@@ -26,6 +19,8 @@ public class Role {
   private Organization organization;
   @Column
   private String name;
+  @Column(columnDefinition = "text")
+  private String description;
   @Column
   private Date createdAt;
   @Column
@@ -40,7 +35,8 @@ public class Role {
   private List<WorkflowStatusTransition> statusTransitionList;
   @OneToMany(mappedBy = "role",fetch = FetchType.EAGER)
   List<RolesPermission> permissions;
-
+  @Transient
+  private boolean hasUsers;
   public Long getId() {
     return id;
   }
@@ -103,5 +99,21 @@ public class Role {
 
   public void setPermissions(List<RolesPermission> permissions) {
     this.permissions = permissions;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  public boolean isHasUsers() {
+    return hasUsers;
+  }
+
+  public void setHasUsers(boolean hasUsers) {
+    this.hasUsers = hasUsers;
   }
 }
