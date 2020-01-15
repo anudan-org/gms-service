@@ -37,6 +37,9 @@ public class Role {
   List<RolesPermission> permissions;
   @Transient
   private boolean hasUsers;
+  @Transient
+  private int linkedUsers;
+
   public Long getId() {
     return id;
   }
@@ -115,5 +118,13 @@ public class Role {
 
   public void setHasUsers(boolean hasUsers) {
     this.hasUsers = hasUsers;
+  }
+
+  public int getLinkedUsers() {
+    return linkedUsers;
+  }
+
+  public void setLinkedUsers(int linkedUsers) {
+    this.linkedUsers = linkedUsers;
   }
 }

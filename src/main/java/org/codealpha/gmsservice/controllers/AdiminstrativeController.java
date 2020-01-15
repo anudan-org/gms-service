@@ -159,6 +159,7 @@ public class AdiminstrativeController {
             List<UserRole> userRoles = userRoleService.findUsersForRole(role);
             if(userRoles!=null && userRoles.size()>0){
                 role.setHasUsers(true);
+                role.setLinkedUsers(userRoles.size());
             }
         }
         return roles;
