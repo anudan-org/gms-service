@@ -53,6 +53,10 @@ public class UserService {
     return userRepository.findByOrganizationAndActive(org,true);
   }
 
+  public List<User> findByOrganization(Organization org){
+    return userRepository.findByOrganization(org);
+  }
+
   public List<User> getGranteeUsers(Organization org){
     return userRepository.findByOrganizationAndActive(org,true);
   }

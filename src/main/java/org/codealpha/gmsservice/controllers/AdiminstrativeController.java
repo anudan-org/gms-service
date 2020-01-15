@@ -158,6 +158,15 @@ public class AdiminstrativeController {
         return roles;
     }
 
+    @GetMapping("/user/{userId}/user")
+    public List<User> getUsersForOrg(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId){
+
+        User user = userService.getUserById(userId);
+
+        List<User> users = getCurrentUsers(user);
+        return users;
+    }
+
     private List<Role> getCurrentRoles(User user) {
         List<Role> roles = roleService.getByOrganization(user.getOrganization());
         for (Role role : roles) {
@@ -168,6 +177,12 @@ public class AdiminstrativeController {
             }
         }
         return roles;
+    }
+
+    private List<User> getCurrentUsers(User user) {
+        List<User> users = userService.findByOrganization(user.getOrganization());
+
+        return users;
     }
 
     @PutMapping("/user/{userId}/role")
