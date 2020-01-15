@@ -27,4 +27,12 @@ public class RoleService {
   public List<Role> getByOrganization(Organization organization){
     return roleRepository.findByOrganization(organization);
   }
+
+  public Role getById(Long roleId){
+    return roleRepository.findById(roleId).get();
+  }
+
+  public void deleteRole(Role role){
+    roleRepository.delete(role);
+  }
 }

@@ -154,6 +154,11 @@ public class AdiminstrativeController {
 
         User user = userService.getUserById(userId);
 
+        List<Role> roles = getCurrentRoles(user);
+        return roles;
+    }
+
+    private List<Role> getCurrentRoles(User user) {
         List<Role> roles = roleService.getByOrganization(user.getOrganization());
         for (Role role : roles) {
             List<UserRole> userRoles = userRoleService.findUsersForRole(role);
@@ -162,6 +167,40 @@ public class AdiminstrativeController {
                 role.setLinkedUsers(userRoles.size());
             }
         }
+        return roles;
+    }
+
+    @PutMapping("/user/{userId}/role")
+    public Role saveRole(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,@RequestBody Role newRole){
+        Role role = null;
+        if(newRole.getId()==0){
+            role = new Role();
+            role.setLinkedUsers(0);
+            role.setHasUsers(false);
+            User user = userService.getUserById(userId);
+            role.setOrganization(user.getOrganization());
+            role.setCreatedAt(DateTime.now().toDate());
+            role.setCreatedBy(user.getEmailId());
+        }else {
+            role = roleService.getById(newRole.getId());
+            role.setUpdatedAt(DateTime.now().toDate());
+            role.setUpdatedBy(userService.getUserById(userId).getEmailId());
+        }
+
+        role.setName(newRole.getName());
+        role.setDescription(newRole.getDescription());
+
+        role = roleService.saveRole(role);
+        return role;
+    }
+
+    @DeleteMapping("/user/{userId}/role/{roleId}")
+    public List<Role> deleteRole(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,@PathVariable("roleId") Long roleId){
+
+        Role role = roleService.getById(roleId);
+        roleService.deleteRole(role);
+
+        List<Role> roles = getCurrentRoles(userService.getUserById(userId));
         return roles;
     }
 }
