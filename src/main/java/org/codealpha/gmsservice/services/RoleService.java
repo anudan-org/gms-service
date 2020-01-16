@@ -35,4 +35,12 @@ public class RoleService {
   public void deleteRole(Role role){
     roleRepository.delete(role);
   }
+
+  public List<Role> getPublicRolesForOrganization(Organization org){
+    return roleRepository.findByOrganizationAndInternal(org,false);
+  }
+
+  public List<Role> getInternalRolesForOrganization(Organization org){
+    return roleRepository.findByOrganizationAndInternal(org,true);
+  }
 }

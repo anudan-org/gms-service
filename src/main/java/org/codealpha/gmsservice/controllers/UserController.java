@@ -77,11 +77,15 @@ public class UserController {
 
   @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
   @Transactional
-  public User create(@RequestBody UserVO user) {
+  public User create(@RequestBody UserVO user,@RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-    Organization granteeOrg = organizationService.findByNameAndOrganizationType(user.getOrganizationName(),"GRANTEE");
-
-    User newUser = userService.getUserByEmailAndOrg(user.getEmailId(),granteeOrg);
+    Organization org = null;
+    if(tenantCode.equalsIgnoreCase("ANUDAN")) {
+      org = organizationService.findByNameAndOrganizationType(user.getOrganizationName(), "GRANTEE");
+    }else{
+      org = organizationService.findOrganizationByTenantCode(tenantCode);
+    }
+    User newUser = userService.getUserByEmailAndOrg(user.getEmailId(),org);
     if(newUser==null) {
       newUser = new User();
 
@@ -89,32 +93,11 @@ public class UserController {
       newUser.setCreatedAt(DateTime.now().toDate());
       newUser.setCreatedBy("Api");
       newUser.setEmailId(user.getEmailId());
-      Organization newGranteeOrg = new Grantee();
-      newGranteeOrg.setOrganizationType("GRANTEE");
-      newGranteeOrg.setCreatedAt(DateTime.now().toDate());
-      newGranteeOrg.setCreatedBy("System");
-      newGranteeOrg.setName("To be set");
 
-      newGranteeOrg = organizationService.save(newGranteeOrg);
-      newUser.setOrganization(newGranteeOrg);
+      newUser.setOrganization(org);
       newUser.setPassword(user.getPassword());
 
-      Role newRole = new Role();
-      newRole.setName("Admin");
-      newRole.setOrganization(newGranteeOrg);
-      newRole.setCreatedAt(DateTime.now().toDate());
-      newRole.setCreatedBy("System");
 
-      newRole = roleService.saveRole(newRole);
-      UserRole userRole = new UserRole();
-      userRole.setRole(newRole);
-      userRole.setUser(newUser);
-      List<UserRole> userRoles = new ArrayList<>();
-      userRoles.add(userRole);
-      newUser.setUserRoles(userRoles);
-      newUser.setFirstName("To be set");
-      newUser.setLastName("To be set");
-      newUser = userService.save(newUser);
 
       UriComponents urlComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
 

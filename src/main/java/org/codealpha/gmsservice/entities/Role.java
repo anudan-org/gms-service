@@ -39,6 +39,8 @@ public class Role {
   private boolean hasUsers;
   @Transient
   private int linkedUsers;
+  @Column
+  private boolean internal;
 
   public Long getId() {
     return id;
@@ -126,5 +128,13 @@ public class Role {
 
   public void setLinkedUsers(int linkedUsers) {
     this.linkedUsers = linkedUsers;
+  }
+
+  public boolean isInternal() {
+    return internal;
+  }
+
+  public void setInternal(boolean internal) {
+    this.internal = internal;
   }
 }

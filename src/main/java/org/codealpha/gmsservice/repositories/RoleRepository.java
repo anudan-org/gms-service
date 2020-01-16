@@ -11,4 +11,6 @@ public interface RoleRepository extends CrudRepository<Role,Long> {
     public List<Role> findByOrganizationAndName(Organization org, String name);
 
     List<Role> findByOrganization(Organization organization);
+
+    List<Role> findByOrganizationAndInternal(Organization org, boolean internalStatus);
 }
