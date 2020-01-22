@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -610,17 +611,15 @@ public class ReportController {
                 User existingUser = userService.getUserByEmailAndOrg(customAss,report.getGrant().getOrganization());
                 ObjectMapper mapper = new ObjectMapper();
                 String code = null;
-                try {
-                    code = Base64.getEncoder().encode(mapper.writeValueAsString(report).getBytes()).toString();
-                } catch (JsonProcessingException e) {
-                    logger.error(e.getMessage(), e);
-                }
+
+                    code = Base64.getEncoder().encodeToString(new byte[]{report.getId().byteValue()});
+
                 if(existingUser != null && existingUser.isActive()){
                     granteeUser = existingUser;
-                    url = url+"/home/?action=login&org="+report.getGrant().getOrganization().getName()+"&r=" + code+"&email="+granteeUser.getEmailId()+"&type=report";
+                    url = url+"/home/?action=login&org="+URLEncoder.encode(report.getGrant().getOrganization().getName())+"&r=" + code+"&email="+granteeUser.getEmailId()+"&type=report";
                 }else if(existingUser!=null && !existingUser.isActive()){
                     granteeUser = existingUser;
-                    url = url+"/home/?action=registration&org="+report.getGrant().getOrganization().getName()+"&r=" + code+"&email="+granteeUser.getEmailId()+"&type=report";
+                    url = url+"/home/?action=registration&org="+ URLEncoder.encode(report.getGrant().getOrganization().getName())+"&r=" + code+"&email="+granteeUser.getEmailId()+"&type=report";
 
                 } else {
                     granteeUser = new User();
@@ -641,7 +640,7 @@ public class ReportController {
                     granteeUser.setActive(false);
                     granteeUser = userService.save(granteeUser);
                     userRole = userRoleService.saveUserRole(userRole);
-                    url = url+"/home/?action=registration&org="+report.getGrant().getOrganization().getName()+"&r=" + code+"&email="+granteeUser.getEmailId()+"&type=report";
+                    url = url+"/home/?action=registration&org="+URLEncoder.encode(report.getGrant().getOrganization().getName())+"&r=" + code+"&email="+granteeUser.getEmailId()+"&type=report";
                 }
 
                 String[] notifications = reportService.buildReportInvitationContent(report,
@@ -781,7 +780,7 @@ public class ReportController {
         _saveSnapShot(report);
 
         //Temporary block to continue testing as Grantee has submitted the report
-        if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
+        /*if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
             ReportWithNote withNote = new ReportWithNote();
 
             report.getReportDetails().getSections().forEach(sec -> {
@@ -802,7 +801,7 @@ public class ReportController {
             ReportAssignmentsVO ass = report.getWorkflowAssignments().stream().filter(a -> a.getStateId().longValue() == fReport.getStatus().getId().longValue()).findFirst().get();
 
             MoveReportState(withNote, userService.getUserById(ass.getAssignmentId()).getId(), reportId, report.getStatus().getId(), workflowStatusTransitionService.getByFromStatus(report.getStatus()).getToState().getId(), tenantCode);
-        }
+        }*/
 
         return report;
 
