@@ -1,11 +1,18 @@
 package org.codealpha.gmsservice.controllers;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import javax.xml.ws.Response;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.codealpha.gmsservice.entities.Grant;
@@ -17,6 +24,7 @@ import org.codealpha.gmsservice.entities.UserRole;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.models.ErrorMessage;
 import org.codealpha.gmsservice.models.UserVO;
+import org.codealpha.gmsservice.security.TokenAuthenticationService;
 import org.codealpha.gmsservice.services.DashboardService;
 import org.codealpha.gmsservice.services.CommonEmailSevice;
 import org.codealpha.gmsservice.services.GranteeService;
@@ -30,6 +38,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -77,7 +87,7 @@ public class UserController {
 
   @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
   @Transactional
-  public User create(@RequestBody UserVO user,@RequestHeader("X-TENANT-CODE") String tenantCode) {
+  public User create(@RequestBody UserVO user, @RequestHeader("X-TENANT-CODE") String tenantCode, HttpServletResponse response, HttpServletRequest request) {
 
     Organization org = null;
     if(tenantCode.equalsIgnoreCase("ANUDAN")) {
@@ -119,6 +129,7 @@ public class UserController {
       newUser.setPassword(user.getPassword());
       newUser = userService.save(newUser);
     }
+
 
     return newUser;
   }

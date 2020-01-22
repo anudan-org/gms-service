@@ -53,7 +53,7 @@ public class DashboardValidator {
     }
 
     private void _validateUser(Long userId, User user) {
-        if (userId != user.getId()) {
+        if (userId.longValue() != user.getId().longValue()) {
             throw new ResourceNotFoundException("Invalid authorization");
         }
     }

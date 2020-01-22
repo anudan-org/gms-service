@@ -3,6 +3,8 @@ package org.codealpha.gmsservice.controllers;
 import java.awt.*;
 import java.io.*;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -2404,23 +2406,20 @@ public class GrantController {
         for (InviteEntry invite : grantInvite.getInvites()) {
             User granteeUser = null;
             User existingUser = userService.getUserByEmailAndOrg(invite.getName(), grant.getOrganization());
-            ObjectMapper mapper = new ObjectMapper();
             String code = null;
             try {
-                code = Base64.getEncoder().encode(mapper.writeValueAsString(grant).getBytes()).toString();
-            } catch (JsonProcessingException e) {
-                logger.error(e.getMessage(), e);
-            }
+                code = Base64.getEncoder().encodeToString(new byte[]{grant.getId().byteValue()});
+
             if (existingUser != null && existingUser.isActive()) {
                 granteeUser = existingUser;
 
 
-                url = url+"/home/?action=login&org="+grant.getOrganization().getName()+"&g=" + code+"&email="+invite.getName()+"&type=grant";
+                url = url+"/home/?action=login&org="+URLEncoder.encode(grant.getOrganization().getName(),StandardCharsets.UTF_8.toString())+"&g=" + code+"&email="+invite.getName()+"&type=grant";
 
 
             } else if(existingUser!=null && !existingUser.isActive()){
                 granteeUser = existingUser;
-                url = url+"/home/?action=registration&org="+grant.getOrganization().getName()+"&g=" + code+"&email="+invite.getName()+"&type=grant";
+                url = url+"/home/?action=registration&org="+URLEncoder.encode(grant.getOrganization().getName(),StandardCharsets.UTF_8.toString())+"&g=" + code+"&email="+invite.getName()+"&type=grant";
 
             } else {
                 granteeUser = new User();
@@ -2441,19 +2440,33 @@ public class GrantController {
                 granteeUser.setActive(false);
                 granteeUser = userService.save(granteeUser);
                 userRole = userRoleService.saveUserRole(userRole);
-                url = url+"/home/?action=registration&org="+grant.getOrganization().getName()+"&g=" + code+"&email="+invite.getName()+"&type=grant";
+                url = url+"/home/?action=registration&org="+URLEncoder.encode(grant.getOrganization().getName(),StandardCharsets.UTF_8.toString())+"&g=" + code+"&email="+invite.getName()+"&type=grant";
             }
 
-            String[] notifications = grantService.buildGrantInvitationContent(grant,
-                    userService.getUserById(userId),
-                    appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.GRANT_INVITE_SUBJECT).getConfigValue(),
-                    appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.GRANT_INVITE_MESSAGE).getConfigValue(),
-                    url);
+
+                String[] notifications = grantService.buildGrantInvitationContent(grant,
+                        userService.getUserById(userId),
+                        appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.GRANT_INVITE_SUBJECT).getConfigValue(),
+                        appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.GRANT_INVITE_MESSAGE).getConfigValue(),
+                        url);
+
              commonEmailSevice.sendMail(granteeUser.getEmailId(),notifications[0],notifications[1],new String[]{appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+        }catch (UnsupportedEncodingException e){
+                logger.error(e.getMessage(),e);
+            }
         }
 
 
         grant = _grantToReturn(userId, grant);
+        return grant;
+    }
+
+    @GetMapping("/resolve")
+    public Grant resolveGrant(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,@RequestParam("g") String grantCode){
+        Long grantId = Long.valueOf(Base64.getDecoder().decode(grantCode)[0]);
+        Grant grant = grantService.getById(grantId);
+
+        grant = _grantToReturn(userId,grant);
         return grant;
     }
 }

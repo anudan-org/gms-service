@@ -38,7 +38,7 @@ public class TokenAuthenticationService {
      */
   }
 
-  static void addAuthentication(HttpServletResponse res, String auth,
+  public static void addAuthentication(HttpServletResponse res, String auth,
       JsonNode userNode, String tenant) throws IOException {
     String JWT = Jwts.builder().setSubject(auth+"^"+tenant)
         .setExpiration(new Date(System.currentTimeMillis() + EXPIRATIONTIME))
