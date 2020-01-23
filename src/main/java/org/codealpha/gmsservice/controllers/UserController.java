@@ -1,46 +1,27 @@
 package org.codealpha.gmsservice.controllers;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
-import javax.xml.ws.Response;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.codealpha.gmsservice.entities.Grant;
-import org.codealpha.gmsservice.entities.Grantee;
 import org.codealpha.gmsservice.entities.Organization;
-import org.codealpha.gmsservice.entities.Role;
 import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.entities.UserRole;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.models.ErrorMessage;
+import org.codealpha.gmsservice.models.UserCheck;
 import org.codealpha.gmsservice.models.UserVO;
-import org.codealpha.gmsservice.security.TokenAuthenticationService;
-import org.codealpha.gmsservice.services.DashboardService;
-import org.codealpha.gmsservice.services.CommonEmailSevice;
-import org.codealpha.gmsservice.services.GranteeService;
-import org.codealpha.gmsservice.services.GranterService;
-import org.codealpha.gmsservice.services.OrganizationService;
-import org.codealpha.gmsservice.services.RoleService;
-import org.codealpha.gmsservice.services.UserService;
+import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.DashboardValidator;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -76,6 +57,10 @@ public class UserController {
   @Autowired
   private DashboardService dashboardService;
   @Autowired DashboardValidator dashboardValidator;
+  @Autowired
+  private GrantService grantService;
+  @Autowired
+  private ReportService reportService;
 
   @GetMapping(value = "/{userId}")
   public User get(@PathVariable(name = "userId") Long id,
@@ -222,5 +207,25 @@ public class UserController {
     user.setPassword(pwds[1]);
     user = userService.save(user);
     return new ResponseEntity<>(user, HttpStatus.OK);
+  }
+
+  @PostMapping("/check")
+  public boolean checkIfUserExists(@RequestBody UserCheck userdata){
+      Organization org = null;
+      if(userdata.getType().equalsIgnoreCase("grant")) {
+          Long grantId = Long.valueOf(Base64.getDecoder().decode(userdata.getObject())[0]);
+          org = grantService.getById(grantId).getOrganization();
+      }else if(userdata.getType().equalsIgnoreCase("report")) {
+          Long reportId = Long.valueOf(Base64.getDecoder().decode(userdata.getObject())[0]);
+          org = reportService.getReportById(reportId).getGrant().getOrganization();
+      }
+
+
+    User user = userService.getUserByEmailAndOrg(userdata.getEmail(),org);
+    if(user!=null && user.isActive()){
+      return true;
+    }
+
+    return false;
   }
 }
