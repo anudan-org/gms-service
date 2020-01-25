@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.swagger.annotations.OAuth2Definition;
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.SecureReportEntity;
@@ -114,8 +113,8 @@ public class ReportService {
         return reportRepository.findAllAssignedReportsForUser(userId,granterOrgId);
     }
 
-    public GranterReportTemplate getDefaultTemplate(){
-        return granterReportTemplateRepository.findByDefaultTemplate(true);
+    public GranterReportTemplate getDefaultTemplate(Long granterId){
+        return granterReportTemplateRepository.findByGranterIdAndDefaultTemplate(granterId,true);
     }
 
     public List<GranterReportSection> findSectionsForReportTemplate(GranterReportTemplate template){

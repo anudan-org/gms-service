@@ -48,6 +48,7 @@ public class ReportVO {
     private String dDate;
     private List<WorkFlowPermission> flowAuthorities;
     private List<User> granteeUsers;
+    private boolean forGranteeUse;
 
     public Long getId() {
         return id;
@@ -281,6 +282,13 @@ public class ReportVO {
         this.granteeUsers = granteeUsers;
     }
 
+    public boolean isForGranteeUse() {
+        return forGranteeUse;
+    }
+
+    public void setForGranteeUse(boolean forGranteeUse) {
+        this.forGranteeUse = forGranteeUse;
+    }
 
     // BUILD THE VO
 

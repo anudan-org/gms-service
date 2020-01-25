@@ -28,6 +28,9 @@ public class GranterGrantTemplate {
     @Column
     private Long granterId;
 
+    @Column
+    private boolean defaultTemplate;
+
     public Long getId() {
         return id;
     }
@@ -82,5 +85,13 @@ public class GranterGrantTemplate {
 
     public void setPrivateToGrant(boolean privateToGrant) {
         this.privateToGrant = privateToGrant;
+    }
+
+    public boolean isDefaultTemplate() {
+        return defaultTemplate;
+    }
+
+    public void setDefaultTemplate(boolean defaultTemplate) {
+        this.defaultTemplate = defaultTemplate;
     }
 }

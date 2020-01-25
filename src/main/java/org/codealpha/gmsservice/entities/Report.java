@@ -70,6 +70,8 @@ public class Report {
     private boolean canManage;
     @Transient
     private List<WorkFlowPermission> flowAuthorities;
+    @Transient
+    private boolean forGranteeUse;
 
     public Long getId() {
         return id;
@@ -305,4 +307,11 @@ public class Report {
         this.granteeUsers = granteeUsers;
     }
 
+    public boolean isForGranteeUse() {
+        return forGranteeUse;
+    }
+
+    public void setForGranteeUse(boolean forGranteeUse) {
+        this.forGranteeUse = forGranteeUse;
+    }
 }

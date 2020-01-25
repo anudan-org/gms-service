@@ -121,6 +121,12 @@ public class ReportController {
         } else {
             report.setCanManage(false);
         }
+
+        if(userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
+            report.setForGranteeUse(true);
+        }else{
+            report.setForGranteeUse(false);
+        }
         if (reportAssignments != null) {
             for (ReportAssignment assignment : reportAssignments) {
                 if (report.getCurrentAssignment() == null) {

@@ -1628,7 +1628,7 @@ public class GrantController {
         TreeMap<Date, List<SectionAttributesVO>> qTree = new TreeMap(quarterlyPeriods);
         TreeMap<Date, List<SectionAttributesVO>> mtTree = new TreeMap(monthlyPeriods);
         final int[] i = {1};
-        GranterReportTemplate reportTemplate = reportService.getDefaultTemplate();
+        GranterReportTemplate reportTemplate = reportService.getDefaultTemplate(grant.getGrantorOrganization().getId());
 
         yrTree.forEach((entry, val) -> {
             Report report = new Report();
