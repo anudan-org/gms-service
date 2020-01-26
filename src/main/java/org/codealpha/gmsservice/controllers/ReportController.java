@@ -196,7 +196,7 @@ public class ReportController {
         return report;
     }
 
-    private void _processStringAttributes(Report grant, Report reportToSave, Organization tenant) {
+    private void _processStringAttributes(Report report, Report reportToSave, Organization tenant) {
         List<ReportStringAttribute> stringAttributes = new ArrayList<>();
         ReportSpecificSection reportSpecificSection = null;
 
@@ -205,7 +205,12 @@ public class ReportController {
 
             reportSpecificSection.setSectionName(sectionVO.getName());
             reportSpecificSection.setSectionOrder(sectionVO.getOrder());
-            reportSpecificSection.setGranter((Granter) tenant);
+            if("ANUDAN".equalsIgnoreCase(tenant.getCode())){
+                reportSpecificSection.setGranter((Granter)report.getGrant().getGrantorOrganization());
+            }else{
+                reportSpecificSection.setGranter((Granter) tenant);
+            }
+
             reportSpecificSection.setDeletable(true);
 
             reportSpecificSection = reportService.saveReportSpecificSection(reportSpecificSection);
@@ -219,7 +224,12 @@ public class ReportController {
 
                     sectionAttribute.setFieldName(sectionAttributesVO.getFieldName());
                     sectionAttribute.setFieldType(sectionAttributesVO.getFieldType());
-                    sectionAttribute.setGranter((Granter) tenant);
+                    if("ANUDAN".equalsIgnoreCase(tenant.getCode())){
+                        sectionAttribute.setGranter((Granter) report.getGrant().getGrantorOrganization());
+                    }else{
+                        sectionAttribute.setGranter((Granter) tenant);
+                    }
+
                     sectionAttribute.setAttributeOrder(sectionAttributesVO.getAttributeOrder());
                     sectionAttribute.setRequired(true);
                     sectionAttribute.setSection(reportSpecificSection);

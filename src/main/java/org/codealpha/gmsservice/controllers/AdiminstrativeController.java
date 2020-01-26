@@ -49,21 +49,35 @@ public class AdiminstrativeController {
     private AppConfigService appConfigService;
     @Autowired
     private CommonEmailSevice commonEmailSevice;
+    @Autowired private ReportService reportService;
+    @Autowired private GrantService grantService;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
     public List<WorkflowTransitionModel> getGrantWorkflows(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode, @ApiParam(name = "grantId", value = "Unique identifier of grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
-        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        Organization org = null;
+        if("ANUDAN".equalsIgnoreCase(tenantCode)){
+            org = grantService.getById(grantId).getGrantorOrganization();
+        }else{
+            org = organizationService.findOrganizationByTenantCode(tenantCode);
+        }
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(tenantOrg.getId(), "GRANT");
+        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "GRANT");
     }
 
-    @GetMapping("/workflow/report/{grantId}/user/{userId}")
+    @GetMapping("/workflow/report/{reportId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for report")
-    public List<WorkflowTransitionModel> getReportWorkflows(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode, @ApiParam(name = "grantId", value = "Unique identifier of grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
-        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+    public List<WorkflowTransitionModel> getReportWorkflows(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode, @ApiParam(name = "reportId", value = "Unique identifier of Report") @PathVariable("reportId") Long reportId, @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
+        Organization org = null;
+        if("ANUDAN".equalsIgnoreCase(tenantCode)){
+            org = reportService.getReportById(reportId).getGrant().getGrantorOrganization();
+        }else{
+            org = organizationService.findOrganizationByTenantCode(tenantCode);
+        }
+        organizationService.findOrganizationByTenantCode(tenantCode);
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(tenantOrg.getId(), "REPORT");
+
+        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "REPORT");
     }
 
     @PostMapping("/workflow")

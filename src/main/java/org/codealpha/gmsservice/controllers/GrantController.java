@@ -1402,7 +1402,11 @@ public class GrantController {
         Grant grant = grantService.getById(grantId);
         Grant finalGrant = grant;
         WorkflowStatus previousState = grant.getGrantStatus();
-        User previousOwner = userService.getUserById(grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getGrantId() == grantId && ass.getStateId() == finalGrant.getGrantStatus().getId()).collect(Collectors.toList()).get(0).getAssignments());
+        List<GrantAssignments> previousAssignments = grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getGrantId().longValue() == grantId.longValue() && ass.getStateId().longValue() == finalGrant.getGrantStatus().getId().longValue()).collect(Collectors.toList());
+        User previousOwner = null;
+        if(previousAssignments!=null && previousAssignments.size()>0){
+            previousOwner = userService.getUserById(previousAssignments.get(0).getAssignments());
+        }
         grant.setGrantStatus(workflowStatusService.findById(toStateId));
         if (grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("")) {
             grant.setNote(grantwithNote.getNote());
@@ -1427,7 +1431,7 @@ public class GrantController {
                         AppConfiguration.GRANT_ALERT_NOTIFICATION_MESSAGE).getConfigValue();*/
 
 
-        User currentOwner = userService.getUserById(grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getGrantId() == grantId && ass.getStateId() == toStateId).collect(Collectors.toList()).get(0).getAssignments());
+        User currentOwner = userService.getUserById(grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getGrantId().longValue() == grantId.longValue() && ass.getStateId().longValue() == toStateId.longValue()).collect(Collectors.toList()).get(0).getAssignments());
 
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState, toStatus);
 
@@ -1438,7 +1442,7 @@ public class GrantController {
                                 AppConfiguration.GRANT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                 workflowStatusService.findById(toStateId).getName(), currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()),
                 previousState.getName(),
-                previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                previousOwner==null?" -":previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
                 transition.getAction(), "Yes",
                 "Please review.",
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
