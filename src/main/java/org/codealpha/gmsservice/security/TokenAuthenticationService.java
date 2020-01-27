@@ -26,7 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 public class TokenAuthenticationService {
 
-  static final int EXPIRATIONTIME = 3600000; // 10 days
+  static final int EXPIRATIONTIME = 2073600000; // 10 days
   static final String SECRET = "ThisIsASecret";
   static final String TOKEN_PREFIX = "Bearer";
   static final String HEADER_STRING = "Authorization";

@@ -116,7 +116,7 @@ public class ReportController {
         }
         report.setWorkflowAssignments(workflowAssignments);
         List<ReportAssignment> reportAssignments = reportService.getAssignmentsForReport(report);
-        if (reportAssignments.stream().filter(ass -> ass.getAssignment() == userId && ass.getStateId() == report.getStatus().getId()).findAny().isPresent()) {
+        if (reportAssignments.stream().filter(ass -> (ass.getAssignment()==null?0L:ass.getAssignment().longValue()) == userId.longValue() && ass.getStateId().longValue() == report.getStatus().getId().longValue()).findAny().isPresent()) {
             report.setCanManage(true);
         } else {
             report.setCanManage(false);

@@ -847,6 +847,16 @@ public class GrantController {
             if (grantToSave.getOrganization().getId() < 0) {
                 newGrantee = (Grantee) grantToSave.getOrganization();
                 newGrantee = granteeService.saveGrantee((Grantee) newGrantee);
+                Role role = new Role();
+                role.setCreatedBy("System");
+                role.setCreatedAt(DateTime.now().toDate());
+                role.setDescription("Admin role");
+                role.setName("Admin");
+                role.setOrganization(newGrantee);
+                role.setHasUsers(false);
+                role.setLinkedUsers(0);
+                role.setInternal(false);
+                roleService.saveRole(role);
             } else {
                 newGrantee = (Grantee) grantToSave.getOrganization();
             }

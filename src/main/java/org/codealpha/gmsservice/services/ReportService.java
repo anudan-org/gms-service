@@ -319,8 +319,8 @@ public class ReportService {
 
     public List<WorkFlowPermission> getFlowAuthority(Report report, Long userId) {
         List<WorkFlowPermission> permissions = new ArrayList<>();
-        if(reportAssignmentRepository.findByReportId(report.getId()).stream().filter(ass -> ass.getStateId()==report.getStatus().getId() && ass.getAssignment()==userId).findFirst().isPresent()){
-            List<WorkflowStatusTransition> allowedTransitions = workflowStatusTransitionRepository.findByWorkflow(workflowStatusRepository.getById(report.getStatus().getId()).getWorkflow()).stream().filter(st -> st.getFromState().getId()==report.getStatus().getId()).collect(Collectors.toList());
+        if(reportAssignmentRepository.findByReportId(report.getId()).stream().filter(ass -> ass.getStateId().longValue()==report.getStatus().getId().longValue() && (ass.getAssignment()==null?0:ass.getAssignment().longValue())==userId).findFirst().isPresent()){
+            List<WorkflowStatusTransition> allowedTransitions = workflowStatusTransitionRepository.findByWorkflow(workflowStatusRepository.getById(report.getStatus().getId()).getWorkflow()).stream().filter(st -> st.getFromState().getId().longValue()==report.getStatus().getId().longValue()).collect(Collectors.toList());
             if(allowedTransitions!=null && allowedTransitions.size()>0){
                 allowedTransitions.forEach(tr ->{
                     WorkFlowPermission workFlowPermission = new WorkFlowPermission();
