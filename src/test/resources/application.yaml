@@ -9,6 +9,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-  upload-file-location: /Users/apple/storage/
+  upload-file-location: /
+  supported-file-types: pdf
+  recaptcha-secret-key: changeit
   send-mail: false
+  use-captcha: false
 

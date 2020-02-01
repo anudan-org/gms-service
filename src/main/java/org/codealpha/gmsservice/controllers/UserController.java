@@ -1,36 +1,27 @@
 package org.codealpha.gmsservice.controllers;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
-import javax.xml.ws.Response;
 
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.codealpha.gmsservice.entities.Grant;
-import org.codealpha.gmsservice.entities.Grantee;
 import org.codealpha.gmsservice.entities.Organization;
-import org.codealpha.gmsservice.entities.Role;
 import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.entities.UserRole;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.models.ErrorMessage;
+import org.codealpha.gmsservice.models.UserCheck;
 import org.codealpha.gmsservice.models.UserVO;
-import org.codealpha.gmsservice.services.DashboardService;
-import org.codealpha.gmsservice.services.CommonEmailSevice;
-import org.codealpha.gmsservice.services.GranteeService;
-import org.codealpha.gmsservice.services.GranterService;
-import org.codealpha.gmsservice.services.OrganizationService;
-import org.codealpha.gmsservice.services.RoleService;
-import org.codealpha.gmsservice.services.UserService;
+import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.DashboardValidator;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -66,9 +57,13 @@ public class UserController {
   @Autowired
   private DashboardService dashboardService;
   @Autowired DashboardValidator dashboardValidator;
+  @Autowired
+  private GrantService grantService;
+  @Autowired
+  private ReportService reportService;
 
-  @GetMapping(value = "/{id}")
-  public User get(@PathVariable(name = "id") Long id,
+  @GetMapping(value = "/{userId}")
+  public User get(@PathVariable(name = "userId") Long id,
       @RequestHeader("X-TENANT-CODE") String tenantCode) {
     User user = userService.getUserById(id);
 
@@ -77,54 +72,50 @@ public class UserController {
 
   @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
   @Transactional
-  public User create(@RequestBody UserVO user) {
+  public User create(@RequestBody UserVO user, @RequestHeader("X-TENANT-CODE") String tenantCode, HttpServletResponse response, HttpServletRequest request) {
 
-    User newUser = new User();
+    Organization org = null;
+    if(tenantCode.equalsIgnoreCase("ANUDAN")) {
+      org = organizationService.findByNameAndOrganizationType(user.getOrganizationName(), "GRANTEE");
+    }else{
+      org = organizationService.findOrganizationByTenantCode(tenantCode);
+    }
+    User newUser = userService.getUserByEmailAndOrg(user.getEmailId(),org);
+    if(newUser==null) {
+      newUser = new User();
 
-    //BCryptPasswordEncoder a  = new BCryptPasswordEncoder
-    newUser.setCreatedAt(DateTime.now().toDate());
-    newUser.setCreatedBy("Api");
-    newUser.setEmailId(user.getEmailId());
-    Organization newGranteeOrg = new Grantee();
-    newGranteeOrg.setOrganizationType("GRANTEE");
-    newGranteeOrg.setCreatedAt(DateTime.now().toDate());
-    newGranteeOrg.setCreatedBy("System");
-    newGranteeOrg.setName("To be set");
+      //BCryptPasswordEncoder a  = new BCryptPasswordEncoder
+      newUser.setCreatedAt(DateTime.now().toDate());
+      newUser.setCreatedBy("Api");
+      newUser.setEmailId(user.getEmailId());
 
-    newGranteeOrg = organizationService.save(newGranteeOrg);
-    newUser.setOrganization(newGranteeOrg);
-    newUser.setPassword(user.getPassword());
+      newUser.setOrganization(org);
+      newUser.setPassword(user.getPassword());
 
-    Role newRole = new Role();
-    newRole.setName("Admin");
-    newRole.setOrganization(newGranteeOrg);
-    newRole.setCreatedAt(DateTime.now().toDate());
-    newRole.setCreatedBy("System");
 
-    newRole = roleService.saveRole(newRole);
-    UserRole userRole = new UserRole();
-    userRole.setRole(newRole);
-    userRole.setUser(newUser);
-    List<UserRole> userRoles = new ArrayList<>();
-    userRoles.add(userRole);
-    newUser.setUserRoles(userRoles);
-    newUser.setFirstName("To be set");
-    newUser.setLastName("To be set");
-    newUser = userService.save(newUser);
 
-    UriComponents urlComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
+      UriComponents urlComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
 
-    String scheme = urlComponents.getScheme();
-    String host = urlComponents.getHost();
-    int port = urlComponents.getPort();
+      String scheme = urlComponents.getScheme();
+      String host = urlComponents.getHost();
+      int port = urlComponents.getPort();
 
-    String verificationLink =
-        scheme + "://" + host + (port != -1 ? ":" + port : "") + "/grantee/verification?emailId="
-            + user.getEmailId() + "&code=" + RandomStringUtils.randomAlphanumeric(127);
+      String verificationLink =
+              scheme + "://" + host + (port != -1 ? ":" + port : "") + "/grantee/verification?emailId="
+                      + user.getEmailId() + "&code=" + RandomStringUtils.randomAlphanumeric(127);
 
-    System.out.println(verificationLink);
-    commonEmailSevice
-        .sendMail(user.getEmailId(), "Anudan.org - Verification Link", verificationLink);
+      System.out.println(verificationLink);
+      commonEmailSevice
+              .sendMail(user.getEmailId(), "Anudan.org - Verification Link", verificationLink,null);
+    }else{
+      newUser.setActive(true);
+      newUser.setFirstName(user.getFirstName());
+      newUser.setLastName(user.getLastName());
+      newUser.setPassword(user.getPassword());
+      newUser = userService.save(newUser);
+    }
+
+
     return newUser;
   }
 
@@ -161,14 +152,15 @@ public class UserController {
     return HttpStatus.OK;
   }
 
-  @GetMapping("/{id}/dashboard")
+  @GetMapping("/{userId}/dashboard")
   public ResponseEntity<DashboardService> getDashbaord(
-      @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("id") Long userId) {
+      @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
 
     dashboardValidator.validate(userId,tenantCode);
     User user = userService.getUserById(userId);
     Organization userOrg = user.getOrganization();
-    Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+    Organization tenantOrg = null;
+      tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
     List<Grant> grants = null;
     switch (userOrg.getType()) {
       case "GRANTEE":
@@ -215,5 +207,25 @@ public class UserController {
     user.setPassword(pwds[1]);
     user = userService.save(user);
     return new ResponseEntity<>(user, HttpStatus.OK);
+  }
+
+  @PostMapping("/check")
+  public boolean checkIfUserExists(@RequestBody UserCheck userdata){
+      Organization org = null;
+      if(userdata.getType().equalsIgnoreCase("grant")) {
+          Long grantId = Long.valueOf(Base64.getDecoder().decode(userdata.getObject())[0]);
+          org = grantService.getById(grantId).getOrganization();
+      }else if(userdata.getType().equalsIgnoreCase("report")) {
+          Long reportId = Long.valueOf(Base64.getDecoder().decode(userdata.getObject())[0]);
+          org = reportService.getReportById(reportId).getGrant().getOrganization();
+      }
+
+
+    User user = userService.getUserByEmailAndOrg(userdata.getEmail(),org);
+    if(user!=null && user.isActive()){
+      return true;
+    }
+
+    return false;
   }
 }

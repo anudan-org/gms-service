@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.services;
 import java.util.List;
 
 import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.entities.Role;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.exceptions.UserNotFoundException;
 import org.codealpha.gmsservice.repositories.OrganizationRepository;
@@ -45,8 +46,30 @@ public class UserService {
     return userRepository.usersToNotifyOnWorkflowSateChangeTo(toStateId);
   }
 
+  public List<User> getUsersByEmail(String email){
+    return userRepository.findByEmailId(email);
+  }
+
   public List<User> getAllTenantUsers(Organization org){
     return userRepository.findByOrganizationAndActive(org,true);
   }
 
+  public List<User> findByOrganization(Organization org){
+    return userRepository.findByOrganization(org);
+  }
+
+  public List<User> getGranteeUsers(Organization org){
+    return userRepository.findByOrganizationAndActive(org,true);
+  }
+
+  public List<User> getAllGranteeUsers(Organization org){
+    return userRepository.findByOrganization(org);
+  }
+
+  public String[] buildJoiningInvitationContent(Organization org, Role role,User inviter, String sub, String msg, String url) {
+    sub = sub.replace("%ORG_NAME%",org.getName());
+
+    msg =  msg.replace("%ROLE_NAME%",role.getName()).replace("%ORG_NAME%",org.getName()).replace("%INVITE_FROM%",inviter.getFirstName().concat(" ").concat(inviter.getLastName())).replace("%LINK%",url);
+    return new String[]{sub,msg};
+  }
 }

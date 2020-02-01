@@ -5,7 +5,7 @@ HELP.md
 *.log
 gms.log*
 .DS_Store
-
+/src/main/resources/application.yaml
 ### STS ###
 .apt_generated
 .classpath

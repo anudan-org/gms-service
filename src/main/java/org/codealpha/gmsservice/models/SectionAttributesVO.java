@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.models;
 import org.codealpha.gmsservice.entities.GrantStringAttributeAttachments;
 import org.codealpha.gmsservice.entities.TemplateLibrary;
 
+import javax.persistence.Transient;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,9 +18,13 @@ public class SectionAttributesVO {
   private List<GrantStringAttributeAttachments> attachments;
   private int attributeOrder;
   private String target;
+  private String actualTarget;
   private String frequency;
   private boolean deletable;
   private boolean required;
+  private boolean canEdit;
+  private String grantLevelTarget;
+  private Long cumulativeActuals;
 
   public String getFieldName() {
     return fieldName;
@@ -115,6 +120,38 @@ public class SectionAttributesVO {
 
   public void setAttachments(List<GrantStringAttributeAttachments> attachments) {
     this.attachments = attachments;
+  }
+
+  public boolean isCanEdit() {
+    return canEdit;
+  }
+
+  public void setCanEdit(boolean canEdit) {
+    this.canEdit = canEdit;
+  }
+
+  public String getGrantLevelTarget() {
+    return grantLevelTarget;
+  }
+
+  public void setGrantLevelTarget(String grantLevelTarget) {
+    this.grantLevelTarget = grantLevelTarget;
+  }
+
+  public String getActualTarget() {
+    return actualTarget;
+  }
+
+  public void setActualTarget(String actualTarget) {
+    this.actualTarget = actualTarget;
+  }
+
+  public Long getCumulativeActuals() {
+    return cumulativeActuals;
+  }
+
+  public void setCumulativeActuals(Long cumulativeActuals) {
+    this.cumulativeActuals = cumulativeActuals;
   }
 
   @Override

@@ -17,6 +17,8 @@ public class AppConfig {
   private String configName;
   @Column
   private String configValue;
+  @Column
+  private String description;
 
   public Long getId() {
     return id;
@@ -40,5 +42,13 @@ public class AppConfig {
 
   public void setConfigValue(String configValue) {
     this.configValue = configValue;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
   }
 }

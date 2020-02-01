@@ -2,6 +2,7 @@ package org.codealpha.gmsservice.security;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -14,6 +15,7 @@ import org.codealpha.gmsservice.exceptions.InvalidTenantException;
 import org.codealpha.gmsservice.services.OrganizationService;
 import org.codealpha.gmsservice.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +39,10 @@ public class AuthProvider implements AuthenticationProvider {
   private UserService userService;
   @Autowired
   private OrganizationService organizationService;
+    @Value("${spring.recaptcha-secret-key}")
+    private String reCaptchaKey;
+  @Value("${spring.use-captcha}")
+  private Boolean useCaptcha;
 
 
   @Override
@@ -47,11 +53,11 @@ public class AuthProvider implements AuthenticationProvider {
     String tenantCode = ((Map<String,String>) authentication.getDetails()).get("TOKEN");
     String captcha = ((Map<String,String>) authentication.getDetails()).get("CAPTCHA");
 
-    if(provider.equalsIgnoreCase("ANUDAN")) {
+    if(provider.equalsIgnoreCase("ANUDAN") && useCaptcha) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("https://www.google.com/recaptcha/api/siteverify");
         LinkedMultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
 
-        params.add("secret", "6Lf5a8MUAAAAAKzpZvN2yKoLoE7O0E64bcgyl3de");
+        params.add("secret", reCaptchaKey);
         params.add("response", captcha);
         HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity =
                 new HttpEntity<>(params);
@@ -76,12 +82,25 @@ public class AuthProvider implements AuthenticationProvider {
       throw new InvalidCredentialsException("Missing required header X-TENANT-CODE");
     }
     if ("ANUDAN".equalsIgnoreCase(provider.toUpperCase())) {
-      Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
-      if (org == null) {
+      Organization org = null;
+      /*if (org == null) {
         throw new BadCredentialsException("Invalid login credentials");
-      }
-      User user = userService.getUserByEmailAndOrg(username,org);
+      }*/
 
+      User user = null;
+      if(!"ANUDAN".equalsIgnoreCase(tenantCode)) {
+        org = organizationService.findOrganizationByTenantCode(tenantCode);
+        user = userService.getUserByEmailAndOrg(username, org);
+      }else if ("ANUDAN".equalsIgnoreCase(tenantCode)){
+        List<User> users = userService.getUsersByEmail(username);
+        for (User eachUser : users) {
+          if(eachUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") || eachUser.getOrganization().getOrganizationType().equalsIgnoreCase("PLATFORM")){
+            user = eachUser;
+            org = user.getOrganization();
+            break;
+          }
+        }
+      }
       if (user != null) {
 
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")

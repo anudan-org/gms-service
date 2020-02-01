@@ -40,11 +40,16 @@ public class Notifications {
   	private String message;
 
   	@Column
+	private String title;
+
+  	@Column
   	private boolean read;
 
     @Column
     private Date postedOn;
 
+    @Column
+    private Long grantId;
 
   	@Column
   	private Long userId;
@@ -88,4 +93,25 @@ public class Notifications {
     public Date getPostedOn(){
       return this.postedOn;
     }
+
+
+    public Long getGrantId() {
+        return grantId;
+    }
+
+    public void setGrantId(Long grantId) {
+        this.grantId = grantId;
+    }
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public boolean isRead() {
+		return read;
+	}
 }

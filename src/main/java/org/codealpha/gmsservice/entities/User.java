@@ -2,20 +2,9 @@ package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 /**
  * @author Developer <developer@enstratify.com>
@@ -58,6 +47,12 @@ public class User {
 
 	@Column
 	private String updatedBy;
+
+	@Column(columnDefinition = "text")
+	private String userProfile;
+
+	@Transient
+	private boolean admin = false;
 
 	@OneToMany(mappedBy = "user",fetch = FetchType.EAGER)
 	private List<UserRole> userRoles;
@@ -157,5 +152,21 @@ public class User {
 
 	public void setActive(boolean active) {
 		this.active = active;
+	}
+
+	public String getUserProfile() {
+		return userProfile;
+	}
+
+	public void setUserProfile(String userProfile) {
+		this.userProfile = userProfile;
+	}
+
+	public boolean isAdmin() {
+		return admin;
+	}
+
+	public void setAdmin(boolean admin) {
+		this.admin = admin;
 	}
 }

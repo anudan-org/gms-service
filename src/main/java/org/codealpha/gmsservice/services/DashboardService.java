@@ -49,13 +49,16 @@ public class DashboardService {
             List<Grant> grantsList = new ArrayList<>();
             tenant.setGrants(grantsList);
             tenant.setGrantTemplates(granterGrantTemplateService.findByGranterIdAndPublishedStatusAndPrivateStatus(user.getOrganization().getId(),true,false));
-            tenant.setTemplateLibrary(templateLibraryService.getTemplateLibraryForGranter((Granter) user.getOrganization()));
+            if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
+                tenant.setTemplateLibrary(templateLibraryService.getTemplateLibraryForGranter((Granter) user.getOrganization()));
+            }
             tenants.add(tenant);
         }
 
         for (Grant grant : grants) {
             for (Tenant tenant : tenants) {
-                if (tenant.getName().equalsIgnoreCase(grant.getGrantorOrganization().getCode())) {
+                if ((user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER") && tenant.getName().equalsIgnoreCase(grant.getGrantorOrganization().getCode()))
+                || (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"))) {
                     List<Grant> grantList = tenant.getGrants();
 
                     grant.setActionAuthorities(workflowPermissionService

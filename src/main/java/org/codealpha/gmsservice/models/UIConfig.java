@@ -20,7 +20,7 @@ public class UIConfig {
 	@ApiModelProperty("Basic header styling")
 	private String navbarColor;
 
-	@ApiModelProperty("Tenant code that uniquely identifies tenant" )
+	@ApiModelProperty("Tenant code that uniquely identifies tenant")
 	private String tenantCode;
 
 	@ApiModelProperty("Basic styling for header text")
@@ -37,10 +37,16 @@ public class UIConfig {
 	private List<Organization> granteeOrgs;
 	@ApiModelProperty("Tenant grant workflow and statuses")
 	private List<WorkflowStatus> workflowStatuses;
+	@ApiModelProperty("Tenant report workflow and statuses")
+	private List<WorkflowStatus> reportWorkflowStatuses;
 	@ApiModelProperty("Tenant grant workflow state transitions")
 	private List<WorkflowTransitionModel> transitions;
+	@ApiModelProperty("Tenant report workflow state transitions")
+	private List<WorkflowTransitionModel> reportTransitions;
 	@ApiModelProperty("Tenant users")
 	private List<User> tenantUsers;
+	@ApiModelProperty("Days before opening Report for publishing")
+	private Integer daysBeforePublishingReport;
 
 	public String getLogoUrl() {
 		return logoUrl;
@@ -129,5 +135,29 @@ public class UIConfig {
 
 	public void setTransitions(List<WorkflowTransitionModel> transitions) {
 		this.transitions = transitions;
+	}
+
+	public Integer getDaysBeforePublishingReport() {
+		return daysBeforePublishingReport;
+	}
+
+	public void setDaysBeforePublishingReport(Integer daysBeforePublishingReport) {
+		this.daysBeforePublishingReport = daysBeforePublishingReport;
+	}
+
+	public List<WorkflowStatus> getReportWorkflowStatuses() {
+		return reportWorkflowStatuses;
+	}
+
+	public void setReportWorkflowStatuses(List<WorkflowStatus> reportWorkflowStatuses) {
+		this.reportWorkflowStatuses = reportWorkflowStatuses;
+	}
+
+	public List<WorkflowTransitionModel> getReportTransitions() {
+		return reportTransitions;
+	}
+
+	public void setReportTransitions(List<WorkflowTransitionModel> reportTransitions) {
+		this.reportTransitions = reportTransitions;
 	}
 }

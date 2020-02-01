@@ -8,21 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.OrderBy;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -68,10 +54,7 @@ public class Grant {
   @ApiModelProperty(name = "stringAttributes",value = "Grant template structure with values",dataType = "List<GrantStringAttributes>")
   private List<GrantStringAttribute> stringAttributes;
 
-  @OneToMany(mappedBy = "grant")
-  @JsonProperty("docAttribute")
-  @JsonIgnore
-  private List<GrantDocumentAttributes> documentAttributes;
+
 
   @Column(name = "name",columnDefinition = "text")
   @ApiModelProperty(name = "name",value = "Title of the grant",dataType = "String")
@@ -284,14 +267,6 @@ public class Grant {
     this.stringAttributes = stringAttributes;
   }
 
-  public List<GrantDocumentAttributes> getDocumentAttributes() {
-    return documentAttributes;
-  }
-
-  public void setDocumentAttributes(
-      List<GrantDocumentAttributes> documentAttributes) {
-    this.documentAttributes = documentAttributes;
-  }
 
   public List<GrantKpi> getKpis() {
     return kpis;

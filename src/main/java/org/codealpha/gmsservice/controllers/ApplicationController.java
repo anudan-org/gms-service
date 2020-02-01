@@ -8,10 +8,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import io.swagger.annotations.*;
-import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
-import org.codealpha.gmsservice.entities.Organization;
-import org.codealpha.gmsservice.entities.Template;
-import org.codealpha.gmsservice.entities.TemplateLibrary;
+import org.codealpha.gmsservice.constants.AppConfiguration;
+import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.models.Configuration;
 import org.codealpha.gmsservice.models.UIConfig;
 import org.codealpha.gmsservice.services.*;
 import org.slf4j.Logger;
@@ -22,10 +21,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
 import org.springframework.util.StreamUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import springfox.documentation.annotations.ApiIgnore;
 
@@ -81,6 +77,9 @@ public class ApplicationController {
     @Value("${spring.profiles.active}")
     private String environment;
 
+    @Autowired private AppConfigService appConfigService;
+    @Autowired private ReportService reportService;
+
     @GetMapping(value = {"/config/{host}", "/config"})
     @ApiOperation(value = "Application Configuration for tenant and Anudan platform.",notes = "Publicly available application configuration for tenant.\nIf host is passed then tenant specific configuration is retrieved. If tenant is not passed then Anudan platform level configuration is retrieved.",response = UIConfig.class)
     public UIConfig config(@ApiParam(name="host",value = "Sub-domain of tenant in url. <Blank> for Anudan platform") @PathVariable(name = "host", required = false) String host,
@@ -107,9 +106,12 @@ public class ApplicationController {
                 config.setGrantInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", org.getId()));
                 config.setSubmissionInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", org.getId()));
                 config.setWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANT",org.getId()));
+                config.setReportWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("REPORT",org.getId()));
                 config.setTenantUsers(userService.getAllTenantUsers(org));
                 config.setTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"GRANT"));
+                config.setReportTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"REPORT"));
                 config.setGranteeOrgs(organizationService.getAssociatedGranteesForTenant(org));
+                config.setDaysBeforePublishingReport(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(orgId, AppConfiguration.REPORT_SETUP_INTERVAL).getConfigValue()));
             } else {
                 org = organizationService.getPlatformOrg();
                 config = new UIConfig();
@@ -258,5 +260,23 @@ public class ApplicationController {
         } catch (IOException ex) {
             logger.error(ex.getMessage(), ex);
         }
+    }
+
+    @GetMapping("/config/{type}/{id}")
+    public Configuration getConfigs(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("type") String type, @PathVariable("id") Long id){
+
+        Configuration config = new Configuration();
+        if("grant".equalsIgnoreCase(type)){
+            Grant grant = grantService.getById(id);
+            config.setTenantUsers(userService.getAllTenantUsers(grant.getGrantorOrganization()));
+            config.setGrantWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANT",grant.getGrantorOrganization().getId()));
+
+        }else if("report".equalsIgnoreCase(type)){
+            Report report = reportService.getReportById(id);
+            config.setTenantUsers(userService.getAllTenantUsers(report.getGrant().getGrantorOrganization()));
+            config.setReportWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("REPORT",report.getGrant().getGrantorOrganization().getId()));
+            config.setReportTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(report.getGrant().getGrantorOrganization().getId(),"REPORT"));
+        }
+        return config;
     }
 }

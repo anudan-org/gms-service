@@ -16,6 +16,7 @@ import org.codealpha.gmsservice.models.SecureEntity;
 import org.codealpha.gmsservice.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 public class GrantService {
@@ -382,6 +383,10 @@ public class GrantService {
         return grantAssignmentRepository.findByGrantIdAndStateId(grant.getId(), grant.getGrantStatus().getId());
     }
 
+    public GrantAssignments getGrantAssignmentForGrantStateAndUser(Grant grant, WorkflowStatus status, User user){
+        return grantAssignmentRepository.findByGrantIdAndStateIdAndAssignments(grant.getId(),status.getId(),user.getId());
+    }
+
     public List<GrantAssignments> getGrantWorkflowAssignments(Grant grant) {
         return grantAssignmentRepository.findByGrantId(grant.getId());
     }
@@ -415,6 +420,20 @@ public class GrantService {
 
     public List<GrantHistory> getGrantHistory(Long grantId) {
         return grantHistoryRepository.findByGrantId(grantId);
+    }
+
+    public String[] buildNotificationContent(Grant finalGrant, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment,String hasNotes,String hasNotesComment) {
+
+        String message = msgConfigValue.replace("%GRANT_NAME%", finalGrant.getName()).replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner).replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner).replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges).replace("%HAS_CHANGES_COMMENT%", hasChangesComment).replace("%HAS_NOTES%",hasNotes).replace("%HAS_NOTES_COMMENT%",hasNotesComment);
+        String subject = subConfigValue.replace("%GRANT_NAME%", finalGrant.getName());
+
+        return new String[]{subject, message};
+    }
+
+    public String[] buildGrantInvitationContent(Grant grant,User user, String sub,String msg,String url){
+        sub = sub.replace("%GRANT_NAME%",grant.getName());
+        msg = msg.replace("%GRANT_NAME%",grant.getName()).replace("%TENANT_NAME%",grant.getGrantorOrganization().getName()).replace("%LINK%",url);
+        return new String[]{sub,msg};
     }
 
     public String buildHashCode(Grant grant) {
@@ -501,5 +520,9 @@ public class GrantService {
         }finally {
             return secureHash;
         }
+    }
+
+    public List<Grant> getActiveGrantsForTenant(Organization organization) {
+        return grantRepository.findActiveGrants(organization.getId());
     }
 }

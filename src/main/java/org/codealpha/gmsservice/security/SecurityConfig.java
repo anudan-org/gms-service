@@ -34,6 +34,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
   @Override
   protected void configure(HttpSecurity http) throws Exception {
     http.csrf().disable().authorizeRequests().antMatchers("/public/images/**/logo").permitAll()
+            .antMatchers("/public/tenant/**").permitAll().antMatchers("/users/").permitAll()
 
         .and()
             .authorizeRequests().anyRequest().authenticated().and()
@@ -48,12 +49,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
   @Override
   public void configure(WebSecurity web) throws Exception {
-    web.ignoring().antMatchers("/v2/api-docs", "/configuration/ui", "/swagger-resources/**", "/configuration/**", "/swagger-ui.html", "/webjars/**");
+    web.ignoring().antMatchers("/users/check","/user/**/grant/resolve","/users/","/public/**","/v2/api-docs", "/configuration/ui", "/swagger-resources/**", "/configuration/**", "/swagger-ui.html", "/webjars/**");
   }
 
   @Override
   protected void configure(AuthenticationManagerBuilder auth) throws Exception {
     auth.authenticationProvider(authProvider);
   }
+
+
 
 }

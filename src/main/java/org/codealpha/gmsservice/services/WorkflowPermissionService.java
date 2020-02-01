@@ -27,7 +27,7 @@ public class WorkflowPermissionService {
         List<Long> userRoleIds = userRoles.stream().map(e -> new Long(e.getRole().getId())).collect(
                 Collectors.toList());
 
-        return workflowPermissionRepository.getPermissionsForGrantFlow(granterOrgId, userRoleIds, grantStatusId);
+        return workflowPermissionRepository.getPermissionsForGrantFlow(grantStatusId);
     }
 
     public List<WorkFlowPermission> getFlowPermisionsOfRoleForStateTransition(Long granterOrgId, List<UserRole> userRoles, Long grantStatusId) {
