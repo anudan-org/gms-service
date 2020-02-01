@@ -71,10 +71,10 @@ public class AuthProvider implements AuthenticationProvider {
 
         try {
             if (!((JsonNode) new ObjectMapper().readValue(responseEntity.getBody(), JsonNode.class)).get("success").asBoolean()) {
-                throw new BadCredentialsException("Invalid login credentials");
+                throw new BadCredentialsException("Invalid Captcha credentials");
             }
         } catch (IOException e) {
-            throw new BadCredentialsException("Invalid login credentials");
+            throw new BadCredentialsException("Captcha verification failed");
         }
     }
 
@@ -105,7 +105,7 @@ public class AuthProvider implements AuthenticationProvider {
 
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")
             && !((Granter) user.getOrganization()).getCode().equalsIgnoreCase(tenantCode)) {
-          throw new BadCredentialsException("Invalid login credentials");
+          throw new BadCredentialsException("Could not deternmine user organization");
         }
         if (password.equalsIgnoreCase(user.getPassword())
             && username.equalsIgnoreCase(user.getEmailId())) {
@@ -116,7 +116,7 @@ public class AuthProvider implements AuthenticationProvider {
           throw new BadCredentialsException("Invalid login credentials");
         }
       }else{
-        throw new BadCredentialsException("Invalid login credentials");
+        throw new BadCredentialsException("Authentication failed");
       }
     } else if ("GOOGLE".equalsIgnoreCase(provider.toUpperCase())) {
       Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
