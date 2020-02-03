@@ -19,4 +19,11 @@ public class GranterReportTemplateService {
             granterReportTemplateRepository.save(t);
         });
     }
+
+    public GranterReportTemplate findByTemplateId(Long templateId){
+        if(granterReportTemplateRepository.findById(templateId).isPresent()) {
+            return granterReportTemplateRepository.findById(templateId).get();
+        }
+        return null;
+    }
 }

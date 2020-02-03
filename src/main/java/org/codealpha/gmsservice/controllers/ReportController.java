@@ -75,6 +75,8 @@ public class ReportController {
     private RoleService roleService;
     @Autowired
     private UserRoleService userRoleService;
+    @Autowired
+    private GranterReportTemplateService granterReportTemplateService;
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -887,6 +889,28 @@ public class ReportController {
     @ApiOperation("Get all published grant templates for tenant")
     public List<GranterReportTemplate> getTenantPublishedReportTemplates(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
         return reportService.findByGranterIdAndPublishedStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(), true);
+    }
+
+    @PutMapping("/{reportId}/template/{templateId}/{templateName}")
+    @ApiOperation("Save custom grant template with name and description")
+    public Report updateTemplateName(@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+                                    @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
+                                    @ApiParam(name = "templateId", value = "Unique identfier of the grant template") @PathVariable("templateId") Long templateId,
+                                    @ApiParam(name = "templateName", value = "NName of the template to be saved") @PathVariable("templateName") String templateName,
+                                    @ApiParam(name = "templateDate", value = "Additional information about the template such as descriptio, publish or save as private") @RequestBody TemplateMetaData templateData) {
+
+        GranterReportTemplate template = granterReportTemplateService.findByTemplateId(templateId);
+        template.setName(templateName);
+        template.setDescription(templateData.getDescription());
+        template.setPublished(templateData.isPublish());
+        template.setPrivateToReport(templateData.isPrivateToGrant());
+        template.setPublished(true);
+        reportService.saveReportTemplate(template);
+
+        Report report = reportService.getReportById(reportId);
+        report = _ReportToReturn(report,userId);
+        return report;
+
     }
 
     @GetMapping("/create/grant/{grantId}/template/{templateId}")
