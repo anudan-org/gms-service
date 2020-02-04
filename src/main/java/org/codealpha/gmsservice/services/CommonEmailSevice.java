@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import java.io.UnsupportedEncodingException;
 
 @Component
 @ComponentScan
@@ -33,14 +34,14 @@ public class CommonEmailSevice {
       MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message);
       //SimpleMailMessage message = new SimpleMailMessage();
       mimeMessageHelper.setTo(to);
-      mimeMessageHelper.setFrom("admin@anudan.org");
+      mimeMessageHelper.setFrom("admin@anudan.org","Anudan Admin");
       mimeMessageHelper.setSubject(subject);
       for(String footerBlock: footer){
           messageText = messageText.concat(footerBlock);
       }
       mimeMessageHelper.setText(messageText,true);
       mailSender.send(message);
-    }catch (MessagingException mse){
+    }catch (MessagingException | UnsupportedEncodingException mse){
       mse.printStackTrace();
     }
   }
