@@ -335,6 +335,8 @@ public class GrantController {
         stringAttribute.setValue("");
         stringAttribute.setSectionAttribute(newSectionAttribute);
         stringAttribute.setSection(grantSection);
+        stringAttribute.setTarget("");
+        stringAttribute.setFrequency("");
         stringAttribute.setGrant(grant);
 
 
