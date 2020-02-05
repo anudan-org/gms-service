@@ -22,7 +22,7 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
     @Query(value = "select distinct A.* from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=?1 and ( (B.anchor=true and B.assignments=?2) or (B.assignments=?2 and B.state_id=A.grant_status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 and ?2 = any (array(select assignments from grant_assignments where grant_id=A.id))) or (C.internal_status='REVIEW' and ?2 = any( array(select assignments from grant_assignments where grant_id=A.id))) or (C.internal_status='ACTIVE' or C.internal_status='CLOSED' ) ) order by A.updated_at desc", nativeQuery = true)
     public List<Grant> findAssignedGrantsOfGranter(Long grantorOrgId, Long userId);
 
-    @Query(value = "select A.* from grants A where A.organization_id=?1", nativeQuery = true)
+    @Query(value = "select A.* from grants A inner join workflow_statuses B on B.id=A.grant_status_id where A.organization_id=?1 and (B.internal_status='ACTIVE' or B.internal_status='CLOSED')", nativeQuery = true)
     public List<Grant> findAllGrantsOfGrantee(Long granteeOrgId);
 
     public Grant findByNameAndGrantorOrganization(String name, Granter granter);
