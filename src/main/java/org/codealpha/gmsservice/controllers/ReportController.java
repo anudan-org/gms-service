@@ -199,14 +199,14 @@ public class ReportController {
         report.setUpdatedAt(DateTime.now().toDate());
         report.setUpdatedBy(user.getId());
 
-        _processStringAttributes(report, reportToSave, tenantOrg);
+        _processStringAttributes(user,report, reportToSave, tenantOrg);
 
         report = reportService.saveReport(report);
 
         return report;
     }
 
-    private void _processStringAttributes(Report report, Report reportToSave, Organization tenant) {
+    private void _processStringAttributes(User user,Report report, Report reportToSave, Organization tenant) {
         List<ReportStringAttribute> stringAttributes = new ArrayList<>();
         ReportSpecificSection reportSpecificSection = null;
 
@@ -251,7 +251,9 @@ public class ReportController {
 
                     reportStringAttribute.setTarget(sectionAttributesVO.getTarget());
                     reportStringAttribute.setFrequency(sectionAttributesVO.getFrequency());
-                    reportStringAttribute.setActualTarget(sectionAttributesVO.getActualTarget());
+                    if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                        reportStringAttribute.setActualTarget(sectionAttributesVO.getActualTarget());
+                    }
                     if (sectionAttribute.getFieldType().equalsIgnoreCase("table")) {
                         List<TableData> tableData = sectionAttributesVO.getFieldTableValue();
                         ObjectMapper mapper = new ObjectMapper();
