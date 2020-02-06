@@ -48,7 +48,7 @@ public class GrantValidator {
             _validateGrant(grantService,grantId,grant,grantToSave);
             _validUserCanModifyGrant(user, grant);
         }catch (Exception e){
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException("Invalid authorization for this user");
         }
     }
 
@@ -56,11 +56,11 @@ public class GrantValidator {
 
         SecureEntity secureEntity = grantService.unBuildGrantHashCode(grantToSave);
         if(grantId.longValue()!=secureEntity.getGrantId()){
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException("Invalid grant being request for modification");
         }
         String existingHas = grantService.buildHashCode(grantToSave);
         if(!existingHas.equalsIgnoreCase(grantToSave.getSecurityCode())){
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException("The grant data seems to have been tampered.");
         }
 
     }
@@ -68,13 +68,13 @@ public class GrantValidator {
     private void _validUserCanModifyGrant(User user, Grant grant) {
         GrantAssignments assignment = grantAssignmentRepository.findByGrantIdAndStateId(grant.getId(),grant.getGrantStatus().getId()).get(0);
         if(assignment.getAssignments()!=user.getId()){
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException("User not authorized to modify this grant");
         }
     }
 
     private void _validateUser(Long userId, User user) {
         if(userId!=user.getId()){
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException("The user is not valid");
         }
     }
 
@@ -87,21 +87,21 @@ public class GrantValidator {
     public void validateTemplateExists(GrantService grantService, Grant grantToSave, Long templateId) {
         SecureEntity secureEntity = grantService.unBuildGrantHashCode(grantToSave);
         if(!secureEntity.getGrantTemplateIds().stream().filter(l -> l.longValue()==templateId.longValue()).findFirst().isPresent()){
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException("The template is in use is not valid");
         }
     }
 
     public void validateSectionExists(GrantService grantService, Grant grantToSave, Long sectionId) {
         SecureEntity secureEntity = grantService.unBuildGrantHashCode(grantToSave);
         if(!secureEntity.getSectionAndAtrribIds().containsKey(sectionId)){
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException("Grant sections seem to have been tampered");
         }
     }
 
     public void validateFieldExists(GrantService grantService, Grant grant, Long sectionId, Long fieldId) {
         SecureEntity secureEntity = grantService.unBuildGrantHashCode(grant);
         if(!secureEntity.getSectionAndAtrribIds().get(sectionId).stream().filter(i -> i.longValue()==fieldId.longValue()).findFirst().isPresent()){
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException("Field does not exist in this grant");
         }
     }
 
@@ -109,15 +109,15 @@ public class GrantValidator {
         SecureEntity secureEntity = grantService.unBuildGrantHashCode(grantToSave);
 
         if(grantId.longValue()!=secureEntity.getGrantId().longValue()){
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException("Invalid grant flow requested");
         }
 
         if(!secureEntity.getGrantWorkflowIds().stream().filter(wf -> wf.longValue()==workflowStatusRepository.getById(grantToSave.getGrantStatus().getId()).getWorkflow().getId().longValue()).findFirst().isPresent()){
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException("Invalid grant flow requested");
         }
 
         if(!grantAssignmentRepository.findByGrantIdAndStateId(grantToSave.getId(),fromStateId).stream().filter(ass -> ass.getAssignments().longValue()==userId).findFirst().isPresent()){
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException("Grant is not in the right state");
         }
 
         Long[][] attribs = secureEntity.getWorkflowStatusTransitionIds().get(workflowStatusRepository.getById(grantToSave.getGrantStatus().getId()).getWorkflow().getId());
@@ -129,7 +129,7 @@ public class GrantValidator {
             }
         }
         if(!found) {
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException("Invalid workflow requested for this grant");
         }
 
     }
@@ -138,7 +138,7 @@ public class GrantValidator {
         for (int i = 0; i < files.length; i++) {
             int finalI = i;
             if(!Arrays.stream(supportedFileTypes).filter(type -> type.equalsIgnoreCase(FilenameUtils.getExtension(files[finalI].getOriginalFilename()))).findAny().isPresent()){
-                throw new InvalidFileTypeException("Invalid file type extension");
+                throw new InvalidFileTypeException("The requested file type extension is not supported");
             }
         }
     }
