@@ -80,8 +80,16 @@ public class ReportController {
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
-        List<Report> reports = reportService.getAllAssignedReportsForUser(userId, tenantOrg.getId());
+        Organization org = null;
+        User user = userService.getUserById(userId);
+
+        if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+            org = user.getOrganization();
+        } else{
+            org = organizationService.findOrganizationByTenantCode(tenantCode);
+        }
+
+        List<Report> reports = reportService.getAllAssignedReportsForUser(userId, org.getId());
         for (Report report : reports) {
 
             report = _ReportToReturn(report, userId);
