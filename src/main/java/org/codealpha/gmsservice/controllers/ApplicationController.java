@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -80,10 +82,10 @@ public class ApplicationController {
     @Autowired private AppConfigService appConfigService;
     @Autowired private ReportService reportService;
 
-    @GetMapping(value = {"/config/{host}", "/config"})
+    @GetMapping(value = {"/config/user/{userId}/{host}", "/config"})
     @ApiOperation(value = "Application Configuration for tenant and Anudan platform.",notes = "Publicly available application configuration for tenant.\nIf host is passed then tenant specific configuration is retrieved. If tenant is not passed then Anudan platform level configuration is retrieved.",response = UIConfig.class)
     public UIConfig config(@ApiParam(name="host",value = "Sub-domain of tenant in url. <Blank> for Anudan platform") @PathVariable(name = "host", required = false) String host,
-                           HttpServletRequest request) {
+                           HttpServletRequest request,@PathVariable("userId") Long userId) {
 
         UIConfig config;
 
@@ -93,6 +95,10 @@ public class ApplicationController {
         }else{
             url = url.replace("http","http");
         }
+        if(host.equalsIgnoreCase("anudan")){
+            host=null;
+        }
+
         if (null != host) {
             Organization org = organizationResolver.getOrganizationByHostedDomain(host);
             if (null != org) {
@@ -112,12 +118,14 @@ public class ApplicationController {
                 config.setReportTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"REPORT"));
                 config.setGranteeOrgs(organizationService.getAssociatedGranteesForTenant(org));
                 config.setDaysBeforePublishingReport(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(orgId, AppConfiguration.REPORT_SETUP_INTERVAL).getConfigValue()));
+                config.setTemplateLibrary(templateLibraryService.getTemplateLibraryForOrganization(org.getId()));
             } else {
                 org = organizationService.getPlatformOrg();
                 config = new UIConfig();
                 config.setLogoUrl(url.concat("/public/images/ANUDAN/anudan.png"));
                 config.setNavbarColor("#e3f2fd");
                 config.setTenantCode(org.getCode());
+                config.setTemplateLibrary(templateLibraryService.getTemplateLibraryForOrganization(org.getId()));
             }
 
         } else {
@@ -125,7 +133,9 @@ public class ApplicationController {
             config = new UIConfig();
             config.setLogoUrl(url.concat("/public/images/ANUDAN/anudan.png"));
             config.setNavbarColor("#e3f2fd");
+            User user = userService.getUserById(userId);
             config.setTenantCode(org.getCode());
+            config.setTemplateLibrary(templateLibraryService.getTemplateLibraryForOrganization(user.getOrganization().getId()));
         }
         //config.setDefaultSections(grantSectionService.getAllDefaultSections());
         return config;

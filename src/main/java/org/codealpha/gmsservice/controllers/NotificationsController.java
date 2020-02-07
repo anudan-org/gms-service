@@ -25,7 +25,7 @@ public class NotificationsController{
 	public List<Notifications> getUserNotifications(@ApiParam(name = "userId",value = "Unique identifier of logger in user") @PathVariable("userId") Long userId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode){
 		/*List<Notifications> notifications = notificationsService.getUserNotifications(userId, false);
 		notifications.sort((a,b)->a.getPostedOn().compareTo(b.getPostedOn()));*/
-		notificationValidator.validate(userId,tenantCode);
+		//notificationValidator.validate(userId,tenantCode);
 		return notificationsService.getAllUserNotifications(userId);
 	}
 

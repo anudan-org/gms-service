@@ -8,6 +8,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
@@ -19,15 +20,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
@@ -35,6 +36,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @RestController
 @RequestMapping("/user/{userId}/report")
@@ -80,8 +83,16 @@ public class ReportController {
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
-        List<Report> reports = reportService.getAllAssignedReportsForUser(userId, tenantOrg.getId());
+        Organization org = null;
+        User user = userService.getUserById(userId);
+
+        if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+            org = user.getOrganization();
+        } else{
+            org = organizationService.findOrganizationByTenantCode(tenantCode);
+        }
+
+        List<Report> reports = reportService.getAllAssignedReportsForUser(userId, org.getId());
         for (Report report : reports) {
 
             report = _ReportToReturn(report, userId);
@@ -191,14 +202,14 @@ public class ReportController {
         report.setUpdatedAt(DateTime.now().toDate());
         report.setUpdatedBy(user.getId());
 
-        _processStringAttributes(report, reportToSave, tenantOrg);
+        _processStringAttributes(user,report, reportToSave, tenantOrg);
 
         report = reportService.saveReport(report);
 
         return report;
     }
 
-    private void _processStringAttributes(Report report, Report reportToSave, Organization tenant) {
+    private void _processStringAttributes(User user,Report report, Report reportToSave, Organization tenant) {
         List<ReportStringAttribute> stringAttributes = new ArrayList<>();
         ReportSpecificSection reportSpecificSection = null;
 
@@ -243,7 +254,9 @@ public class ReportController {
 
                     reportStringAttribute.setTarget(sectionAttributesVO.getTarget());
                     reportStringAttribute.setFrequency(sectionAttributesVO.getFrequency());
-                    reportStringAttribute.setActualTarget(sectionAttributesVO.getActualTarget());
+                    if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                        reportStringAttribute.setActualTarget(sectionAttributesVO.getActualTarget());
+                    }
                     if (sectionAttribute.getFieldType().equalsIgnoreCase("table")) {
                         List<TableData> tableData = sectionAttributesVO.getFieldTableValue();
                         ObjectMapper mapper = new ObjectMapper();
@@ -427,7 +440,15 @@ public class ReportController {
         try {
             file = resourceLoader
                     .getResource("file:" + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8"));
-            filePath = uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId() + "/";
+            //filePath = uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId() + "/";
+
+            User user = userService.getUserById(userId);
+
+            if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + "/report-documents/" + reportId + "/" + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId() + "/";
+            }else{
+                filePath = uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId() + "/";
+            }
 
             File dir = new File(filePath);
             dir.mkdirs();
@@ -481,7 +502,14 @@ public class ReportController {
         Report report = reportService.getReportById(reportId);
 
         ReportStringAttribute attr = reportService.getReportStringByStringAttributeId(attributeId);
-        String filePath = uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + attr.getSection().getId() + "/" + attr.getSectionAttribute().getId() + "/";
+        User user = userService.getUserById(userId);
+
+        String filePath = "";
+        if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+            filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + "/report-documents/" + reportId + "/" + attr.getSection().getId() + "/" + attr.getSectionAttribute().getId() + "/";
+        }else{
+            filePath = uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + attr.getSection().getId() + "/" + attr.getSectionAttribute().getId() + "/";
+        }
         File dir = new File(filePath);
         dir.mkdirs();
         List<DocInfo> docInfos = new ArrayList<>();
@@ -1002,5 +1030,57 @@ public class ReportController {
 
         report = _ReportToReturn(report,userId);
         return report;
+    }
+
+    @PostMapping(value = "/{reportId}/attachments", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public byte[] downloadSelectedAttachments(@PathVariable("userId") Long userId, @PathVariable("reportId") Long reportId, @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest, HttpServletResponse response) throws IOException {
+
+        ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
+        //setting headers
+        response.setContentType("application/zip");
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
+
+        //creating byteArray stream, make it bufforable and passing this buffor to ZipOutputStream
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+        ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+
+        //simple file list, just for tests
+
+        ArrayList<File> files = new ArrayList<>(2);
+        files.add(new File("README.md"));
+
+        User user= userService.getUserById(userId);
+
+        //packing files
+        for (Long attachmentId : downloadRequest.getAttachmentIds()) {
+            ReportStringAttributeAttachments attachment = reportService.getStringAttributeAttachmentsByAttachmentId(attachmentId);
+            Long sectionId = attachment.getReportStringAttribute().getSectionAttribute().getSection().getId();
+            Long attributeId = attachment.getReportStringAttribute().getSectionAttribute().getId();
+            File file = null;
+            if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                 file = resourceLoader.getResource("file:" + uploadLocation + user.getOrganization().getName().toUpperCase() + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType()).getFile();
+            } else{
+                file = resourceLoader.getResource("file:" + uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType()).getFile();
+            }
+            //new zip entry and copying inputstream with file to zipOutputStream, after all closing streams
+            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+            FileInputStream fileInputStream = new FileInputStream(file);
+
+            IOUtils.copy(fileInputStream, zipOutputStream);
+
+            fileInputStream.close();
+            zipOutputStream.closeEntry();
+        }
+
+        if (zipOutputStream != null) {
+            zipOutputStream.finish();
+            zipOutputStream.flush();
+            IOUtils.closeQuietly(zipOutputStream);
+        }
+        IOUtils.closeQuietly(bufferedOutputStream);
+        IOUtils.closeQuietly(byteArrayOutputStream);
+        return byteArrayOutputStream.toByteArray();
     }
 }

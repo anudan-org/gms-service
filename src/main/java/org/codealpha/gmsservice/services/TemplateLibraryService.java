@@ -20,4 +20,8 @@ public class TemplateLibraryService {
     public TemplateLibrary getTemplateLibraryDocumentById(Long id){
         return templateLibraryRepository.findById(id).get();
     }
+
+    public List<TemplateLibrary> getTemplateLibraryForOrganization(Long orgId){
+        return templateLibraryRepository.findByGranterId(orgId);
+    }
 }

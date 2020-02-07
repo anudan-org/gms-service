@@ -47,6 +47,8 @@ public class UIConfig {
 	private List<User> tenantUsers;
 	@ApiModelProperty("Days before opening Report for publishing")
 	private Integer daysBeforePublishingReport;
+	@ApiModelProperty("Template Library of organization")
+	private List<TemplateLibrary> templateLibrary;
 
 	public String getLogoUrl() {
 		return logoUrl;
@@ -159,5 +161,13 @@ public class UIConfig {
 
 	public void setReportTransitions(List<WorkflowTransitionModel> reportTransitions) {
 		this.reportTransitions = reportTransitions;
+	}
+
+	public List<TemplateLibrary> getTemplateLibrary() {
+		return templateLibrary;
+	}
+
+	public void setTemplateLibrary(List<TemplateLibrary> templateLibrary) {
+		this.templateLibrary = templateLibrary;
 	}
 }
