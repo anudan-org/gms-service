@@ -383,4 +383,7 @@ public class ReportService {
         return new String[]{sub,msg};
     }
 
+    public ReportStringAttributeAttachments getStringAttributeAttachmentsByAttachmentId(Long attachmentId) {
+        return reportStringAttributeAttachmentsRepository.findById(attachmentId).get();
+    }
 }
