@@ -926,7 +926,7 @@ public class ReportController {
     @GetMapping("/templates")
     @ApiOperation("Get all published grant templates for tenant")
     public List<GranterReportTemplate> getTenantPublishedReportTemplates(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
-        return reportService.findByGranterIdAndPublishedStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(), true);
+        return reportService.findByGranterIdAndPublishedStatusAndPrivateStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(), true,false);
     }
 
     @PutMapping("/{reportId}/template/{templateId}/{templateName}")

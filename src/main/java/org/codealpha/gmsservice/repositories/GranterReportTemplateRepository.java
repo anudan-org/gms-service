@@ -9,4 +9,5 @@ public interface GranterReportTemplateRepository extends CrudRepository<GranterR
     public GranterReportTemplate findByGranterIdAndDefaultTemplate(Long granterId,Boolean flag);
     public List<GranterReportTemplate> findByGranterId(Long granterId);
     public List<GranterReportTemplate> findByGranterIdAndPublished(Long granterId,Boolean publishedStatus);
+    public List<GranterReportTemplate> findByGranterIdAndPublishedAndPrivateToReport(Long granterId,Boolean publishedStatus, boolean _private);
 }
