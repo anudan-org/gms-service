@@ -380,6 +380,10 @@ public class ReportService {
         return granterReportTemplateRepository.findByGranterIdAndPublished(id,publishedStatus);
     }
 
+    public List<GranterReportTemplate> findByGranterIdAndPublishedStatusAndPrivateStatus(Long id, boolean publishedStatus, boolean _private) {
+        return granterReportTemplateRepository.findByGranterIdAndPublishedAndPrivateToReport(id,publishedStatus,_private);
+    }
+
     public String[] buildReportInvitationContent(Report report,User user, String sub,String msg,String url){
         sub = sub.replace("%GRANT_NAME%",report.getGrant().getName());
         sub = sub.replace("%REPORT_NAME%",report.getName());
