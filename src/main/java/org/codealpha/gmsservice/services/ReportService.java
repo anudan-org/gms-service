@@ -108,9 +108,14 @@ public class ReportService {
         return reportAssignmentRepository.findByReportId(report.getId());
     }
 
-    public List<Report> getAllAssignedReportsForUser(Long userId, Long granterOrgId){
+    public List<Report> getAllAssignedReportsForGranteeUser(Long userId, Long granteeOrgId){
 
-        return reportRepository.findAllAssignedReportsForUser(userId,granterOrgId);
+        return reportRepository.findAllAssignedReportsForGranteeUser(userId,granteeOrgId);
+    }
+
+    public List<Report> getAllAssignedReportsForGranterUser(Long userId, Long granterOrgId){
+
+        return reportRepository.findAllAssignedReportsForGranterUser(userId,granterOrgId);
     }
 
     public GranterReportTemplate getDefaultTemplate(Long granterId){

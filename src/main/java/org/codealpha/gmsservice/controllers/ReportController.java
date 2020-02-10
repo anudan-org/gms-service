@@ -34,7 +34,6 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -86,13 +85,16 @@ public class ReportController {
         Organization org = null;
         User user = userService.getUserById(userId);
 
+        List<Report> reports = null;
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
             org = user.getOrganization();
+            reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId());
         } else{
             org = organizationService.findOrganizationByTenantCode(tenantCode);
+            reports = reportService.getAllAssignedReportsForGranterUser(userId, org.getId());
         }
 
-        List<Report> reports = reportService.getAllAssignedReportsForUser(userId, org.getId());
+
         for (Report report : reports) {
 
             report = _ReportToReturn(report, userId);
@@ -128,12 +130,7 @@ public class ReportController {
             workflowAssignments.add(assignmentsVO);
         }
         report.setWorkflowAssignments(workflowAssignments);
-        List<ReportAssignment> reportAssignments = reportService.getAssignmentsForReport(report);
-        if (reportAssignments.stream().filter(ass -> (ass.getAssignment()==null?0L:ass.getAssignment().longValue()) == userId.longValue() && ass.getStateId().longValue() == report.getStatus().getId().longValue()).findAny().isPresent()) {
-            report.setCanManage(true);
-        } else {
-            report.setCanManage(false);
-        }
+        List<ReportAssignment> reportAssignments = determineCanManage(report, userId);
 
         if(userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
             report.setForGranteeUse(true);
@@ -175,6 +172,16 @@ public class ReportController {
         return report;
     }
 
+    private List<ReportAssignment> determineCanManage(Report report, Long userId) {
+        List<ReportAssignment> reportAssignments = reportService.getAssignmentsForReport(report);
+        if (reportAssignments.stream().filter(ass -> (ass.getAssignment()==null?0L:ass.getAssignment().longValue()) == userId.longValue() && ass.getStateId().longValue() == report.getStatus().getId().longValue()).findAny().isPresent()) {
+            report.setCanManage(true);
+        } else {
+            report.setCanManage(false);
+        }
+        return reportAssignments;
+    }
+
 
     @PutMapping("/{reportId}")
     @ApiOperation("Save report")
@@ -186,7 +193,10 @@ public class ReportController {
 
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         User user = userService.getUserById(userId);
-        Report report = _processReport(reportToSave, tenantOrg, user);
+        Report report = null;
+        Report savedReports = reportService.getReportById(reportId);
+        determineCanManage(savedReports,userId);
+        if(savedReports.getCanManage()) report = _processReport(reportToSave, tenantOrg, user);
 
         report = _ReportToReturn(reportToSave, userId);
         return report;
