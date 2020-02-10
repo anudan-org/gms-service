@@ -2163,7 +2163,7 @@ public class GrantController {
     @GetMapping("/templates")
     @ApiOperation("Get all published grant templates for tenant")
     public List<GranterGrantTemplate> getTenantPublishedGrantTemplates(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
-        return granterGrantTemplateService.findByGranterIdAndPublishedStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(), true);
+        return granterGrantTemplateService.findByGranterIdAndPublishedStatusAndPrivateStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(), true,false);
     }
 
     @PostMapping("/{grantId}/assignment")
