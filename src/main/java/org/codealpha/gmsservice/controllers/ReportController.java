@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -445,11 +446,11 @@ public class ReportController {
 
         ReportStringAttribute stringAttribute = reportService.getReportStringByStringAttributeId(fieldId);
 
-        Resource file = null;
+        File file = null;
         String filePath = null;
         try {
             file = resourceLoader
-                    .getResource("file:" + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8"));
+                    .getResource("file:" + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8")).getFile();
             //filePath = uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId() + "/";
 
             User user = userService.getUserById(userId);
@@ -463,7 +464,7 @@ public class ReportController {
             File dir = new File(filePath);
             dir.mkdirs();
             File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
-            FileWriter newJsp = new FileWriter(fileToCreate);
+            FileCopyUtils.copy(file,fileToCreate);
         } catch (IOException e) {
             e.printStackTrace();
         }

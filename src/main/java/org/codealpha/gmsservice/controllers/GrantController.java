@@ -53,6 +53,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -740,7 +741,7 @@ public class GrantController {
     public Grant saveGrant(@ApiParam(name = "grantId", value = "Unique identifier of grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "grantToSave", value = "Grant to save in edit mode, passed in Body of request") @RequestBody Grant grantToSave, @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
                            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
+        //grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
 
 
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
@@ -2199,17 +2200,19 @@ public class GrantController {
 
         GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(fieldId);
 
-        Resource file = null;
+        File file = null;
         String filePath = null;
         try {
             file = resourceLoader
-                    .getResource("file:" + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8"));
+                    .getResource("file:" + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8")).getFile();
             filePath = uploadLocation + tenantCode + "/grant-documents/" + grantId + "/" + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId() + "/";
+
 
             File dir = new File(filePath);
             dir.mkdirs();
             File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
-            FileWriter newJsp = new FileWriter(fileToCreate);
+            FileCopyUtils.copy(file,fileToCreate);
+            //FileWriter newJsp = new FileWriter(fileToCreate);
         } catch (IOException e) {
             e.printStackTrace();
         }
