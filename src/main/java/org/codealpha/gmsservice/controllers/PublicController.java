@@ -50,6 +50,8 @@ public class PublicController {
         }
     }
 
+
+
     /*@GetMapping("/tenant/{domain}")
     public String getTenantCode(@PathVariable("domain") String domain){
         Organization org = organizationService.findOrganizationByTenantCode(domain);

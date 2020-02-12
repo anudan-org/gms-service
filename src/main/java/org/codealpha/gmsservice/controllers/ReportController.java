@@ -18,9 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -1093,5 +1096,31 @@ public class ReportController {
         IOUtils.closeQuietly(bufferedOutputStream);
         IOUtils.closeQuietly(byteArrayOutputStream);
         return byteArrayOutputStream.toByteArray();
+    }
+
+
+    @GetMapping("/{reportId}/file/{fileId}")
+    @ApiOperation(value = "Get file for download")
+    public ResponseEntity<Resource> getFileForDownload(HttpServletResponse servletResponse, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("reportId") Long reportId, @PathVariable("fileId") Long fileId) {
+
+        ReportStringAttributeAttachments attachment = reportService.getStringAttributeAttachmentsByAttachmentId(fileId);
+        String filePath = attachment.getLocation() + attachment.getName()+"."+attachment.getType();
+
+        /*servletResponse.setContentType(file.getcMediaType.IMAGE_PNG_VALUE);
+        servletResponse.setHeader("org-name",organizationService.findOrganizationByTenantCode(tenant).getName());*/
+        try {
+            File file = resourceLoader.getResource("file:" + filePath).getFile();
+            InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+attachment.getName()+"."+attachment.getType());
+            servletResponse.setHeader("filename", attachment.getName()+"."+attachment.getType());
+            return  ResponseEntity.ok().headers(headers).contentLength(file.length()).contentType(MediaType.parseMediaType("application/octet-stream"))
+                    .body(resource);
+            //StreamUtils.copy(file.getInputStream(), servletResponse.getOutputStream());
+        } catch (IOException ex) {
+            logger.error(ex.getMessage(), ex);
+        }
+        return null;
     }
 }
