@@ -1075,6 +1075,9 @@ public class ReportController {
             File file = null;
             if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
                  file = resourceLoader.getResource("file:" + uploadLocation + user.getOrganization().getName().toUpperCase() + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType()).getFile();
+                 if(!file.exists()){
+                     file = resourceLoader.getResource("file:" + uploadLocation + reportService.getReportById(reportId).getGrant().getGrantorOrganization().getCode().toUpperCase() + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType()).getFile();
+                 }
             } else{
                 file = resourceLoader.getResource("file:" + uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType()).getFile();
             }
