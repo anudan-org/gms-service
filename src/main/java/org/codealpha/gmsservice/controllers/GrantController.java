@@ -1568,8 +1568,13 @@ public class GrantController {
                                     if (yearlyPeriods.containsKey(st.toDate())) {
                                         yearlyPeriods.get(st.toDate()).add(attr);
                                     } else {
-                                        List attrList = new ArrayList<SectionAttributesVO>();
-                                        attrList.add(attr);
+                                        List attrList = null;
+
+                                        if(yearlyPeriods.containsKey(st.toDate())){
+                                            attrList = yearlyPeriods.get(st.toDate());
+                                        }else{
+                                            attrList = new ArrayList<SectionAttributesVO>();
+                                        }
                                         yearlyPeriods.put(st.toDate(), attrList);
                                     }
                                 }
@@ -1587,8 +1592,13 @@ public class GrantController {
                                     if (yearlyPeriods.containsKey(st.toDate())) {
                                         yearlyPeriods.get(st.toDate()).add(attr);
                                     } else {
-                                        List attrList = new ArrayList<SectionAttributesVO>();
-                                        attrList.add(attr);
+                                        List attrList = null;
+
+                                        if(halfyearlyPeriods.containsKey(st.toDate())){
+                                            attrList = halfyearlyPeriods.get(st.toDate());
+                                        }else{
+                                            attrList = new ArrayList<SectionAttributesVO>();
+                                        }
                                         halfyearlyPeriods.put(st.toDate(), attrList);
                                     }
                                 }
@@ -1607,8 +1617,13 @@ public class GrantController {
                                     } else if (halfyearlyPeriods.containsKey(st.toDate())) {
                                         halfyearlyPeriods.get(st.toDate()).add(attr);
                                     } else {
-                                        List attrList = new ArrayList<SectionAttributesVO>();
-                                        attrList.add(attr);
+                                        List attrList = null;
+
+                                        if(quarterlyPeriods.containsKey(st.toDate())){
+                                            attrList = quarterlyPeriods.get(st.toDate());
+                                        }else{
+                                            attrList = new ArrayList<SectionAttributesVO>();
+                                        }
                                         quarterlyPeriods.put(st.toDate(), attrList);
                                     }
                                 }
@@ -1629,7 +1644,13 @@ public class GrantController {
                                     } else if (quarterlyPeriods.containsKey(st.toDate())) {
                                         quarterlyPeriods.get(st.toDate()).add(attr);
                                     } else {
-                                        List attrList = new ArrayList<SectionAttributesVO>();
+                                        List attrList = null;
+
+                                        if(monthlyPeriods.containsKey(st.toDate())){
+                                            attrList = monthlyPeriods.get(st.toDate());
+                                        }else{
+                                            attrList = new ArrayList<SectionAttributesVO>();
+                                        }
                                         attrList.add(attr);
                                         monthlyPeriods.put(st.toDate(), attrList);
                                     }
