@@ -552,7 +552,7 @@ public class ReportController {
 
         mapper = new ObjectMapper();
         try {
-            if (attr.getValue().equalsIgnoreCase("")) {
+            if (attr.getValue().equalsIgnoreCase("") || attr.getValue()==null ) {
                 attr.setValue("[]");
             }
             List<ReportStringAttributeAttachments> currentAttachments = mapper.readValue(attr.getValue(), new TypeReference<List<ReportStringAttributeAttachments>>() {
@@ -1122,5 +1122,28 @@ public class ReportController {
             logger.error(ex.getMessage(), ex);
         }
         return null;
+    }
+
+    @PostMapping("{reportId}/attribute/{attributeId}/attachment/{attachmentId}")
+    @ApiOperation("Delete attachment from document field")
+    public Report deleteReportStringAttributeAttachment(@ApiParam(name = "reportToSave", value = "Report to save in edit mode, pass in Body of request") @RequestBody Report reportToSave, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "userId", value = "Unique identifier og logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "attachmentId", value = "Unique identifier of the document attachment being deleted") @PathVariable("attachmentId") Long attachmentId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode, @ApiParam(name = "attributeId", value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId) {
+        saveReport(reportId,reportToSave, userId, tenantCode);
+        ReportStringAttributeAttachments attch = reportService.getStringAttributeAttachmentsByAttachmentId(attachmentId);
+        reportService.deleteStringAttributeAttachments(Arrays.asList(new ReportStringAttributeAttachments[]{attch}));
+        ReportStringAttribute stringAttribute = reportService.findReportStringAttributeById(attributeId);
+        List<ReportStringAttributeAttachments> stringAttributeAttachments = reportService.getStringAttributeAttachmentsByStringAttribute(stringAttribute);
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
+            stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
+        } catch (JsonProcessingException e) {
+            logger.error(e.getMessage(), e);
+        }
+
+
+        Report report = reportService.getReportById(reportId);
+
+        report = _ReportToReturn(report,userId);
+        return report;
     }
 }

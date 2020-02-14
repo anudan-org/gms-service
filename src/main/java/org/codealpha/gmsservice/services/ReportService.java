@@ -395,4 +395,9 @@ public class ReportService {
     public ReportStringAttributeAttachments getStringAttributeAttachmentsByAttachmentId(Long attachmentId) {
         return reportStringAttributeAttachmentsRepository.findById(attachmentId).get();
     }
+
+    public ReportStringAttribute findReportStringAttributeById(Long attributeId) {
+
+        return reportStringAttributeRepository.findById(attributeId).get();
+    }
 }
