@@ -552,7 +552,7 @@ public class ReportController {
 
         mapper = new ObjectMapper();
         try {
-            if (attr.getValue().equalsIgnoreCase("") || attr.getValue()==null ) {
+            if (attr.getValue()==null || attr.getValue().equalsIgnoreCase("") ) {
                 attr.setValue("[]");
             }
             List<ReportStringAttributeAttachments> currentAttachments = mapper.readValue(attr.getValue(), new TypeReference<List<ReportStringAttributeAttachments>>() {
