@@ -50,9 +50,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -740,7 +745,7 @@ public class GrantController {
     public Grant saveGrant(@ApiParam(name = "grantId", value = "Unique identifier of grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "grantToSave", value = "Grant to save in edit mode, passed in Body of request") @RequestBody Grant grantToSave, @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
                            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
+        //grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
 
 
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
@@ -1563,8 +1568,13 @@ public class GrantController {
                                     if (yearlyPeriods.containsKey(st.toDate())) {
                                         yearlyPeriods.get(st.toDate()).add(attr);
                                     } else {
-                                        List attrList = new ArrayList<SectionAttributesVO>();
-                                        attrList.add(attr);
+                                        List attrList = null;
+
+                                        if(yearlyPeriods.containsKey(st.toDate())){
+                                            attrList = yearlyPeriods.get(st.toDate());
+                                        }else{
+                                            attrList = new ArrayList<SectionAttributesVO>();
+                                        }
                                         yearlyPeriods.put(st.toDate(), attrList);
                                     }
                                 }
@@ -1582,8 +1592,13 @@ public class GrantController {
                                     if (yearlyPeriods.containsKey(st.toDate())) {
                                         yearlyPeriods.get(st.toDate()).add(attr);
                                     } else {
-                                        List attrList = new ArrayList<SectionAttributesVO>();
-                                        attrList.add(attr);
+                                        List attrList = null;
+
+                                        if(halfyearlyPeriods.containsKey(st.toDate())){
+                                            attrList = halfyearlyPeriods.get(st.toDate());
+                                        }else{
+                                            attrList = new ArrayList<SectionAttributesVO>();
+                                        }
                                         halfyearlyPeriods.put(st.toDate(), attrList);
                                     }
                                 }
@@ -1602,8 +1617,13 @@ public class GrantController {
                                     } else if (halfyearlyPeriods.containsKey(st.toDate())) {
                                         halfyearlyPeriods.get(st.toDate()).add(attr);
                                     } else {
-                                        List attrList = new ArrayList<SectionAttributesVO>();
-                                        attrList.add(attr);
+                                        List attrList = null;
+
+                                        if(quarterlyPeriods.containsKey(st.toDate())){
+                                            attrList = quarterlyPeriods.get(st.toDate());
+                                        }else{
+                                            attrList = new ArrayList<SectionAttributesVO>();
+                                        }
                                         quarterlyPeriods.put(st.toDate(), attrList);
                                     }
                                 }
@@ -1624,7 +1644,13 @@ public class GrantController {
                                     } else if (quarterlyPeriods.containsKey(st.toDate())) {
                                         quarterlyPeriods.get(st.toDate()).add(attr);
                                     } else {
-                                        List attrList = new ArrayList<SectionAttributesVO>();
+                                        List attrList = null;
+
+                                        if(monthlyPeriods.containsKey(st.toDate())){
+                                            attrList = monthlyPeriods.get(st.toDate());
+                                        }else{
+                                            attrList = new ArrayList<SectionAttributesVO>();
+                                        }
                                         attrList.add(attr);
                                         monthlyPeriods.put(st.toDate(), attrList);
                                     }
@@ -2199,17 +2225,19 @@ public class GrantController {
 
         GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(fieldId);
 
-        Resource file = null;
+        File file = null;
         String filePath = null;
         try {
             file = resourceLoader
-                    .getResource("file:" + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8"));
+                    .getResource("file:" + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8")).getFile();
             filePath = uploadLocation + tenantCode + "/grant-documents/" + grantId + "/" + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId() + "/";
+
 
             File dir = new File(filePath);
             dir.mkdirs();
             File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
-            FileWriter newJsp = new FileWriter(fileToCreate);
+            FileCopyUtils.copy(file,fileToCreate);
+            //FileWriter newJsp = new FileWriter(fileToCreate);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -2484,5 +2512,30 @@ public class GrantController {
 
         grant = _grantToReturn(userId,grant);
         return grant;
+    }
+
+    @GetMapping("/{grantId}/file/{fileId}")
+    @ApiOperation(value = "Get file for download")
+    public ResponseEntity<Resource> getFileForDownload(HttpServletResponse servletResponse, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("grantId") Long grantId, @PathVariable("fileId") Long fileId) {
+
+        GrantStringAttributeAttachments attachment = grantService.getStringAttributeAttachmentsByAttachmentId(fileId);
+        String filePath = attachment.getLocation() + attachment.getName()+"."+attachment.getType();
+
+        /*servletResponse.setContentType(file.getcMediaType.IMAGE_PNG_VALUE);
+        servletResponse.setHeader("org-name",organizationService.findOrganizationByTenantCode(tenant).getName());*/
+        try {
+            File file = resourceLoader.getResource("file:" + filePath).getFile();
+            InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+attachment.getName()+"."+attachment.getType());
+            servletResponse.setHeader("filename", attachment.getName()+"."+attachment.getType());
+            return  ResponseEntity.ok().headers(headers).contentLength(file.length()).contentType(MediaType.parseMediaType("application/octet-stream"))
+                    .body(resource);
+            //StreamUtils.copy(file.getInputStream(), servletResponse.getOutputStream());
+        } catch (IOException ex) {
+            logger.error(ex.getMessage(), ex);
+        }
+        return null;
     }
 }
