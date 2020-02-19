@@ -1080,6 +1080,10 @@ public class ReportController {
                  }
             } else{
                 file = resourceLoader.getResource("file:" + uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType()).getFile();
+                if(!file.exists()){
+
+                    file = resourceLoader.getResource("file:" + uploadLocation + reportService.getReportById(reportId).getGrant().getOrganization().getName().toUpperCase() + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType()).getFile();
+                }
             }
             //new zip entry and copying inputstream with file to zipOutputStream, after all closing streams
             zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
