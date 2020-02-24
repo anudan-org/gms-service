@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.time.Month;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,15 +38,13 @@ import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.codealpha.gmsservice.constants.AppConfiguration;
-import org.codealpha.gmsservice.constants.GrantStatus;
-import org.codealpha.gmsservice.constants.KpiType;
-import org.codealpha.gmsservice.constants.ReportingPeriod;
+import org.codealpha.gmsservice.constants.*;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.GrantValidator;
 import org.joda.time.DateTime;
+import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1542,8 +1541,8 @@ public class GrantController {
     private void _createReportingPeriods(Grant grant, User user, String tenantCode) {
         Map<Date, List<SectionAttributesVO>> quarterlyPeriods = new HashMap<>();
         Map<Date, List<SectionAttributesVO>> halfyearlyPeriods = new HashMap<>();
-        Map<Date, List<SectionAttributesVO>> monthlyPeriods = new HashMap<>();
-        Map<Date, List<SectionAttributesVO>> yearlyPeriods = new HashMap<>();
+        Map<DatePeriod, List<SectionAttributesVO>> monthlyPeriods = new HashMap<>();
+        Map<DatePeriod, List<SectionAttributesVO>> yearlyPeriods = new HashMap<>();
         if (grant.getStartDate() != null && grant.getEndDate() != null) {
             grant.getGrantDetails().getSections().forEach(sec -> {
                 if (sec.getAttributes() != null && sec.getAttributes().size() > 0) {
@@ -1558,12 +1557,28 @@ public class GrantController {
                         if (attr.getFieldType().equalsIgnoreCase("KPI")) {
 
                             if (attr.getFrequency().equalsIgnoreCase("YEARLY")) {
-                                DateTime st = new DateTime(grant.getStartDate());
-                                DateTime en = new DateTime(grant.getEnDate());
-                                while (st.isBefore(en)) {
-                                    st = st.plusMonths(12);
-                                    if (st.isAfter(en)) {
-                                        continue;
+                                DateTime st = new DateTime(grant.getStartDate()).withTime(0,0,0,0);
+                                DateTime en = new DateTime(grant.getEnDate()).withTime(23, 59, 59, 999);
+
+                                DateTime tempSt = st;
+                                DateTime tempEn = null;
+                                DateTime yearEnding = null;
+                                while (tempSt.isBefore(en)) {
+
+
+                                    tempEn = tempSt.plusMonths(12).withTime(23,59,59,999);
+
+                                    yearEnding = tempEn.withMonthOfYear(Month.MARCH.getValue()).dayOfMonth().withMaximumValue().withTime(23,59,59,999);
+
+                                    if (tempSt.isAfter(en)) {
+                                        tempEn=en;
+                                    }else if((tempEn.isEqual(en) || tempEn.isBefore(en)) && tempEn.isBefore(yearEnding) ){
+                                        tempEn = tempEn.dayOfMonth().withMaximumValue();
+                                        if(tempEn.isAfter(en)){
+                                            tempEn = en;
+                                        }
+                                    }else if(en.isBefore(tempEn) || en.isEqual(tempEn)){
+                                        tempEn = en;
                                     }
                                     if (yearlyPeriods.containsKey(st.toDate())) {
                                         yearlyPeriods.get(st.toDate()).add(attr);
@@ -1575,8 +1590,10 @@ public class GrantController {
                                         }else{
                                             attrList = new ArrayList<SectionAttributesVO>();
                                         }
-                                        yearlyPeriods.put(st.toDate(), attrList);
+                                        DatePeriod dp = new DatePeriod(tempSt.toDate(),tempEn.toDate());
+                                        yearlyPeriods.put(dp, attrList);
                                     }
+                                    tempSt = tempEn.plusDays(1);
                                 }
                             }
 
@@ -1587,7 +1604,9 @@ public class GrantController {
                                 while (st.isBefore(en)) {
                                     st = st.plusMonths(6);
                                     if (st.isAfter(en)) {
-                                        continue;
+                                        st=en;
+                                    }else if(st.isBefore(en)){
+                                        st = st.dayOfMonth().withMaximumValue();
                                     }
                                     if (yearlyPeriods.containsKey(st.toDate())) {
                                         yearlyPeriods.get(st.toDate()).add(attr);
@@ -1610,7 +1629,9 @@ public class GrantController {
                                 while (st.isBefore(en)) {
                                     st = st.plusMonths(3);
                                     if (st.isAfter(en)) {
-                                        continue;
+                                        st=en;
+                                    }else if(st.isBefore(en)){
+                                        st = st.dayOfMonth().withMaximumValue();
                                     }
                                     if (yearlyPeriods.containsKey(st.toDate())) {
                                         yearlyPeriods.get(st.toDate()).add(attr);
@@ -1630,31 +1651,23 @@ public class GrantController {
                             }
 
                             if (attr.getFrequency().equalsIgnoreCase("MONTHLY")) {
-                                DateTime st = new DateTime(grant.getStartDate());
-                                DateTime en = new DateTime(grant.getEnDate());
-                                while (st.isBefore(en)) {
-                                    st = st.plusMonths(1);
-                                    if (st.isAfter(en)) {
-                                        continue;
-                                    }
-                                    if (yearlyPeriods.containsKey(st.toDate())) {
-                                        yearlyPeriods.get(st.toDate()).add(attr);
-                                    } else if (halfyearlyPeriods.containsKey(st.toDate())) {
-                                        halfyearlyPeriods.get(st.toDate()).add(attr);
-                                    } else if (quarterlyPeriods.containsKey(st.toDate())) {
-                                        quarterlyPeriods.get(st.toDate()).add(attr);
-                                    } else {
-                                        List attrList = null;
+                                DateTime st = new DateTime(grant.getStartDate()).withTimeAtStartOfDay();
+                                DateTime en = new DateTime(grant.getEnDate()).withTime(23,59,59,999);
+                                List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en, Frequency.MONTHLY);
 
-                                        if(monthlyPeriods.containsKey(st.toDate())){
-                                            attrList = monthlyPeriods.get(st.toDate());
-                                        }else{
-                                            attrList = new ArrayList<SectionAttributesVO>();
-                                        }
-                                        attrList.add(attr);
-                                        monthlyPeriods.put(st.toDate(), attrList);
+                                reportingFrequencies.forEach(rf -> {
+
+                                    List attrList = null;
+
+                                    if(monthlyPeriods.containsKey(rf)){
+                                        attrList = monthlyPeriods.get(rf);
+                                    }else{
+                                        attrList = new ArrayList<SectionAttributesVO>();
                                     }
-                                }
+                                    attrList.add(attr);
+                                    monthlyPeriods.put(rf, attrList);
+                                });
+
                             }
 
                         }
@@ -1665,25 +1678,27 @@ public class GrantController {
 
         Date now = DateTime.now().toDate();
 
-        TreeMap<Date, List<SectionAttributesVO>> yrTree = new TreeMap(yearlyPeriods);
+        TreeMap<DatePeriod, List<SectionAttributesVO>> yrTree = new TreeMap(yearlyPeriods);
         TreeMap<Date, List<SectionAttributesVO>> hyTree = new TreeMap(halfyearlyPeriods);
         TreeMap<Date, List<SectionAttributesVO>> qTree = new TreeMap(quarterlyPeriods);
-        TreeMap<Date, List<SectionAttributesVO>> mtTree = new TreeMap(monthlyPeriods);
+        TreeMap<DatePeriod, List<SectionAttributesVO>> mtTree = new TreeMap(monthlyPeriods);
         final int[] i = {1};
         GranterReportTemplate reportTemplate = reportService.getDefaultTemplate(grant.getGrantorOrganization().getId());
 
-        yrTree.forEach((entry, val) -> {
+        GranterReportTemplate reportTemplateToUse = null;
+        yearlyPeriods.forEach((entry, val) -> {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
-            report.setEndDate(entry);
+            report.setDueDate(new DateTime(entry.getEnd()).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
+            report.setEndDate(entry.getEnd());
             report.setGrant(grant);
             report.setName("Yearly Progress Report");
             report.setTemplate(reportTemplate);
-            report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.YEARLY.value()).toDate());
+            report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT", grant.getGrantorOrganization().getId()));
             report.setType("Yearly");
+
 
             report = reportService.saveReport(report);
 
@@ -1735,16 +1750,16 @@ public class GrantController {
 
         i[0] = 1;
 
-        mtTree.forEach((entry, val) -> {
+        monthlyPeriods.forEach((entry, val) -> {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
-            report.setEndDate(entry);
+            report.setDueDate(new DateTime(entry.getEnd()).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
+            report.setEndDate(entry.getEnd());
             report.setGrant(grant);
             report.setName("Monthly Progress Report");
             report.setTemplate(reportTemplate);
-            report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.MONTHLY.value()).toDate());
+            report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT", grant.getGrantorOrganization().getId()));
             report.setType("Monthly");
             report = reportService.saveReport(report);
@@ -1755,6 +1770,26 @@ public class GrantController {
 
 
         System.out.println("here");
+    }
+
+    private List<DatePeriod> getReportingFrequencies(DateTime st, DateTime en, Frequency frequency) {
+
+        List<DatePeriod> periods = new ArrayList<>();
+        if(frequency==Frequency.MONTHLY){
+
+            while(st.isBefore(en)){
+                DateTime tempEn = st.dayOfMonth().withMaximumValue().withTime(23,59,59,999);
+                if(tempEn.isAfter(en)){
+                    break;
+                }
+                DatePeriod p = new DatePeriod(st.toDate(),tempEn.toDate());
+                periods.add(p);
+                st = tempEn.plusDays(1).withTimeAtStartOfDay();
+            }
+            periods.add(new DatePeriod(st.toDate(),en.toDate()));
+        }
+
+        return periods;
     }
 
     private void _createSectionsForReports(GranterReportTemplate reportTemplate, List<SectionAttributesVO> val, Report report) {

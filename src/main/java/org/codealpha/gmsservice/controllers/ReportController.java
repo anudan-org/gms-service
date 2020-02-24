@@ -178,7 +178,7 @@ public class ReportController {
 
     private List<ReportAssignment> determineCanManage(Report report, Long userId) {
         List<ReportAssignment> reportAssignments = reportService.getAssignmentsForReport(report);
-        if (reportAssignments.stream().filter(ass -> (ass.getAssignment()==null?0L:ass.getAssignment().longValue()) == userId.longValue() && ass.getStateId().longValue() == report.getStatus().getId().longValue()).findAny().isPresent()) {
+        if ((reportAssignments.stream().filter(ass -> (ass.getAssignment()==null?0L:ass.getAssignment().longValue()) == userId.longValue() && ass.getStateId().longValue() == report.getStatus().getId().longValue()).findAny().isPresent()) || (report.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE") && userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"))) {
             report.setCanManage(true);
         } else {
             report.setCanManage(false);
@@ -319,7 +319,7 @@ public class ReportController {
         stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
 
         if (_checkIfReportTemplateChanged(report, reportSection, newSectionAttribute)) {
-            _createNewReportTemplateFromExisiting(report);
+            reportService._createNewReportTemplateFromExisiting(report);
         }
 
         report = _ReportToReturn(report, userId);
@@ -343,76 +343,6 @@ public class ReportController {
         return false;
     }
 
-    private GranterReportTemplate _createNewReportTemplateFromExisiting(Report report) {
-        GranterReportTemplate currentReportTemplate = reportService.findByTemplateId(report.getTemplate().getId());
-        GranterReportTemplate newTemplate = null;
-        if (!currentReportTemplate.isPublished()) {
-            reportService.deleteReportTemplate(currentReportTemplate);
-        }
-        newTemplate = new GranterReportTemplate();
-        newTemplate.setName("Custom Template");
-        newTemplate.setGranterId(report.getGrant().getGrantorOrganization().getId());
-        newTemplate.setPublished(false);
-        newTemplate = reportService.saveReportTemplate(newTemplate);
-
-
-        List<GranterReportSection> newSections = new ArrayList<>();
-        for (ReportSpecificSection currentSection : reportService.getReportSections(report)) {
-            GranterReportSection newSection = new GranterReportSection();
-            newSection.setSectionOrder(currentSection.getSectionOrder());
-            newSection.setSectionName(currentSection.getSectionName());
-            newSection.setReportTemplate(newTemplate);
-            newSection.setGranter((Granter) report.getGrant().getGrantorOrganization());
-            newSection.setDeletable(currentSection.getDeletable());
-
-            newSection = reportService.saveReportTemplateSection(newSection);
-            newSections.add(newSection);
-
-            currentSection.setReportTemplateId(newTemplate.getId());
-            currentSection = reportService.saveSection(currentSection);
-
-            for (ReportSpecificSectionAttribute currentAttribute : reportService.getSpecificSectionAttributesBySection(currentSection)) {
-                GranterReportSectionAttribute newAttribute = new GranterReportSectionAttribute();
-                newAttribute.setDeletable(currentAttribute.getDeletable());
-                newAttribute.setFieldName(currentAttribute.getFieldName());
-                newAttribute.setFieldType(currentAttribute.getFieldType());
-                newAttribute.setGranter((Granter) currentAttribute.getGranter());
-                newAttribute.setRequired(currentAttribute.getRequired());
-                newAttribute.setAttributeOrder(currentAttribute.getAttributeOrder());
-                newAttribute.setSection(newSection);
-                if (currentAttribute.getFieldType().equalsIgnoreCase("table")) {
-                    ReportStringAttribute stringAttribute = reportService.getReportStringAttributeBySectionAttributeAndSection(currentAttribute, currentSection);
-
-                    ObjectMapper mapper = new ObjectMapper();
-                    try {
-                        List<TableData> tableData = mapper.readValue(stringAttribute.getValue(), new TypeReference<List<TableData>>() {
-                        });
-                        for (TableData data : tableData) {
-                            for (ColumnData columnData : data.getColumns()) {
-                                columnData.setValue("");
-                            }
-                        }
-                        newAttribute.setExtras(mapper.writeValueAsString(tableData));
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                newAttribute = reportService.saveReportTemplateSectionAttribute(newAttribute);
-
-            }
-        }
-
-        newTemplate.setSections(newSections);
-        newTemplate = reportService.saveReportTemplate(newTemplate);
-
-        //grant = grantService.getById(grant.getId());
-        report.setTemplate(newTemplate);
-        reportService.saveReport(report);
-        return newTemplate;
-    }
-
     @PutMapping("/{reportId}/section/{sectionId}/field/{fieldId}")
     @ApiOperation("Update field information")
     public ReportFieldInfo updateField(@ApiParam(name = "sectionId", value = "Unique identifier of section") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "attributeToSave", value = "Updated attribute to be saved") @RequestBody ReportAttributeToSaveVO attributeToSave, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "fieldId", value = "Unique identifier of the field being updated") @PathVariable("fieldId") Long fieldId, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -433,7 +363,7 @@ public class ReportController {
 
         report = reportService.getReportById(reportId);
         if (_checkIfReportTemplateChanged(report, currentAttribute.getSection(), currentAttribute)) {
-            _createNewReportTemplateFromExisiting(report);
+            reportService._createNewReportTemplateFromExisiting(report);
         }
 
 
@@ -600,7 +530,7 @@ public class ReportController {
         specificSection = reportService.saveSection(specificSection);
 
         if (_checkIfReportTemplateChanged(report, specificSection, null)) {
-            GranterReportTemplate newTemplate = _createNewReportTemplateFromExisiting(report);
+            GranterReportTemplate newTemplate = reportService._createNewReportTemplateFromExisiting(report);
             templateId = newTemplate.getId();
         }
 
@@ -634,7 +564,7 @@ public class ReportController {
 
         report = reportService.getReportById(reportId);
         if (_checkIfReportTemplateChanged(report, section, null)) {
-            GranterReportTemplate newTemplate = _createNewReportTemplateFromExisiting(report);
+            GranterReportTemplate newTemplate = reportService._createNewReportTemplateFromExisiting(report);
             templateId = newTemplate.getId();
         }
         report = _ReportToReturn(report, userId);
@@ -784,8 +714,18 @@ public class ReportController {
         Report finalReport = report;
         WorkflowStatus previousState = report.getStatus();
 
-        User previousOwner = userService.getUserById(reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == finalReport.getStatus().getId().longValue()).collect(Collectors.toList()).get(0).getAssignment());
-        report.setStatus(workflowStatusService.findById(toStateId));
+
+        User updatingUser = userService.getUserById(userId);
+        if(updatingUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && previousState.getInternalStatus().equalsIgnoreCase("ACTIVE")){
+            ReportAssignment changedAssignment = reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == finalReport.getStatus().getId().longValue()).collect(Collectors.toList()).get(0);
+            changedAssignment.setAssignment(userId);
+            reportService.saveAssignmentForReport(changedAssignment);
+        }
+        ReportAssignment currentAssignment = reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == finalReport.getStatus().getId().longValue()).collect(Collectors.toList()).get(0);
+        User previousOwner = userService.getUserById(currentAssignment.getAssignment());
+
+
+            report.setStatus(workflowStatusService.findById(toStateId));
         if (reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")) {
             report.setNote(reportWithNote.getNote());
             report.setNoteAdded(new Date());
@@ -921,7 +861,7 @@ public class ReportController {
 
 
         if (_checkIfReportTemplateChanged(report, attribute.getSection(), null)) {
-            GranterReportTemplate newTemplate = _createNewReportTemplateFromExisiting(report);
+            GranterReportTemplate newTemplate = reportService._createNewReportTemplateFromExisiting(report);
         }
         report = _ReportToReturn(report, userId);
         return report;
