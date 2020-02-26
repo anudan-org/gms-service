@@ -17,10 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,14 +56,18 @@ public class ReportService {
         Organization granterOrg = organizationRepository.findByCode(tenantCode);
         List<WorkflowStatus> statuses = workflowStatusRepository.getAllTenantStatuses("REPORT", report.getGrant().getGrantorOrganization().getId());
 
-        GrantAssignments anchorAssignment = grantAssignmentRepository.findByGrantIdAndAnchor(report.getGrant().getId(),true);
+        Optional<WorkflowStatus> grantActiveStatus = workflowStatusRepository.getAllTenantStatuses("GRANT", report.getGrant().getGrantorOrganization().getId()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("ACTIVE")).findFirst();
+        GrantAssignments anchorAssignment = null;
+        if(grantActiveStatus.isPresent()) {
+            anchorAssignment = grantAssignmentRepository.findByGrantIdAndStateId(report.getGrant().getId(), grantActiveStatus.get().getId()).get(0);
+        }
         List<ReportAssignment> assignments = new ArrayList<>();
         for (WorkflowStatus status : statuses) {
             if (!status.getTerminal()) {
                 assignment = new ReportAssignment();
                 if (status.isInitial()) {
                     assignment.setAnchor(true);
-                    assignment.setAssignment(anchorAssignment.getAssignments());
+                    assignment.setAssignment(anchorAssignment!=null?anchorAssignment.getAssignments():null);
                 } else {
                     assignment.setAnchor(false);
                 }
