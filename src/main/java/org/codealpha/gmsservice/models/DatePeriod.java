@@ -3,10 +3,12 @@ package org.codealpha.gmsservice.models;
 import org.joda.time.DateTime;
 
 import java.util.Date;
+import java.util.Objects;
 
-public class DatePeriod implements Comparable {
+public class DatePeriod {
     private Date start;
     private Date end;
+    private String label;
 
     public DatePeriod(Date start, Date end) {
         this.start = start;
@@ -29,38 +31,24 @@ public class DatePeriod implements Comparable {
         this.end = end;
     }
 
-    @Override
-    public int compareTo(Object o) {
-        o = (DatePeriod)o;
+    public String getLabel() {
+        return label;
+    }
 
-        DateTime thisStDate = new DateTime(this.start);
-        DateTime compareStDate = new DateTime(((DatePeriod) o).start);
-        DateTime thisEnDate = new DateTime(this.end);
-        DateTime compareEnDate = new DateTime(((DatePeriod) o).end);
-        if(thisStDate.isEqual(compareStDate) && thisEnDate.isEqual(compareEnDate)){
-            return 1;
-        }else {
-            return 0;
-        }
+    public void setLabel(String label) {
+        this.label = label;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        obj = (DatePeriod)obj;
-
-        DateTime thisStDate = new DateTime(this.start);
-        DateTime compareStDate = new DateTime(((DatePeriod) obj).start);
-        DateTime thisEnDate = new DateTime(this.end);
-        DateTime compareEnDate = new DateTime(((DatePeriod) obj).end);
-        if(thisStDate.isEqual(compareStDate) && thisEnDate.isEqual(compareEnDate)){
-            return true;
-        }else {
-            return false;
-        }
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DatePeriod that = (DatePeriod) o;
+        return end.equals(that.end);
     }
 
     @Override
     public int hashCode() {
-        return start.hashCode();
+        return Objects.hash(end);
     }
 }
