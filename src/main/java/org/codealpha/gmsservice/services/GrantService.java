@@ -431,6 +431,7 @@ public class GrantService {
     public String[] buildNotificationContent(Grant finalGrant,User invite, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment,String hasNotes,String hasNotesComment) {
 
         String code = Base64.getEncoder().encodeToString(new byte[]{finalGrant.getId().byteValue()});
+        System.out.println("Grant Code: "+code+" Grant Id:"+finalGrant.getId());
         UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
         String host = uriComponents.getHost();//.substring(uriComponents.getHost().indexOf(".")+1);
         UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
