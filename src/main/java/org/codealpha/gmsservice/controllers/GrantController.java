@@ -1452,7 +1452,7 @@ public class GrantController {
 
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState, toStatus);
 
-        String notificationContent[] = grantService.buildNotificationContent(finalGrant, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
+        String notificationContent[] = grantService.buildNotificationContent(finalGrant,user, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
                         .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                                 AppConfiguration.GRANT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(), appConfigService
                         .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
@@ -2555,9 +2555,10 @@ public class GrantController {
         String url = uriBuilder.toUriString();
         for (InviteEntry invite : grantInvite.getInvites()) {
             User granteeUser = null;
-            User existingUser = userService.getUserByEmailAndOrg(invite.getName(), grant.getOrganization());
+
             String code = null;
             try {
+                User existingUser = userService.getUserByEmailAndOrg(invite.getName(), grant.getOrganization());
                 code = Base64.getEncoder().encodeToString(new byte[]{grant.getId().byteValue()});
 
             if (existingUser != null && existingUser.isActive()) {
