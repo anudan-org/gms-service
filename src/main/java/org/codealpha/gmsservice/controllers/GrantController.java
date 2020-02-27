@@ -2615,6 +2615,7 @@ public class GrantController {
     @GetMapping("/resolve")
     public Grant resolveGrant(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,@RequestParam("g") String grantCode){
         Long grantId = Long.valueOf(Base64.getDecoder().decode(grantCode)[0]);
+        logger.info("Grant Id: " + grantId);
         Grant grant = grantService.getById(grantId);
 
         grant = _grantToReturn(userId,grant);
