@@ -1,6 +1,9 @@
 package org.codealpha.gmsservice.services;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -17,6 +20,9 @@ import org.codealpha.gmsservice.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 public class GrantService {
@@ -422,10 +428,23 @@ public class GrantService {
         return grantHistoryRepository.findByGrantId(grantId);
     }
 
-    public String[] buildNotificationContent(Grant finalGrant, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment,String hasNotes,String hasNotesComment) {
+    public String[] buildNotificationContent(Grant finalGrant,User invite, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment,String hasNotes,String hasNotesComment) {
 
-        String message = msgConfigValue.replace("%GRANT_NAME%", finalGrant.getName()).replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner).replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner).replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges).replace("%HAS_CHANGES_COMMENT%", hasChangesComment).replace("%HAS_NOTES%",hasNotes).replace("%HAS_NOTES_COMMENT%",hasNotesComment);
-        String subject = subConfigValue.replace("%GRANT_NAME%", finalGrant.getName());
+        String code = Base64.getEncoder().encodeToString(String.valueOf(finalGrant.getId()).getBytes());
+        System.out.println("Grant Code: "+code+" Grant Id:"+finalGrant.getId());
+        UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
+        String host = uriComponents.getHost();//.substring(uriComponents.getHost().indexOf(".")+1);
+        UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
+        String url = uriBuilder.toUriString();
+        try {
+            url = url+"/home/?action=login&org="+ URLEncoder.encode(finalGrant.getOrganization().getName(), StandardCharsets.UTF_8.toString())+"&g=" + code+"&email=&type=grant";
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName()).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalGrant.getGrantorOrganization().getName()).replaceAll("%GRANT_LINK%",url);
+        String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName());
 
         return new String[]{subject, message};
     }

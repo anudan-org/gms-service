@@ -2,22 +2,22 @@ package org.codealpha.gmsservice.services;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.models.ColumnData;
 import org.codealpha.gmsservice.models.SecureReportEntity;
+import org.codealpha.gmsservice.models.TableData;
 import org.codealpha.gmsservice.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,6 +40,7 @@ public class ReportService {
     @Autowired private GranterReportSectionAttributeRepository granterReportSectionAttributeRepository;
     @Autowired private ReportStringAttributeAttachmentsRepository reportStringAttributeAttachmentsRepository;
     @Autowired private ReportHistoryRepository reportHistoryRepository;
+    @Autowired private UserRepository userRepository;
 
     public Report saveReport(Report report){
         return reportRepository.save(report);
@@ -55,14 +56,18 @@ public class ReportService {
         Organization granterOrg = organizationRepository.findByCode(tenantCode);
         List<WorkflowStatus> statuses = workflowStatusRepository.getAllTenantStatuses("REPORT", report.getGrant().getGrantorOrganization().getId());
 
-        GrantAssignments anchorAssignment = grantAssignmentRepository.findByGrantIdAndAnchor(report.getGrant().getId(),true);
+        Optional<WorkflowStatus> grantActiveStatus = workflowStatusRepository.getAllTenantStatuses("GRANT", report.getGrant().getGrantorOrganization().getId()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("ACTIVE")).findFirst();
+        GrantAssignments anchorAssignment = null;
+        if(grantActiveStatus.isPresent()) {
+            anchorAssignment = grantAssignmentRepository.findByGrantIdAndStateId(report.getGrant().getId(), grantActiveStatus.get().getId()).get(0);
+        }
         List<ReportAssignment> assignments = new ArrayList<>();
         for (WorkflowStatus status : statuses) {
             if (!status.getTerminal()) {
                 assignment = new ReportAssignment();
                 if (status.isInitial()) {
                     assignment.setAnchor(true);
-                    assignment.setAssignment(anchorAssignment.getAssignments());
+                    assignment.setAssignment(anchorAssignment!=null?anchorAssignment.getAssignments():null);
                 } else {
                     assignment.setAnchor(false);
                 }
@@ -324,7 +329,7 @@ public class ReportService {
 
     public List<WorkFlowPermission> getFlowAuthority(Report report, Long userId) {
         List<WorkFlowPermission> permissions = new ArrayList<>();
-        if(reportAssignmentRepository.findByReportId(report.getId()).stream().filter(ass -> ass.getStateId().longValue()==report.getStatus().getId().longValue() && (ass.getAssignment()==null?0:ass.getAssignment().longValue())==userId).findFirst().isPresent()){
+        if((reportAssignmentRepository.findByReportId(report.getId()).stream().filter(ass -> ass.getStateId().longValue()==report.getStatus().getId().longValue() && (ass.getAssignment()==null?0:ass.getAssignment().longValue())==userId).findFirst().isPresent()) || (userRepository.findById(userId).get().getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && report.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"))){
 
             List<WorkflowStatusTransition> allowedTransitions = workflowStatusTransitionRepository.findByWorkflow(workflowStatusRepository.getById(report.getStatus().getId()).getWorkflow()).stream().filter(st -> st.getFromState().getId().longValue()==report.getStatus().getId().longValue()).collect(Collectors.toList());
             if(allowedTransitions!=null && allowedTransitions.size()>0){
@@ -399,5 +404,75 @@ public class ReportService {
     public ReportStringAttribute findReportStringAttributeById(Long attributeId) {
 
         return reportStringAttributeRepository.findById(attributeId).get();
+    }
+
+    public GranterReportTemplate _createNewReportTemplateFromExisiting(Report report) {
+        GranterReportTemplate currentReportTemplate = findByTemplateId(report.getTemplate().getId());
+        GranterReportTemplate newTemplate = null;
+        if (!currentReportTemplate.isPublished()) {
+            deleteReportTemplate(currentReportTemplate);
+        }
+        newTemplate = new GranterReportTemplate();
+        newTemplate.setName("Custom Template");
+        newTemplate.setGranterId(report.getGrant().getGrantorOrganization().getId());
+        newTemplate.setPublished(false);
+        newTemplate = saveReportTemplate(newTemplate);
+
+
+        List<GranterReportSection> newSections = new ArrayList<>();
+        for (ReportSpecificSection currentSection : getReportSections(report)) {
+            GranterReportSection newSection = new GranterReportSection();
+            newSection.setSectionOrder(currentSection.getSectionOrder());
+            newSection.setSectionName(currentSection.getSectionName());
+            newSection.setReportTemplate(newTemplate);
+            newSection.setGranter((Granter) report.getGrant().getGrantorOrganization());
+            newSection.setDeletable(currentSection.getDeletable());
+
+            newSection = saveReportTemplateSection(newSection);
+            newSections.add(newSection);
+
+            currentSection.setReportTemplateId(newTemplate.getId());
+            currentSection = saveSection(currentSection);
+
+            for (ReportSpecificSectionAttribute currentAttribute : getSpecificSectionAttributesBySection(currentSection)) {
+                GranterReportSectionAttribute newAttribute = new GranterReportSectionAttribute();
+                newAttribute.setDeletable(currentAttribute.getDeletable());
+                newAttribute.setFieldName(currentAttribute.getFieldName());
+                newAttribute.setFieldType(currentAttribute.getFieldType());
+                newAttribute.setGranter((Granter) currentAttribute.getGranter());
+                newAttribute.setRequired(currentAttribute.getRequired());
+                newAttribute.setAttributeOrder(currentAttribute.getAttributeOrder());
+                newAttribute.setSection(newSection);
+                if (currentAttribute.getFieldType().equalsIgnoreCase("table")) {
+                    ReportStringAttribute stringAttribute = getReportStringAttributeBySectionAttributeAndSection(currentAttribute, currentSection);
+
+                    ObjectMapper mapper = new ObjectMapper();
+                    try {
+                        List<TableData> tableData = mapper.readValue(stringAttribute.getValue(), new TypeReference<List<TableData>>() {
+                        });
+                        for (TableData data : tableData) {
+                            for (ColumnData columnData : data.getColumns()) {
+                                columnData.setValue("");
+                            }
+                        }
+                        newAttribute.setExtras(mapper.writeValueAsString(tableData));
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                newAttribute = saveReportTemplateSectionAttribute(newAttribute);
+
+            }
+        }
+
+        newTemplate.setSections(newSections);
+        newTemplate = saveReportTemplate(newTemplate);
+
+        //grant = grantService.getById(grant.getId());
+        report.setTemplate(newTemplate);
+        saveReport(report);
+        return newTemplate;
     }
 }

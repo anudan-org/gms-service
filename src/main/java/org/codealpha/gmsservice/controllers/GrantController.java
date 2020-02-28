@@ -2,12 +2,14 @@ package org.codealpha.gmsservice.controllers;
 
 import java.awt.*;
 import java.io.*;
+import java.lang.reflect.Array;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.time.Month;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,15 +39,13 @@ import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.codealpha.gmsservice.constants.AppConfiguration;
-import org.codealpha.gmsservice.constants.GrantStatus;
-import org.codealpha.gmsservice.constants.KpiType;
-import org.codealpha.gmsservice.constants.ReportingPeriod;
+import org.codealpha.gmsservice.constants.*;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.GrantValidator;
 import org.joda.time.DateTime;
+import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -748,8 +748,14 @@ public class GrantController {
         //grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
 
 
-        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        Organization tenantOrg = null;
+
         User user = userService.getUserById(userId);
+        if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
+            tenantOrg = grantService.getById(grantId).getGrantorOrganization();
+        }else{
+            tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        }
         grantToSave.setOrganization(_processNewGranteeOrgIfPresent(grantToSave));
         Grant grant = _processGrant(grantToSave, tenantOrg, user);
 
@@ -1452,7 +1458,7 @@ public class GrantController {
 
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState, toStatus);
 
-        String notificationContent[] = grantService.buildNotificationContent(finalGrant, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
+        String notificationContent[] = grantService.buildNotificationContent(finalGrant,user, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
                         .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                                 AppConfiguration.GRANT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(), appConfigService
                         .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
@@ -1540,10 +1546,10 @@ public class GrantController {
     }
 
     private void _createReportingPeriods(Grant grant, User user, String tenantCode) {
-        Map<Date, List<SectionAttributesVO>> quarterlyPeriods = new HashMap<>();
-        Map<Date, List<SectionAttributesVO>> halfyearlyPeriods = new HashMap<>();
-        Map<Date, List<SectionAttributesVO>> monthlyPeriods = new HashMap<>();
-        Map<Date, List<SectionAttributesVO>> yearlyPeriods = new HashMap<>();
+        Map<DatePeriod, PeriodAttribWithLabel> quarterlyPeriods = new HashMap<>();
+        Map<DatePeriod, PeriodAttribWithLabel> halfyearlyPeriods = new HashMap<>();
+        Map<DatePeriod, PeriodAttribWithLabel> monthlyPeriods = new HashMap<>();
+        Map<DatePeriod, PeriodAttribWithLabel> yearlyPeriods = new HashMap<>();
         if (grant.getStartDate() != null && grant.getEndDate() != null) {
             grant.getGrantDetails().getSections().forEach(sec -> {
                 if (sec.getAttributes() != null && sec.getAttributes().size() > 0) {
@@ -1558,106 +1564,104 @@ public class GrantController {
                         if (attr.getFieldType().equalsIgnoreCase("KPI")) {
 
                             if (attr.getFrequency().equalsIgnoreCase("YEARLY")) {
-                                DateTime st = new DateTime(grant.getStartDate());
-                                DateTime en = new DateTime(grant.getEnDate());
-                                while (st.isBefore(en)) {
-                                    st = st.plusMonths(12);
-                                    if (st.isAfter(en)) {
-                                        continue;
-                                    }
-                                    if (yearlyPeriods.containsKey(st.toDate())) {
-                                        yearlyPeriods.get(st.toDate()).add(attr);
-                                    } else {
-                                        List attrList = null;
+                                DateTime st = new DateTime(grant.getStartDate()).withTimeAtStartOfDay();
+                                DateTime en = new DateTime(grant.getEnDate()).withTime(23,59,59,999);
+                                List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en, Frequency.YEARLY);
 
-                                        if(yearlyPeriods.containsKey(st.toDate())){
-                                            attrList = yearlyPeriods.get(st.toDate());
-                                        }else{
+                                reportingFrequencies.forEach(rf -> {
+
+                                    List attrList = null;
+
+                                        if (yearlyPeriods.containsKey(rf)) {
+                                            attrList = yearlyPeriods.get(rf).getAttributes();
+                                        } else {
                                             attrList = new ArrayList<SectionAttributesVO>();
                                         }
-                                        yearlyPeriods.put(st.toDate(), attrList);
-                                    }
-                                }
+                                        attrList.add(attr);
+                                        yearlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(),attrList));
+
+                                });
                             }
 
                             if (attr.getFrequency().equalsIgnoreCase("HALF-YEARLY")) {
+                                DateTime st = new DateTime(grant.getStartDate()).withTimeAtStartOfDay();
+                                DateTime en = new DateTime(grant.getEnDate()).withTime(23,59,59,999);
+                                List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en, Frequency.HALF_YEARLY);
 
-                                DateTime st = new DateTime(grant.getStartDate());
-                                DateTime en = new DateTime(grant.getEnDate());
-                                while (st.isBefore(en)) {
-                                    st = st.plusMonths(6);
-                                    if (st.isAfter(en)) {
-                                        continue;
-                                    }
-                                    if (yearlyPeriods.containsKey(st.toDate())) {
-                                        yearlyPeriods.get(st.toDate()).add(attr);
-                                    } else {
-                                        List attrList = null;
+                                reportingFrequencies.forEach(rf -> {
 
-                                        if(halfyearlyPeriods.containsKey(st.toDate())){
-                                            attrList = halfyearlyPeriods.get(st.toDate());
-                                        }else{
+                                    List attrList = null;
+                                    if(yearlyPeriods.containsKey(rf)){
+                                        yearlyPeriods.get(rf).getAttributes().add(attr);
+                                    }else {
+
+                                        if (halfyearlyPeriods.containsKey(rf)) {
+                                            attrList = halfyearlyPeriods.get(rf).getAttributes();
+                                        } else {
                                             attrList = new ArrayList<SectionAttributesVO>();
                                         }
-                                        halfyearlyPeriods.put(st.toDate(), attrList);
+                                        attrList.add(attr);
+                                        halfyearlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(),attrList));
                                     }
-                                }
+                                });
                             }
 
                             if (attr.getFrequency().equalsIgnoreCase("QUARTERLY")) {
-                                DateTime st = new DateTime(grant.getStartDate());
-                                DateTime en = new DateTime(grant.getEnDate());
-                                while (st.isBefore(en)) {
-                                    st = st.plusMonths(3);
-                                    if (st.isAfter(en)) {
-                                        continue;
-                                    }
-                                    if (yearlyPeriods.containsKey(st.toDate())) {
-                                        yearlyPeriods.get(st.toDate()).add(attr);
-                                    } else if (halfyearlyPeriods.containsKey(st.toDate())) {
-                                        halfyearlyPeriods.get(st.toDate()).add(attr);
-                                    } else {
-                                        List attrList = null;
 
-                                        if(quarterlyPeriods.containsKey(st.toDate())){
-                                            attrList = quarterlyPeriods.get(st.toDate());
-                                        }else{
+                                DateTime st = new DateTime(grant.getStartDate()).withTimeAtStartOfDay();
+                                DateTime en = new DateTime(grant.getEnDate()).withTime(23,59,59,999);
+                                List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en, Frequency.QUARTERLY);
+                                reportingFrequencies.forEach(rf -> {
+
+                                    List attrList = null;
+
+                                    if(yearlyPeriods.containsKey(rf)){
+                                        yearlyPeriods.get(rf).getAttributes().add(attr);
+                                    } else if(halfyearlyPeriods.containsKey(rf)){
+                                        halfyearlyPeriods.get(rf).getAttributes().add(attr);
+                                    }else {
+                                        if (quarterlyPeriods.containsKey(rf)) {
+                                            attrList = quarterlyPeriods.get(rf).getAttributes();
+                                        } else {
                                             attrList = new ArrayList<SectionAttributesVO>();
                                         }
-                                        quarterlyPeriods.put(st.toDate(), attrList);
+                                        attrList.add(attr);
+                                        quarterlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(),attrList));
                                     }
+                                    });
+
                                 }
                             }
 
                             if (attr.getFrequency().equalsIgnoreCase("MONTHLY")) {
-                                DateTime st = new DateTime(grant.getStartDate());
-                                DateTime en = new DateTime(grant.getEnDate());
-                                while (st.isBefore(en)) {
-                                    st = st.plusMonths(1);
-                                    if (st.isAfter(en)) {
-                                        continue;
-                                    }
-                                    if (yearlyPeriods.containsKey(st.toDate())) {
-                                        yearlyPeriods.get(st.toDate()).add(attr);
-                                    } else if (halfyearlyPeriods.containsKey(st.toDate())) {
-                                        halfyearlyPeriods.get(st.toDate()).add(attr);
-                                    } else if (quarterlyPeriods.containsKey(st.toDate())) {
-                                        quarterlyPeriods.get(st.toDate()).add(attr);
-                                    } else {
-                                        List attrList = null;
+                                DateTime st = new DateTime(grant.getStartDate()).withTimeAtStartOfDay();
+                                DateTime en = new DateTime(grant.getEnDate()).withTime(23,59,59,999);
+                                List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en, Frequency.MONTHLY);
 
-                                        if(monthlyPeriods.containsKey(st.toDate())){
-                                            attrList = monthlyPeriods.get(st.toDate());
-                                        }else{
+                                reportingFrequencies.forEach(rf -> {
+
+                                    List attrList = null;
+                                    if(yearlyPeriods.containsKey(rf)){
+                                        yearlyPeriods.get(rf).getAttributes().add(attr);
+                                    } else if(halfyearlyPeriods.containsKey(rf)){
+                                        halfyearlyPeriods.get(rf).getAttributes().add(attr);
+                                    }else if(quarterlyPeriods.containsKey(rf)){
+                                        quarterlyPeriods.get(rf).getAttributes().add(attr);
+                                    }else {
+
+                                        if (monthlyPeriods.containsKey(rf)) {
+                                            attrList = monthlyPeriods.get(rf).getAttributes();
+                                        } else {
                                             attrList = new ArrayList<SectionAttributesVO>();
                                         }
                                         attrList.add(attr);
-                                        monthlyPeriods.put(st.toDate(), attrList);
+                                        monthlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(),attrList));
                                     }
-                                }
+                                });
+
                             }
 
-                        }
+
                     });
                 }
             });
@@ -1665,29 +1669,28 @@ public class GrantController {
 
         Date now = DateTime.now().toDate();
 
-        TreeMap<Date, List<SectionAttributesVO>> yrTree = new TreeMap(yearlyPeriods);
-        TreeMap<Date, List<SectionAttributesVO>> hyTree = new TreeMap(halfyearlyPeriods);
-        TreeMap<Date, List<SectionAttributesVO>> qTree = new TreeMap(quarterlyPeriods);
-        TreeMap<Date, List<SectionAttributesVO>> mtTree = new TreeMap(monthlyPeriods);
+
         final int[] i = {1};
         GranterReportTemplate reportTemplate = reportService.getDefaultTemplate(grant.getGrantorOrganization().getId());
 
-        yrTree.forEach((entry, val) -> {
+        GranterReportTemplate reportTemplateToUse = null;
+        yearlyPeriods.forEach((entry, val) -> {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
-            report.setEndDate(entry);
+            report.setDueDate(new DateTime(entry.getEnd()).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
+            report.setEndDate(entry.getEnd());
             report.setGrant(grant);
-            report.setName("Yearly Progress Report");
+            report.setName(val.getPeriodLabel());
             report.setTemplate(reportTemplate);
-            report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.YEARLY.value()).toDate());
+            report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT", grant.getGrantorOrganization().getId()));
             report.setType("Yearly");
 
+
             report = reportService.saveReport(report);
 
-            _createSectionsForReports(reportTemplate, val, report);
+            _createSectionsForReports(reportTemplate, val.getAttributes(), report);
 
             reportService.saveAssignments(report, tenantCode, user.getId());
             i[0]++;
@@ -1695,66 +1698,175 @@ public class GrantController {
 
         i[0] = 1;
 
-        hyTree.forEach((entry, val) -> {
+        halfyearlyPeriods.forEach((entry, val) -> {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
-            report.setEndDate(entry);
+            report.setDueDate(new DateTime(entry.getEnd()).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
+            report.setEndDate(entry.getEnd());
             report.setGrant(grant);
-            report.setName("Half-Yearly Progress Report");
+            report.setName(val.getPeriodLabel());
             report.setTemplate(reportTemplate);
-            report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.HALF_YEARLY.value()).toDate());
+            report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT", grant.getGrantorOrganization().getId()));
             report.setType("Half-Yearly");
             report = reportService.saveReport(report);
-            _createSectionsForReports(reportTemplate, val, report);
+            _createSectionsForReports(reportTemplate, val.getAttributes(), report);
             reportService.saveAssignments(report, tenantCode, user.getId());
             i[0]++;
         });
 
         i[0] = 1;
 
-        qTree.forEach((entry, val) -> {
+        quarterlyPeriods.forEach((entry, val) -> {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
-            report.setEndDate(entry);
+            report.setDueDate(new DateTime(entry.getEnd()).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
+            report.setEndDate(entry.getEnd());
             report.setGrant(grant);
-            report.setName("Quarterly Progress Report");
+            report.setName(val.getPeriodLabel());
             report.setTemplate(reportTemplate);
-            report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.QUARTER.value()).toDate());
+            report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT", grant.getGrantorOrganization().getId()));
             report.setType("Quarterly");
             report = reportService.saveReport(report);
-            _createSectionsForReports(reportTemplate, val, report);
+            _createSectionsForReports(reportTemplate, val.getAttributes(), report);
             reportService.saveAssignments(report, tenantCode, user.getId());
             i[0]++;
         });
 
         i[0] = 1;
 
-        mtTree.forEach((entry, val) -> {
+        monthlyPeriods.forEach((entry, val) -> {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
-            report.setEndDate(entry);
+            report.setDueDate(new DateTime(entry.getEnd()).plusDays(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue())).toDate());
+            report.setEndDate(entry.getEnd());
             report.setGrant(grant);
-            report.setName("Monthly Progress Report");
+            report.setName(val.getPeriodLabel());
             report.setTemplate(reportTemplate);
-            report.setStartDate(new DateTime(entry).minusMonths(ReportingPeriod.MONTHLY.value()).toDate());
+            report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT", grant.getGrantorOrganization().getId()));
             report.setType("Monthly");
             report = reportService.saveReport(report);
-            _createSectionsForReports(reportTemplate, val, report);
+            _createSectionsForReports(reportTemplate, val.getAttributes(), report);
             reportService.saveAssignments(report, tenantCode, user.getId());
             i[0]++;
         });
 
 
         System.out.println("here");
+    }
+
+    private List<DatePeriod> getReportingFrequencies(DateTime st, DateTime en, Frequency frequency) {
+
+        List<DatePeriod> periods = new ArrayList<>();
+        if(frequency==Frequency.MONTHLY){
+
+            while(st.isBefore(en) && !st.withTime(23,59,59,999).isEqual(en)){
+                DateTime tempEn = st.dayOfMonth().withMaximumValue().withTime(23,59,59,999);
+                if(tempEn.isAfter(en)){
+                    DatePeriod dp = new DatePeriod(st.toDate(), en.toDate());
+                    dp.setLabel("Monthly Report");
+                    periods.add(dp);
+                    break;
+                }
+                DatePeriod p = new DatePeriod(st.toDate(),tempEn.toDate());
+                p.setLabel("Monthly Report");
+                periods.add(p);
+                st = tempEn.plusDays(1).withTimeAtStartOfDay();
+            }
+
+        }else if(frequency==Frequency.QUARTERLY){
+
+            Month[] QUARTER_MONTH_ENDS = new Month[]{Month.MARCH,Month.JUNE,Month.SEPTEMBER,Month.DECEMBER};
+            while(st.isBefore(en) && !st.withTime(23,59,59,999).isEqual(en)){
+                DatePeriodLabel qrtrEnd = endOfQuarter(st);
+                DateTime tempEn = qrtrEnd.getDateTime().dayOfMonth().withMaximumValue().withTime(23,59,59,999);
+                if(tempEn.isAfter(en)){
+                    DatePeriod dp = new DatePeriod(st.toDate(),en.toDate());
+                    dp.setLabel(endOfQuarter(st).getPeriodLabel());
+                    periods.add(dp);
+                    break;
+                }
+                DatePeriod p = new DatePeriod(st.toDate(),tempEn.toDate());
+                p.setLabel(qrtrEnd.getPeriodLabel());
+                periods.add(p);
+                st = tempEn.plusDays(1).withTimeAtStartOfDay();
+            }
+            //periods.add(new DatePeriod(st.toDate(),en.toDate()));
+        }else if(frequency==Frequency.HALF_YEARLY){
+
+            while(st.isBefore(en) && !st.withTime(23,59,59,999).isEqual(en)){
+                DatePeriodLabel halfYrEnd = endOfHalfYear(st);
+                DateTime tempEn = halfYrEnd.getDateTime().dayOfMonth().withMaximumValue().withTime(23,59,59,999);
+                if(tempEn.isAfter(en)){
+                    DatePeriod dp = new DatePeriod(st.toDate(), en.toDate());
+                    dp.setLabel(endOfHalfYear(st).getPeriodLabel());
+                    periods.add(dp);
+                    break;
+                }
+                DatePeriod p = new DatePeriod(st.toDate(),tempEn.toDate());
+                p.setLabel(halfYrEnd.getPeriodLabel());
+                periods.add(p);
+                st = tempEn.plusDays(1).withTimeAtStartOfDay();
+            }
+            //periods.add(new DatePeriod(st.toDate(),en.toDate()));
+        }else if(frequency==Frequency.YEARLY){
+
+            while(st.isBefore(en) && !st.withTime(23,59,59,999).isEqual(en)){
+                DatePeriodLabel yrEnd = endOfYear(st);
+                DateTime tempEn = yrEnd.getDateTime().dayOfMonth().withMaximumValue().withTime(23,59,59,999);
+                if(tempEn.isAfter(en)){
+                    DatePeriod dp = new DatePeriod(st.toDate(), en.toDate());
+                    dp.setLabel(endOfYear(st).getPeriodLabel());
+                    periods.add(dp);
+                    break;
+                }
+                DatePeriod p = new DatePeriod(st.toDate(),tempEn.toDate());
+                p.setLabel(yrEnd.getPeriodLabel());
+                periods.add(p);
+                st = tempEn.plusDays(1).withTimeAtStartOfDay();
+            }
+            //periods.add(new DatePeriod(st.toDate(),en.toDate()));
+        }
+
+        return periods;
+    }
+
+    private DatePeriodLabel endOfQuarter(DateTime st) {
+        if(st.getMonthOfYear()>=Month.JANUARY.getValue() && st.getMonthOfYear()<=Month.MARCH.getValue()){
+            return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),"Quarterly Report - Q4 " + String.valueOf(st.getYear()-1)+"/"+String.valueOf(String.valueOf(st.getYear()).substring(2,4)));
+        } else if(st.getMonthOfYear()>=Month.APRIL.getValue() && st.getMonthOfYear()<=Month.JUNE.getValue()){
+            return new DatePeriodLabel(st.withMonthOfYear(Month.JUNE.getValue()),"Quarterly Report - Q1 " + String.valueOf(st.getYear())+"/"+String.valueOf(String.valueOf(st.getYear()+1).substring(2,4)));
+        }else if(st.getMonthOfYear()>=Month.JULY.getValue() && st.getMonthOfYear()<=Month.SEPTEMBER.getValue()){
+            return new DatePeriodLabel(st.withMonthOfYear(Month.SEPTEMBER.getValue()),"Quarterly Report - Q2 " + String.valueOf(st.getYear())+"/"+String.valueOf(String.valueOf(st.getYear()+1).substring(2,4)));
+        }else if(st.getMonthOfYear()>=Month.OCTOBER.getValue() && st.getMonthOfYear()<=Month.DECEMBER.getValue()){
+            return new DatePeriodLabel(st.withMonthOfYear(Month.DECEMBER.getValue()),"Quarterly Report - Q3 " + String.valueOf(st.getYear())+"/"+String.valueOf(String.valueOf(st.getYear()+1).substring(2,4)));
+        }
+        return null;
+    }
+
+    private DatePeriodLabel endOfHalfYear(DateTime st) {
+        if(st.getMonthOfYear()>=Month.APRIL.getValue() && st.getMonthOfYear()<=Month.SEPTEMBER.getValue()){
+            return new DatePeriodLabel(st.withMonthOfYear(Month.SEPTEMBER.getValue()),"Half-Yearly Report - H1 " + String.valueOf(st.getYear())+"/"+String.valueOf(String.valueOf(st.getYear()+1).substring(2,4)));
+        } else if(st.getMonthOfYear()>=Month.OCTOBER.getValue() && st.getMonthOfYear()<=Month.DECEMBER.getValue()){
+            return new DatePeriodLabel(st.plusYears(1).withMonthOfYear(Month.MARCH.getValue()),"Half-Yearly Report - H2 " + String.valueOf(st.getYear())+"/"+String.valueOf(String.valueOf(st.getYear()+1).substring(2,4)));
+        }else if(st.getMonthOfYear()>=Month.JANUARY.getValue() && st.getMonthOfYear()<=Month.MARCH.getValue()){
+            return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),"Half-Yearly Report - H2 " + String.valueOf(st.getYear()-1)+"/"+String.valueOf(String.valueOf(st.getYear()).substring(2,4)));
+        }
+        return null;
+    }
+
+    private DatePeriodLabel endOfYear(DateTime st) {
+        if(st.getMonthOfYear()>=Month.APRIL.getValue() && st.getMonthOfYear()<=Month.DECEMBER.getValue()){
+            return new DatePeriodLabel(st.plusYears(1).withMonthOfYear(Month.MARCH.getValue()),"Yearly Report " + String.valueOf(st.getYear())+"/"+String.valueOf(String.valueOf(st.getYear()+1).substring(2,4)));
+        } else if(st.getMonthOfYear()>=Month.JANUARY.getValue() && st.getMonthOfYear()<=Month.MARCH.getValue()){
+            return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),"Yearly Report " + String.valueOf(st.getYear()-1)+"/"+String.valueOf(String.valueOf(st.getYear()).substring(2,4)));
+        }
+        return null;
     }
 
     private void _createSectionsForReports(GranterReportTemplate reportTemplate, List<SectionAttributesVO> val, Report report) {
@@ -2449,10 +2561,11 @@ public class GrantController {
         String url = uriBuilder.toUriString();
         for (InviteEntry invite : grantInvite.getInvites()) {
             User granteeUser = null;
-            User existingUser = userService.getUserByEmailAndOrg(invite.getName(), grant.getOrganization());
+
             String code = null;
             try {
-                code = Base64.getEncoder().encodeToString(new byte[]{grant.getId().byteValue()});
+                User existingUser = userService.getUserByEmailAndOrg(invite.getName(), grant.getOrganization());
+                code = Base64.getEncoder().encodeToString(String.valueOf(grant.getId()).getBytes());
 
             if (existingUser != null && existingUser.isActive()) {
                 granteeUser = existingUser;
@@ -2507,7 +2620,8 @@ public class GrantController {
 
     @GetMapping("/resolve")
     public Grant resolveGrant(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,@RequestParam("g") String grantCode){
-        Long grantId = Long.valueOf(Base64.getDecoder().decode(grantCode)[0]);
+        Long grantId = Long.valueOf(new String(Base64.getDecoder().decode(grantCode),StandardCharsets.UTF_8));
+        logger.info("Grant Id: " + grantId);
         Grant grant = grantService.getById(grantId);
 
         grant = _grantToReturn(userId,grant);
