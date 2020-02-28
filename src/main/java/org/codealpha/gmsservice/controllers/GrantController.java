@@ -748,8 +748,14 @@ public class GrantController {
         //grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
 
 
-        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        Organization tenantOrg = null;
+
         User user = userService.getUserById(userId);
+        if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
+            tenantOrg = grantService.getById(grantId).getGrantorOrganization();
+        }else{
+            tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        }
         grantToSave.setOrganization(_processNewGranteeOrgIfPresent(grantToSave));
         Grant grant = _processGrant(grantToSave, tenantOrg, user);
 
