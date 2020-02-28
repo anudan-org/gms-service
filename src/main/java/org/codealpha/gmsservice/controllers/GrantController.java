@@ -2559,7 +2559,7 @@ public class GrantController {
             String code = null;
             try {
                 User existingUser = userService.getUserByEmailAndOrg(invite.getName(), grant.getOrganization());
-                code = Base64.getEncoder().encodeToString(new byte[]{grant.getId().byteValue()});
+                code = Base64.getEncoder().encodeToString(String.valueOf(grant.getId()).getBytes());
 
             if (existingUser != null && existingUser.isActive()) {
                 granteeUser = existingUser;
@@ -2614,7 +2614,7 @@ public class GrantController {
 
     @GetMapping("/resolve")
     public Grant resolveGrant(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,@RequestParam("g") String grantCode){
-        Long grantId = Long.valueOf(Base64.getDecoder().decode(grantCode)[0]);
+        Long grantId = Long.valueOf(new String(Base64.getDecoder().decode(grantCode),StandardCharsets.UTF_8));
         logger.info("Grant Id: " + grantId);
         Grant grant = grantService.getById(grantId);
 

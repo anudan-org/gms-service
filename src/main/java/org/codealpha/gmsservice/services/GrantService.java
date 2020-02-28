@@ -430,14 +430,14 @@ public class GrantService {
 
     public String[] buildNotificationContent(Grant finalGrant,User invite, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment,String hasNotes,String hasNotesComment) {
 
-        String code = Base64.getEncoder().encodeToString(new byte[]{finalGrant.getId().byteValue()});
+        String code = Base64.getEncoder().encodeToString(String.valueOf(finalGrant.getId()).getBytes());
         System.out.println("Grant Code: "+code+" Grant Id:"+finalGrant.getId());
         UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
         String host = uriComponents.getHost();//.substring(uriComponents.getHost().indexOf(".")+1);
         UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
         String url = uriBuilder.toUriString();
         try {
-            url = url+"/home/?action=login&org="+ URLEncoder.encode(finalGrant.getOrganization().getName(), StandardCharsets.UTF_8.toString())+"&g=" + code+"&email="+invite.getEmailId()+"&type=grant";
+            url = url+"/home/?action=login&org="+ URLEncoder.encode(finalGrant.getOrganization().getName(), StandardCharsets.UTF_8.toString())+"&g=" + code+"&email=&type=grant";
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
