@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -602,7 +603,7 @@ public class ReportController {
                 ObjectMapper mapper = new ObjectMapper();
                 String code = null;
 
-                    code = Base64.getEncoder().encodeToString(new byte[]{report.getId().byteValue()});
+                    code = Base64.getEncoder().encodeToString(String.valueOf(report.getId()).getBytes());
 
                 if(existingUser != null && existingUser.isActive()){
                     granteeUser = existingUser;
@@ -753,26 +754,42 @@ public class ReportController {
 
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState, toStatus);
 
-        String notificationContent[] = reportService.buildNotificationContent(finalReport, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
-                        .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(), appConfigService
-                        .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
-                workflowStatusService.findById(toStateId).getName(), currentOwnerName,
-                previousState.getName(),
-                previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                transition.getAction(), "Yes",
-                "Please review.",
-                reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
-                reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "");
+
+        String finalCurrentOwnerName = currentOwnerName;
         usersToNotify.stream().forEach(u -> {
 
-
+            String notificationContent[] = reportService.buildNotificationContent(finalReport,u, u.getFirstName().concat(" ").concat(u.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
+                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(), appConfigService
+                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
+                    workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
+                    previousState.getName(),
+                    previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                    transition.getAction(), "Yes",
+                    "Please review.",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "");
             commonEmailSevice.sendMail(u.getEmailId(), notificationContent[0], notificationContent[1], new String[]{appConfigService
                     .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
         });
-        usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(), finalReport.getId()));
+        usersToNotify.stream().forEach(u -> {
+            String notificationContent[] = reportService.buildNotificationContent(finalReport,u, u.getFirstName().concat(" ").concat(u.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
+                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(), appConfigService
+                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
+                    workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
+                    previousState.getName(),
+                    previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                    transition.getAction(), "Yes",
+                    "Please review.",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "");
+            notificationsService.saveNotification(notificationContent, u.getId(), finalReport.getId());
+
+        });
 
         //}
 
@@ -1088,6 +1105,15 @@ public class ReportController {
         }
 
 
+        Report report = reportService.getReportById(reportId);
+
+        report = _ReportToReturn(report,userId);
+        return report;
+    }
+
+    @GetMapping("/resolve")
+    public Report resolveReport(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,@RequestParam("r") String reportCode){
+        Long reportId = Long.valueOf(new String(Base64.getDecoder().decode(reportCode), StandardCharsets.UTF_8));
         Report report = reportService.getReportById(reportId);
 
         report = _ReportToReturn(report,userId);
