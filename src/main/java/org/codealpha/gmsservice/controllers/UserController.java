@@ -175,6 +175,25 @@ public class UserController {
     return new ResponseEntity<>(null, HttpStatus.OK);
   }
 
+    @GetMapping("/{userId}/dashboard/in-progress")
+    public ResponseEntity<Long> getInProgressGrantsOfUser(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId){
+        dashboardValidator.validate(userId,tenantCode);
+        User user = userService.getUserById(userId);
+        Organization userOrg = user.getOrganization();
+        Organization tenantOrg = null;
+        tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        List<Grant> grants = null;
+        switch (userOrg.getType()) {
+            case "GRANTEE":
+
+                return new ResponseEntity<>(0L, HttpStatus.OK);
+            case "GRANTER":
+                return new ResponseEntity<>(granterService.getInProgressGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId()),HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(null, HttpStatus.OK);
+    }
+
   @PostMapping("/{id}/validate-pwd")
   public ResponseEntity<ErrorMessage> validatePassword(@PathVariable("id") Long userId,
       @RequestBody String pwd,@RequestHeader("X-TENANT-CODE") String tenantCode) {

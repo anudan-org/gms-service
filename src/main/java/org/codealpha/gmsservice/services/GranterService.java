@@ -59,4 +59,14 @@ public class GranterService {
     return granterRepository.findById(grnaterId).get();
   }
 
+  public Long getInProgressGrantsOfGranterForGrantor(Long granterOrgId, Organization tenantOrg, Long userId) {
+
+
+      if("GRANTER".equalsIgnoreCase(tenantOrg.getType())){
+        return grantRepository.countOfInprogressGrantsForGrantor(granterOrgId,userId);
+      }else if("PLATFORM".equalsIgnoreCase(tenantOrg.getType())){
+        return 0l;
+      }
+      return null;
+  }
 }
