@@ -380,7 +380,7 @@ public class ReportService {
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalReport.getGrant().getName()).replaceAll("%REPORT_NAME%",finalReport.getName()).replaceAll("%REPORT_LINK%",url).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment);
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalReport.getGrant().getName()).replaceAll("%REPORT_NAME%",finalReport.getName()).replaceAll("%REPORT_LINK%",url).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalReport.getGrant().getGrantorOrganization().getName());
         String subject = subConfigValue.replaceAll("%REPORT_NAME%", finalReport.getName());
 
         return new String[]{subject, message};
