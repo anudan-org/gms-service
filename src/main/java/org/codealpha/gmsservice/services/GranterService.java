@@ -69,4 +69,44 @@ public class GranterService {
       }
       return null;
   }
+
+    public Long getActiveGrantsOfGranteeForGrantor(Long granterOrgId, Organization tenantOrg, Long userId) {
+
+
+        if("GRANTER".equalsIgnoreCase(tenantOrg.getType())){
+            return grantRepository.countOfInprogressGrantsForGrantor(granterOrgId,userId);
+        }else if("PLATFORM".equalsIgnoreCase(tenantOrg.getType())){
+            return grantRepository.countOfActiveGrantsForGrantee(granterOrgId);
+        }
+        return null;
+    }
+
+    public Long getActiveGrantsOfGranterForGrantor(Long userOrgId, Organization tenantOrg, Long userId) {
+        if("GRANTER".equalsIgnoreCase(tenantOrg.getType())){
+            return grantRepository.countOfActiveGrantsForGrantor(userOrgId);
+        }else if("PLATFORM".equalsIgnoreCase(tenantOrg.getType())){
+            return 0l;
+        }
+        return null;
+    }
+
+    public Long getClosedGrantsOfGranteeForGrantor(Long granterOrgId, Organization tenantOrg, Long userId) {
+
+
+        if("GRANTER".equalsIgnoreCase(tenantOrg.getType())){
+            return grantRepository.countOfInprogressGrantsForGrantor(granterOrgId,userId);
+        }else if("PLATFORM".equalsIgnoreCase(tenantOrg.getType())){
+            return grantRepository.countOfClosedGrantsForGrantee(granterOrgId);
+        }
+        return null;
+    }
+
+    public Long getClosedGrantsOfGranterForGrantor(Long userOrgId, Organization tenantOrg, Long userId) {
+        if("GRANTER".equalsIgnoreCase(tenantOrg.getType())){
+            return grantRepository.countOfClosedGrantsForGrantor(userOrgId);
+        }else if("PLATFORM".equalsIgnoreCase(tenantOrg.getType())){
+            return grantRepository.countOfClosedGrantsForGrantor(userOrgId);
+        }
+        return null;
+    }
 }
