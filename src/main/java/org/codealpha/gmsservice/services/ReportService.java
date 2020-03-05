@@ -363,7 +363,7 @@ public class ReportService {
         return reportAssignmentRepository.save(assignment);
     }
 
-    public String[] buildNotificationContent(Report finalReport,User u, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment,String hasNotes,String hasNotesComment) {
+    public String[] buildEmailNotificationContent(Report finalReport, User u, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment, String hasNotes, String hasNotesComment) {
 
         String code = Base64.getEncoder().encodeToString(String.valueOf(finalReport.getId()).getBytes());
         UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();

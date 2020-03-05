@@ -22,14 +22,19 @@ public List<Notifications> getAllUserNotifications(Long userId){
   	return notificationsRepository.findByUserIdOrderByPostedOnDesc(userId);
   }
 
-  public Notifications saveNotification (String[] message, Long userId, Long grantId){
+  public Notifications saveNotification (String[] message, Long userId, Long id,String notificationFor){
       Notifications notification = new Notifications();
       notification.setMessage(message[1]);
       notification.setTitle(message[0]);
       notification.setPostedOn(new Date());
       notification.setRead(false);
       notification.setUserId(userId);
-      notification.setGrantId(grantId);
+      notification.setNotificationFor(notificationFor.toUpperCase());
+      if(notificationFor.equalsIgnoreCase("REPORT")){
+          notification.setReportId(id);
+      }else if(notificationFor.equalsIgnoreCase("GRANT")){
+          notification.setGrantId(id);
+      }
       return notificationsRepository.save(notification);
   }
 
