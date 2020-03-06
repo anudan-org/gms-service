@@ -86,7 +86,7 @@ public class ReportController {
     private GranterReportTemplateService granterReportTemplateService;
 
     @GetMapping("/")
-    public List<Report> getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public List<Report> getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,@RequestParam(value = "q",required = false) String filterClause) {
         Organization org = null;
         User user = userService.getUserById(userId);
 
@@ -96,7 +96,18 @@ public class ReportController {
             reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId());
         } else{
             org = organizationService.findOrganizationByTenantCode(tenantCode);
-            reports = reportService.getAllAssignedReportsForGranterUser(userId, org.getId());
+            Date start = DateTime.now().withTimeAtStartOfDay().toDate();
+            Date end = new DateTime(start).plusDays(30).withTime(23,59,59,999).toDate();
+            if(filterClause!=null && filterClause.equalsIgnoreCase("UPCOMING")){
+                reports = reportService.getUpcomingReportsForGranterUserByDateRange(userId,org.getId(),start,end);
+            }else if(filterClause!=null && filterClause.equalsIgnoreCase("UPCOMING-DUE")){
+                reports = reportService.getReadyToSubmitReportsForGranterUserByDateRange(userId,org.getId(),start,end);
+            }else if(filterClause!=null && filterClause.equalsIgnoreCase("SUBMITTED")){
+                reports = reportService.getSubmittedReportsForGranterUserByDateRange(userId,org.getId());
+            } else if(filterClause!=null && filterClause.equalsIgnoreCase("APPROVED")){
+                reports = reportService.getApprovedReportsForGranterUserByDateRange(userId,org.getId());
+            }
+            //reports = reportService.getAllAssignedReportsForGranterUser(userId, org.getId());
         }
 
 

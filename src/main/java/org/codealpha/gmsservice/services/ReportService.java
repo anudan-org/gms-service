@@ -129,6 +129,26 @@ public class ReportService {
         return reportRepository.findAllAssignedReportsForGranterUser(userId,granterOrgId);
     }
 
+   public List<Report> getUpcomingReportsForGranterUserByDateRange(Long userId, Long granterOrgId,Date start, Date end){
+
+        return reportRepository.findUpcomingReportsForGranterUserByDateRange(userId,granterOrgId,start,end);
+    }
+
+    public List<Report> getReadyToSubmitReportsForGranterUserByDateRange(Long userId, Long granterOrgId,Date start, Date end){
+
+        return reportRepository.findReadyToSubmitReportsForGranterUserByDateRange(userId,granterOrgId,start,end);
+    }
+
+    public List<Report> getSubmittedReportsForGranterUserByDateRange(Long userId, Long granterOrgId){
+
+        return reportRepository.findSubmittedReportsForGranterUserByDateRange(userId,granterOrgId);
+    }
+
+    public List<Report> getApprovedReportsForGranterUserByDateRange(Long userId, Long granterOrgId){
+
+        return reportRepository.findApprovedReportsForGranterUserByDateRange(userId,granterOrgId);
+    }
+
     public GranterReportTemplate getDefaultTemplate(Long granterId){
         return granterReportTemplateRepository.findByGranterIdAndDefaultTemplate(granterId,true);
     }
