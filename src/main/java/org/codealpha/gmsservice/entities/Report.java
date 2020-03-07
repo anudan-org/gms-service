@@ -72,6 +72,8 @@ public class Report {
     private List<WorkFlowPermission> flowAuthorities;
     @Transient
     private boolean forGranteeUse;
+    @Transient
+    private int futureReportsCount = 0;
 
     public Long getId() {
         return id;
@@ -313,5 +315,13 @@ public class Report {
 
     public void setForGranteeUse(boolean forGranteeUse) {
         this.forGranteeUse = forGranteeUse;
+    }
+
+    public void setFutureReportsCount(int futureReportsCount) {
+        this.futureReportsCount = futureReportsCount;
+    }
+
+    public int getFutureReportsCount() {
+        return futureReportsCount;
     }
 }

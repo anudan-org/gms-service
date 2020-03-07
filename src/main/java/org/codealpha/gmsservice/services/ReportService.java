@@ -134,6 +134,11 @@ public class ReportService {
         return reportRepository.findUpcomingReportsForGranterUserByDateRange(userId,granterOrgId,start,end);
     }
 
+    public List<Report> getFutureReportForGranterUserByDateRangeAndGrant(Long userId, Long granterOrgId,Date end,Long grantId){
+
+        return reportRepository.findFutureReportsToSubmitForGranterUserByDateRangeAndGrant(userId,granterOrgId,end,grantId);
+    }
+
     public List<Report> getReadyToSubmitReportsForGranterUserByDateRange(Long userId, Long granterOrgId,Date start, Date end){
 
         return reportRepository.findReadyToSubmitReportsForGranterUserByDateRange(userId,granterOrgId,start,end);

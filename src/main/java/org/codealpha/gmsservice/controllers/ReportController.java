@@ -100,6 +100,10 @@ public class ReportController {
             Date end = new DateTime(start).plusDays(30).withTime(23,59,59,999).toDate();
             if(filterClause!=null && filterClause.equalsIgnoreCase("UPCOMING")){
                 reports = reportService.getUpcomingReportsForGranterUserByDateRange(userId,org.getId(),start,end);
+                for (Report report : reports) {
+                    int futureReportsCount = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId,org.getId(),end,report.getGrant().getId()).size();
+                    report.setFutureReportsCount(futureReportsCount);
+                }
             }else if(filterClause!=null && filterClause.equalsIgnoreCase("UPCOMING-DUE")){
                 reports = reportService.getReadyToSubmitReportsForGranterUserByDateRange(userId,org.getId(),start,end);
             }else if(filterClause!=null && filterClause.equalsIgnoreCase("SUBMITTED")){
@@ -125,6 +129,28 @@ public class ReportController {
         Report report = reportService.getReportById(reportId);
 
         return _ReportToReturn(report, userId);
+    }
+
+    @GetMapping("/{reportId}/{grantId}")
+    public List<Report> getFutureReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("reportId") Long reportId,@PathVariable("grantId") Long grantId) {
+        User user = userService.getUserById(userId);
+
+        List<Report> reports = null;
+        if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
+            Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
+            Date start = DateTime.now().withTimeAtStartOfDay().toDate();
+            Date end = new DateTime(start).plusDays(30).withTime(23,59,59,999).toDate();
+            reports = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId,org.getId(),end,grantId);
+        }
+
+        reports.removeIf(r -> r.getId()==reportId);
+
+        for (Report report : reports) {
+
+            report = _ReportToReturn(report, userId);
+
+        }
+        return reports;
     }
 
     private Report _ReportToReturn(Report report, Long userId) {
