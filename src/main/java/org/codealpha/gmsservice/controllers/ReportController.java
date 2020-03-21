@@ -93,7 +93,13 @@ public class ReportController {
         List<Report> reports = null;
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
             org = user.getOrganization();
-            reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId());
+            if(filterClause!=null && filterClause.equalsIgnoreCase("UPCOMING-DUE")) {
+                reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId(),"ACTIVE");
+            }else if(filterClause!=null && filterClause.equalsIgnoreCase("SUBMITTED")) {
+                reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId(),"REVIEW");
+            }else if(filterClause!=null && filterClause.equalsIgnoreCase("APPROVED")) {
+                reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId(),"CLOSED");
+            }
         } else{
             org = organizationService.findOrganizationByTenantCode(tenantCode);
             Date start = DateTime.now().withTimeAtStartOfDay().toDate();
@@ -115,10 +121,12 @@ public class ReportController {
         }
 
 
-        for (Report report : reports) {
+        if(reports!=null) {
+            for (Report report : reports) {
 
-            report = _ReportToReturn(report, userId);
+                report = _ReportToReturn(report, userId);
 
+            }
         }
         return reports;
     }

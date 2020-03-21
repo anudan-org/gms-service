@@ -119,9 +119,9 @@ public class ReportService {
         return reportAssignmentRepository.findByReportId(report.getId());
     }
 
-    public List<Report> getAllAssignedReportsForGranteeUser(Long userId, Long granteeOrgId){
+    public List<Report> getAllAssignedReportsForGranteeUser(Long userId, Long granteeOrgId,String status){
 
-        return reportRepository.findAllAssignedReportsForGranteeUser(userId,granteeOrgId);
+        return reportRepository.findAllAssignedReportsForGranteeUser(userId,granteeOrgId, status);
     }
 
     public List<Report> getAllAssignedReportsForGranterUser(Long userId, Long granterOrgId){
