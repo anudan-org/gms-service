@@ -403,7 +403,8 @@ public class ReportController {
         ReportStringAttribute stringAttribute = reportService.getReportStringAttributeBySectionAttributeAndSection(currentAttribute, currentAttribute.getSection());
         stringAttribute.setValue("");
         if (currentAttribute.getFieldType().equalsIgnoreCase("kpi")) {
-            stringAttribute.setFrequency(report.getType().toLowerCase());
+            //stringAttribute.setFrequency(report.getType().toLowerCase());
+            stringAttribute.setFrequency("adhoc");
         }
         stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
 
