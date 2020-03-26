@@ -15,8 +15,14 @@ import org.codealpha.gmsservice.models.TableData;
 import org.codealpha.gmsservice.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -113,14 +119,39 @@ public class ReportService {
         return reportAssignmentRepository.findByReportId(report.getId());
     }
 
-    public List<Report> getAllAssignedReportsForGranteeUser(Long userId, Long granteeOrgId){
+    public List<Report> getAllAssignedReportsForGranteeUser(Long userId, Long granteeOrgId,String status){
 
-        return reportRepository.findAllAssignedReportsForGranteeUser(userId,granteeOrgId);
+        return reportRepository.findAllAssignedReportsForGranteeUser(userId,granteeOrgId, status);
     }
 
     public List<Report> getAllAssignedReportsForGranterUser(Long userId, Long granterOrgId){
 
         return reportRepository.findAllAssignedReportsForGranterUser(userId,granterOrgId);
+    }
+
+   public List<Report> getUpcomingReportsForGranterUserByDateRange(Long userId, Long granterOrgId,Date start, Date end){
+
+        return reportRepository.findUpcomingReportsForGranterUserByDateRange(userId,granterOrgId,start,end);
+    }
+
+    public List<Report> getFutureReportForGranterUserByDateRangeAndGrant(Long userId, Long granterOrgId,Date end,Long grantId){
+
+        return reportRepository.findFutureReportsToSubmitForGranterUserByDateRangeAndGrant(userId,granterOrgId,end,grantId);
+    }
+
+    public List<Report> getReadyToSubmitReportsForGranterUserByDateRange(Long userId, Long granterOrgId,Date start, Date end){
+
+        return reportRepository.findReadyToSubmitReportsForGranterUserByDateRange(userId,granterOrgId,start,end);
+    }
+
+    public List<Report> getSubmittedReportsForGranterUserByDateRange(Long userId, Long granterOrgId){
+
+        return reportRepository.findSubmittedReportsForGranterUserByDateRange(userId,granterOrgId);
+    }
+
+    public List<Report> getApprovedReportsForGranterUserByDateRange(Long userId, Long granterOrgId){
+
+        return reportRepository.findApprovedReportsForGranterUserByDateRange(userId,granterOrgId);
     }
 
     public GranterReportTemplate getDefaultTemplate(Long granterId){
@@ -357,10 +388,25 @@ public class ReportService {
         return reportAssignmentRepository.save(assignment);
     }
 
-    public String[] buildNotificationContent(Report finalReport, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment,String hasNotes,String hasNotesComment) {
+    public String[] buildEmailNotificationContent(Report finalReport, User u, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment, String hasNotes, String hasNotesComment) {
 
-        String message = msgConfigValue.replace("%GRANT_NAME%", finalReport.getName()).replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner).replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner).replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges).replace("%HAS_CHANGES_COMMENT%", hasChangesComment).replace("%HAS_NOTES%",hasNotes).replace("%HAS_NOTES_COMMENT%",hasNotesComment);
-        String subject = subConfigValue.replace("%GRANT_NAME%", finalReport.getName());
+        String code = Base64.getEncoder().encodeToString(String.valueOf(finalReport.getId()).getBytes());
+        UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
+        String host = null;
+        if(u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+            host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".")+1);
+        }else{
+            host = uriComponents.getHost();
+        }
+        UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
+        String url = uriBuilder.toUriString();
+        try {
+            url = url+"/home/?action=login&org="+ URLEncoder.encode(finalReport.getGrant().getGrantorOrganization().getName(), StandardCharsets.UTF_8.toString())+"&r=" + code+"&email=&type=report";
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalReport.getGrant().getName()).replaceAll("%REPORT_NAME%",finalReport.getName()).replaceAll("%REPORT_LINK%",url).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalReport.getGrant().getGrantorOrganization().getName());
+        String subject = subConfigValue.replaceAll("%REPORT_NAME%", finalReport.getName());
 
         return new String[]{subject, message};
     }

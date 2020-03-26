@@ -49,6 +49,7 @@ public class ReportVO {
     private List<WorkFlowPermission> flowAuthorities;
     private List<User> granteeUsers;
     private boolean forGranteeUse;
+    private int futureReportsCount;
 
     public Long getId() {
         return id;
@@ -288,6 +289,14 @@ public class ReportVO {
 
     public void setForGranteeUse(boolean forGranteeUse) {
         this.forGranteeUse = forGranteeUse;
+    }
+
+    public int getFutureReportsCount() {
+        return futureReportsCount;
+    }
+
+    public void setFutureReportsCount(int futureReportsCount) {
+        this.futureReportsCount = futureReportsCount;
     }
 
     // BUILD THE VO

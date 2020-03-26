@@ -2,7 +2,6 @@ package org.codealpha.gmsservice.controllers;
 
 import java.awt.*;
 import java.io.*;
-import java.lang.reflect.Array;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -26,13 +25,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
-import com.google.common.hash.HashCode;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.text.WordUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -45,7 +42,6 @@ import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.GrantValidator;
 import org.joda.time.DateTime;
-import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +53,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.FileCopyUtils;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -1448,7 +1443,11 @@ public class GrantController {
         List<User> usersToNotify = new ArrayList<>();//userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
 
         List<GrantAssignments> assigments = grantService.getGrantWorkflowAssignments(grant);
-        assigments.forEach(ass -> usersToNotify.add(userService.getUserById(ass.getAssignments())));
+        assigments.forEach(ass -> {
+            if(!usersToNotify.stream().filter(u -> u.getId()==ass.getAssignments()).findFirst().isPresent()){
+                usersToNotify.add(userService.getUserById(ass.getAssignments()));
+            }
+        });
        /* String notificationMessageTemplate = appConfigService
                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.GRANT_ALERT_NOTIFICATION_MESSAGE).getConfigValue();*/
@@ -1458,7 +1457,7 @@ public class GrantController {
 
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState, toStatus);
 
-        String notificationContent[] = grantService.buildNotificationContent(finalGrant,user, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
+        String emailNotificationContent[] = grantService.buildEmailNotificationContent(finalGrant,user, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
                         .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                                 AppConfiguration.GRANT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(), appConfigService
                         .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
@@ -1470,14 +1469,26 @@ public class GrantController {
                 "Please review.",
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "");
+        String notificationContent[] = grantService.buildEmailNotificationContent(finalGrant,user, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
+                        .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
+                                AppConfiguration.GRANT_STATE_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(), appConfigService
+                        .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
+                                AppConfiguration.GRANT_STATE_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                workflowStatusService.findById(toStateId).getName(), currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()),
+                previousState.getName(),
+                previousOwner==null?" -":previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                transition.getAction(), "Yes",
+                "Please review.",
+                grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
+                grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "");
         usersToNotify.stream().forEach(u -> {
 
 
-            commonEmailSevice.sendMail(u.getEmailId(), notificationContent[0], notificationContent[1], new String[]{appConfigService
+            commonEmailSevice.sendMail(u.getEmailId(), emailNotificationContent[0], emailNotificationContent[1], new String[]{appConfigService
                     .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                             AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
         });
-        usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(), finalGrant.getId()));
+        usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(), finalGrant.getId(),"GRANT"));
 
         //}
 

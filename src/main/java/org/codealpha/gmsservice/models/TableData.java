@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.models;
 public class TableData {
 
     private String name;
+    private String header;
     private ColumnData[] columns;
 
     public String getName() {
@@ -19,5 +20,13 @@ public class TableData {
 
     public void setColumns(ColumnData[] columns) {
         this.columns = columns;
+    }
+
+    public String getHeader() {
+        return header;
+    }
+
+    public void setHeader(String header) {
+        this.header = header;
     }
 }

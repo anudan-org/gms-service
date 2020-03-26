@@ -175,6 +175,60 @@ public class UserController {
     return new ResponseEntity<>(null, HttpStatus.OK);
   }
 
+    @GetMapping("/{userId}/dashboard/in-progress")
+    public ResponseEntity<Long> getInProgressGrantsOfUser(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId){
+        dashboardValidator.validate(userId,tenantCode);
+        User user = userService.getUserById(userId);
+        Organization userOrg = user.getOrganization();
+        Organization tenantOrg = null;
+        tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        List<Grant> grants = null;
+        switch (userOrg.getType()) {
+            case "GRANTEE":
+                return new ResponseEntity<>(granterService.getActiveGrantsOfGranteeForGrantor(userOrg.getId(),tenantOrg,user.getId()), HttpStatus.OK);
+            case "GRANTER":
+                return new ResponseEntity<>(granterService.getInProgressGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId()),HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(null, HttpStatus.OK);
+    }
+
+  @GetMapping("/{userId}/dashboard/active")
+  public ResponseEntity<Long> getActiveGrantsOfUser(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId){
+    dashboardValidator.validate(userId,tenantCode);
+    User user = userService.getUserById(userId);
+    Organization userOrg = user.getOrganization();
+    Organization tenantOrg = null;
+    tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+    List<Grant> grants = null;
+    switch (userOrg.getType()) {
+      case "GRANTEE":
+        return new ResponseEntity<>(granterService.getActiveGrantsOfGranteeForGrantor(userOrg.getId(),tenantOrg,user.getId()), HttpStatus.OK);
+      case "GRANTER":
+        return new ResponseEntity<>(granterService.getActiveGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId()),HttpStatus.OK);
+    }
+
+    return new ResponseEntity<>(null, HttpStatus.OK);
+  }
+
+  @GetMapping("/{userId}/dashboard/closed")
+  public ResponseEntity<Long> getClosedGrantsOfUser(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId){
+    dashboardValidator.validate(userId,tenantCode);
+    User user = userService.getUserById(userId);
+    Organization userOrg = user.getOrganization();
+    Organization tenantOrg = null;
+    tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+    List<Grant> grants = null;
+    switch (userOrg.getType()) {
+      case "GRANTEE":
+        return new ResponseEntity<>(granterService.getClosedGrantsOfGranteeForGrantor(userOrg.getId(),tenantOrg,user.getId()), HttpStatus.OK);
+      case "GRANTER":
+        return new ResponseEntity<>(granterService.getClosedGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId()),HttpStatus.OK);
+    }
+
+    return new ResponseEntity<>(null, HttpStatus.OK);
+  }
+
   @PostMapping("/{id}/validate-pwd")
   public ResponseEntity<ErrorMessage> validatePassword(@PathVariable("id") Long userId,
       @RequestBody String pwd,@RequestHeader("X-TENANT-CODE") String tenantCode) {

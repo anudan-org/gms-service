@@ -67,6 +67,7 @@ public class GrantDetailVO {
             List<TableData> tableDataList = new ArrayList<>();
             TableData tableData = new TableData();
             tableData.setName("");
+            tableData.setHeader("");
             tableData.setColumns(new ColumnData[5]);
             for(int i=0;i<tableData.getColumns().length;i++){
 

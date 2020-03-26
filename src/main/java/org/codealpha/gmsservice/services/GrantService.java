@@ -428,7 +428,7 @@ public class GrantService {
         return grantHistoryRepository.findByGrantId(grantId);
     }
 
-    public String[] buildNotificationContent(Grant finalGrant,User invite, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment,String hasNotes,String hasNotesComment) {
+    public String[] buildEmailNotificationContent(Grant finalGrant, User invite, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment, String hasNotes, String hasNotesComment) {
 
         String code = Base64.getEncoder().encodeToString(String.valueOf(finalGrant.getId()).getBytes());
         System.out.println("Grant Code: "+code+" Grant Id:"+finalGrant.getId());

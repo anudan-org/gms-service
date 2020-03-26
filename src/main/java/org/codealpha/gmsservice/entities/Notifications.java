@@ -1,31 +1,13 @@
 package org.codealpha.gmsservice.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
-import javax.persistence.Transient;
-import org.codealpha.gmsservice.constants.GrantStatus;
-import org.codealpha.gmsservice.models.GrantDetailVO;
-import org.joda.time.DateTime;
 
 @Entity
 @Table(name = "notifications")
@@ -50,6 +32,12 @@ public class Notifications {
 
     @Column
     private Long grantId;
+
+    @Column
+	private Long reportId;
+
+    @Column
+	private String notificationFor;
 
   	@Column
   	private Long userId;
@@ -113,5 +101,21 @@ public class Notifications {
 
 	public boolean isRead() {
 		return read;
+	}
+
+	public Long getReportId() {
+		return reportId;
+	}
+
+	public void setReportId(Long reportId) {
+		this.reportId = reportId;
+	}
+
+	public String getNotificationFor() {
+		return notificationFor;
+	}
+
+	public void setNotificationFor(String notificationFor) {
+		this.notificationFor = notificationFor;
 	}
 }

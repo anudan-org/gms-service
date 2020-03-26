@@ -29,4 +29,19 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
 
     @Query(value = "select A.* from grants A inner join workflow_statuses B on B.id=A.grant_status_id where B.internal_status='ACTIVE' and A.grantor_org_id=?1", nativeQuery = true)
     List<Grant> findActiveGrants(Long organizationId);
+
+    @Query(value = "select count(distinct A.*) from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=?1 and ( (B.anchor=true and B.assignments=?2 and C.internal_status not in('ACTIVE','CLOSED')) or (B.assignments=?2 and B.state_id=A.grant_status_id and C.internal_status not in('ACTIVE','CLOSED')) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 and ?2 = any (array(select assignments from grant_assignments where grant_id=A.id))) or (C.internal_status='REVIEW' and ?2 = any( array(select assignments from grant_assignments where grant_id=A.id))))",nativeQuery = true)
+    Long countOfInprogressGrantsForGrantor(Long grantorOrgId,Long userId);
+
+    @Query(value = "select count(*) from grants A inner join workflow_statuses B on B.id=A.grant_status_id where A.organization_id=?1 and B.internal_status='ACTIVE'",nativeQuery = true)
+    Long countOfActiveGrantsForGrantee(Long granteeOrgId);
+
+    @Query(value = "select count(distinct A.*) from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=?1 and C.internal_status='ACTIVE'",nativeQuery = true)
+    Long countOfActiveGrantsForGrantor(Long userOrgId);
+
+    @Query(value = "select count(*) from grants A inner join workflow_statuses B on B.id=A.grant_status_id where A.organization_id=?1 and B.internal_status='CLOSED'",nativeQuery = true)
+    Long countOfClosedGrantsForGrantee(Long granteeOrgId);
+
+    @Query(value = "select count(distinct A.*) from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=?1 and C.internal_status='CLOSED'",nativeQuery = true)
+    Long countOfClosedGrantsForGrantor(Long userOrgId);
 }
