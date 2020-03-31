@@ -898,7 +898,14 @@ public class ReportController {
     @GetMapping("/{reportId}/history/")
     public List<ReportHistory> getReportHistory(@PathVariable("reportId") Long reportId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        List<ReportHistory> history = reportService.getReportHistory(reportId);
+        List<ReportHistory> history = null;
+        User user = userService.getUserById(userId);
+        if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
+            history = reportService.getReportHistory(reportId);
+
+        } else if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
+            history = reportService.getReportHistoryForGrantee(reportId,user.getId());
+        }
         for (ReportHistory historyEntry : history) {
             historyEntry.setNoteAddedByUser(userService.getUserById(historyEntry.getNoteAddedBy()));
         }
