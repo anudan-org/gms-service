@@ -802,8 +802,13 @@ public class ReportController {
             currentOwnerName = currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName());
         }
 
+
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState, toStatus);
 
+        WorkflowStatus currentState = workflowStatusService.findById(toStateId);
+        if(!updatingUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && !currentState.getInternalStatus().equalsIgnoreCase("ACTIVE") && !currentState.getInternalStatus().equalsIgnoreCase("CLOSED")){
+            usersToNotify.removeIf(u -> u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"));
+        }
 
         String finalCurrentOwnerName = currentOwnerName;
         usersToNotify.stream().forEach(u -> {
