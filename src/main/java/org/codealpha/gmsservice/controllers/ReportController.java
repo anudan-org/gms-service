@@ -802,8 +802,13 @@ public class ReportController {
             currentOwnerName = currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName());
         }
 
+
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState, toStatus);
 
+        WorkflowStatus currentState = workflowStatusService.findById(toStateId);
+        if(!updatingUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && !currentState.getInternalStatus().equalsIgnoreCase("ACTIVE") && !currentState.getInternalStatus().equalsIgnoreCase("CLOSED")){
+            usersToNotify.removeIf(u -> u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"));
+        }
 
         String finalCurrentOwnerName = currentOwnerName;
         usersToNotify.stream().forEach(u -> {
@@ -898,7 +903,14 @@ public class ReportController {
     @GetMapping("/{reportId}/history/")
     public List<ReportHistory> getReportHistory(@PathVariable("reportId") Long reportId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        List<ReportHistory> history = reportService.getReportHistory(reportId);
+        List<ReportHistory> history = null;
+        User user = userService.getUserById(userId);
+        if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
+            history = reportService.getReportHistory(reportId);
+
+        } else if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
+            history = reportService.getReportHistoryForGrantee(reportId,user.getId());
+        }
         for (ReportHistory historyEntry : history) {
             historyEntry.setNoteAddedByUser(userService.getUserById(historyEntry.getNoteAddedBy()));
         }

@@ -414,6 +414,9 @@ public class ReportService {
     public List<ReportHistory> getReportHistory(Long reportId) {
         return reportHistoryRepository.findByReportId(reportId);
     }
+    public List<ReportHistory> getReportHistoryForGrantee(Long reportId,Long granteeUserId) {
+        return reportHistoryRepository.findReportHistoryForGranteeByReportId(reportId,granteeUserId);
+    }
 
     public void deleteStringAttributeAttachments(List<ReportStringAttributeAttachments> attachments) {
         reportStringAttributeAttachmentsRepository.deleteAll(attachments);

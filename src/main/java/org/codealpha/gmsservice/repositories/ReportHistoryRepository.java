@@ -11,4 +11,7 @@ public interface ReportHistoryRepository extends CrudRepository<ReportHistory,Lo
 
     @Query(value = "select * from report_history where id=?1 and (note is not null or note!='') order by seqid desc",nativeQuery = true)
     public List<ReportHistory> findByReportId(Long reportId);
+
+    @Query(value="select A.* from report_history A inner join workflow_statuses B on B.id=A.status_id where A.id=?1 and (note is not null or note!='') and (A.note_added_by= ?2 or B.internal_status in ('ACTIVE','CLOSED')) order by seqid desc",nativeQuery = true)
+    public List<ReportHistory> findReportHistoryForGranteeByReportId(Long reportId, Long granteeUserId);
 }
