@@ -138,7 +138,8 @@ public class ScheduledJobs {
                     if(Integer.valueOf(hourAndMinute[0])==now.hourOfDay().get() && Integer.valueOf(hourAndMinute[1])==now.minuteOfHour().get()){
 
                         Date dueDate = now.withTimeAtStartOfDay().plusDays(taskConfiguration.getConfiguration().getDaysBefore()).toDate();
-                        List<ReportAssignment> usersToNotify = reportService.getActionDueReportsForPlatform(Long.valueOf(taskConfiguration.getConfiguration().getAfterNoOfHours()),grantIdsToSkip.keySet().stream().collect(Collectors.toList()));
+
+                        List<ReportAssignment> usersToNotify = reportService.getActionDueReportsForPlatform(Long.valueOf(taskConfiguration.getConfiguration().getAfterNoOfHours()),grantIdsToSkip.keySet().stream().collect(Collectors.toList()),now.toDate());
                         for (ReportAssignment reportAssignment : usersToNotify) {
 
                                 User user = userService.getUserById(reportAssignment.getAssignment());

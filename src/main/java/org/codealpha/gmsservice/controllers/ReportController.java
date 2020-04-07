@@ -259,7 +259,7 @@ public class ReportController {
         report.setName(reportToSave.getName());
         report.setEndDate(reportToSave.getEndDate());
         report.setDueDate(reportToSave.getDueDate());
-        report.setUpdatedAt(DateTime.now().toDate());
+        report.setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
         report.setUpdatedBy(user.getId());
 
         _processStringAttributes(user,report, reportToSave, tenantOrg);
@@ -778,7 +778,7 @@ public class ReportController {
             report.setNoteAdded(new Date());
             report.setNoteAddedBy(userId);
         }
-        report.setUpdatedAt(DateTime.now().toDate());
+        report.setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
         report.setUpdatedBy(userId);
         report = reportService.saveReport(report);
 
