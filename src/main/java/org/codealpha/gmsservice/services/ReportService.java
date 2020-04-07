@@ -540,6 +540,6 @@ public class ReportService {
     }
 
     public List<ReportAssignment> getActionDueReportsForPlatform(Long noOfHours,List<Long> granterIds){
-        return reportRepository.getActionDueReportsForPlatform(noOfHours,granterIds);
+        return reportAssignmentRepository.getActionDueReportsForPlatform(noOfHours,granterIds);
     }
 }
