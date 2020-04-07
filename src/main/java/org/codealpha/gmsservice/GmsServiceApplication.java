@@ -3,7 +3,6 @@ package org.codealpha.gmsservice;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-import org.codealpha.gmsservice.services.DueReportReminderScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -31,9 +30,6 @@ import java.util.concurrent.Executor;
 @EnableSwagger2
 public class GmsServiceApplication {
 
-    @Autowired
-    private DueReportReminderScheduler dueReportReminderScheduler;
-
 
     public static void main(String[] args) {
         SpringApplication.run(GmsServiceApplication.class, args);
@@ -59,10 +55,6 @@ public class GmsServiceApplication {
         return mailSender;
     }
 
-    @PostConstruct
-    public void configureDueReportReminders(){
-        dueReportReminderScheduler.configure();
-    }
 
 
     @Configuration
