@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -391,21 +392,25 @@ public class ReportService {
     public String[] buildEmailNotificationContent(Report finalReport, User u, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment, String hasNotes, String hasNotesComment) {
 
         String code = Base64.getEncoder().encodeToString(String.valueOf(finalReport.getId()).getBytes());
-        UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
-        String host = null;
-        if(u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-            host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".")+1);
-        }else{
-            host = uriComponents.getHost();
-        }
-        UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
-        String url = uriBuilder.toUriString();
+
+        String host = "";
+        String url = "";
         try {
-            url = url+"/home/?action=login&org="+ URLEncoder.encode(finalReport.getGrant().getGrantorOrganization().getName(), StandardCharsets.UTF_8.toString())+"&r=" + code+"&email=&type=report";
-        } catch (UnsupportedEncodingException e) {
+            UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
+            if (u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
+                UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
+                url = uriBuilder.toUriString();
+                url = url+"/home/?action=login&org="+ URLEncoder.encode(finalReport.getGrant().getGrantorOrganization().getName(), StandardCharsets.UTF_8.toString())+"&r=" + code+"&email=&type=report";
+            } else {
+                host = uriComponents.getHost();
+            }
+        }catch (Exception e){
             e.printStackTrace();
         }
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalReport.getGrant().getName()).replaceAll("%REPORT_NAME%",finalReport.getName()).replaceAll("%REPORT_LINK%",url).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalReport.getGrant().getGrantorOrganization().getName());
+
+
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalReport.getGrant().getName()).replaceAll("%REPORT_NAME%",finalReport.getName()).replaceAll("%REPORT_LINK%",url).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalReport.getGrant().getGrantorOrganization().getName()).replaceAll("%DUE_DATE%",new SimpleDateFormat("dd-MMM-yyyy").format(finalReport.getEndDate()));
         String subject = subConfigValue.replaceAll("%REPORT_NAME%", finalReport.getName());
 
         return new String[]{subject, message};
@@ -523,5 +528,18 @@ public class ReportService {
         report.setTemplate(newTemplate);
         saveReport(report);
         return newTemplate;
+    }
+
+
+    public List<Report> getDueReportsForPlatform(Date dueDate,List<Long> granterIds){
+        return reportRepository.getDueReportsForPlatform(dueDate, granterIds);
+    }
+
+    public List<Report> getDueReportsForGranter(Date dueDate,Long granterId){
+        return reportRepository.getDueReportsForGranter(dueDate, granterId);
+    }
+
+    public List<ReportAssignment> getActionDueReportsForPlatform(Long noOfHours,List<Long> granterIds){
+        return reportRepository.getActionDueReportsForPlatform(noOfHours,granterIds);
     }
 }

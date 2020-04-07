@@ -2,6 +2,9 @@ package org.codealpha.gmsservice;
 
 import java.util.Properties;
 import java.util.concurrent.Executor;
+
+import org.codealpha.gmsservice.services.DueReportReminderScheduler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
@@ -13,9 +16,11 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.util.unit.DataSize;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.MultipartConfigElement;
 import java.util.Properties;
 import java.util.concurrent.Executor;
@@ -26,10 +31,14 @@ import java.util.concurrent.Executor;
 @EnableSwagger2
 public class GmsServiceApplication {
 
+    @Autowired
+    private DueReportReminderScheduler dueReportReminderScheduler;
+
 
     public static void main(String[] args) {
         SpringApplication.run(GmsServiceApplication.class, args);
     }
+
 
 
     @Bean
@@ -48,6 +57,11 @@ public class GmsServiceApplication {
         props.put("mail.debug", "true");
 
         return mailSender;
+    }
+
+    @PostConstruct
+    public void configureDueReportReminders(){
+        dueReportReminderScheduler.configure();
     }
 
 
@@ -74,6 +88,17 @@ public class GmsServiceApplication {
 
         return factory.createMultipartConfig();
 
+    }
+
+    @Configuration
+    public class ThreadPoolTaskSchedulerConfig {
+        @Bean
+        public ThreadPoolTaskScheduler threadPoolTaskScheduler(){
+            ThreadPoolTaskScheduler threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
+            threadPoolTaskScheduler.setPoolSize(50);
+            threadPoolTaskScheduler.setThreadNamePrefix("ThreadPoolTaskScheduler");
+            return threadPoolTaskScheduler;
+        }
     }
 
 }

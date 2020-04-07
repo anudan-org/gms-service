@@ -21,4 +21,8 @@ public class AppConfigService {
   public AppConfig getAppConfigForGranterOrg(Long orgId, AppConfiguration appConfiguration){
     return appConfigRepository.getAppConfigForOrg(orgId,appConfiguration.name());
   }
+
+  public AppConfig getSpecialAppConfigForGranterOrg(Long orgId, AppConfiguration appConfiguration){
+    return appConfigRepository.getAppConfigForOrgSpecial(orgId,appConfiguration.name());
+  }
 }
