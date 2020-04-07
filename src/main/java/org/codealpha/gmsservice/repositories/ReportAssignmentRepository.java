@@ -12,4 +12,7 @@ public interface ReportAssignmentRepository extends CrudRepository<ReportAssignm
 
     @Query(value = "select distinct B.* from reports A inner join grants Z on Z.id=A.grant_id inner join report_assignments B on B.report_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.state_id=A.status_id) and ( (C.internal_status='DRAFT' and (select count(*) from report_history where id=A.id)>0 ) or (C.internal_status='REVIEW' )) ) and  (DATE_PART('day', ?3-A.updated_at ) * 24 + DATE_PART('hour', ?3-A.updated_at ))*60 + DATE_PART('minute', ?3-A.updated_at )=?1 and Z.grantor_org_id not in(?2)",nativeQuery = true)
     List<ReportAssignment> getActionDueReportsForPlatform(Long noOfMinutes, List<Long> granterIds,Date time);
+
+    @Query(value = "select distinct B.* from reports A inner join grants Z on Z.id=A.grant_id inner join report_assignments B on B.report_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.state_id=A.status_id) and ( (C.internal_status='DRAFT' and (select count(*) from report_history where id=A.id)>0 ) or (C.internal_status='REVIEW' )) ) and  (DATE_PART('day', ?3-A.updated_at ) * 24 + DATE_PART('hour', ?3-A.updated_at ))*60 + DATE_PART('minute', ?3-A.updated_at )=?1 and Z.grantor_org_id =?2",nativeQuery = true)
+    List<ReportAssignment> getActionDueReportsForGranterOrg(Long noOfMinutes, Long granterId,Date time);
 }

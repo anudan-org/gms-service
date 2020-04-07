@@ -147,29 +147,19 @@ public class ScheduledJobs {
                                 emailSevice.sendMail(user.getEmailId(),"Action Pending","Action pending for report "+report.getName(),new String[]{appConfigService
                                         .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
-
-
-
-
                         }
                     }
                 }else{
                     if(Integer.valueOf(hourAndMinute[0])==now.hourOfDay().get() && Integer.valueOf(hourAndMinute[1])==now.minuteOfHour().get()){
 
-                        Date dueDate = now.withTimeAtStartOfDay().plusDays(taskConfiguration.getConfiguration().getDaysBefore()).toDate();
-                        List<Report> reportsToNotify = reportService.getDueReportsForGranter(dueDate,configId);
-                        for (Report report : reportsToNotify) {
-                            for (ReportAssignment reportAssignment : reportService.getAssignmentsForReport(report)) {
-                                User userToNotify = userService.getUserById(reportAssignment.getAssignment());
-                                String[] messageMetadata = reportService.buildEmailNotificationContent(report,userToNotify,userToNotify.getFirstName()+" "+userToNotify.getLastName(),"",null,taskConfiguration.getSubject(),taskConfiguration.getMessage(),"","","","","","","","","");
+                        List<ReportAssignment> usersToNotify = reportService.getActionDueReportsForGranterOrg(Long.valueOf(taskConfiguration.getConfiguration().getAfterNoOfHours()),configId,now.toDate());
+                        for (ReportAssignment reportAssignment : usersToNotify) {
 
-                                emailSevice.sendMail(userToNotify.getEmailId(),messageMetadata[0],messageMetadata[1],new String[]{appConfigService
-                                        .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                                                AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
-                            }
-
-
-
+                            User user = userService.getUserById(reportAssignment.getAssignment());
+                            Report report = reportService.getReportById(reportAssignment.getReportId());
+                            emailSevice.sendMail(user.getEmailId(),"Action Pending","Action pending for report "+report.getName(),new String[]{appConfigService
+                                    .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                                            AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
                         }
                     }
                 }
