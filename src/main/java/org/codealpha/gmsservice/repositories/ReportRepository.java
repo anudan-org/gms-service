@@ -33,10 +33,10 @@ public interface ReportRepository extends CrudRepository<Report,Long> {
     @Query(value = "select sum(cast(c.actual_target as bigint)) from reports A inner join workflow_statuses B on B.id=A.status_id inner join report_string_attributes C on C.report_id=A.id inner join report_specific_section_attributes D on D.id=C.section_attribute_id where A. grant_id=?1 and B.internal_status='CLOSED' and D.field_name=?2 group by D.field_name;",nativeQuery = true)
     Long getApprovedReportsActualSumForGrantAndAttribute(Long id,String attributeName);
 
-    @Query(value = "select * from reports r inner join grants g on g.id=r.grant_id inner join workflow_statuses wf on wf.id=r.status_id where r.end_date=?1 and wf.internal_status='ACTIVE' and g.grantor_org_id not in (?2) order by r.end_date",nativeQuery = true)
+    @Query(value = "select * from reports r inner join grants g on g.id=r.grant_id inner join workflow_statuses wf on wf.id=r.status_id where r.due_date=?1 and wf.internal_status='ACTIVE' and g.grantor_org_id not in (?2) order by r.due_date",nativeQuery = true)
     List<Report> getDueReportsForPlatform(Date dueDate,List<Long> granterIds);
 
-    @Query(value = "select * from reports r inner join grants g on g.id=r.grant_id inner join workflow_statuses wf on wf.id=r.status_id where r.end_date=?1 and wf.internal_status='ACTIVE' and g.grantor_org_id = ?2 order by r.end_date",nativeQuery = true)
+    @Query(value = "select * from reports r inner join grants g on g.id=r.grant_id inner join workflow_statuses wf on wf.id=r.status_id where r.due_date=?1 and wf.internal_status='ACTIVE' and g.grantor_org_id = ?2 order by r.due_date",nativeQuery = true)
     List<Report> getDueReportsForGranter(Date dueDate,Long granterId);
 
 }
