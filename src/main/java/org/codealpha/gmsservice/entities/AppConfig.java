@@ -1,10 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
+
 import jdk.nashorn.internal.runtime.logging.Logger;
 
 @Entity
@@ -19,6 +16,12 @@ public class AppConfig {
   private String configValue;
   @Column
   private String description;
+  @Column
+  private Boolean configurable;
+  @Column
+  private Long key;
+  @Column
+  private String type;
 
   public Long getId() {
     return id;
@@ -50,5 +53,29 @@ public class AppConfig {
 
   public void setDescription(String description) {
     this.description = description;
+  }
+
+  public Boolean getConfigurable() {
+    return configurable;
+  }
+
+  public void setConfigurable(Boolean configurable) {
+    this.configurable = configurable;
+  }
+
+  public Long getKey() {
+    return key;
+  }
+
+  public void setKey(Long key) {
+    this.key = key;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
   }
 }

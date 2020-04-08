@@ -25,4 +25,12 @@ public class AppConfigService {
   public AppConfig getSpecialAppConfigForGranterOrg(Long orgId, AppConfiguration appConfiguration){
     return appConfigRepository.getAppConfigForOrgSpecial(orgId,appConfiguration.name());
   }
+
+  public AppConfig getAppConfigById(Long id){
+    return appConfigRepository.findById(id).get();
+  }
+
+  public AppConfig saveAppConfig(AppConfig config){
+    return appConfigRepository.save(config);
+  }
 }

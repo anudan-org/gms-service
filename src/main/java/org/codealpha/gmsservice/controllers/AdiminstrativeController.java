@@ -1,6 +1,9 @@
 package org.codealpha.gmsservice.controllers;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -8,9 +11,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.models.WorkFlowDataModel;
-import org.codealpha.gmsservice.models.WorkflowTransitionDataModel;
-import org.codealpha.gmsservice.models.templateVO;
+import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 import springfox.documentation.annotations.ApiIgnore;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -305,5 +307,65 @@ public class AdiminstrativeController {
                 url);
         commonEmailSevice.sendMail(user.getEmailId(),notifications[0],notifications[1],new String[]{appConfigService.getAppConfigForGranterOrg(user.getOrganization().getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
         return user;
+    }
+
+    @GetMapping("/settings/{userId}/{orgId}")
+    public List<AppConfigVO> getAppConfigsForOrg(@PathVariable("orgId") Long orgId,@RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable("userId") Long userId){
+        Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
+        if(org.getOrganizationType().equalsIgnoreCase("PLATFORM")){
+            List<AppConfig> configs = appConfigService.getAllAppConfigForGrantorOrg(0L);
+            List<AppConfigVO> configVOs = new ArrayList<>();
+            for (AppConfig config : configs) {
+                AppConfigVO configVO = new AppConfigVO();
+                configVO.setConfigName(config.getConfigName());
+                configVO.setId(config.getId());
+                configVO.setConfigValue(config.getConfigValue());
+                configVO.setDescription(config.getDescription());
+                configVO.setConfigurable(config.getConfigurable());
+                configVO.setKey(config.getKey());
+                configVO.setType(config.getType());
+                if(config.getConfigName().equalsIgnoreCase(AppConfiguration.DUE_REPORTS_REMINDER_SETTINGS.toString()) || config.getConfigName().equalsIgnoreCase(AppConfiguration.ACTION_DUE_REPORTS_REMINDER_SETTINGS.toString()) ){
+                    ObjectMapper mapper = new ObjectMapper();
+                    mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+                    try {
+                        ScheduledTaskVO taskConfiguration = mapper.readValue(config.getConfigValue(), ScheduledTaskVO.class);
+                        configVO.setScheduledTaskConfiguration(taskConfiguration);
+                    } catch (JsonParseException e) {
+                        e.printStackTrace();
+                    } catch (JsonMappingException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                configVOs.add(configVO);
+            }
+            return configVOs;
+        }
+        return null;
+    }
+
+
+    @PostMapping("/settings/{userId}/{orgId}")
+    public AppConfigVO saveSetting(@RequestBody AppConfigVO config, @PathVariable("orgId") Long orgId,@RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable("userId") Long userId){
+        if(config.getType().equalsIgnoreCase("app")){
+            AppConfig existingConfig = appConfigService.getAppConfigById(config.getKey());
+            if(config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS") || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")){
+                ObjectMapper mapper = new ObjectMapper();
+                try {
+                    existingConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }else{
+                existingConfig.setConfigValue(config.getConfigValue());
+            }
+
+            existingConfig = appConfigService.saveAppConfig(existingConfig);
+        } else if(config.getType().equalsIgnoreCase("org")){
+
+        }
+
+        return config;
     }
 }

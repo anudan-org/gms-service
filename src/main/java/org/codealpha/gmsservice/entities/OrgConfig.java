@@ -20,6 +20,8 @@ public class OrgConfig {
   private String configValue;
   @Column
   private String description;
+  @Column
+  private Boolean configurable;
 
   public Long getId() {
     return id;
@@ -59,5 +61,13 @@ public class OrgConfig {
 
   public void setDescription(String description) {
     this.description = description;
+  }
+
+  public Boolean getConfigurable() {
+    return configurable;
+  }
+
+  public void setConfigurable(Boolean configurable) {
+    this.configurable = configurable;
   }
 }
