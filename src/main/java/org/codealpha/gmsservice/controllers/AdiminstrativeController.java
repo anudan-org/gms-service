@@ -15,7 +15,6 @@ import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
@@ -315,40 +314,82 @@ public class AdiminstrativeController {
         if(org.getOrganizationType().equalsIgnoreCase("PLATFORM")){
             List<AppConfig> configs = appConfigService.getAllAppConfigForGrantorOrg(0L);
             List<AppConfigVO> configVOs = new ArrayList<>();
-            for (AppConfig config : configs) {
-                AppConfigVO configVO = new AppConfigVO();
-                configVO.setConfigName(config.getConfigName());
-                configVO.setId(config.getId());
-                configVO.setConfigValue(config.getConfigValue());
-                configVO.setDescription(config.getDescription());
-                configVO.setConfigurable(config.getConfigurable());
-                configVO.setKey(config.getKey());
-                configVO.setType(config.getType());
-                if(config.getConfigName().equalsIgnoreCase(AppConfiguration.DUE_REPORTS_REMINDER_SETTINGS.toString()) || config.getConfigName().equalsIgnoreCase(AppConfiguration.ACTION_DUE_REPORTS_REMINDER_SETTINGS.toString()) ){
-                    ObjectMapper mapper = new ObjectMapper();
-                    mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-                    try {
-                        ScheduledTaskVO taskConfiguration = mapper.readValue(config.getConfigValue(), ScheduledTaskVO.class);
-                        configVO.setScheduledTaskConfiguration(taskConfiguration);
-                    } catch (JsonParseException e) {
-                        e.printStackTrace();
-                    } catch (JsonMappingException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                configVOs.add(configVO);
-            }
+            buildConfigVOList(configs, configVOs);
+            return configVOs;
+        }else if(org.getOrganizationType().equalsIgnoreCase("GRANTER")){
+            List<AppConfig> configs = appConfigService.getAllAppConfigForGrantorOrg(orgId);
+            List<AppConfigVO> configVOs = new ArrayList<>();
+            buildConfigVOList(configs, configVOs);
             return configVOs;
         }
         return null;
     }
 
+    private void buildConfigVOList(List<AppConfig> configs, List<AppConfigVO> configVOs) {
+        for (AppConfig config : configs) {
+            AppConfigVO configVO = convertAppConfigToVO(config);
+            configVOs.add(configVO);
+        }
+    }
+
+    private AppConfigVO convertAppConfigToVO(AppConfig config) {
+        AppConfigVO configVO = new AppConfigVO();
+        configVO.setConfigName(config.getConfigName());
+        configVO.setId(config.getId());
+        configVO.setConfigValue(config.getConfigValue());
+        configVO.setDescription(config.getDescription());
+        configVO.setConfigurable(config.getConfigurable());
+        configVO.setKey(config.getKey());
+        configVO.setType(config.getType());
+        if(config.getConfigName().equalsIgnoreCase(AppConfiguration.DUE_REPORTS_REMINDER_SETTINGS.toString()) || config.getConfigName().equalsIgnoreCase(AppConfiguration.ACTION_DUE_REPORTS_REMINDER_SETTINGS.toString()) ){
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+            try {
+                ScheduledTaskVO taskConfiguration = mapper.readValue(config.getConfigValue(), ScheduledTaskVO.class);
+                configVO.setScheduledTaskConfiguration(taskConfiguration);
+            } catch (JsonParseException e) {
+                e.printStackTrace();
+            } catch (JsonMappingException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return configVO;
+    }
+
+    private AppConfigVO convertOrgConfigToVO(OrgConfig config) {
+        AppConfigVO configVO = new AppConfigVO();
+        configVO.setConfigName(config.getConfigName());
+        configVO.setId(config.getId());
+        configVO.setConfigValue(config.getConfigValue());
+        configVO.setDescription(config.getDescription());
+        configVO.setConfigurable(config.getConfigurable());
+        configVO.setKey(config.getKey());
+        configVO.setType(config.getType());
+        if(config.getConfigName().equalsIgnoreCase(AppConfiguration.DUE_REPORTS_REMINDER_SETTINGS.toString()) || config.getConfigName().equalsIgnoreCase(AppConfiguration.ACTION_DUE_REPORTS_REMINDER_SETTINGS.toString()) ){
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+            try {
+                ScheduledTaskVO taskConfiguration = mapper.readValue(config.getConfigValue(), ScheduledTaskVO.class);
+                configVO.setScheduledTaskConfiguration(taskConfiguration);
+            } catch (JsonParseException e) {
+                e.printStackTrace();
+            } catch (JsonMappingException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return configVO;
+    }
+
 
     @PostMapping("/settings/{userId}/{orgId}")
     public AppConfigVO saveSetting(@RequestBody AppConfigVO config, @PathVariable("orgId") Long orgId,@RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable("userId") Long userId){
-        if(config.getType().equalsIgnoreCase("app")){
+
+        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        if(config.getType().equalsIgnoreCase("app") && tenantOrg.getOrganizationType().equalsIgnoreCase("PLATFORM")){
             AppConfig existingConfig = appConfigService.getAppConfigById(config.getKey());
             if(config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS") || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")){
                 ObjectMapper mapper = new ObjectMapper();
@@ -362,7 +403,43 @@ public class AdiminstrativeController {
             }
 
             existingConfig = appConfigService.saveAppConfig(existingConfig);
+        } else if(config.getType().equalsIgnoreCase("app") && tenantOrg.getOrganizationType().equalsIgnoreCase("GRANTER")){
+            AppConfig existingConfig = appConfigService.getAppConfigById(config.getKey());
+            OrgConfig orgConfig = new OrgConfig();
+            orgConfig.setConfigName(existingConfig.getConfigName());
+            orgConfig.setConfigurable(existingConfig.getConfigurable());
+            orgConfig.setDescription(existingConfig.getDescription());
+            orgConfig.setGranterId(orgId);
+
+            if(config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS") || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")){
+                ObjectMapper mapper = new ObjectMapper();
+                try {
+                    orgConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }else{
+                existingConfig.setConfigValue(config.getConfigValue());
+            }
+
+            orgConfig = appConfigService.saveOrgConfig(orgConfig);
+            config = convertOrgConfigToVO(orgConfig);
+            config.setType("org");
+            config.setKey(orgConfig.getId());
         } else if(config.getType().equalsIgnoreCase("org")){
+            OrgConfig existingConfig = appConfigService.getOrgConfigById(config.getKey());
+            if(config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS") || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")){
+                ObjectMapper mapper = new ObjectMapper();
+                try {
+                    existingConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }else{
+                existingConfig.setConfigValue(config.getConfigValue());
+            }
+
+            existingConfig = appConfigService.saveOrgConfig(existingConfig);
 
         }
 

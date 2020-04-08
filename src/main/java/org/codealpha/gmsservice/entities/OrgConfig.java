@@ -22,6 +22,10 @@ public class OrgConfig {
   private String description;
   @Column
   private Boolean configurable;
+  @Column
+  private Long key;
+  @Column
+  private String type;
 
   public Long getId() {
     return id;
@@ -69,5 +73,21 @@ public class OrgConfig {
 
   public void setConfigurable(Boolean configurable) {
     this.configurable = configurable;
+  }
+
+  public Long getKey() {
+    return key;
+  }
+
+  public void setKey(Long key) {
+    this.key = key;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
   }
 }
