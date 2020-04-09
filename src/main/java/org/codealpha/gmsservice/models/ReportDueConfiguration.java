@@ -1,14 +1,14 @@
 package org.codealpha.gmsservice.models;
 
 public class ReportDueConfiguration {
-    private int daysBefore;
+    private int[] daysBefore;
     private int afterNoOfHours ;
 
-    public int getDaysBefore() {
+    public int[] getDaysBefore() {
         return daysBefore;
     }
 
-    public void setDaysBefore(int daysBefore) {
+    public void setDaysBefore(int[] daysBefore) {
         this.daysBefore = daysBefore;
     }
 

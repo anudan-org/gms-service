@@ -63,39 +63,39 @@ public class ScheduledJobs {
 
                     if(Integer.valueOf(hourAndMinute[0])==now.hourOfDay().get() && Integer.valueOf(hourAndMinute[1])==now.minuteOfHour().get()){
 
-                        Date dueDate = now.withTimeAtStartOfDay().plusDays(taskConfiguration.getConfiguration().getDaysBefore()).toDate();
-                        List<Report> reportsToNotify = reportService.getDueReportsForPlatform(dueDate,grantIdsToSkip.keySet().stream().collect(Collectors.toList()));
-                        for (Report report : reportsToNotify) {
-                            for (ReportAssignment reportAssignment : reportService.getAssignmentsForReport(report)) {
-                                User userToNotify = userService.getUserById(reportAssignment.getAssignment());
-                                String[] messageMetadata = reportService.buildEmailNotificationContent(report,userToNotify,userToNotify.getFirstName()+" "+userToNotify.getLastName(),"",null,taskConfiguration.getSubject(),taskConfiguration.getMessage(),"","","","","","","","","");
+                        int[] daysBefore = taskConfiguration.getConfiguration().getDaysBefore();
+                        for (int db : daysBefore) {
+                            Date dueDate = now.withTimeAtStartOfDay().plusDays(db).toDate();
+                            List<Report> reportsToNotify = reportService.getDueReportsForPlatform(dueDate,grantIdsToSkip.keySet().stream().collect(Collectors.toList()));
+                            for (Report report : reportsToNotify) {
+                                for (ReportAssignment reportAssignment : reportService.getAssignmentsForReport(report)) {
+                                    User userToNotify = userService.getUserById(reportAssignment.getAssignment());
+                                    String[] messageMetadata = reportService.buildEmailNotificationContent(report,userToNotify,userToNotify.getFirstName()+" "+userToNotify.getLastName(),"",null,taskConfiguration.getSubject(),taskConfiguration.getMessage(),"","","","","","","","","");
 
-                                emailSevice.sendMail(userToNotify.getEmailId(),messageMetadata[0],messageMetadata[1],new String[]{appConfigService
-                                        .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                                                AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+                                    emailSevice.sendMail(userToNotify.getEmailId(),messageMetadata[0],messageMetadata[1],new String[]{appConfigService
+                                            .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                                                    AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+                                }
                             }
-
-
-
                         }
+
                     }
                 }else{
                     if(Integer.valueOf(hourAndMinute[0])==now.hourOfDay().get() && Integer.valueOf(hourAndMinute[1])==now.minuteOfHour().get()){
+                        int[] daysBefore = taskConfiguration.getConfiguration().getDaysBefore();
+                        for (int db : daysBefore) {
+                            Date dueDate = now.withTimeAtStartOfDay().plusDays(db).toDate();
+                            List<Report> reportsToNotify = reportService.getDueReportsForGranter(dueDate, configId);
+                            for (Report report : reportsToNotify) {
+                                for (ReportAssignment reportAssignment : reportService.getAssignmentsForReport(report)) {
+                                    User userToNotify = userService.getUserById(reportAssignment.getAssignment());
+                                    String[] messageMetadata = reportService.buildEmailNotificationContent(report, userToNotify, userToNotify.getFirstName() + " " + userToNotify.getLastName(), "", null, taskConfiguration.getSubject(), taskConfiguration.getMessage(), "", "", "", "", "", "", "", "", "");
 
-                        Date dueDate = now.withTimeAtStartOfDay().plusDays(taskConfiguration.getConfiguration().getDaysBefore()).toDate();
-                        List<Report> reportsToNotify = reportService.getDueReportsForGranter(dueDate,configId);
-                        for (Report report : reportsToNotify) {
-                            for (ReportAssignment reportAssignment : reportService.getAssignmentsForReport(report)) {
-                                User userToNotify = userService.getUserById(reportAssignment.getAssignment());
-                                String[] messageMetadata = reportService.buildEmailNotificationContent(report,userToNotify,userToNotify.getFirstName()+" "+userToNotify.getLastName(),"",null,taskConfiguration.getSubject(),taskConfiguration.getMessage(),"","","","","","","","","");
-
-                                emailSevice.sendMail(userToNotify.getEmailId(),messageMetadata[0],messageMetadata[1],new String[]{appConfigService
-                                        .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                                                AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
-                            }
-
-
-
+                                    emailSevice.sendMail(userToNotify.getEmailId(), messageMetadata[0], messageMetadata[1], new String[]{appConfigService
+                                            .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                                                    AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+                                }
+}
                         }
                     }
                 }
@@ -136,9 +136,6 @@ public class ScheduledJobs {
                 if(configId==0){
 
                     if(Integer.valueOf(hourAndMinute[0])==now.hourOfDay().get() && Integer.valueOf(hourAndMinute[1])==now.minuteOfHour().get()){
-
-                        Date dueDate = now.withTimeAtStartOfDay().plusDays(taskConfiguration.getConfiguration().getDaysBefore()).toDate();
-
                         List<ReportAssignment> usersToNotify = reportService.getActionDueReportsForPlatform(Long.valueOf(taskConfiguration.getConfiguration().getAfterNoOfHours()),grantIdsToSkip.keySet().stream().collect(Collectors.toList()),now.toDate());
                         for (ReportAssignment reportAssignment : usersToNotify) {
 
