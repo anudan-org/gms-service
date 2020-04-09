@@ -5,8 +5,10 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.entities.Release;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.services.OrganizationService;
+import org.codealpha.gmsservice.services.ReleaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,8 @@ public class PublicController {
     private String uploadLocation;
     @Autowired
     private OrganizationService organizationService;
+    @Autowired
+    private ReleaseService releaseService;
 
     @GetMapping("/images/{tenant}/logo")
     @ApiOperation(value = "Get tenant logo image for <img> tag 'src' property")
@@ -72,6 +76,11 @@ public class PublicController {
             throw new ResourceNotFoundException("Invalid request to access Anudan");
         }
 
+    }
+
+    @GetMapping("/release")
+    public Release getAppVersion(){
+        return releaseService.getCurrentRelease();
     }
 
     /*@GetMapping("/grant/invite")

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.models.AppRelease;
 import org.codealpha.gmsservice.models.ScheduledTaskVO;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
@@ -12,7 +13,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +37,8 @@ public class ScheduledJobs {
     private CommonEmailSevice emailSevice;
     @Autowired
     private UserService userService;
+    @Autowired
+    private ReleaseService releaseService;
 
     private boolean appLevelSettingsProcessed = false;
 
@@ -165,6 +174,24 @@ public class ScheduledJobs {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    @Scheduled(cron = "0 * * * * *")
+    public void readAndStoreReleaseVersion(){
+
+       Path path = Paths.get("/opt/gms/release.json");
+        try {
+            String entry = Files.readAllLines(path).get(0);
+            ObjectMapper mapper = new ObjectMapper();
+            AppRelease release = mapper.readValue(entry,AppRelease.class);
+            Release version = new Release();
+            version.setVersion(release.getVersion());
+            releaseService.deleteAllEntries();
+            releaseService.saveRelease(version);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
