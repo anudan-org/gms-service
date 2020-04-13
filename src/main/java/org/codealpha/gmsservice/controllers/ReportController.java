@@ -317,7 +317,7 @@ public class ReportController {
                     if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
                         reportStringAttribute.setActualTarget(sectionAttributesVO.getActualTarget());
                     }
-                    if (sectionAttribute.getFieldType().equalsIgnoreCase("table")) {
+                    if (sectionAttribute.getFieldType().equalsIgnoreCase("table") || sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
                         List<TableData> tableData = sectionAttributesVO.getFieldTableValue();
                         ObjectMapper mapper = new ObjectMapper();
                         try {
@@ -1055,7 +1055,7 @@ public class ReportController {
                 if (sectionAttribute.getFieldType().equalsIgnoreCase("kpi")) {
                     stringAttribute.setGrantLevelTarget(null);
                     stringAttribute.setFrequency(finalReport1.getType().toLowerCase());
-                } else if (sectionAttribute.getFieldType().equalsIgnoreCase("table")) {
+                } else if (sectionAttribute.getFieldType().equalsIgnoreCase("table") || sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
                     stringAttribute.setValue(a.getExtras());
                 }
                 stringAttribute = reportService.saveReportStringAttribute(stringAttribute);

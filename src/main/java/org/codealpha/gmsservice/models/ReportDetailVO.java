@@ -65,7 +65,7 @@ public class ReportDetailVO {
         if(grantId!=0) {
           sectionAttribute.setCumulativeActuals(reportService.getApprovedReportsActualSumForGrant(grantId, sectionAttribute.getFieldName()));
         }
-        if(sectionAttribute.getFieldType().equalsIgnoreCase("table")){
+        if(sectionAttribute.getFieldType().equalsIgnoreCase("table") || sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")){
             ObjectMapper mapper = new ObjectMapper();
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){
             List<TableData> tableDataList = new ArrayList<>();

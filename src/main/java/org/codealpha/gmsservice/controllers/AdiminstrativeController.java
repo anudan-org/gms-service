@@ -150,7 +150,7 @@ public class AdiminstrativeController {
                         GranterReportSectionAttribute attribute = new GranterReportSectionAttribute();
                         attribute.setAttributeOrder(a.getOrder());
                         attribute.setDeletable(true);
-                        if (a.getType().equalsIgnoreCase("table")) {
+                        if (a.getType().equalsIgnoreCase("table") || a.getType().equalsIgnoreCase("disbursement")) {
                             try {
                                 attribute.setExtras(new ObjectMapper().writeValueAsString(a.getTableValue()));
                             } catch (JsonProcessingException e) {

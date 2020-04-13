@@ -176,7 +176,7 @@ public class GrantController {
                 stringAttribute.setSection(specificSection);
                 stringAttribute.setGrant(grant);
                 stringAttribute.setSectionAttribute(specificSectionAttribute);
-                if (specificSectionAttribute.getFieldType().equalsIgnoreCase("table") && specificSectionAttribute.getExtras() != null && specificSectionAttribute.getExtras() != "") {
+                if ((specificSectionAttribute.getFieldType().equalsIgnoreCase("table") || specificSectionAttribute.getFieldType().equalsIgnoreCase("disbursement")) && specificSectionAttribute.getExtras() != null && specificSectionAttribute.getExtras() != "") {
                     stringAttribute.setValue(sectionAttribute.getExtras());
                 } else {
                     stringAttribute.setValue("");
@@ -616,7 +616,7 @@ public class GrantController {
                 newAttribute.setRequired(currentAttribute.getRequired());
                 newAttribute.setAttributeOrder(currentAttribute.getAttributeOrder());
                 newAttribute.setSection(newSection);
-                if (currentAttribute.getFieldType().equalsIgnoreCase("table")) {
+                if (currentAttribute.getFieldType().equalsIgnoreCase("table") || currentAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
                     GrantStringAttribute stringAttribute = grantService.findGrantStringBySectionIdAttribueIdAndGrantId(currentSection.getId(), currentAttribute.getId(), grant.getId());
 
                     ObjectMapper mapper = new ObjectMapper();
@@ -1148,7 +1148,7 @@ public class GrantController {
                     }
                     grantStringAttribute.setTarget(sectionAttributesVO.getTarget());
                     grantStringAttribute.setFrequency(sectionAttributesVO.getFrequency());
-                    if (sectionAttribute.getFieldType().equalsIgnoreCase("table")) {
+                    if (sectionAttribute.getFieldType().equalsIgnoreCase("table") || sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
                         List<TableData> tableData = sectionAttributesVO.getFieldTableValue();
                         ObjectMapper mapper = new ObjectMapper();
                         try {
@@ -2061,7 +2061,7 @@ public class GrantController {
                 if (sectionAttribute.getFieldType().equalsIgnoreCase("kpi")) {
                     stringAttribute.setGrantLevelTarget(null);
                     stringAttribute.setFrequency(report.getType().toLowerCase());
-                } else if (sectionAttribute.getFieldType().equalsIgnoreCase("table")) {
+                } else if (sectionAttribute.getFieldType().equalsIgnoreCase("table") || sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
                     stringAttribute.setValue(a.getExtras());
                 }
 

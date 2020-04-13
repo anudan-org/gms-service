@@ -497,7 +497,7 @@ public class ReportService {
                 newAttribute.setRequired(currentAttribute.getRequired());
                 newAttribute.setAttributeOrder(currentAttribute.getAttributeOrder());
                 newAttribute.setSection(newSection);
-                if (currentAttribute.getFieldType().equalsIgnoreCase("table")) {
+                if (currentAttribute.getFieldType().equalsIgnoreCase("table") || currentAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
                     ReportStringAttribute stringAttribute = getReportStringAttributeBySectionAttributeAndSection(currentAttribute, currentSection);
 
                     ObjectMapper mapper = new ObjectMapper();

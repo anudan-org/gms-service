@@ -128,7 +128,7 @@ public class GrantService {
             if (grantStringAttribute.isPresent()) {
                 return grantStringAttribute.get().getSectionAttribute();
             }
-        } else if (type.equalsIgnoreCase("table")) {
+        } else if (type.equalsIgnoreCase("table") || type.equalsIgnoreCase("disbursement")) {
             Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
             if (grantStringAttribute.isPresent()) {
                 return grantStringAttribute.get().getSectionAttribute();
