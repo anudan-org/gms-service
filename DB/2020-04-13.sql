@@ -1,12 +1,11 @@
 update app_config set config_value='{"message":"<p>The report <a href=%REPORT_LINK%>%REPORT_NAME%</a> is due on %DUE_DATE%. <p>Please log on to Anudan to submit the report.</p><p>In case you have any questions or need clarifications while submitting the report please reach out to <b>%OWNER_NAME%</b> (%OWNER_EMAIL%).<p><i>This is a system generated reminder for a report submission against <b>%GRANT_NAME%</b> from %TENANT%. Please ignore this reminder if you have already submitted the report.</i></p>","messageDescription":"Description for message","subject":"Report Submission Reminder | Action Required","subjectDescription":"Description for reminder notification subject","time":"17:57","timeDescription":"Description for time","configuration":{"daysBefore":[30,6,2,1],"afterNoOfHours":0},"configurationDescription":"Description for configuration","sql":""}' where config_name='DUE_REPORTS_REMINDER_SETTINGS';
 
-alter table grants alter column moved_on timestamp;
+alter table grants add column moved_on timestamp;
 alter table grant_history add column moved_on timestamp;
 alter table reports add column moved_on timestamp;
 alter table report_history add column moved_on timestamp;
 
-drop function process_grant_state_change cascade;
-CREATE FUNCTION process_grant_state_change()
+CREATE OR REPLACE FUNCTION process_grant_state_change()
     RETURNS trigger
 AS $BODY$
     BEGIN
@@ -19,9 +18,8 @@ id, amount, created_at, created_by, description, end_date, name, representative,
     END;
 $BODY$  LANGUAGE 'plpgsql';
 
-drop function process_report_state_change cascade;
 
-CREATE FUNCTION process_report_state_change()
+CREATE OR REPLACE FUNCTION process_report_state_change()
     RETURNS trigger
 AS $BODY$
     BEGIN
