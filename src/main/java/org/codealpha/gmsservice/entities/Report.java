@@ -74,6 +74,8 @@ public class Report {
     private boolean forGranteeUse;
     @Transient
     private int futureReportsCount = 0;
+    @Column
+    private Date movedOn;
 
     public Long getId() {
         return id;
@@ -323,5 +325,13 @@ public class Report {
 
     public int getFutureReportsCount() {
         return futureReportsCount;
+    }
+
+    public Date getMovedOn() {
+        return movedOn;
+    }
+
+    public void setMovedOn(Date movedOn) {
+        this.movedOn = movedOn;
     }
 }

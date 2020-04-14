@@ -685,7 +685,7 @@ public class ReportController {
                         appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(), AppConfiguration.REPORT_INVITE_SUBJECT).getConfigValue(),
                         appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(), AppConfiguration.REPORT_INVITE_MESSAGE).getConfigValue(),
                         url);
-                commonEmailSevice.sendMail(granteeUser.getEmailId(),notifications[0],notifications[1],new String[]{appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+                commonEmailSevice.sendMail(granteeUser.getEmailId(),null,notifications[0],notifications[1],new String[]{appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
 
                 if(assignmentsVO.getAssignmentId()==0){
                     assignment.setAssignment(granteeUser.getId());
@@ -778,8 +778,10 @@ public class ReportController {
             report.setNoteAdded(new Date());
             report.setNoteAddedBy(userId);
         }
-        report.setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
+        Date currentDateTime = DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate();
+        report.setUpdatedAt(currentDateTime);
         report.setUpdatedBy(userId);
+        report.setMovedOn(currentDateTime);
         report = reportService.saveReport(report);
 
         User user = userService.getUserById(userId);
@@ -824,8 +826,8 @@ public class ReportController {
                     transition.getAction(), "Yes",
                     "Please review.",
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
-                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "");
-            commonEmailSevice.sendMail(u.getEmailId(), emailNotificationContent[0], emailNotificationContent[1], new String[]{appConfigService
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "", null, null, null);
+            commonEmailSevice.sendMail(u.getEmailId(),null, emailNotificationContent[0], emailNotificationContent[1], new String[]{appConfigService
                     .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
         });
@@ -841,7 +843,7 @@ public class ReportController {
                     transition.getAction(), "Yes",
                     "Please review.",
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
-                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "");
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "", null, null, null);
 
             notificationsService.saveNotification(notificationContent, u.getId(), finalReport.getId(),"REPORT");
 

@@ -51,6 +51,8 @@ public class GrantVO {
   private Long templateId;
   private GranterGrantTemplate grantTemplate;
   private Long grantId;
+
+  private Date movedOn;
   @JsonIgnore
   private List<GrantStringAttribute> stringAttributes;
 
@@ -89,6 +91,14 @@ public class GrantVO {
 
   public void setGrantorOrganization(Granter grantorOrganization) {
     this.grantorOrganization = grantorOrganization;
+  }
+
+  public Date getMovedOn() {
+    return movedOn;
+  }
+
+  public void setMovedOn(Date movedOn) {
+    this.movedOn = movedOn;
   }
 
   public String getName() {

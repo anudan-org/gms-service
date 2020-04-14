@@ -24,7 +24,7 @@ public class CommonEmailSevice {
   private boolean sendMail;
 
   @Async("threadPoolTaskExecutor")
-  public void sendMail(String to, String subject, String messageText, String footer[]){
+  public void sendMail(String to,String[] ccList, String subject, String messageText, String footer[]){
     if(!sendMail){
       return;
     }
@@ -34,6 +34,9 @@ public class CommonEmailSevice {
       MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message);
       //SimpleMailMessage message = new SimpleMailMessage();
       mimeMessageHelper.setTo(to);
+      if(ccList!=null) {
+        mimeMessageHelper.setCc(ccList);
+      }
       mimeMessageHelper.setFrom("admin@anudan.org","Anudan Admin");
       mimeMessageHelper.setSubject(subject);
       for(String footerBlock: footer){

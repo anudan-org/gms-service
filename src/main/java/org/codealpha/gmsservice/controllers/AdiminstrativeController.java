@@ -304,7 +304,7 @@ public class AdiminstrativeController {
                 appConfigService.getAppConfigForGranterOrg(user.getOrganization().getId(), AppConfiguration.INVITE_SUBJECT).getConfigValue(),
                 appConfigService.getAppConfigForGranterOrg(user.getOrganization().getId(), AppConfiguration.INVITE_MESSAGE).getConfigValue(),
                 url);
-        commonEmailSevice.sendMail(user.getEmailId(),notifications[0],notifications[1],new String[]{appConfigService.getAppConfigForGranterOrg(user.getOrganization().getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+        commonEmailSevice.sendMail(user.getEmailId(),null,notifications[0],notifications[1],new String[]{appConfigService.getAppConfigForGranterOrg(user.getOrganization().getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
         return user;
     }
 

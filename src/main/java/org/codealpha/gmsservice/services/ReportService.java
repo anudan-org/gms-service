@@ -13,12 +13,15 @@ import org.codealpha.gmsservice.models.ColumnData;
 import org.codealpha.gmsservice.models.SecureReportEntity;
 import org.codealpha.gmsservice.models.TableData;
 import org.codealpha.gmsservice.repositories.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -30,6 +33,7 @@ import java.util.stream.Collectors;
 @Service
 public class ReportService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ReportService.class);
     private final String SECRET = "78yughvdbfv87ny4w87rbshfiv8aw4tr87awvyeruvbhdkjfhbity834t";
     @Autowired private ReportRepository reportRepository;
     @Autowired private OrganizationRepository organizationRepository;
@@ -48,7 +52,8 @@ public class ReportService {
     @Autowired private ReportStringAttributeAttachmentsRepository reportStringAttributeAttachmentsRepository;
     @Autowired private ReportHistoryRepository reportHistoryRepository;
     @Autowired private UserRepository userRepository;
-
+    @Autowired
+    private ServletContext servletContext;
     public Report saveReport(Report report){
         return reportRepository.save(report);
     }
@@ -389,28 +394,37 @@ public class ReportService {
         return reportAssignmentRepository.save(assignment);
     }
 
-    public String[] buildEmailNotificationContent(Report finalReport, User u, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment, String hasNotes, String hasNotesComment) {
+    public String[] buildEmailNotificationContent(Report finalReport, User u, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment, String hasNotes, String hasNotesComment, String link, User owner, Integer noOfDays) {
 
         String code = Base64.getEncoder().encodeToString(String.valueOf(finalReport.getId()).getBytes());
 
         String host = "";
         String url = "";
+        UriComponents uriComponents = null;
         try {
-            UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
+            uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
             if (u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
                 host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
-                UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
-                url = uriBuilder.toUriString();
-                url = url+"/home/?action=login&org="+ URLEncoder.encode(finalReport.getGrant().getGrantorOrganization().getName(), StandardCharsets.UTF_8.toString())+"&r=" + code+"&email=&type=report";
+
             } else {
                 host = uriComponents.getHost();
             }
+            UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
+            url = uriBuilder.toUriString();
+            url = url+"/home/?action=login&org="+ URLEncoder.encode(finalReport.getGrant().getGrantorOrganization().getName(), StandardCharsets.UTF_8.toString())+"&r=" + code+"&email=&type=report";
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
+            url = link;
+            try {
+                url = url+"/home/?action=login&org="+ URLEncoder.encode(finalReport.getGrant().getGrantorOrganization().getName(), StandardCharsets.UTF_8.toString())+"&r=" + code+"&email=&type=report";
+            } catch (UnsupportedEncodingException ex) {
+                ex.printStackTrace();
+            }
         }
 
 
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalReport.getGrant().getName()).replaceAll("%REPORT_NAME%",finalReport.getName()).replaceAll("%REPORT_LINK%",url).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalReport.getGrant().getGrantorOrganization().getName()).replaceAll("%DUE_DATE%",new SimpleDateFormat("dd-MMM-yyyy").format(finalReport.getDueDate()));
+
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalReport.getGrant().getName()).replaceAll("%REPORT_NAME%",finalReport.getName()).replaceAll("%REPORT_LINK%",url).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalReport.getGrant().getGrantorOrganization().getName()).replaceAll("%DUE_DATE%",new SimpleDateFormat("dd-MMM-yyyy").format(finalReport.getDueDate())).replaceAll("%OWNER_NAME%",owner==null?"":owner.getFirstName()+" "+owner.getLastName()).replaceAll("%OWNER_EMAIL%",owner==null?"":owner.getEmailId()).replaceAll("%NO_DAYS%",noOfDays==null?"":String.valueOf(noOfDays));
         String subject = subConfigValue.replaceAll("%REPORT_NAME%", finalReport.getName());
 
         return new String[]{subject, message};
@@ -539,8 +553,8 @@ public class ReportService {
         return reportRepository.getDueReportsForGranter(dueDate, granterId);
     }
 
-    public List<ReportAssignment> getActionDueReportsForPlatform(Long noOfHours,List<Long> granterIds,Date date){
-        return reportAssignmentRepository.getActionDueReportsForPlatform(noOfHours,granterIds,date);
+    public List<ReportAssignment> getActionDueReportsForPlatform(List<Long> granterIds){
+        return reportAssignmentRepository.getActionDueReportsForPlatform(granterIds);
     }
 
     public List<ReportAssignment> getActionDueReportsForGranterOrg(Long noOfHours,Long granterId,Date date){

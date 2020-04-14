@@ -169,6 +169,9 @@ public class Grant {
   @ApiModelProperty(name = "securityCode",value = "Secure code for grant")
   private String securityCode;
 
+  @Column
+  private Date movedOn;
+
   public Long getId() {
     return id;
   }
@@ -444,5 +447,13 @@ public class Grant {
 
   public void setSecurityCode(String securityCode) {
     this.securityCode = securityCode;
+  }
+
+  public Date getMovedOn() {
+    return movedOn;
+  }
+
+  public void setMovedOn(Date movedOn) {
+    this.movedOn = movedOn;
   }
 }

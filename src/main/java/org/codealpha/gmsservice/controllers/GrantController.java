@@ -835,7 +835,7 @@ public class GrantController {
                 .usersToNotifyOnWorkflowSateChangeTo(submission.getSubmissionStatus().getId());
 
         for (User userToNotify : usersToNotify) {
-            commonEmailSevice.sendMail(userToNotify.getEmailId(), appConfigService
+            commonEmailSevice.sendMail(userToNotify.getEmailId(),null, appConfigService
                             .getAppConfigForGranterOrg(submission.getGrant().getGrantorOrganization().getId(),
                                     AppConfiguration.SUBMISSION_ALTER_MAIL_SUBJECT).getConfigValue(),
                     submissionService.buildMailContent(submission, appConfigService
@@ -1550,8 +1550,10 @@ public class GrantController {
             grant.setNoteAdded(new Date());
             grant.setNoteAddedBy(userService.getUserById(userId).getEmailId());
         }
-        grant.setUpdatedAt(DateTime.now().toDate());
+        Date currentDateTime = DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate();
+        grant.setUpdatedAt(currentDateTime);
         grant.setUpdatedBy(userService.getUserById(userId).getEmailId());
+        grant.setMovedOn(currentDateTime);
         grant = grantService.saveGrant(grant);
 
         User user = userService.getUserById(userId);
@@ -1603,7 +1605,7 @@ public class GrantController {
         usersToNotify.stream().forEach(u -> {
 
 
-            commonEmailSevice.sendMail(u.getEmailId(), emailNotificationContent[0], emailNotificationContent[1], new String[]{appConfigService
+            commonEmailSevice.sendMail(u.getEmailId(),null, emailNotificationContent[0], emailNotificationContent[1], new String[]{appConfigService
                     .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                             AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
         });
@@ -2737,7 +2739,7 @@ public class GrantController {
                         appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(), AppConfiguration.GRANT_INVITE_MESSAGE).getConfigValue(),
                         url);
 
-             commonEmailSevice.sendMail(granteeUser.getEmailId(),notifications[0],notifications[1],new String[]{appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+             commonEmailSevice.sendMail(granteeUser.getEmailId(),null,notifications[0],notifications[1],new String[]{appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
         }catch (UnsupportedEncodingException e){
                 logger.error(e.getMessage(),e);
             }
