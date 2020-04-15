@@ -1589,7 +1589,7 @@ public class GrantController {
                 transition.getAction(), "Yes",
                 "Please review.",
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
-                grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "");
+                grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "","",null,null);
         String notificationContent[] = grantService.buildEmailNotificationContent(finalGrant,user, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
                         .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                                 AppConfiguration.GRANT_STATE_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(), appConfigService
@@ -1601,7 +1601,7 @@ public class GrantController {
                 transition.getAction(), "Yes",
                 "Please review.",
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
-                grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "");
+                grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "","",null,null);
         usersToNotify.stream().forEach(u -> {
 
 

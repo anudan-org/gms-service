@@ -8,7 +8,6 @@ import org.codealpha.gmsservice.models.AppRelease;
 import org.codealpha.gmsservice.models.ScheduledTaskVO;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
-import org.joda.time.Days;
 import org.joda.time.Minutes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -128,7 +127,7 @@ public class ScheduledJobs {
         WorkflowStatus grantActiveState = workflowStatusService.getTenantWorkflowStatuses("GRANT",report.getGrant().getGrantorOrganization().getId()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("ACTIVE")).findFirst().get();
         List<GrantAssignments> grantAssignments = grantService.getGrantWorkflowAssignments(report.getGrant());
         User owner = userService.getUserById(grantAssignments.stream().filter(ass -> Long.valueOf(ass.getStateId()) == grantActiveState.getId()).findFirst().get().getAssignments());
-        String[] messageMetadata = reportService.buildEmailNotificationContent(report, granteeToNotify, granteeToNotify.getFirstName() + " " + granteeToNotify.getLastName(), "", null, taskConfiguration.getSubject(), taskConfiguration.getMessage(), "", "", "", "", "", "", "", "", "", link, owner, null);
+        String[] messageMetadata = reportService.buildEmailNotificationContent(report, granteeToNotify, granteeToNotify.getFirstName() + " " + granteeToNotify.getLastName(), "", null, taskConfiguration.getSubjectReport(), taskConfiguration.getMessageReport(), "", "", "", "", "", "", "", "", "", link, owner, null);
 
 
         emailSevice.sendMail(granteeToNotify.getEmailId(), otherUsersToNotify.toArray(new String[]{}), messageMetadata[0], messageMetadata[1], new String[]{appConfigService
@@ -203,7 +202,7 @@ public class ScheduledJobs {
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
                                     if(Minutes.minutesBetween(new DateTime(report.getMovedOn()),now).getMinutes()/(afterNoOfHour)==1){
                                         User user = userService.getUserById(reportAssignment.getAssignment());
-                                        String[] messageMetadata = reportService.buildEmailNotificationContent(report, user, user.getFirstName() + " " + user.getLastName(), "", null, taskConfiguration.getSubject(), taskConfiguration.getMessage(), "", "", "", "", "", "", "", "", "", buildLink(environment,true,user.getOrganization().getCode().toLowerCase()), null, afterNoOfHour/(24*60));
+                                        String[] messageMetadata = reportService.buildEmailNotificationContent(report, user, user.getFirstName() + " " + user.getLastName(), "", null, taskConfiguration.getSubjectReport(), taskConfiguration.getMessageReport(), "", "", "", "", "", "", "", "", "", buildLink(environment,true,user.getOrganization().getCode().toLowerCase()), null, afterNoOfHour/(24*60));
                                         emailSevice.sendMail(user.getEmailId(),null,messageMetadata[0],messageMetadata[1],new String[]{appConfigService
                                                 .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
@@ -212,30 +211,103 @@ public class ScheduledJobs {
 
                             }
                         }
-                        /*for (ReportAssignment reportAssignment : usersToNotify) {
-
-                                User user = userService.getUserById(reportAssignment.getAssignment());
-                                Report report = reportService.getReportById(reportAssignment.getReportId());
-
-                            String[] messageMetadata = reportService.buildEmailNotificationContent(report, user, user.getFirstName() + " " + user.getLastName(), "", null, taskConfiguration.getSubject(), taskConfiguration.getMessage(), "", "", "", "", "", "", "", "", "", buildLink(environment), null, Days.daysBetween(now.toLocalDate(),new DateTime(report.getMovedOn()).toLocalDate()).getDays());
-                                emailSevice.sendMail(user.getEmailId(),null,messageMetadata[0],messageMetadata[1],new String[]{appConfigService
-                                        .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                                                AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
-                        }*/
                     }
                 }else{
                     if(Integer.valueOf(hourAndMinute[0])==now.hourOfDay().get() && Integer.valueOf(hourAndMinute[1])==now.minuteOfHour().get()){
 
-                        for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                            List<ReportAssignment> usersToNotify = reportService.getActionDueReportsForGranterOrg(Long.valueOf(afterNoOfHour),configId,now.toDate());
-                            for (ReportAssignment reportAssignment : usersToNotify) {
+                            List<ReportAssignment> usersToNotify = reportService.getActionDueReportsForGranterOrg(configId);
+                            if(usersToNotify!=null && usersToNotify.size()>0){
+                                for (ReportAssignment reportAssignment : usersToNotify) {
+                                    Report report = reportService.getReportById(reportAssignment.getReportId());
 
-                                User user = userService.getUserById(reportAssignment.getAssignment());
-                                Report report = reportService.getReportById(reportAssignment.getReportId());
-                                String[] messageMetadata = reportService.buildEmailNotificationContent(report, user, user.getFirstName() + " " + user.getLastName(), "", null, taskConfiguration.getSubject(), taskConfiguration.getMessage(), "", "", "", "", "", "", "", "", "", buildLink(environment,true,user.getOrganization().getCode().toLowerCase()), null, afterNoOfHour/(24*60));
-                                emailSevice.sendMail(user.getEmailId(),null,messageMetadata[0],messageMetadata[1],new String[]{appConfigService
-                                        .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                                                AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+                                    for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
+                                        if(Minutes.minutesBetween(new DateTime(report.getMovedOn()),now).getMinutes()/(afterNoOfHour)==1){
+                                            User user = userService.getUserById(reportAssignment.getAssignment());
+                                            String[] messageMetadata = reportService.buildEmailNotificationContent(report, user, user.getFirstName() + " " + user.getLastName(), "", null, taskConfiguration.getSubjectReport(), taskConfiguration.getMessageReport(), "", "", "", "", "", "", "", "", "", buildLink(environment,true,user.getOrganization().getCode().toLowerCase()), null, afterNoOfHour/(24*60));
+                                            emailSevice.sendMail(user.getEmailId(),null,messageMetadata[0],messageMetadata[1],new String[]{appConfigService
+                                                    .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                                                            AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+                                        }
+                                    }
+
+                                }
+                        }
+
+                    }
+                }
+
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Scheduled(cron = "0 * * * * *")
+    public void grantsActionDueChecker(){
+        DateTime now = DateTime.now();
+
+        List<Granter> granters = granterService.getAllGranters();
+
+        Map<Long,AppConfig> configs = new HashMap<>();
+
+        for (Granter granter : granters) {
+            AppConfig config = appConfigService.getSpecialAppConfigForGranterOrg(granter.getId(), AppConfiguration.ACTION_DUE_REPORTS_REMINDER_SETTINGS);
+            configs.put(config.getId(),config);
+        }
+
+        Map<Long,AppConfig> grantIdsToSkip = new HashMap<>();
+        configs.keySet().forEach(c -> {
+            grantIdsToSkip.put(c,configs.get(c));
+        });
+
+
+
+        for(Long configId : configs.keySet()){
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+            try {
+                ScheduledTaskVO taskConfiguration = mapper.readValue(configs.get(configId).getConfigValue(), ScheduledTaskVO.class);
+                String[] hourAndMinute = taskConfiguration.getTime().split(":");
+                if(configId==0){
+
+                    if(Integer.valueOf(hourAndMinute[0])==now.hourOfDay().get() && Integer.valueOf(hourAndMinute[1])==now.minuteOfHour().get()){
+                        List<GrantAssignments> usersToNotify = grantService.getActionDueGrantsForPlatform(grantIdsToSkip.keySet().stream().collect(Collectors.toList()));
+                        if(usersToNotify!=null && usersToNotify.size()>0){
+                            for (GrantAssignments grantAssignment : usersToNotify) {
+                                Grant grant = grantService.getById(grantAssignment.getGrantId());
+
+                                for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
+                                    if(Minutes.minutesBetween(new DateTime(grant.getMovedOn()),now).getMinutes()/(afterNoOfHour)==1){
+                                        User user = userService.getUserById(grantAssignment.getAssignments());
+                                        String[] messageMetadata = grantService.buildEmailNotificationContent(grant, user, user.getFirstName() + " " + user.getLastName(), "", null, taskConfiguration.getSubjectGrant(), taskConfiguration.getMessageGrant(), "", "", "", "", "", "", "", "", "", buildLink(environment,true,user.getOrganization().getCode().toLowerCase()), null, afterNoOfHour/(24*60));
+                                        emailSevice.sendMail(user.getEmailId(),null,messageMetadata[0],messageMetadata[1],new String[]{appConfigService
+                                                .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                                        AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                }else{
+                    if(Integer.valueOf(hourAndMinute[0])==now.hourOfDay().get() && Integer.valueOf(hourAndMinute[1])==now.minuteOfHour().get()){
+
+                        List<GrantAssignments> usersToNotify = grantService.getActionDueGrantsForGranterOrg(configId);
+                        if(usersToNotify!=null && usersToNotify.size()>0){
+                            for (GrantAssignments grantAssignments : usersToNotify) {
+                                Grant grant = grantService.getById(grantAssignments.getGrantId());
+
+                                for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
+                                    if(Minutes.minutesBetween(new DateTime(grant.getMovedOn()),now).getMinutes()/(afterNoOfHour)==1){
+                                        User user = userService.getUserById(grantAssignments.getAssignments());
+                                        String[] messageMetadata = grantService.buildEmailNotificationContent(grant, user, user.getFirstName() + " " + user.getLastName(), "", null, taskConfiguration.getSubjectGrant(), taskConfiguration.getMessageGrant(), "", "", "", "", "", "", "", "", "", buildLink(environment,true,user.getOrganization().getCode().toLowerCase()), null, afterNoOfHour/(24*60));
+                                        emailSevice.sendMail(user.getEmailId(),null,messageMetadata[0],messageMetadata[1],new String[]{appConfigService
+                                                .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                                        AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+                                    }
+                                }
+
                             }
                         }
 

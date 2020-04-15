@@ -1,13 +1,13 @@
 package org.codealpha.gmsservice.models;
 
-import javax.persistence.*;
-
 public class ScheduledTaskVO {
     
    
-   private String message;
+   private String messageReport;
+   private String messageGrant;
    private String messageDescription;
-   private String subject;
+   private String subjectReport;
+   private String subjectGrant;
    private String subjectDescription;
    private String time;
    private String timeDescription;
@@ -16,12 +16,12 @@ public class ScheduledTaskVO {
    private String sql;
 
 
-    public String getMessage() {
-        return message;
+    public String getMessageReport() {
+        return messageReport;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setMessageReport(String messageReport) {
+        this.messageReport = messageReport;
     }
 
     public String getMessageDescription() {
@@ -73,12 +73,12 @@ public class ScheduledTaskVO {
         this.configuration = configuration;
     }
 
-    public String getSubject() {
-        return subject;
+    public String getSubjectReport() {
+        return subjectReport;
     }
 
-    public void setSubject(String subject) {
-        this.subject = subject;
+    public void setSubjectReport(String subjectReport) {
+        this.subjectReport = subjectReport;
     }
 
     public String getSubjectDescription() {
@@ -87,5 +87,21 @@ public class ScheduledTaskVO {
 
     public void setSubjectDescription(String subjectDescription) {
         this.subjectDescription = subjectDescription;
+    }
+
+    public String getMessageGrant() {
+        return messageGrant;
+    }
+
+    public void setMessageGrant(String messageGrant) {
+        this.messageGrant = messageGrant;
+    }
+
+    public String getSubjectGrant() {
+        return subjectGrant;
+    }
+
+    public void setSubjectGrant(String subjectGrant) {
+        this.subjectGrant = subjectGrant;
     }
 }
