@@ -84,6 +84,8 @@ public class ReportController {
     private UserRoleService userRoleService;
     @Autowired
     private GranterReportTemplateService granterReportTemplateService;
+    @Autowired
+    private WorkflowPermissionService workflowPermissionService;
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,@RequestParam(value = "q",required = false) String filterClause) {
@@ -217,6 +219,11 @@ public class ReportController {
 
         report.setGranteeUsers(userService.getAllGranteeUsers(report.getGrant().getOrganization()));
 
+        GrantVO grantVO = new GrantVO().build(report.getGrant(), grantService.getGrantSections(report.getGrant()), workflowPermissionService, userService.getUserById(userId),
+                appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS), userService);
+
+        report.getGrant().setGrantDetails(grantVO.getGrantDetails());
         report.setSecurityCode(reportService.buildHashCode(report));
         report.setFlowAuthorities(reportService.getFlowAuthority(report, userId));
         return report;
@@ -364,29 +371,12 @@ public class ReportController {
 
         stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
 
-        if (_checkIfReportTemplateChanged(report, reportSection, newSectionAttribute)) {
+        if (reportService._checkIfReportTemplateChanged(report, reportSection, newSectionAttribute, this)) {
             reportService._createNewReportTemplateFromExisiting(report);
         }
 
         report = _ReportToReturn(report, userId);
         return new ReportFieldInfo(newSectionAttribute.getId(), stringAttribute.getId(), report);
-    }
-
-    private Boolean _checkIfReportTemplateChanged(Report report, ReportSpecificSection newSection, ReportSpecificSectionAttribute newAttribute) {
-        GranterReportTemplate currentReportTemplate = reportService.findByTemplateId(report.getTemplate().getId());
-        for (GranterReportSection reportSection : currentReportTemplate.getSections()) {
-            if (!reportSection.getSectionName().equalsIgnoreCase(newSection.getSectionName())) {
-                return true;
-            }
-            if (newAttribute != null) {
-                for (GranterReportSectionAttribute sectionAttribute : reportSection.getAttributes()) {
-                    if (!sectionAttribute.getFieldName().equalsIgnoreCase(newAttribute.getFieldName())) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
     }
 
     @PutMapping("/{reportId}/section/{sectionId}/field/{fieldId}")
@@ -409,7 +399,7 @@ public class ReportController {
         stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
 
         report = reportService.getReportById(reportId);
-        if (_checkIfReportTemplateChanged(report, currentAttribute.getSection(), currentAttribute)) {
+        if (reportService._checkIfReportTemplateChanged(report, currentAttribute.getSection(), currentAttribute, this)) {
             reportService._createNewReportTemplateFromExisiting(report);
         }
 
@@ -576,7 +566,7 @@ public class ReportController {
         specificSection.setSectionOrder(reportService.getNextSectionOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(), templateId));
         specificSection = reportService.saveSection(specificSection);
 
-        if (_checkIfReportTemplateChanged(report, specificSection, null)) {
+        if (reportService._checkIfReportTemplateChanged(report, specificSection, null, this)) {
             GranterReportTemplate newTemplate = reportService._createNewReportTemplateFromExisiting(report);
             templateId = newTemplate.getId();
         }
@@ -610,7 +600,7 @@ public class ReportController {
         reportService.deleteSection(section);
 
         report = reportService.getReportById(reportId);
-        if (_checkIfReportTemplateChanged(report, section, null)) {
+        if (reportService._checkIfReportTemplateChanged(report, section, null, this)) {
             GranterReportTemplate newTemplate = reportService._createNewReportTemplateFromExisiting(report);
             templateId = newTemplate.getId();
         }
@@ -942,7 +932,7 @@ public class ReportController {
         report = reportService.saveReport(report);
 
 
-        if (_checkIfReportTemplateChanged(report, attribute.getSection(), null)) {
+        if (reportService._checkIfReportTemplateChanged(report, attribute.getSection(), null, this)) {
             GranterReportTemplate newTemplate = reportService._createNewReportTemplateFromExisiting(report);
         }
         report = _ReportToReturn(report, userId);

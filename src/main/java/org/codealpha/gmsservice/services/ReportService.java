@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.codealpha.gmsservice.constants.WorkflowObject;
+import org.codealpha.gmsservice.controllers.ReportController;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.ColumnData;
 import org.codealpha.gmsservice.models.SecureReportEntity;
@@ -559,5 +560,22 @@ public class ReportService {
 
     public List<ReportAssignment> getActionDueReportsForGranterOrg(Long granterId){
         return reportAssignmentRepository.getActionDueReportsForGranterOrg(granterId);
+    }
+
+    public Boolean _checkIfReportTemplateChanged(Report report, ReportSpecificSection newSection, ReportSpecificSectionAttribute newAttribute, ReportController reportController) {
+        GranterReportTemplate currentReportTemplate = findByTemplateId(report.getTemplate().getId());
+        for (GranterReportSection reportSection : currentReportTemplate.getSections()) {
+            if (!reportSection.getSectionName().equalsIgnoreCase(newSection.getSectionName())) {
+                return true;
+            }
+            if (newAttribute != null) {
+                for (GranterReportSectionAttribute sectionAttribute : reportSection.getAttributes()) {
+                    if (!sectionAttribute.getFieldName().equalsIgnoreCase(newAttribute.getFieldName())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

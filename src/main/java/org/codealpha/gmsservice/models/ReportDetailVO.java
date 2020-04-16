@@ -65,7 +65,7 @@ public class ReportDetailVO {
         if(grantId!=0) {
           sectionAttribute.setCumulativeActuals(reportService.getApprovedReportsActualSumForGrant(grantId, sectionAttribute.getFieldName()));
         }
-        if(sectionAttribute.getFieldType().equalsIgnoreCase("table") || sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")){
+        if(sectionAttribute.getFieldType().equalsIgnoreCase("table")){
             ObjectMapper mapper = new ObjectMapper();
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){
             List<TableData> tableDataList = new ArrayList<>();
@@ -91,20 +91,37 @@ public class ReportDetailVO {
             e.printStackTrace();
           }
           sectionAttribute.setFieldTableValue(tableData);
+        } else if(sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")){
+          ObjectMapper mapper = new ObjectMapper();
+          String[] colHeaders = new String[]{"Disbursement Date/Period","Actual Disbursement","Funds from other Sources","Notes"};
+          if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){
+            List<TableData> tableDataList = new ArrayList<>();
+            TableData tableData = new TableData();
+            tableData.setName("1");
+            tableData.setHeader("Actual Installment #");
+            tableData.setColumns(new ColumnData[4]);
+            for(int i=0;i<tableData.getColumns().length;i++){
+
+              tableData.getColumns()[i] = new ColumnData(colHeaders[i],"",(i==1 || i==2)?"currency":null);
+            }
+            tableDataList.add(tableData);
+
+            try {
+              sectionAttribute.setFieldValue( mapper.writeValueAsString(tableDataList));
+            } catch (JsonProcessingException e) {
+              e.printStackTrace();
+            }
+          }
+          List<TableData> tableData = null;
+          try {
+            tableData = mapper.readValue(sectionAttribute.getFieldValue(), new TypeReference<List<TableData>>() {});
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+          sectionAttribute.setFieldTableValue(tableData);
         } else if(sectionAttribute.getFieldType().equalsIgnoreCase("document")){
 
           ObjectMapper mapper = new ObjectMapper();
-          /*if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
-            sectionAttribute.setDocs(new ArrayList<>());
-          }else{
-            try {
-              List<TemplateLibrary> assignedTemplates = mapper.readValue(sectionAttribute.getFieldValue(),new TypeReference<List<TemplateLibrary>>(){});
-              sectionAttribute.setDocs(assignedTemplates);
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
-          }*/
-
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
             sectionAttribute.setAttachments(new ArrayList<>());
           }else{

@@ -44,7 +44,7 @@ public class GrantDetailVO {
     if(value!=null) {
       for (GrantStringAttribute stringAttribute : value) {
 
-        Optional<SectionVO> so = sections.stream().filter(a -> a.getId()==stringAttribute.getSection().getId()).findFirst();
+        Optional<SectionVO> so = sections.stream().filter(a -> a.getId().longValue()==stringAttribute.getSection().getId().longValue()).findFirst();
         if(so.isPresent()) {
           sectionVO = so.get();
         }else{
@@ -95,7 +95,7 @@ public class GrantDetailVO {
             List<TableData> tableDataList = new ArrayList<>();
             TableData tableData = new TableData();
             tableData.setName("1");
-            tableData.setHeader("Installment #");
+            tableData.setHeader("Planned Installment #");
             tableData.setColumns(new ColumnData[4]);
             for(int i=0;i<tableData.getColumns().length;i++){
 
