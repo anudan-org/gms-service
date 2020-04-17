@@ -93,7 +93,7 @@ public class ReportDetailVO {
           sectionAttribute.setFieldTableValue(tableData);
         } else if(sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")){
           ObjectMapper mapper = new ObjectMapper();
-          String[] colHeaders = new String[]{"Disbursement Date/Period","Actual Disbursement","Funds from other Sources","Notes"};
+          String[] colHeaders = new String[]{"Disbursement Date","Actual Disbursement","Funds from other Sources","Notes"};
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){
             List<TableData> tableDataList = new ArrayList<>();
             TableData tableData = new TableData();

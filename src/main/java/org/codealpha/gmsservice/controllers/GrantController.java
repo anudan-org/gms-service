@@ -2087,7 +2087,7 @@ public class GrantController {
                 if(specificSectionAttribute.getFieldType().equalsIgnoreCase("disbursement")){
                    if(reportTemplateHasDisbursement.get()){
                        ObjectMapper mapper = new ObjectMapper();
-                       String[] colHeaders = new String[]{"Disbursement Date/Period","Actual Disbursement","Funds from other Sources","Notes"};
+                       String[] colHeaders = new String[]{"Disbursement Date","Actual Disbursement","Funds from other Sources","Notes"};
                        List<TableData> tableDataList = new ArrayList<>();
                        TableData tableData = new TableData();
                        tableData.setName("1");
@@ -2133,7 +2133,7 @@ public class GrantController {
                        stringAttribute.setReport(report);
                        stringAttribute.setSectionAttribute(sectionAttribute);
                        ObjectMapper mapper = new ObjectMapper();
-                       String[] colHeaders = new String[]{"Disbursement Date/Period","Actual Disbursement","Funds from other Sources","Notes"};
+                       String[] colHeaders = new String[]{"Disbursement Date","Actual Disbursement","Funds from other Sources","Notes"};
                        List<TableData> tableDataList = new ArrayList<>();
                        TableData tableData = new TableData();
                        tableData.setName("1");
