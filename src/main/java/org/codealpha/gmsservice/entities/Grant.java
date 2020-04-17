@@ -12,12 +12,8 @@ import javax.persistence.*;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import io.swagger.annotations.ApiParam;
 import org.codealpha.gmsservice.constants.GrantStatus;
-import org.codealpha.gmsservice.models.AssignedTo;
-import org.codealpha.gmsservice.models.GrantAssignmentsVO;
-import org.codealpha.gmsservice.models.GrantDetailVO;
-import org.hibernate.validator.constraints.CodePointLength;
+import org.codealpha.gmsservice.models.*;
 
 /**
  * @author Developer <developer@enstratify.com>
@@ -171,6 +167,9 @@ public class Grant {
 
   @Column
   private Date movedOn;
+
+  @Transient
+  private List<TableData> approvedReportsDisbursements;
 
   public Long getId() {
     return id;
@@ -455,5 +454,13 @@ public class Grant {
 
   public void setMovedOn(Date movedOn) {
     this.movedOn = movedOn;
+  }
+
+  public List<TableData> getApprovedReportsDisbursements() {
+    return approvedReportsDisbursements;
+  }
+
+  public void setApprovedReportsDisbursements(List<TableData> approvedReportsDisbursements) {
+    this.approvedReportsDisbursements = approvedReportsDisbursements;
   }
 }

@@ -223,7 +223,54 @@ public class ReportController {
                 appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS), userService);
 
+        ObjectMapper mapper = new ObjectMapper();
         report.getGrant().setGrantDetails(grantVO.getGrantDetails());
+        List<Report> approvedReports = reportService.findByGrantAndStatus(report.getGrant(),workflowStatusService.getTenantWorkflowStatuses("REPORT",report.getGrant().getGrantorOrganization().getId()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get());
+        List<TableData> approvedDisbursements = new ArrayList<>();
+        AtomicInteger installmentNumber = new AtomicInteger();
+        for (Report approvedReport : approvedReports) {
+            reportService.getReportSections(approvedReport).forEach(sec ->{
+                if(sec.getAttributes()!=null) {
+                    sec.getAttributes().forEach(attr -> {
+                        if (attr.getFieldType().equalsIgnoreCase("disbursement")) {
+
+                            try {
+                                List<TableData> tableDataList = mapper.readValue(reportService.getReportStringByStringAttributeId(attr.getId()).getValue(), new TypeReference<List<TableData>>() {
+                                });
+                                tableDataList.forEach(td -> {
+                                    approvedDisbursements.add(td);
+                                    installmentNumber.getAndIncrement();
+                                });
+                            } catch (IOException e) {
+                                logger.error(e.getMessage(), e);
+                            }
+
+                        }
+                    });
+                }
+            });
+        }
+        report.getGrant().setApprovedReportsDisbursements(approvedDisbursements);
+
+        report.getReportDetails().getSections().forEach(sec ->{
+            if(sec.getAttributes()!=null) {
+                sec.getAttributes().forEach(attr -> {
+                    if (attr.getFieldType().equalsIgnoreCase("disbursement")) {
+                        for (TableData data : attr.getFieldTableValue()) {
+                            installmentNumber.getAndIncrement();
+                            data.setName(String.valueOf(installmentNumber.get()));
+                        }
+
+                        try {
+                            attr.setFieldValue(mapper.writeValueAsString(attr.getFieldTableValue()));
+                        } catch (JsonProcessingException e) {
+                            logger.error(e.getMessage(),e);
+                        }
+
+                    }
+                });
+            }
+        });
         report.setSecurityCode(reportService.buildHashCode(report));
         report.setFlowAuthorities(reportService.getFlowAuthority(report, userId));
         return report;

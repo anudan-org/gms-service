@@ -51,6 +51,7 @@ public class GrantVO {
   private Long templateId;
   private GranterGrantTemplate grantTemplate;
   private Long grantId;
+  private List<List<TableData>> approvedReportsDisbursements;
 
   private Date movedOn;
   @JsonIgnore
@@ -391,5 +392,13 @@ public class GrantVO {
 
   public void setSecurityCode(String securityCode) {
     this.securityCode = securityCode;
+  }
+
+  public List<List<TableData>> getApprovedReportsDisbursements() {
+    return approvedReportsDisbursements;
+  }
+
+  public void setApprovedReportsDisbursements(List<List<TableData>> approvedReportsDisbursements) {
+    this.approvedReportsDisbursements = approvedReportsDisbursements;
   }
 }

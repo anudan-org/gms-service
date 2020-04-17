@@ -1,7 +1,9 @@
 package org.codealpha.gmsservice.repositories;
 
+import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Report;
 import org.codealpha.gmsservice.entities.ReportAssignment;
+import org.codealpha.gmsservice.entities.WorkflowStatus;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
@@ -38,5 +40,7 @@ public interface ReportRepository extends CrudRepository<Report,Long> {
 
     @Query(value = "select * from reports r inner join grants g on g.id=r.grant_id inner join workflow_statuses wf on wf.id=r.status_id where r.due_date=?1 and wf.internal_status='ACTIVE' and g.grantor_org_id = ?2 order by r.due_date",nativeQuery = true)
     List<Report> getDueReportsForGranter(Date dueDate,Long granterId);
+
+    public List<Report> findByGrantAndStatus(Grant grant, WorkflowStatus status);
 
 }

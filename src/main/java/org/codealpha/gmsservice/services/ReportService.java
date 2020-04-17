@@ -578,4 +578,8 @@ public class ReportService {
         }
         return false;
     }
+
+    public List<Report> findByGrantAndStatus(Grant grant, WorkflowStatus status){
+        return reportRepository.findByGrantAndStatus(grant,status);
+    }
 }
