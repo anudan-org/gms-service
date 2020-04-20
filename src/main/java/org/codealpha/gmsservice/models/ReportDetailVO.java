@@ -102,7 +102,7 @@ public class ReportDetailVO {
             tableData.setColumns(new ColumnData[4]);
             for(int i=0;i<tableData.getColumns().length;i++){
 
-              tableData.getColumns()[i] = new ColumnData(colHeaders[i],"",(i==1 || i==2)?"currency":null);
+              tableData.getColumns()[i] = new ColumnData(colHeaders[i],"",(i==1 || i==2)?"currency":i==0?"date":null);
             }
             tableDataList.add(tableData);
 

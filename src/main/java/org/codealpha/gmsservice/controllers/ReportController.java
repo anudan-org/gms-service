@@ -794,6 +794,37 @@ public class ReportController {
         /*grantValidator.validate(grantService,grantId,reportWithNote.getGrant(),userId,tenantCode);
         grantValidator.validateFlow(grantService,reportWithNote.getGrant(),grantId,userId,fromStateId,toStateId);*/
 
+        for (SectionVO section : reportWithNote.getReport().getReportDetails().getSections()) {
+            if (section.getAttributes() != null) {
+                for (SectionAttributesVO attribute : section.getAttributes()) {
+                    if (attribute.getFieldType().equalsIgnoreCase("disbursement")) {
+                        List<String> rowNames = new ArrayList<>();
+                        for (int i = 0; i < attribute.getFieldTableValue().size(); i++) {
+                            if (attribute.getFieldTableValue().get(i).getColumns()[0].getValue().trim() == "" && attribute.getFieldTableValue().get(i).getColumns()[1].getValue().trim() == "" && attribute.getFieldTableValue().get(i).getColumns()[2].getValue().trim() == "" && attribute.getFieldTableValue().get(i).getColumns()[3].getValue().trim() == "") {
+                                rowNames.add(attribute.getFieldTableValue().get(i).getName());
+                            }
+                        }
+
+                        for (String rowName : rowNames) {
+                            attribute.getFieldTableValue().removeIf(e -> e.getName().equalsIgnoreCase(rowName));
+                        }
+
+                        for (int i = 0; i < attribute.getFieldTableValue().size(); i++) {
+                            attribute.getFieldTableValue().get(i).setName(String.valueOf(i+1));
+                            try {
+                                attribute.setFieldValue(new ObjectMapper().writeValueAsString(attribute.getFieldTableValue()));
+                            } catch (JsonProcessingException e) {
+                                logger.error(e.getMessage(),e);
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+        saveReport(reportId,reportWithNote.getReport(),userId,tenantCode);
+
         Report report = reportService.getReportById(reportId);
         Report finalReport = report;
         WorkflowStatus previousState = report.getStatus();
