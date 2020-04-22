@@ -41,6 +41,8 @@ public class WorkflowStatusTransition {
   private Date updatedAt;
   @Column
   private String updatedBy;
+  @Column
+  private int seqOrder;
 
   public Long getId() {
     return id;
@@ -132,5 +134,13 @@ public class WorkflowStatusTransition {
 
   public boolean isNoteRequired() {
     return noteRequired;
+  }
+
+  public int getSeqOrder() {
+    return seqOrder;
+  }
+
+  public void setSeqOrder(int seqOrder) {
+    this.seqOrder = seqOrder;
   }
 }

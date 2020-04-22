@@ -24,6 +24,8 @@ public class WorkflowTransitionModel {
     private Long roleId;
     @Column
     private Boolean noteRequired;
+    @Column
+    private Integer seqOrder;
 
     public Long getId() {
         return id;
@@ -95,5 +97,13 @@ public class WorkflowTransitionModel {
 
     public void setNoteRequired(Boolean noteRequired) {
         this.noteRequired = noteRequired;
+    }
+
+    public Integer getSeqOrder() {
+        return seqOrder;
+    }
+
+    public void setSeqOrder(Integer seqOrder) {
+        this.seqOrder = seqOrder;
     }
 }
