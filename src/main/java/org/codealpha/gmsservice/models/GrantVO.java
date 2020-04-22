@@ -51,6 +51,9 @@ public class GrantVO {
   private Long templateId;
   private GranterGrantTemplate grantTemplate;
   private Long grantId;
+  private List<List<TableData>> approvedReportsDisbursements;
+
+  private Date movedOn;
   @JsonIgnore
   private List<GrantStringAttribute> stringAttributes;
 
@@ -89,6 +92,14 @@ public class GrantVO {
 
   public void setGrantorOrganization(Granter grantorOrganization) {
     this.grantorOrganization = grantorOrganization;
+  }
+
+  public Date getMovedOn() {
+    return movedOn;
+  }
+
+  public void setMovedOn(Date movedOn) {
+    this.movedOn = movedOn;
   }
 
   public String getName() {
@@ -381,5 +392,13 @@ public class GrantVO {
 
   public void setSecurityCode(String securityCode) {
     this.securityCode = securityCode;
+  }
+
+  public List<List<TableData>> getApprovedReportsDisbursements() {
+    return approvedReportsDisbursements;
+  }
+
+  public void setApprovedReportsDisbursements(List<List<TableData>> approvedReportsDisbursements) {
+    this.approvedReportsDisbursements = approvedReportsDisbursements;
   }
 }

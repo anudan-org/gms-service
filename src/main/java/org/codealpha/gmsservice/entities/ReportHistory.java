@@ -71,7 +71,8 @@ public class ReportHistory {
     private boolean canManage;
     @Transient
     private List<WorkFlowPermission> flowAuthorities;
-
+    @Column
+    private Date movedOn;
 
     public Long getSeqid() {
         return seqid;
@@ -313,5 +314,13 @@ public class ReportHistory {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Date getMovedOn() {
+        return movedOn;
+    }
+
+    public void setMovedOn(Date movedOn) {
+        this.movedOn = movedOn;
     }
 }

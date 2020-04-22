@@ -115,6 +115,9 @@ public class GrantHistory {
   @Transient
   private User noteAddedByUser;
 
+  @Column
+  private Date movedOn;
+
   @OneToMany(mappedBy = "grant", cascade = CascadeType.ALL)
   @OrderBy("submitBy ASC")
   @JsonManagedReference
@@ -408,5 +411,13 @@ public class GrantHistory {
 
   public void setNoteAddedByUser(User noteAddedByUser) {
     this.noteAddedByUser = noteAddedByUser;
+  }
+
+  public Date getMovedOn() {
+    return movedOn;
+  }
+
+  public void setMovedOn(Date movedOn) {
+    this.movedOn = movedOn;
   }
 }

@@ -106,7 +106,7 @@ public class UserController {
 
       System.out.println(verificationLink);
       commonEmailSevice
-              .sendMail(user.getEmailId(), "Anudan.org - Verification Link", verificationLink,null);
+              .sendMail(user.getEmailId(),null, "Anudan.org - Verification Link", verificationLink,null);
     }else{
       newUser.setActive(true);
       newUser.setFirstName(user.getFirstName());

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -128,7 +129,7 @@ public class GrantService {
             if (grantStringAttribute.isPresent()) {
                 return grantStringAttribute.get().getSectionAttribute();
             }
-        } else if (type.equalsIgnoreCase("table")) {
+        } else if (type.equalsIgnoreCase("table") || type.equalsIgnoreCase("disbursement")) {
             Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
             if (grantStringAttribute.isPresent()) {
                 return grantStringAttribute.get().getSectionAttribute();
@@ -428,22 +429,36 @@ public class GrantService {
         return grantHistoryRepository.findByGrantId(grantId);
     }
 
-    public String[] buildEmailNotificationContent(Grant finalGrant, User invite, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment, String hasNotes, String hasNotesComment) {
+    public String[] buildEmailNotificationContent(Grant finalGrant, User user, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment, String hasNotes, String hasNotesComment, String link, User owner, Integer noOfDays) {
 
         String code = Base64.getEncoder().encodeToString(String.valueOf(finalGrant.getId()).getBytes());
-        System.out.println("Grant Code: "+code+" Grant Id:"+finalGrant.getId());
-        UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
-        String host = uriComponents.getHost();//.substring(uriComponents.getHost().indexOf(".")+1);
-        UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
-        String url = uriBuilder.toUriString();
+
+        String host = "";
+        String url = "";
+        UriComponents uriComponents = null;
         try {
+            uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
+            if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
+
+            } else {
+                host = uriComponents.getHost();
+            }
+            UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
+            url = uriBuilder.toUriString();
             url = url+"/home/?action=login&org="+ URLEncoder.encode(finalGrant.getOrganization().getName(), StandardCharsets.UTF_8.toString())+"&g=" + code+"&email=&type=grant";
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+        }catch (Exception e){
+            url = link;
+            try {
+                url = url+"/home/?action=login&org="+ URLEncoder.encode(finalGrant.getOrganization().getName(), StandardCharsets.UTF_8.toString())+"&g=" + code+"&email=&type=grant";
+            } catch (UnsupportedEncodingException ex) {
+                ex.printStackTrace();
+            }
         }
 
 
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName()).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalGrant.getGrantorOrganization().getName()).replaceAll("%GRANT_LINK%",url);
+
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName()).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalGrant.getGrantorOrganization().getName()).replaceAll("%GRANT_LINK%",url).replaceAll("%OWNER_NAME%",owner==null?"":owner.getFirstName()+" "+owner.getLastName()).replaceAll("%OWNER_EMAIL%",owner==null?"":owner.getEmailId()).replaceAll("%NO_DAYS%",noOfDays==null?"":String.valueOf(noOfDays));
         String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName());
 
         return new String[]{subject, message};
@@ -543,5 +558,13 @@ public class GrantService {
 
     public List<Grant> getActiveGrantsForTenant(Organization organization) {
         return grantRepository.findActiveGrants(organization.getId());
+    }
+
+    public List<GrantAssignments> getActionDueGrantsForPlatform(List<Long> granterIds){
+        return grantAssignmentRepository.getActionDueGrantsForPlatform(granterIds);
+    }
+
+    public List<GrantAssignments> getActionDueGrantsForGranterOrg(Long granterId){
+        return grantAssignmentRepository.getActionDueGrantsForGranterOrg(granterId);
     }
 }

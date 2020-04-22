@@ -32,6 +32,7 @@ public class ReportVO {
     private GranterReportTemplate template;
     private ReportDetailVO reportDetails;
     private List<ReportAssignment> assignments;
+    private Date movedOn;
     @JsonIgnore
     private List<ReportStringAttribute> stringAttributes;
     private Grant grant;
@@ -93,6 +94,14 @@ public class ReportVO {
 
     public WorkflowStatus getStatus() {
         return status;
+    }
+
+    public Date getMovedOn() {
+        return movedOn;
+    }
+
+    public void setMovedOn(Date movedOn) {
+        this.movedOn = movedOn;
     }
 
     public void setStatus(WorkflowStatus status) {
