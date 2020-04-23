@@ -327,7 +327,26 @@ public class GrantController {
                             try {
                                 if (stringAttrubute.getSectionAttribute().getFieldType().equalsIgnoreCase("document")) {
                                     stringAttrubute.setValue(new ObjectMapper().writeValueAsString(allAttachments));
-                                } else {
+                                } else if(stringAttrubute.getSectionAttribute().getFieldType().equalsIgnoreCase("disbursement")){
+                                    String[] colHeaders = new String[]{"Date/Period","Amount","Funds from other Sources","Notes"};
+                                    List<TableData> tableDataList = new ArrayList<>();
+                                    TableData tableData = new TableData();
+                                    tableData.setName("1");
+                                    tableData.setHeader("Planned Installment #");
+                                    tableData.setColumns(new ColumnData[4]);
+                                    for(int i=0;i<tableData.getColumns().length;i++){
+
+                                        tableData.getColumns()[i] = new ColumnData(colHeaders[i],"",(i==1 || i==2)?"currency":null);
+                                    }
+                                    tableDataList.add(tableData);
+
+                                    ObjectMapper mapper = new ObjectMapper();
+                                    try {
+                                        stringAttrubute.setValue( mapper.writeValueAsString(tableDataList));
+                                    } catch (JsonProcessingException e) {
+                                        logger.error(e.getMessage(),e);
+                                    }
+                                }else {
                                     stringAttrubute.setValue(stringAttr.getValue());
                                 }
                                 stringAttrubute = grantService.saveStringAttribute(stringAttrubute);
