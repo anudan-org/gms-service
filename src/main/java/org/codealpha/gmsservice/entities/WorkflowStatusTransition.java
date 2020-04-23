@@ -44,6 +44,7 @@ public class WorkflowStatusTransition {
   @Column
   private Integer seqOrder;
 
+
   public Long getId() {
     return id;
   }
