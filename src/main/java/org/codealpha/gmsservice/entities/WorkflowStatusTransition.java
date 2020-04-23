@@ -42,7 +42,7 @@ public class WorkflowStatusTransition {
   @Column
   private String updatedBy;
   @Column
-  private int seqOrder;
+  private Integer seqOrder;
 
   public Long getId() {
     return id;
@@ -136,11 +136,11 @@ public class WorkflowStatusTransition {
     return noteRequired;
   }
 
-  public int getSeqOrder() {
+  public Integer getSeqOrder() {
     return seqOrder;
   }
 
-  public void setSeqOrder(int seqOrder) {
+  public void setSeqOrder(Integer seqOrder) {
     this.seqOrder = seqOrder;
   }
 }
