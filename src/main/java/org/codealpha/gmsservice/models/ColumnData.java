@@ -1,8 +1,12 @@
 package org.codealpha.gmsservice.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 public class ColumnData {
     private String name;
     private String value;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String dataType;
 
     public ColumnData() {

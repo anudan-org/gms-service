@@ -1562,9 +1562,11 @@ public class GrantController {
                 for (SectionAttributesVO attribute : section.getAttributes()) {
                     if (attribute.getFieldType().equalsIgnoreCase("disbursement")) {
                         List<String> rowNames = new ArrayList<>();
-                        for (int i = 0; i < attribute.getFieldTableValue().size(); i++) {
-                            if (attribute.getFieldTableValue().get(i).getColumns()[0].getValue().trim() == "" && attribute.getFieldTableValue().get(i).getColumns()[1].getValue().trim() == "" && attribute.getFieldTableValue().get(i).getColumns()[2].getValue().trim() == "" && attribute.getFieldTableValue().get(i).getColumns()[3].getValue().trim() == "") {
-                                rowNames.add(attribute.getFieldTableValue().get(i).getName());
+                        if(attribute.getFieldTableValue().size()>1) {
+                            for (int i = 0; i < attribute.getFieldTableValue().size(); i++) {
+                                if (attribute.getFieldTableValue().get(i).getColumns()[0].getValue().trim() == "" && attribute.getFieldTableValue().get(i).getColumns()[1].getValue().trim() == "" && attribute.getFieldTableValue().get(i).getColumns()[2].getValue().trim() == "" && attribute.getFieldTableValue().get(i).getColumns()[3].getValue().trim() == "") {
+                                    rowNames.add(attribute.getFieldTableValue().get(i).getName());
+                                }
                             }
                         }
 
