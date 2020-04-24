@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice;
 
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.concurrent.Executor;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,6 +92,12 @@ public class GmsServiceApplication {
             threadPoolTaskScheduler.setThreadNamePrefix("ThreadPoolTaskScheduler");
             return threadPoolTaskScheduler;
         }
+    }
+
+    @PostConstruct
+    public void init(){
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kolkata"));
+        System.out.println("Running with: "+TimeZone.getDefault().getDisplayName());
     }
 
 }
