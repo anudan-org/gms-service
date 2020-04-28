@@ -98,7 +98,7 @@ public class ReportDetailVO {
             List<TableData> tableDataList = new ArrayList<>();
             TableData tableData = new TableData();
             tableData.setName("1");
-            tableData.setHeader("Actual Installment #");
+            tableData.setHeader("#");
             tableData.setEnteredByGrantee(false);
             tableData.setColumns(new ColumnData[4]);
             for(int i=0;i<tableData.getColumns().length;i++){
