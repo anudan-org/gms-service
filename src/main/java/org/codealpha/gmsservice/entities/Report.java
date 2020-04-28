@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
@@ -45,6 +46,8 @@ public class Report {
     private String securityCode;
     @Transient
     private List<User> granteeUsers;
+    @Column(columnDefinition = "text")
+    private String linkedApprovedReports;
 
     @Column(columnDefinition = "text")
     @ApiModelProperty(name = "note",value = "Current note associated with the grant",dataType = "String")
@@ -76,6 +79,10 @@ public class Report {
     private int futureReportsCount = 0;
     @Column
     private Date movedOn;
+
+    @Column
+    @JsonIgnore
+    private String reportDetail;
 
     public Long getId() {
         return id;
@@ -333,5 +340,21 @@ public class Report {
 
     public void setMovedOn(Date movedOn) {
         this.movedOn = movedOn;
+    }
+
+    public String getLinkedApprovedReports() {
+        return linkedApprovedReports;
+    }
+
+    public void setLinkedApprovedReports(String linkedApprovedReports) {
+        this.linkedApprovedReports = linkedApprovedReports;
+    }
+
+    public String getReportDetail() {
+        return reportDetail;
+    }
+
+    public void setReportDetail(String reportDetail) {
+        this.reportDetail = reportDetail;
     }
 }

@@ -130,6 +130,21 @@ public class ReportController {
 
             }
         }
+
+        if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && filterClause!=null && filterClause.equalsIgnoreCase("SUBMITTED")){
+            for (Report report : reports) {
+                try {
+                    ReportHistory historicReport = reportService.getSingleReportHistoryByStatusAndReportId("ACTIVE",report.getId());
+                    if(historicReport!=null && historicReport.getReportDetail()!=null) {
+                        ObjectMapper mapper = new ObjectMapper();
+                        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                        report.setReportDetails(mapper.readValue(historicReport.getReportDetail(), ReportDetailVO.class));
+                    }
+                } catch (IOException e) {
+                    logger.error(e.getMessage(),e);
+                }
+            }
+        }
         return reports;
     }
 
@@ -138,7 +153,9 @@ public class ReportController {
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         Report report = reportService.getReportById(reportId);
 
-        return _ReportToReturn(report, userId);
+        report = _ReportToReturn(report, userId);
+        _checkAndReturnHistoricalReport(userId, report);
+        return report;
     }
 
     @GetMapping("/{reportId}/{grantId}")
@@ -225,31 +242,40 @@ public class ReportController {
 
         ObjectMapper mapper = new ObjectMapper();
         report.getGrant().setGrantDetails(grantVO.getGrantDetails());
-        List<Report> approvedReports = reportService.findByGrantAndStatus(report.getGrant(),workflowStatusService.getTenantWorkflowStatuses("REPORT",report.getGrant().getGrantorOrganization().getId()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get());
+
+        List<Report> approvedReports = null;
         List<TableData> approvedDisbursements = new ArrayList<>();
         AtomicInteger installmentNumber = new AtomicInteger();
-        for (Report approvedReport : approvedReports) {
-            reportService.getReportSections(approvedReport).forEach(sec ->{
-                if(sec.getAttributes()!=null) {
-                    sec.getAttributes().forEach(attr -> {
-                        if (attr.getFieldType().equalsIgnoreCase("disbursement")) {
 
-                            try {
-                                List<TableData> tableDataList = mapper.readValue(reportService.getReportStringByStringAttributeId(attr.getId()).getValue(), new TypeReference<List<TableData>>() {
-                                });
-                                tableDataList.forEach(td -> {
-                                    approvedDisbursements.add(td);
-                                    installmentNumber.getAndIncrement();
-                                });
-                            } catch (IOException e) {
-                                logger.error(e.getMessage(), e);
+        if(report.getLinkedApprovedReports()!=null) {
+            approvedReports = reportService.getReportsByIds(report.getLinkedApprovedReports());
+            for (Report approvedReport : approvedReports) {
+                reportService.getReportSections(approvedReport).forEach(sec ->{
+                    if(sec.getAttributes()!=null) {
+                        sec.getAttributes().forEach(attr -> {
+                            if (attr.getFieldType().equalsIgnoreCase("disbursement")) {
+
+                                try {
+                                    List<TableData> tableDataList = mapper.readValue(reportService.getReportStringByStringAttributeId(attr.getId()).getValue(), new TypeReference<List<TableData>>() {
+                                    });
+                                    tableDataList.forEach(td -> {
+                                        approvedDisbursements.add(td);
+                                        installmentNumber.getAndIncrement();
+                                    });
+                                } catch (IOException e) {
+                                    logger.error(e.getMessage(), e);
+                                }
+
                             }
-
-                        }
-                    });
-                }
-            });
+                        });
+                    }
+                });
+            }
         }
+
+
+
+
         report.getGrant().setApprovedReportsDisbursements(approvedDisbursements);
 
         report.getReportDetails().getSections().forEach(sec ->{
@@ -315,6 +341,30 @@ public class ReportController {
         report.setDueDate(reportToSave.getDueDate());
         report.setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
         report.setUpdatedBy(user.getId());
+        try {
+            report.setReportDetail(new ObjectMapper().writeValueAsString(reportToSave.getReportDetails()));
+        } catch (JsonProcessingException e) {
+            logger.error(e.getMessage(),e);
+        }
+
+        List<Report> approvedReports = null;
+        if(report.getLinkedApprovedReports()==null || report.getLinkedApprovedReports().isEmpty()){
+            approvedReports = reportService.findByGrantAndStatus(report.getGrant(),workflowStatusService.getTenantWorkflowStatuses("REPORT",report.getGrant().getGrantorOrganization().getId()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get(),report.getId());
+            if(approvedReports==null || approvedReports.isEmpty()){
+                try {
+                    report.setLinkedApprovedReports(new ObjectMapper().writeValueAsString(Arrays.asList(new Long[]{0l})));
+                } catch (JsonProcessingException e) {
+                   logger.error(e.getMessage(),e);
+                }
+            } else {
+                try {
+                    report.setLinkedApprovedReports(new ObjectMapper().writeValueAsString(approvedReports.stream().map(r -> new Long(r.getId())).collect(Collectors.toList())));
+                } catch (JsonProcessingException e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
+            report = reportService.saveReport(report);
+        }
 
         _processStringAttributes(user,report, reportToSave, tenantOrg);
 
@@ -1252,6 +1302,22 @@ public class ReportController {
         Report report = reportService.getReportById(reportId);
 
         report = _ReportToReturn(report,userId);
+        _checkAndReturnHistoricalReport(userId, report);
         return report;
+    }
+
+    private void _checkAndReturnHistoricalReport(@PathVariable("userId") Long userId, Report report) {
+        if (userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && report.getStatus().getInternalStatus().equalsIgnoreCase("REVIEW")) {
+            try {
+                ReportHistory historicReport = reportService.getSingleReportHistoryByStatusAndReportId("ACTIVE", report.getId());
+                if (historicReport != null && historicReport.getReportDetail() != null) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                    report.setReportDetails(mapper.readValue(historicReport.getReportDetail(), ReportDetailVO.class));
+                }
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
     }
 }

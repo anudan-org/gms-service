@@ -68,6 +68,7 @@ public class GrantDetailVO {
             TableData tableData = new TableData();
             tableData.setName("");
             tableData.setHeader("");
+            tableData.setEnteredByGrantee(false);
             tableData.setColumns(new ColumnData[5]);
             for(int i=0;i<tableData.getColumns().length;i++){
 
@@ -96,6 +97,7 @@ public class GrantDetailVO {
             TableData tableData = new TableData();
             tableData.setName("1");
             tableData.setHeader("Planned Installment #");
+            tableData.setEnteredByGrantee(false);
             tableData.setColumns(new ColumnData[4]);
             for(int i=0;i<tableData.getColumns().length;i++){
 

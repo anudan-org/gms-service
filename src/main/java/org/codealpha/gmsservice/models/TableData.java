@@ -8,6 +8,7 @@ public class TableData {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String header;
     private ColumnData[] columns;
+    private boolean enteredByGrantee;
 
     public String getName() {
         return name;
@@ -31,5 +32,13 @@ public class TableData {
 
     public void setHeader(String header) {
         this.header = header;
+    }
+
+    public boolean isEnteredByGrantee() {
+        return enteredByGrantee;
+    }
+
+    public void setEnteredByGrantee(boolean enteredByGrantee) {
+        this.enteredByGrantee = enteredByGrantee;
     }
 }
