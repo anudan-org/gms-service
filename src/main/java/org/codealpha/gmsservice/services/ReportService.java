@@ -131,6 +131,10 @@ public class ReportService {
         return reportRepository.findAllAssignedReportsForGranteeUser(userId,granteeOrgId, status);
     }
 
+    public ReportHistory getSingleReportHistoryByStatusAndReportId(String status,Long reportId){
+        return reportHistoryRepository.getSingleReportHistoryByStatusAndReportId(status,reportId);
+    }
+
     public List<Report> getAllAssignedReportsForGranterUser(Long userId, Long granterOrgId){
 
         return reportRepository.findAllAssignedReportsForGranterUser(userId,granterOrgId);

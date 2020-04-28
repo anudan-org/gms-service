@@ -130,6 +130,21 @@ public class ReportController {
 
             }
         }
+
+        if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && filterClause!=null && filterClause.equalsIgnoreCase("SUBMITTED")){
+            for (Report report : reports) {
+                try {
+                    ReportHistory historicReport = reportService.getSingleReportHistoryByStatusAndReportId("ACTIVE",report.getId());
+                    if(historicReport!=null && historicReport.getReportDetail()!=null) {
+                        ObjectMapper mapper = new ObjectMapper();
+                        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                        report.setReportDetails(mapper.readValue(historicReport.getReportDetail(), ReportDetailVO.class));
+                    }
+                } catch (IOException e) {
+                    logger.error(e.getMessage(),e);
+                }
+            }
+        }
         return reports;
     }
 
@@ -138,7 +153,9 @@ public class ReportController {
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         Report report = reportService.getReportById(reportId);
 
-        return _ReportToReturn(report, userId);
+        report = _ReportToReturn(report, userId);
+        _checkAndReturnHistoricalReport(userId, report);
+        return report;
     }
 
     @GetMapping("/{reportId}/{grantId}")
@@ -324,6 +341,11 @@ public class ReportController {
         report.setDueDate(reportToSave.getDueDate());
         report.setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
         report.setUpdatedBy(user.getId());
+        try {
+            report.setReportDetail(new ObjectMapper().writeValueAsString(reportToSave.getReportDetails()));
+        } catch (JsonProcessingException e) {
+            logger.error(e.getMessage(),e);
+        }
 
         List<Report> approvedReports = null;
         if(report.getLinkedApprovedReports()==null || report.getLinkedApprovedReports().isEmpty()){
@@ -1280,6 +1302,22 @@ public class ReportController {
         Report report = reportService.getReportById(reportId);
 
         report = _ReportToReturn(report,userId);
+        _checkAndReturnHistoricalReport(userId, report);
         return report;
+    }
+
+    private void _checkAndReturnHistoricalReport(@PathVariable("userId") Long userId, Report report) {
+        if (userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && report.getStatus().getInternalStatus().equalsIgnoreCase("REVIEW")) {
+            try {
+                ReportHistory historicReport = reportService.getSingleReportHistoryByStatusAndReportId("ACTIVE", report.getId());
+                if (historicReport != null && historicReport.getReportDetail() != null) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                    report.setReportDetails(mapper.readValue(historicReport.getReportDetail(), ReportDetailVO.class));
+                }
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
     }
 }

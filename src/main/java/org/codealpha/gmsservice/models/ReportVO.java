@@ -52,6 +52,7 @@ public class ReportVO {
     private boolean forGranteeUse;
     private int futureReportsCount;
     private String linkedApprovedReports;
+    private String reportDetail;
     public Long getId() {
         return id;
     }
@@ -314,6 +315,14 @@ public class ReportVO {
 
     public void setLinkedApprovedReports(String linkedApprovedReports) {
         this.linkedApprovedReports = linkedApprovedReports;
+    }
+
+    public String getReportDetail() {
+        return reportDetail;
+    }
+
+    public void setReportDetail(String reportDetail) {
+        this.reportDetail = reportDetail;
     }
 
     // BUILD THE VO

@@ -73,6 +73,8 @@ public class ReportHistory {
     private List<WorkFlowPermission> flowAuthorities;
     @Column
     private Date movedOn;
+    @Column
+    private String reportDetail;
 
     public Long getSeqid() {
         return seqid;
@@ -322,5 +324,13 @@ public class ReportHistory {
 
     public void setMovedOn(Date movedOn) {
         this.movedOn = movedOn;
+    }
+
+    public String getReportDetail() {
+        return reportDetail;
+    }
+
+    public void setReportDetail(String reportDetail) {
+        this.reportDetail = reportDetail;
     }
 }
