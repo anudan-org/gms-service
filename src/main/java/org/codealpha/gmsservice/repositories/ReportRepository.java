@@ -41,6 +41,10 @@ public interface ReportRepository extends CrudRepository<Report,Long> {
     @Query(value = "select * from reports r inner join grants g on g.id=r.grant_id inner join workflow_statuses wf on wf.id=r.status_id where r.due_date=?1 and wf.internal_status='ACTIVE' and g.grantor_org_id = ?2 order by r.due_date",nativeQuery = true)
     List<Report> getDueReportsForGranter(Date dueDate,Long granterId);
 
-    public List<Report> findByGrantAndStatus(Grant grant, WorkflowStatus status);
+    @Query(value = "select * from reports A inner join workflow_statuses B on B.id=A.status_id where A.grant_id=?1 and B.internal_status=?2 and A.id!=?3",nativeQuery = true)
+    public List<Report> findByGrantAndStatus(Long grantId, String statusName, Long currentReportId);
+
+    @Query(value = "select * from reports where id in (?1)",nativeQuery = true)
+    public List<Report> findReportsByIds(List<Long> reportIds);
 
 }

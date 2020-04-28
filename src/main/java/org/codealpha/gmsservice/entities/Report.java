@@ -45,6 +45,8 @@ public class Report {
     private String securityCode;
     @Transient
     private List<User> granteeUsers;
+    @Column(columnDefinition = "text")
+    private String linkedApprovedReports;
 
     @Column(columnDefinition = "text")
     @ApiModelProperty(name = "note",value = "Current note associated with the grant",dataType = "String")
@@ -333,5 +335,13 @@ public class Report {
 
     public void setMovedOn(Date movedOn) {
         this.movedOn = movedOn;
+    }
+
+    public String getLinkedApprovedReports() {
+        return linkedApprovedReports;
+    }
+
+    public void setLinkedApprovedReports(String linkedApprovedReports) {
+        this.linkedApprovedReports = linkedApprovedReports;
     }
 }

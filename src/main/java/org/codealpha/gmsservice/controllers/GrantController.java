@@ -333,6 +333,7 @@ public class GrantController {
                                     TableData tableData = new TableData();
                                     tableData.setName("1");
                                     tableData.setHeader("Planned Installment #");
+                                    tableData.setEnteredByGrantee(false);
                                     tableData.setColumns(new ColumnData[4]);
                                     for(int i=0;i<tableData.getColumns().length;i++){
 
@@ -2143,6 +2144,7 @@ public class GrantController {
                         TableData tableData = new TableData();
                         tableData.setName("1");
                         tableData.setHeader("Planned Installment #");
+                        tableData.setEnteredByGrantee(false);
                         tableData.setColumns(new ColumnData[4]);
                         for (int i = 0; i < tableData.getColumns().length; i++) {
 
@@ -2190,6 +2192,7 @@ public class GrantController {
                         TableData tableData = new TableData();
                         tableData.setName("1");
                         tableData.setHeader("Planned Installment #");
+                        tableData.setEnteredByGrantee(false);
                         tableData.setColumns(new ColumnData[4]);
                         for (int i = 0; i < tableData.getColumns().length; i++) {
 

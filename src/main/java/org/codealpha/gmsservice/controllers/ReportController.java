@@ -225,31 +225,40 @@ public class ReportController {
 
         ObjectMapper mapper = new ObjectMapper();
         report.getGrant().setGrantDetails(grantVO.getGrantDetails());
-        List<Report> approvedReports = reportService.findByGrantAndStatus(report.getGrant(),workflowStatusService.getTenantWorkflowStatuses("REPORT",report.getGrant().getGrantorOrganization().getId()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get());
+
+        List<Report> approvedReports = null;
         List<TableData> approvedDisbursements = new ArrayList<>();
         AtomicInteger installmentNumber = new AtomicInteger();
-        for (Report approvedReport : approvedReports) {
-            reportService.getReportSections(approvedReport).forEach(sec ->{
-                if(sec.getAttributes()!=null) {
-                    sec.getAttributes().forEach(attr -> {
-                        if (attr.getFieldType().equalsIgnoreCase("disbursement")) {
 
-                            try {
-                                List<TableData> tableDataList = mapper.readValue(reportService.getReportStringByStringAttributeId(attr.getId()).getValue(), new TypeReference<List<TableData>>() {
-                                });
-                                tableDataList.forEach(td -> {
-                                    approvedDisbursements.add(td);
-                                    installmentNumber.getAndIncrement();
-                                });
-                            } catch (IOException e) {
-                                logger.error(e.getMessage(), e);
+        if(report.getLinkedApprovedReports()!=null) {
+            approvedReports = reportService.getReportsByIds(report.getLinkedApprovedReports());
+            for (Report approvedReport : approvedReports) {
+                reportService.getReportSections(approvedReport).forEach(sec ->{
+                    if(sec.getAttributes()!=null) {
+                        sec.getAttributes().forEach(attr -> {
+                            if (attr.getFieldType().equalsIgnoreCase("disbursement")) {
+
+                                try {
+                                    List<TableData> tableDataList = mapper.readValue(reportService.getReportStringByStringAttributeId(attr.getId()).getValue(), new TypeReference<List<TableData>>() {
+                                    });
+                                    tableDataList.forEach(td -> {
+                                        approvedDisbursements.add(td);
+                                        installmentNumber.getAndIncrement();
+                                    });
+                                } catch (IOException e) {
+                                    logger.error(e.getMessage(), e);
+                                }
+
                             }
-
-                        }
-                    });
-                }
-            });
+                        });
+                    }
+                });
+            }
         }
+
+
+
+
         report.getGrant().setApprovedReportsDisbursements(approvedDisbursements);
 
         report.getReportDetails().getSections().forEach(sec ->{
@@ -315,6 +324,25 @@ public class ReportController {
         report.setDueDate(reportToSave.getDueDate());
         report.setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
         report.setUpdatedBy(user.getId());
+
+        List<Report> approvedReports = null;
+        if(report.getLinkedApprovedReports()==null || report.getLinkedApprovedReports().isEmpty()){
+            approvedReports = reportService.findByGrantAndStatus(report.getGrant(),workflowStatusService.getTenantWorkflowStatuses("REPORT",report.getGrant().getGrantorOrganization().getId()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get(),report.getId());
+            if(approvedReports==null || approvedReports.isEmpty()){
+                try {
+                    report.setLinkedApprovedReports(new ObjectMapper().writeValueAsString(Arrays.asList(new Long[]{0l})));
+                } catch (JsonProcessingException e) {
+                   logger.error(e.getMessage(),e);
+                }
+            } else {
+                try {
+                    report.setLinkedApprovedReports(new ObjectMapper().writeValueAsString(approvedReports.stream().map(r -> new Long(r.getId())).collect(Collectors.toList())));
+                } catch (JsonProcessingException e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
+            report = reportService.saveReport(report);
+        }
 
         _processStringAttributes(user,report, reportToSave, tenantOrg);
 

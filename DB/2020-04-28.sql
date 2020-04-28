@@ -1,0 +1,1 @@
+alter table reports add column linked_approved_reports text;

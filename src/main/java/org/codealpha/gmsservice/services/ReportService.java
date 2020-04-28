@@ -579,7 +579,18 @@ public class ReportService {
         return false;
     }
 
-    public List<Report> findByGrantAndStatus(Grant grant, WorkflowStatus status){
-        return reportRepository.findByGrantAndStatus(grant,status);
+    public List<Report> findByGrantAndStatus(Grant grant, WorkflowStatus status,Long reportId){
+        return reportRepository.findByGrantAndStatus(grant.getId(),status.getInternalStatus(),reportId);
+    }
+
+    public List<Report> getReportsByIds(String linkedApprovedReports) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            List<Long> reportIds = mapper.readValue(linkedApprovedReports,new TypeReference<List<Long>>(){});
+            return reportRepository.findReportsByIds(reportIds);
+        } catch (IOException e) {
+            logger.error(e.getMessage(),e);
+        }
+        return null;
     }
 }
