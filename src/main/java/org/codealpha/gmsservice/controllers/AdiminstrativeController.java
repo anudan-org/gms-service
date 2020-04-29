@@ -298,7 +298,7 @@ public class AdiminstrativeController {
         }
         UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
         String url = uriBuilder.toUriString();
-        url = url+"/home/?action=registration&org="+ StringEscapeUtils.escapeHtml4(user.getOrganization().getName())+"&email="+user.getEmailId()+"&type=join";
+        url = url+"/home/?action=registration&org="+ StringEscapeUtils.escapeHtml4(user.getOrganization().getName()).replaceAll(" ","%20")+"&email="+user.getEmailId()+"&type=join";
         String[] notifications = userService.buildJoiningInvitationContent(
                 user.getOrganization(),userRoles.get(0).getRole(),adminUser,
                 appConfigService.getAppConfigForGranterOrg(user.getOrganization().getId(), AppConfiguration.INVITE_SUBJECT).getConfigValue(),
