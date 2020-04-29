@@ -67,7 +67,16 @@ public class ReportService {
         ReportAssignment assignment = null;
 
         Organization granterOrg = organizationRepository.findByCode(tenantCode);
-        List<WorkflowStatus> statuses = workflowStatusRepository.getAllTenantStatuses("REPORT", report.getGrant().getGrantorOrganization().getId());
+        List<WorkflowStatus> statuses = new ArrayList<>();
+        List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionRepository.findByWorkflow(workflowRepository.findByGranterAndObject(granterOrg,WorkflowObject.REPORT).get(0));
+        for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
+            if(!statuses.stream().filter(s -> Long.valueOf(s.getId())==Long.valueOf(supportedTransition.getFromState().getId())).findAny().isPresent()) {
+                statuses.add(supportedTransition.getFromState());
+            }
+            if(!statuses.stream().filter(s -> Long.valueOf(s.getId())==Long.valueOf(supportedTransition.getToState().getId())).findAny().isPresent()) {
+                statuses.add(supportedTransition.getToState());
+            }
+        }
 
         Optional<WorkflowStatus> grantActiveStatus = workflowStatusRepository.getAllTenantStatuses("GRANT", report.getGrant().getGrantorOrganization().getId()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("ACTIVE")).findFirst();
         GrantAssignments anchorAssignment = null;

@@ -131,6 +131,8 @@ public class GrantController {
 
     @Autowired
     private CommonEmailSevice commonEmailSevice;
+    @Autowired
+    private WorkflowService workflowService;
 
     @GetMapping("/create/{templateId}")
     @ApiOperation("Create new grant with a template")
@@ -199,7 +201,18 @@ public class GrantController {
 
     private void createInitialAssignmentsPlaceholders(@PathVariable("userId") Long userId, Grant grant, Organization granterOrg) {
         GrantAssignments assignment;
-        List<WorkflowStatus> statuses = workflowStatusService.getTenantWorkflowStatuses("GRANT", granterOrg.getId());
+        List<WorkflowStatus> statuses = new ArrayList<>();
+        List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionService.getStatusTransitionsForWorkflow(workflowService.findByGranterAndObject(granterOrg,WorkflowObject.GRANT));
+        for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
+            if(!statuses.stream().filter(s -> Long.valueOf(s.getId())==Long.valueOf(supportedTransition.getFromState().getId())).findAny().isPresent()) {
+                statuses.add(supportedTransition.getFromState());
+            }
+            if(!statuses.stream().filter(s -> Long.valueOf(s.getId())==Long.valueOf(supportedTransition.getToState().getId())).findAny().isPresent()) {
+                statuses.add(supportedTransition.getToState());
+            }
+        }
+
+        //List<WorkflowStatus> statuses = workflowStatusService.getTenantWorkflowStatuses("GRANT", granterOrg.getId());
         for (WorkflowStatus status : statuses) {
             if (!status.getTerminal()) {
                 assignment = new GrantAssignments();

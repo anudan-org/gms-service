@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
+import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
@@ -86,6 +87,8 @@ public class ReportController {
     private GranterReportTemplateService granterReportTemplateService;
     @Autowired
     private WorkflowPermissionService workflowPermissionService;
+    @Autowired
+    private WorkflowService workflowService;
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,@RequestParam(value = "q",required = false) String filterClause) {
@@ -1121,7 +1124,16 @@ public class ReportController {
         ReportAssignment assignment = null;
 
         Organization granterOrg = organizationService.findOrganizationByTenantCode(tenantCode);
-        List<WorkflowStatus> statuses = workflowStatusService.getTenantWorkflowStatuses("REPORT", granterOrg.getId());
+        List<WorkflowStatus> statuses = new ArrayList<>();
+        List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionService.getStatusTransitionsForWorkflow(workflowService.findByGranterAndObject(granterOrg, WorkflowObject.REPORT));
+        for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
+            if(!statuses.stream().filter(s -> Long.valueOf(s.getId())==Long.valueOf(supportedTransition.getFromState().getId())).findAny().isPresent()) {
+                statuses.add(supportedTransition.getFromState());
+            }
+            if(!statuses.stream().filter(s -> Long.valueOf(s.getId())==Long.valueOf(supportedTransition.getToState().getId())).findAny().isPresent()) {
+                statuses.add(supportedTransition.getToState());
+            }
+        }
         for (WorkflowStatus status : statuses) {
             if (!status.getTerminal()) {
                 assignment = new ReportAssignment();
