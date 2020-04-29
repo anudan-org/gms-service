@@ -1,0 +1,1 @@
+alter table workflow_statuses add column disabled boolean default false;

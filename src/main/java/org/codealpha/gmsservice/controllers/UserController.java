@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.controllers;
 
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.models.ErrorMessage;
 import org.codealpha.gmsservice.models.UserCheck;
 import org.codealpha.gmsservice.models.UserVO;
+import org.codealpha.gmsservice.models.dashboard.*;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.DashboardValidator;
 import org.joda.time.DateTime;
@@ -281,5 +283,40 @@ public class UserController {
     }
 
     return false;
+  }
+
+  @GetMapping("/{userId}/dashboard/summary")
+  public ResponseEntity<Category> getDasboardSummary(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId){
+    DashboardSummary dashboardSummary = new DashboardSummary();
+    //dashboardSummary.setCategory();
+
+    Category dashboardCategory = null;
+    Summary categorySummary = new Summary(Long.valueOf(50),Long.valueOf(15),Long.valueOf(5000000),Long.valueOf(10));
+    List<Filter> categoryFilters = new ArrayList<>();
+
+    Filter categoryFilter = new Filter();
+    categoryFilter.setName("Active Grants");
+    categoryFilter.setTotalGrants(Long.valueOf(20));
+    categoryFilter.setPeriod("2014-2025");
+    categoryFilter.setCommittedAmount(Long.valueOf(2000000));
+    categoryFilter.setDisbursedAmount(Long.valueOf(1600000));
+
+    List<DetailedSummary> detailedSummaryList = new ArrayList<>();
+    detailedSummaryList.add(new DetailedSummary("Approved",Long.valueOf(12)));
+    detailedSummaryList.add(new DetailedSummary("Due",Long.valueOf(5)));
+    detailedSummaryList.add(new DetailedSummary("Unapproved",Long.valueOf(3)));
+    detailedSummaryList.add(new DetailedSummary("Overdue",Long.valueOf(2)));
+
+    List<Detail> filterDetails = new ArrayList<>();
+    filterDetails.add(new Detail("Reports",detailedSummaryList));
+    categoryFilter.setDetails(filterDetails);
+
+    categoryFilters.add(categoryFilter);
+
+    dashboardCategory = new Category("CEO",categorySummary,categoryFilters);
+
+
+
+    return new ResponseEntity(dashboardCategory,HttpStatus.OK);
   }
 }
