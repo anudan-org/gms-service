@@ -1,12 +1,19 @@
 package org.codealpha.gmsservice.services;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.entities.dashboard.*;
 import org.codealpha.gmsservice.models.*;
+import org.codealpha.gmsservice.repositories.dashboard.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,7 +37,18 @@ public class DashboardService {
     private UserService userService;
     @Autowired
     private WorkflowStatusService workflowStatusService;
-
+    @Autowired
+    private GranterCountAndAmountTotalRepository granterCountAndAmountTotalRepository;
+    @Autowired
+    private GranterGranteeRepository granterGranteeRepository;
+    @Autowired
+    private GranterActiveUserRepository granterActiveUserRepository;
+    @Autowired
+    private GranterActiveGrantSummaryCommittedRepository granterActiveGrantSummaryCommittedRepository;
+    @Autowired
+    private GranterActiveGrantSummaryDisbursedRepository granterActiveGrantSummaryDisbursedRepository;
+    @Autowired
+    private GranterReportStatusRepository granterReportStatusRepository;
 
     List<Tenant> tenants;
 
@@ -160,5 +178,54 @@ public class DashboardService {
         this.tenants = tenants;
     }
 
+
+    public GranterCountAndAmountTotal getSummaryForGranter(Long granterId){
+        return granterCountAndAmountTotalRepository.getSummaryForGranter(granterId);
+    }
+
+    public GranterGrantee getGranteesSummaryForGranter(Long granterId){
+        return granterGranteeRepository.getGranteeSummaryForGranter(granterId);
+    }
+
+    public GranterActiveUser getActiveUserSummaryForGranter(Long granterId){
+        return granterActiveUserRepository.getActiveUserSummaryForGranter(granterId);
+    }
+
+    public GranterActiveGrantSummaryCommitted getActiveGrantCommittedSummaryForGranter(Long granterId){
+        return granterActiveGrantSummaryCommittedRepository.getActiveGrantCommittedSummaryForGranter(granterId);
+    }
+
+    public Long getActiveGrantDisbursedAmountForGranter(Long granterId) {
+        List<GranterActiveGrantSummaryDisbursed> disbursedList = granterActiveGrantSummaryDisbursedRepository.getActiveGrantDisbursedSummaryForGranter(granterId);
+        AtomicReference<Long> disbursedAmount = new AtomicReference<>(0l);
+        if(disbursedList!=null && disbursedList.size()>0){
+            disbursedList.forEach(d ->{
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
+
+                try {
+                    List<TableData> dataList = mapper.readValue(d.getDisbursementData(),new TypeReference<List<TableData>>() {});
+                    if(dataList!=null){
+                        dataList.forEach(a -> {
+
+                            for (ColumnData column : a.getColumns()) {
+                                if(column.getName().equalsIgnoreCase("Actual Disbursement") && column.getValue()!=null && column.getValue().trim()!="" && column.getDataType().equalsIgnoreCase("currency")){
+                                    disbursedAmount.updateAndGet(v -> v + Long.valueOf(column.getValue()));
+                                }
+                            }
+                        });
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+
+        return disbursedAmount.get();
+    }
+
+    public List<GranterReportStatus> getReportStatusSummaryForGranterAndStatus(Long granterId,String status){
+        return granterReportStatusRepository.getReportStatusesForGranter(granterId, status);
+    }
 
 }

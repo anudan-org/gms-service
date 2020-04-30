@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.controllers;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
+import org.codealpha.gmsservice.entities.dashboard.*;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.models.ErrorMessage;
 import org.codealpha.gmsservice.models.UserCheck;
@@ -289,23 +291,35 @@ public class UserController {
   public ResponseEntity<Category> getDasboardSummary(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId){
     DashboardSummary dashboardSummary = new DashboardSummary();
     //dashboardSummary.setCategory();
+    Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+
+    GranterCountAndAmountTotal countAndAmountTotal = dashboardService.getSummaryForGranter(tenantOrg.getId());
+    GranterGrantee granteeSummary = dashboardService.getGranteesSummaryForGranter(tenantOrg.getId());
+    GranterActiveUser granterActiveUserSummary = dashboardService.getActiveUserSummaryForGranter(tenantOrg.getId());
+    GranterActiveGrantSummaryCommitted activeGrantSummaryCommitted = dashboardService.getActiveGrantCommittedSummaryForGranter(tenantOrg.getId());
+    Long disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGranter(tenantOrg.getId());
 
     Category dashboardCategory = null;
-    Summary categorySummary = new Summary(Long.valueOf(50),Long.valueOf(15),Long.valueOf(5000000),Long.valueOf(10));
+    Summary categorySummary = new Summary(Long.valueOf(countAndAmountTotal.getTotalGrants()),Long.valueOf(granteeSummary.getGranteeTotals()),Long.valueOf(countAndAmountTotal.getTotalGrantAmount()),Long.valueOf(granterActiveUserSummary.getActiveUsers()));
     List<Filter> categoryFilters = new ArrayList<>();
 
     Filter categoryFilter = new Filter();
     categoryFilter.setName("Active Grants");
-    categoryFilter.setTotalGrants(Long.valueOf(20));
-    categoryFilter.setPeriod("2014-2025");
-    categoryFilter.setCommittedAmount(Long.valueOf(2000000));
-    categoryFilter.setDisbursedAmount(Long.valueOf(1600000));
+    categoryFilter.setTotalGrants(Long.valueOf(activeGrantSummaryCommitted.getGrantCount()));
+    SimpleDateFormat sd = new SimpleDateFormat("yyyy");
+    categoryFilter.setPeriod(sd.format(activeGrantSummaryCommitted.getPeriodStart())+ "-" + sd.format(activeGrantSummaryCommitted.getPeriodEnd()));
+    categoryFilter.setCommittedAmount(Long.valueOf(activeGrantSummaryCommitted.getCommittedAmount()));
+    categoryFilter.setDisbursedAmount(Long.valueOf(disbursedAmount));
+    List<GranterReportStatus> reportStatuses = dashboardService.getReportStatusSummaryForGranterAndStatus(tenantOrg.getId(),"ACTIVE");
 
     List<DetailedSummary> detailedSummaryList = new ArrayList<>();
-    detailedSummaryList.add(new DetailedSummary("Approved",Long.valueOf(12)));
-    detailedSummaryList.add(new DetailedSummary("Due",Long.valueOf(5)));
-    detailedSummaryList.add(new DetailedSummary("Unapproved",Long.valueOf(3)));
-    detailedSummaryList.add(new DetailedSummary("Overdue",Long.valueOf(2)));
+    if(reportStatuses!=null && reportStatuses.size()>0){
+      for (GranterReportStatus reportStatus : reportStatuses) {
+        detailedSummaryList.add(new DetailedSummary(reportStatus.getStatus(),Long.valueOf(reportStatus.getCount())));
+      }
+
+    }
+
 
     List<Detail> filterDetails = new ArrayList<>();
     filterDetails.add(new Detail("Reports",detailedSummaryList));
