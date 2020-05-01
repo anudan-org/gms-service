@@ -3,8 +3,8 @@ package org.codealpha.gmsservice.entities.dashboard;
 import javax.persistence.*;
 import java.util.Date;
 
-@Entity(name = "granter_active_grants_summary_disbursed")
-public class GranterActiveGrantSummaryDisbursed {
+@Entity(name = "granter_grants_summary_disbursed")
+public class GranterGrantSummaryDisbursed {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -13,6 +13,12 @@ public class GranterActiveGrantSummaryDisbursed {
     private Long granterId;
     @Column
     private String disbursementData;
+    @Column
+    private String internalStatus;
+    @Column
+    private Date startDate;
+    @Column
+    private Long grantAmount;
 
 
     public Long getId() {
@@ -37,5 +43,29 @@ public class GranterActiveGrantSummaryDisbursed {
 
     public void setDisbursementData(String disbursementData) {
         this.disbursementData = disbursementData;
+    }
+
+    public String getInternalStatus() {
+        return internalStatus;
+    }
+
+    public void setInternalStatus(String internalStatus) {
+        this.internalStatus = internalStatus;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public Long getGrantAmount() {
+        return grantAmount;
+    }
+
+    public void setGrantAmount(Long grantAmount) {
+        this.grantAmount = grantAmount;
     }
 }
