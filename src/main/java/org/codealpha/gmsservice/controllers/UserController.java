@@ -300,8 +300,14 @@ public class UserController {
 
         List<Filter> categoryFilters = new ArrayList<>();
 
-        categoryFilters.add(getFilterForGrantsByStatus(tenantOrg,"ACTIVE"));
-        categoryFilters.add(getFilterForGrantsByStatus(tenantOrg,"CLOSED"));
+        Filter activeFilter = getFilterForGrantsByStatus(tenantOrg,"ACTIVE");
+        if(activeFilter!=null) {
+            categoryFilters.add(activeFilter);
+        }
+        Filter closedFilter = getFilterForGrantsByStatus(tenantOrg,"CLOSED");
+        if(closedFilter!=null) {
+            categoryFilters.add(getFilterForGrantsByStatus(tenantOrg, "CLOSED"));
+        }
 
         dashboardCategory = new Category("CEO", categorySummary, categoryFilters);
 
@@ -311,6 +317,9 @@ public class UserController {
 
     private Filter getFilterForGrantsByStatus(Organization tenantOrg,String status) {
         GranterGrantSummaryCommitted activeGrantSummaryCommitted = dashboardService.getActiveGrantCommittedSummaryForGranter(tenantOrg.getId(),status);
+        if(activeGrantSummaryCommitted==null){
+            return null;
+        }
         Long disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGranter(tenantOrg.getId(),status);
         Filter categoryFilter = new Filter();
         categoryFilter.setName(WordUtils.capitalizeFully(status+" Grants"));
