@@ -16,7 +16,6 @@ import org.codealpha.gmsservice.entities.dashboard.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.dashboard.*;
 import org.joda.time.DateTime;
-import org.joda.time.Months;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -231,7 +230,13 @@ public class DashboardService {
     }
 
     public Map<Integer,String> getActiveGrantsCommittedPeriodsForGranterAndStatus(Long granterId, String status) {
-        List<GranterGrantSummaryDisbursed> disbursedList = granterActiveGrantSummaryDisbursedRepository.getGrantDisbursedSummaryForGranter(granterId,status);
+
+        List<GranterGrantSummaryDisbursed> disbursedList = null;
+        if(status.equalsIgnoreCase("ACTIVE")){
+            disbursedList = granterActiveGrantSummaryDisbursedRepository.getActiveGrantCommittedSummaryForGranter(granterId,status);
+        } else if(status.equalsIgnoreCase("CLOSED")){
+            disbursedList = granterActiveGrantSummaryDisbursedRepository.getClosedGrantCommittedSummaryForGranter(granterId,status);
+        }
         Map<Integer,String> periods = new HashMap<>();
         if(disbursedList!=null && disbursedList.size()>0){
             for (GranterGrantSummaryDisbursed granterGrantSummaryDisbursed : disbursedList) {
@@ -296,7 +301,12 @@ public class DashboardService {
     }
 
     public Long getCommittedAmountForGranterAndPeriodAndStatus(Integer period,Long granterId,String status) {
-        List<GranterGrantSummaryDisbursed> disbursedList = granterActiveGrantSummaryDisbursedRepository.getGrantDisbursedSummaryForGranter(granterId, status);
+        List<GranterGrantSummaryDisbursed> disbursedList = null;
+        if(status.equalsIgnoreCase("ACTIVE")){
+            disbursedList = granterActiveGrantSummaryDisbursedRepository.getActiveGrantCommittedSummaryForGranter(granterId,status);
+        } else if(status.equalsIgnoreCase("CLOSED")){
+            disbursedList = granterActiveGrantSummaryDisbursedRepository.getClosedGrantCommittedSummaryForGranter(granterId,status);
+        }
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
         Long total = 0l;
