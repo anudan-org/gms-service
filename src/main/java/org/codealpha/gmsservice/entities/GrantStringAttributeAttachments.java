@@ -15,20 +15,26 @@ public class GrantStringAttributeAttachments {
     @Column(columnDefinition = "text")
     private String description;
     @Column
+    @JsonIgnore
     private String location;
     @Column
+    @JsonIgnore
     private int version;
     @Column
     private String title;
     @Column
     private String type;
     @Column
+    @JsonIgnore
     private Date createdOn;
     @Column
+    @JsonIgnore
     private String createdBy;
     @Column
+    @JsonIgnore
     private Date updatedOn;
     @Column
+    @JsonIgnore
     private String updatedBy;
     @ManyToOne
     @JoinColumn(referencedColumnName = "id")
