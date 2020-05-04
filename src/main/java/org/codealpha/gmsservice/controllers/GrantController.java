@@ -233,7 +233,7 @@ public class GrantController {
         grant.setName(grantName);
         grant.setStartDate(null);
         grant.setStDate("");
-        grant.setAmount(0D);
+        //grant.setAmount(0D);
         grant.setDescription("");
         grant.setGrantStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", organizationService.findOrganizationByTenantCode(tenantCode).getId()));
         grant.setStatusName(GrantStatus.DRAFT);
