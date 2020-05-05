@@ -606,4 +606,8 @@ public class ReportService {
         }
         return null;
     }
+
+    public List<Report> findReportsByStatusForGrant(WorkflowStatus status, Grant grant){
+        return reportRepository.findByStatusAndGrant(status,grant);
+    }
 }
