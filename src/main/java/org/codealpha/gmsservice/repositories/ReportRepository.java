@@ -47,4 +47,6 @@ public interface ReportRepository extends CrudRepository<Report,Long> {
     @Query(value = "select * from reports where id in (?1)",nativeQuery = true)
     public List<Report> findReportsByIds(List<Long> reportIds);
 
+    public List<Report> findByStatusAndGrant(WorkflowStatus status,Grant grant);
+
 }

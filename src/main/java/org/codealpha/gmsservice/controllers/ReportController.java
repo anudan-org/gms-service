@@ -183,6 +183,21 @@ public class ReportController {
         return reports;
     }
 
+    @GetMapping("/{grantId}/approved")
+    public List<Report> getApprovedReportsForGrant(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("grantId") Long grantId) {
+        Optional <WorkflowStatus> reportApprovedStatus = workflowStatusService.getTenantWorkflowStatuses("REPORT",organizationService.findOrganizationByTenantCode(tenantCode).getId()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
+        List<Report> reports = new ArrayList<>();
+        if(reportApprovedStatus.isPresent()){
+            reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(),grantService.getById(grantId));
+        }
+
+        for (Report report : reports) {
+            report = _ReportToReturn(report,userId);
+        }
+
+        return reports;
+    }
+
     private Report _ReportToReturn(Report report, Long userId) {
 
         report.setStringAttributes(reportService.getReportStringAttributesForReport(report));
@@ -284,7 +299,7 @@ public class ReportController {
         report.getReportDetails().getSections().forEach(sec ->{
             if(sec.getAttributes()!=null) {
                 sec.getAttributes().forEach(attr -> {
-                    if (attr.getFieldType().equalsIgnoreCase("disbursement")) {
+                    if (attr.getFieldType().equalsIgnoreCase("disbursement") && attr.getFieldTableValue()!=null) {
                         for (TableData data : attr.getFieldTableValue()) {
                             installmentNumber.getAndIncrement();
                             data.setName(String.valueOf(installmentNumber.get()));
