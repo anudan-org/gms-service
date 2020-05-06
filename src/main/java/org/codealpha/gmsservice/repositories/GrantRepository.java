@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.repositories;
 
+import java.util.Date;
 import java.util.List;
 
 import org.codealpha.gmsservice.entities.Grant;
@@ -44,4 +45,7 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
 
     @Query(value = "select count(distinct A.*) from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=?1 and C.internal_status='CLOSED'",nativeQuery = true)
     Long countOfClosedGrantsForGrantor(Long userOrgId);
+
+    @Query(value = "select count(*) from grants where start_date=?1 and grant_status_id=?3 and id !=?2",nativeQuery = true)
+    public Long getCountOfOtherGrantsWithStartDateAndStatus(Date startDate,Long grantId,Long statusId);
 }

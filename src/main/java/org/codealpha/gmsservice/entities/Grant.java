@@ -171,6 +171,9 @@ public class Grant {
   @Transient
   private List<TableData> approvedReportsDisbursements;
 
+  @Column(columnDefinition = "text")
+  private String referenceNo;
+
   public Long getId() {
     return id;
   }
@@ -462,5 +465,13 @@ public class Grant {
 
   public void setApprovedReportsDisbursements(List<TableData> approvedReportsDisbursements) {
     this.approvedReportsDisbursements = approvedReportsDisbursements;
+  }
+
+  public String getReferenceNo() {
+    return referenceNo;
+  }
+
+  public void setReferenceNo(String referenceNo) {
+    this.referenceNo = referenceNo;
   }
 }
