@@ -546,7 +546,7 @@ public class GrantController {
         currentAttribute.setFieldType(attributeToSave.getAttr().getFieldType());
         currentAttribute = grantService.saveSectionAttribute(currentAttribute);
         GrantStringAttribute stringAttribute = grantService.findGrantStringBySectionIdAttribueIdAndGrantId(currentAttribute.getSection().getId(), currentAttribute.getId(), grantId);
-        stringAttribute.setValue("");
+        //stringAttribute.setValue("");
         stringAttribute = grantService.saveStringAttribute(stringAttribute);
 
         grant = grantService.getById(grantId);
