@@ -295,7 +295,7 @@ public class UserController {
         GranterCountAndAmountTotal countAndAmountTotal = dashboardService.getSummaryForGranter(tenantOrg.getId());
         GranterGrantee granteeSummary = dashboardService.getGranteesSummaryForGranter(tenantOrg.getId());
         GranterActiveUser granterActiveUserSummary = dashboardService.getActiveUserSummaryForGranter(tenantOrg.getId());
-        Summary categorySummary = new Summary(Long.valueOf(countAndAmountTotal.getTotalGrants()), Long.valueOf(granteeSummary.getGranteeTotals()), Long.valueOf(countAndAmountTotal.getTotalGrantAmount()), Long.valueOf(granterActiveUserSummary.getActiveUsers()));
+        Summary categorySummary = new Summary(Long.valueOf(countAndAmountTotal==null?0l:countAndAmountTotal.getTotalGrants()), Long.valueOf(granteeSummary==null?0l:granteeSummary.getGranteeTotals()), Long.valueOf(countAndAmountTotal==null?0l:countAndAmountTotal.getTotalGrantAmount()), Long.valueOf(granterActiveUserSummary==null?0l:granterActiveUserSummary.getActiveUsers()));
 
 
         List<Filter> categoryFilters = new ArrayList<>();
