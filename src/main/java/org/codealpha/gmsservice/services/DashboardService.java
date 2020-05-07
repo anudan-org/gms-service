@@ -233,9 +233,9 @@ public class DashboardService {
 
         List<GranterGrantSummaryDisbursed> disbursedList = null;
         if(status.equalsIgnoreCase("ACTIVE")){
-            disbursedList = granterActiveGrantSummaryDisbursedRepository.getActiveGrantCommittedSummaryForGranter(granterId,status);
+            disbursedList = granterActiveGrantSummaryDisbursedRepository.getActiveGrantCommittedSummaryForGranter(granterId);
         } else if(status.equalsIgnoreCase("CLOSED")){
-            disbursedList = granterActiveGrantSummaryDisbursedRepository.getClosedGrantCommittedSummaryForGranter(granterId,status);
+            disbursedList = granterActiveGrantSummaryDisbursedRepository.getClosedGrantCommittedSummaryForGranter(granterId);
         }
         Map<Integer,String> periods = new HashMap<>();
         if(disbursedList!=null && disbursedList.size()>0){
@@ -303,9 +303,9 @@ public class DashboardService {
     public Long getCommittedAmountForGranterAndPeriodAndStatus(Integer period,Long granterId,String status) {
         List<GranterGrantSummaryDisbursed> disbursedList = null;
         if(status.equalsIgnoreCase("ACTIVE")){
-            disbursedList = granterActiveGrantSummaryDisbursedRepository.getActiveGrantCommittedSummaryForGranter(granterId,status);
+            disbursedList = granterActiveGrantSummaryDisbursedRepository.getActiveGrantCommittedSummaryForGranter(granterId);
         } else if(status.equalsIgnoreCase("CLOSED")){
-            disbursedList = granterActiveGrantSummaryDisbursedRepository.getClosedGrantCommittedSummaryForGranter(granterId,status);
+            disbursedList = granterActiveGrantSummaryDisbursedRepository.getClosedGrantCommittedSummaryForGranter(granterId);
         }
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);

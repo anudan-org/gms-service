@@ -344,31 +344,21 @@ public class UserController {
         List<DetailedSummary> reportSummaryList = new ArrayList<>();
         if (reportStatuses != null && reportStatuses.size() > 0) {
             for (GranterReportStatus reportStatus : reportStatuses) {
-                if(reportStatuses.stream().filter(rs -> rs.getStatus().equalsIgnoreCase("due")).findAny().isPresent()) {
-                    reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
-                }else{
-                    reportSummaryList.add(new ReportSummary("Due",Long.valueOf(0)));
-                }
-
-                if(reportStatuses.stream().filter(rs -> rs.getStatus().equalsIgnoreCase("approved")).findAny().isPresent()) {
-                    reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
-                }else{
-                    reportSummaryList.add(new ReportSummary("Approved",Long.valueOf(0)));
-                }
-
-                if(reportStatuses.stream().filter(rs -> rs.getStatus().equalsIgnoreCase("Unapproved")).findAny().isPresent()) {
-                    reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
-                }else{
-                    reportSummaryList.add(new ReportSummary("Unapproved",Long.valueOf(0)));
-                }
-
-                if(reportStatuses.stream().filter(rs -> rs.getStatus().equalsIgnoreCase("Overdue")).findAny().isPresent()) {
-                    reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
-                }else{
-                    reportSummaryList.add(new ReportSummary("Overdue",Long.valueOf(0)));
-                }
+                reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
             }
 
+            if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny().isPresent()){
+                reportSummaryList.add(new ReportSummary("Due",Long.valueOf(0)));
+            }
+            if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("unapproved")).findAny().isPresent()){
+                reportSummaryList.add(new ReportSummary("Unapproved",Long.valueOf(0)));
+            }
+            if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("approved")).findAny().isPresent()){
+                reportSummaryList.add(new ReportSummary("Approved",Long.valueOf(0)));
+            }
+            if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny().isPresent()){
+                reportSummaryList.add(new ReportSummary("Overdue",Long.valueOf(0)));
+            }
         }
 
         List<DetailedSummary> disbursalSummaryList = new ArrayList<>();
