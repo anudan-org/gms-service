@@ -769,7 +769,7 @@ CREATE TABLE public.users (
     user_profile text
 );
 
-
+alter table users add column plain boolean default false;
 --
 -- TOC entry 233 (class 1259 OID 306604)
 -- Name: granter_active_users; Type: MATERIALIZED VIEW; Schema: public; Owner: -

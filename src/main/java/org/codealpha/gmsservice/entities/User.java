@@ -57,6 +57,9 @@ public class User {
 	@OneToMany(mappedBy = "user",fetch = FetchType.EAGER)
 	private List<UserRole> userRoles;
 
+	@Column
+	private boolean plain;
+
 	public Long getId() {
 		return id;
 	}
@@ -168,5 +171,13 @@ public class User {
 
 	public void setAdmin(boolean admin) {
 		this.admin = admin;
+	}
+
+	public boolean isPlain() {
+		return plain;
+	}
+
+	public void setPlain(boolean plain) {
+		this.plain = plain;
 	}
 }

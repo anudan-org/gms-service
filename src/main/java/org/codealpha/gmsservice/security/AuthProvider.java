@@ -25,6 +25,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
@@ -43,6 +44,7 @@ public class AuthProvider implements AuthenticationProvider {
     private String reCaptchaKey;
   @Value("${spring.use-captcha}")
   private Boolean useCaptcha;
+  @Autowired private PasswordEncoder passwordEncoder;
 
 
   @Override
@@ -107,13 +109,24 @@ public class AuthProvider implements AuthenticationProvider {
             && !((Granter) user.getOrganization()).getCode().equalsIgnoreCase(tenantCode)) {
           throw new BadCredentialsException("Could not deternmine user organization");
         }
-        if (password.equalsIgnoreCase(user.getPassword())
-            && username.equalsIgnoreCase(user.getEmailId())) {
+        if(user.isPlain()) {
+          if (password.equalsIgnoreCase(user.getPassword())
+                  && username.equalsIgnoreCase(user.getEmailId())) {
 
-          return new UsernamePasswordAuthenticationToken(username, password, new ArrayList());
-        } else {
-          //TODO - Read messages from a resource bundle
-          throw new BadCredentialsException("Invalid login credentials");
+            return new UsernamePasswordAuthenticationToken(username, password, new ArrayList());
+          } else {
+            //TODO - Read messages from a resource bundle
+            throw new BadCredentialsException("Invalid login credentials");
+          }
+        }else{
+          if (passwordEncoder.matches(password,user.getPassword())
+                  && username.equalsIgnoreCase(user.getEmailId())) {
+
+            return new UsernamePasswordAuthenticationToken(username, password, new ArrayList());
+          } else {
+            //TODO - Read messages from a resource bundle
+            throw new BadCredentialsException("Invalid login credentials");
+          }
         }
       }else{
         throw new BadCredentialsException("Authentication failed");
