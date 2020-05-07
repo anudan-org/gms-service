@@ -98,7 +98,7 @@ public class UserController {
             newUser.setEmailId(user.getEmailId());
 
             newUser.setOrganization(org);
-            newUser.setPassword(user.getPassword());
+            newUser.setPassword(passwordEncoder.encode(user.getPassword()));
 
 
             UriComponents urlComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
@@ -118,7 +118,7 @@ public class UserController {
             newUser.setActive(true);
             newUser.setFirstName(user.getFirstName());
             newUser.setLastName(user.getLastName());
-            newUser.setPassword(user.getPassword());
+            newUser.setPassword(passwordEncoder.encode(user.getPassword()));
             newUser = userService.save(newUser);
         }
 
@@ -344,7 +344,29 @@ public class UserController {
         List<DetailedSummary> reportSummaryList = new ArrayList<>();
         if (reportStatuses != null && reportStatuses.size() > 0) {
             for (GranterReportStatus reportStatus : reportStatuses) {
-                reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
+                if(reportStatuses.stream().filter(rs -> rs.getStatus().equalsIgnoreCase("due")).findAny().isPresent()) {
+                    reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
+                }else{
+                    reportSummaryList.add(new ReportSummary("Due",Long.valueOf(0)));
+                }
+
+                if(reportStatuses.stream().filter(rs -> rs.getStatus().equalsIgnoreCase("approved")).findAny().isPresent()) {
+                    reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
+                }else{
+                    reportSummaryList.add(new ReportSummary("Approved",Long.valueOf(0)));
+                }
+
+                if(reportStatuses.stream().filter(rs -> rs.getStatus().equalsIgnoreCase("Unapproved")).findAny().isPresent()) {
+                    reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
+                }else{
+                    reportSummaryList.add(new ReportSummary("Unapproved",Long.valueOf(0)));
+                }
+
+                if(reportStatuses.stream().filter(rs -> rs.getStatus().equalsIgnoreCase("Overdue")).findAny().isPresent()) {
+                    reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
+                }else{
+                    reportSummaryList.add(new ReportSummary("Overdue",Long.valueOf(0)));
+                }
             }
 
         }
