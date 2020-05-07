@@ -3,10 +3,12 @@ package org.codealpha.gmsservice.models.dashboard;
 public class DisbursementData {
     private String name;
     private String value;
+    private Long count;
 
-    public DisbursementData(String name, String value) {
+    public DisbursementData(String name, String value,Long count) {
         this.name = name;
         this.value = value;
+        this.count = count;
     }
 
     public String getName() {
@@ -23,5 +25,13 @@ public class DisbursementData {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public Long getCount() {
+        return count;
+    }
+
+    public void setCount(Long count) {
+        this.count = count;
     }
 }

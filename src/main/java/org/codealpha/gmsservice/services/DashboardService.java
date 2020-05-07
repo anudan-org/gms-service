@@ -255,11 +255,12 @@ public class DashboardService {
         return periods;
     }
 
-    public Long getDisbursedAmountForGranterAndPeriodAndStatus(Integer period,Long granterId,String status) {
+    public Long[] getDisbursedAmountForGranterAndPeriodAndStatus(Integer period,Long granterId,String status) {
         List<GranterGrantSummaryDisbursed> disbursedList = granterActiveGrantSummaryDisbursedRepository.getGrantDisbursedSummaryForGranter(granterId, status);
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
         Long total = 0l;
+        Map<Long,String> countMap= new HashMap<>();
         if (disbursedList != null && disbursedList.size() > 0) {
             for (GranterGrantSummaryDisbursed granterGrantSummaryDisbursed : disbursedList) {
 
@@ -288,6 +289,7 @@ public class DashboardService {
                         }
                         if(period==disbursementYear){
                             total += disbursementAmt;
+                            countMap.put(granterGrantSummaryDisbursed.getGrantId(),"");
                         }
 
                     }
@@ -297,10 +299,10 @@ public class DashboardService {
 
             }
         }
-        return total;
+        return new Long[]{total,Long.valueOf(countMap.size())};
     }
 
-    public Long getCommittedAmountForGranterAndPeriodAndStatus(Integer period,Long granterId,String status) {
+    public Long[] getCommittedAmountForGranterAndPeriodAndStatus(Integer period,Long granterId,String status) {
         List<GranterGrantSummaryDisbursed> disbursedList = null;
         if(status.equalsIgnoreCase("ACTIVE")){
             disbursedList = granterActiveGrantSummaryDisbursedRepository.getActiveGrantCommittedSummaryForGranter(granterId);
@@ -310,6 +312,7 @@ public class DashboardService {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
         Long total = 0l;
+        Map<Long,String> countMap= new HashMap<>();
         if (disbursedList != null && disbursedList.size() > 0) {
             for (GranterGrantSummaryDisbursed granterGrantSummaryDisbursed : disbursedList) {
 
@@ -326,9 +329,10 @@ public class DashboardService {
                         }
                         if(period==disbursementYear){
                             total += disbursementAmt;
+                            countMap.put(granterGrantSummaryDisbursed.getGrantId(),"");
                         }
             }
         }
-        return total;
+        return new Long[]{total,Long.valueOf(countMap.size())};
     }
 }
