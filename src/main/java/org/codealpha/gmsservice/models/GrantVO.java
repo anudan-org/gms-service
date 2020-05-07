@@ -52,6 +52,7 @@ public class GrantVO {
   private GranterGrantTemplate grantTemplate;
   private Long grantId;
   private List<List<TableData>> approvedReportsDisbursements;
+  private String referenceNo;
 
   private Date movedOn;
   @JsonIgnore
@@ -315,6 +316,14 @@ public class GrantVO {
 
   public void setWorkflowAssignment(List<GrantAssignments> workflowAssignment) {
     this.workflowAssignment = workflowAssignment;
+  }
+
+  public String getReferenceNo() {
+    return referenceNo;
+  }
+
+  public void setReferenceNo(String referenceNo) {
+    this.referenceNo = referenceNo;
   }
 
   public GrantVO build(Grant grant, List<GrantSpecificSection> sections,

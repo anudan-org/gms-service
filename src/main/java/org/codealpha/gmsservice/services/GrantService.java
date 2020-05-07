@@ -567,4 +567,8 @@ public class GrantService {
     public List<GrantAssignments> getActionDueGrantsForGranterOrg(Long granterId){
         return grantAssignmentRepository.getActionDueGrantsForGranterOrg(granterId);
     }
+
+    public Long getCountOfOtherGrantsWithStartDateAndStatus(Date startDate,Long granterId,Long statusId){
+        return grantRepository.getCountOfOtherGrantsWithStartDateAndStatus(startDate,granterId,statusId);
+    }
 }

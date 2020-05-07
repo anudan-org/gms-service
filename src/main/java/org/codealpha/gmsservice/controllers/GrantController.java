@@ -40,6 +40,7 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.codealpha.gmsservice.constants.*;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.exceptions.ApplicationException;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.GrantValidator;
@@ -546,7 +547,7 @@ public class GrantController {
         currentAttribute.setFieldType(attributeToSave.getAttr().getFieldType());
         currentAttribute = grantService.saveSectionAttribute(currentAttribute);
         GrantStringAttribute stringAttribute = grantService.findGrantStringBySectionIdAttribueIdAndGrantId(currentAttribute.getSection().getId(), currentAttribute.getId(), grantId);
-        stringAttribute.setValue("");
+        //stringAttribute.setValue("");
         stringAttribute = grantService.saveStringAttribute(stringAttribute);
 
         grant = grantService.getById(grantId);
@@ -1738,9 +1739,29 @@ public class GrantController {
         //Save Snapshot
         _saveSnapShot(grant);
         if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
+            if(Boolean.valueOf(appConfigService.getAppConfigForGranterOrg(organizationService.findOrganizationByTenantCode(tenantCode).getId(),AppConfiguration.GENERATE_GRANT_REFERENCE).getConfigValue())){
+                grant = _generateGrantReferenceNo(grant,toStatus);
+            }
+
+
             _createReportingPeriods(grant, user, tenantCode);
         }
         return grant;
+
+    }
+
+    private Grant _generateGrantReferenceNo(Grant grant, WorkflowStatus toStatus) {
+        if(grant.getStartDate()==null && grant.getEndDate()==null && grant.getOrganization()==null){
+            throw new ApplicationException("Cannot generate reference code");
+        }
+
+        SimpleDateFormat stFormat = new SimpleDateFormat("yyMMdd");
+        SimpleDateFormat enFormat = new SimpleDateFormat("yy");
+        Long sNo = grantService.getCountOfOtherGrantsWithStartDateAndStatus(new DateTime(grant.getStartDate()).withTimeAtStartOfDay().toDate(),grant.getId(),toStatus.getId());
+        String amountCode = grant.getAmount()>9999999999L?"A":(grant.getAmount()>9999999L && grant.getAmount()<=9999999999L)?"C":"L";
+        String referenceCode = grant.getOrganization().getName().replaceAll(" ","").substring(0,4).toUpperCase() + "-" + stFormat.format(grant.getStartDate())+enFormat.format(grant.getEndDate())+"-"+amountCode+"-"+(sNo+1);
+        grant.setReferenceNo(referenceCode);
+        return grantService.saveGrant(grant);
 
     }
 

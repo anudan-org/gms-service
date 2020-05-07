@@ -15,6 +15,8 @@ import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
@@ -52,6 +54,7 @@ public class AdiminstrativeController {
     private CommonEmailSevice commonEmailSevice;
     @Autowired private ReportService reportService;
     @Autowired private GrantService grantService;
+    @Autowired private PasswordEncoder passwordEncoder;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -444,5 +447,19 @@ public class AdiminstrativeController {
         }
 
         return config;
+    }
+
+    @PostMapping("/{userId}/encryptpasswords/{tenant}")
+    public HttpStatus encryptAllPasswords(@PathVariable("tenant") String tenant,@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId")Long userId){
+
+            List<User> tenantUsers = userService.getAllTenantUsers(organizationService.findOrganizationByTenantCode(tenant));
+            for (User tenantUser : tenantUsers) {
+                if(!tenantUser.isPlain()){
+                    tenantUser.setPassword(passwordEncoder.encode(tenantUser.getPassword()));
+                    userService.save(tenantUser);
+                }
+            }
+
+        return  HttpStatus.OK;
     }
 }

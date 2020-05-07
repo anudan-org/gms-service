@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -66,6 +67,8 @@ public class UserController {
     private GrantService grantService;
     @Autowired
     private ReportService reportService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping(value = "/{userId}")
     public User get(@PathVariable(name = "userId") Long id,
@@ -257,11 +260,19 @@ public class UserController {
         if (!pwds[1].matches("((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,20})") && !pwds[2].matches("((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,20})")) {
             throw new ResourceNotFoundException("Password must contain at least one digit, one lowercase character, one uppercase character, one special symbols in the list \"@#$%\" and between 6-20 characters.");
         }
-        if (!userService.getUserById(userId).getPassword().equalsIgnoreCase(pwds[0])) {
-            throw new ResourceNotFoundException("You have entered an invalid previous password");
-        }
         User user = userService.getUserById(userId);
-        user.setPassword(pwds[1]);
+        if(user.isPlain()){
+            if (!user.getPassword().equalsIgnoreCase(pwds[0])) {
+                throw new ResourceNotFoundException("You have entered an invalid previous password");
+            }
+        }else{
+            if(!passwordEncoder.matches(pwds[0],user.getPassword())){
+                throw new ResourceNotFoundException("You have entered an invalid previous password");
+            }
+        }
+
+        user.setPassword(passwordEncoder.encode(pwds[1]));
+        user.setPlain(false);
         user = userService.save(user);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
@@ -295,7 +306,7 @@ public class UserController {
         GranterCountAndAmountTotal countAndAmountTotal = dashboardService.getSummaryForGranter(tenantOrg.getId());
         GranterGrantee granteeSummary = dashboardService.getGranteesSummaryForGranter(tenantOrg.getId());
         GranterActiveUser granterActiveUserSummary = dashboardService.getActiveUserSummaryForGranter(tenantOrg.getId());
-        Summary categorySummary = new Summary(Long.valueOf(countAndAmountTotal.getTotalGrants()), Long.valueOf(granteeSummary.getGranteeTotals()), Long.valueOf(countAndAmountTotal.getTotalGrantAmount()), Long.valueOf(granterActiveUserSummary.getActiveUsers()));
+        Summary categorySummary = new Summary(Long.valueOf(countAndAmountTotal==null?0l:countAndAmountTotal.getTotalGrants()), Long.valueOf(granteeSummary==null?0l:granteeSummary.getGranteeTotals()), Long.valueOf(countAndAmountTotal==null?0l:countAndAmountTotal.getTotalGrantAmount()), Long.valueOf(granterActiveUserSummary==null?0l:granterActiveUserSummary.getActiveUsers()));
 
 
         List<Filter> categoryFilters = new ArrayList<>();
