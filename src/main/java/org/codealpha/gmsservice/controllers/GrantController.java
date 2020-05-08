@@ -1758,6 +1758,7 @@ public class GrantController {
         SimpleDateFormat stFormat = new SimpleDateFormat("yyMMdd");
         SimpleDateFormat enFormat = new SimpleDateFormat("yy");
         Long sNo = grantService.getCountOfOtherGrantsWithStartDateAndStatus(new DateTime(grant.getStartDate()).withTimeAtStartOfDay().toDate(),grant.getId(),toStatus.getId());
+        logger.debug("SNO: -----------   " + sNo);
         String amountCode = grant.getAmount()>9999999999L?"A":(grant.getAmount()>9999999L && grant.getAmount()<=9999999999L)?"C":"L";
         String referenceCode = grant.getOrganization().getName().replaceAll(" ","").substring(0,4).toUpperCase() + "-" + stFormat.format(grant.getStartDate())+enFormat.format(grant.getEndDate())+"-"+amountCode+"-"+(sNo+1);
         grant.setReferenceNo(referenceCode);
