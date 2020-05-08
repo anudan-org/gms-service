@@ -10,6 +10,8 @@ public class GranterGrantSummaryDisbursed {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column
+    private Long grantId;
+    @Column
     private Long granterId;
     @Column
     private String disbursementData;
@@ -67,5 +69,13 @@ public class GranterGrantSummaryDisbursed {
 
     public void setGrantAmount(Long grantAmount) {
         this.grantAmount = grantAmount;
+    }
+
+    public Long getGrantId() {
+        return grantId;
+    }
+
+    public void setGrantId(Long grantId) {
+        this.grantId = grantId;
     }
 }

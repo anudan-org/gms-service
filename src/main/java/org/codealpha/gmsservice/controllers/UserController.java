@@ -98,7 +98,7 @@ public class UserController {
             newUser.setEmailId(user.getEmailId());
 
             newUser.setOrganization(org);
-            newUser.setPassword(user.getPassword());
+            newUser.setPassword(passwordEncoder.encode(user.getPassword()));
 
 
             UriComponents urlComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
@@ -118,7 +118,7 @@ public class UserController {
             newUser.setActive(true);
             newUser.setFirstName(user.getFirstName());
             newUser.setLastName(user.getLastName());
-            newUser.setPassword(user.getPassword());
+            newUser.setPassword(passwordEncoder.encode(user.getPassword()));
             newUser = userService.save(newUser);
         }
 
@@ -347,6 +347,18 @@ public class UserController {
                 reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
             }
 
+            if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny().isPresent()){
+                reportSummaryList.add(new ReportSummary("Due",Long.valueOf(0)));
+            }
+            if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("unapproved")).findAny().isPresent()){
+                reportSummaryList.add(new ReportSummary("Unapproved",Long.valueOf(0)));
+            }
+            if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("approved")).findAny().isPresent()){
+                reportSummaryList.add(new ReportSummary("Approved",Long.valueOf(0)));
+            }
+            if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny().isPresent()){
+                reportSummaryList.add(new ReportSummary("Overdue",Long.valueOf(0)));
+            }
         }
 
         List<DetailedSummary> disbursalSummaryList = new ArrayList<>();
@@ -356,7 +368,9 @@ public class UserController {
         String[] strings = {"Committed", "Disbursed"};
 
         for (Integer period : periodsMap.keySet()) {
-            disbursalSummaryList.add(new DisbursalSummary(periodsMap.get(period),new DisbursementData[]{new DisbursementData("Disbursed",String.valueOf(dashboardService.getDisbursedAmountForGranterAndPeriodAndStatus(period,tenantOrg.getId(),status)/100000)),new DisbursementData("Committed",String.valueOf(dashboardService.getCommittedAmountForGranterAndPeriodAndStatus(period,tenantOrg.getId(),status)/100000))}));
+            Long[] disbursalTotalAndCount = dashboardService.getDisbursedAmountForGranterAndPeriodAndStatus(period,tenantOrg.getId(),status);
+            Long[] committedTotalAndCount = dashboardService.getCommittedAmountForGranterAndPeriodAndStatus(period,tenantOrg.getId(),status);
+            disbursalSummaryList.add(new DisbursalSummary(periodsMap.get(period),new DisbursementData[]{new DisbursementData("Disbursed",String.valueOf(disbursalTotalAndCount[0]/100000),disbursalTotalAndCount[1]),new DisbursementData("Committed",String.valueOf(committedTotalAndCount[0]/100000),committedTotalAndCount[1])}));
         }
 
 
