@@ -1751,6 +1751,7 @@ public class GrantController {
     }
 
     private Grant _generateGrantReferenceNo(Grant grant, WorkflowStatus toStatus) {
+        System.out.println("GENERATING SNO");
         if(grant.getStartDate()==null && grant.getEndDate()==null && grant.getOrganization()==null){
             throw new ApplicationException("Cannot generate reference code");
         }
