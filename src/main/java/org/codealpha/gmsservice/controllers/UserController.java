@@ -10,12 +10,16 @@ import javax.transaction.Transactional;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.text.WordUtils;
+import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.entities.PasswordResetRequest;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.dashboard.*;
+import org.codealpha.gmsservice.exceptions.ApplicationException;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.models.ErrorMessage;
+import org.codealpha.gmsservice.models.ResetPwdData;
 import org.codealpha.gmsservice.models.UserCheck;
 import org.codealpha.gmsservice.models.UserVO;
 import org.codealpha.gmsservice.models.dashboard.*;
@@ -69,6 +73,8 @@ public class UserController {
     private ReportService reportService;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired private AppConfigService appConfigService;
+    @Autowired private PasswordResetRequestService passwordResetRequestService;
 
     @GetMapping(value = "/{userId}")
     public User get(@PathVariable(name = "userId") Long id,
@@ -380,5 +386,74 @@ public class UserController {
         filterDetails.add(new Detail("Disbursements", disbursalSummaryList));
         categoryFilter.setDetails(filterDetails);
         return categoryFilter;
+    }
+
+
+    @GetMapping("/forgot/{emailId}")
+    public ResponseEntity<PasswordResetRequest> forgotPassword(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("emailId") String emailId){
+        Organization userOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        User user = userService.getUserByEmailAndOrg(emailId,userOrg);
+        PasswordResetRequest response = new PasswordResetRequest();
+        if(user!=null){
+            response = sendPasswordResetLink(user);
+            response.setMessage("Password reset email sent to " + user.getEmailId());
+            return new ResponseEntity(response,HttpStatus.OK);
+        }else{
+            response.setMessage("Invalid email address.");
+            return new ResponseEntity(response,HttpStatus.EXPECTATION_FAILED);
+        }
+    }
+
+    private PasswordResetRequest sendPasswordResetLink(User user) {
+        Organization tenantOrg = null;
+        if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") || user.getOrganization().getOrganizationType().equalsIgnoreCase("PLATFORM")){
+            tenantOrg = organizationService.findOrganizationByTenantCode("ANUDAN");
+        }else if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")){
+            tenantOrg = user.getOrganization();
+        }
+
+        String mailSubject = appConfigService.getAppConfigForGranterOrg(tenantOrg.getId(), AppConfiguration.FORGOT_PASSWORD_MAIL_SUBJECT).getConfigValue();
+        String mailMessage = appConfigService.getAppConfigForGranterOrg(tenantOrg.getId(), AppConfiguration.FORGOT_PASSWORD_MAIL_MESSAGE).getConfigValue();
+        String mailFooter = appConfigService.getAppConfigForGranterOrg(tenantOrg.getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue();
+
+        return userService.sendPasswordResetMail(user,mailSubject,mailMessage,mailFooter);
+    }
+
+
+    @PostMapping("/set-password")
+    public ResponseEntity<User> resetPassword(@RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody ResetPwdData resetPwdData){
+
+        User user = null;
+        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        Organization userOrg = null;
+        if(tenantOrg.getOrganizationType().equalsIgnoreCase("PLATFORM")){
+            userOrg = organizationService.findByNameAndOrganizationType(resetPwdData.getOrg(),"GRANTEE");
+
+        }else if(tenantOrg.getOrganizationType().equalsIgnoreCase("GRANTER")){
+            userOrg = tenantOrg;
+        }
+        user = userService.getUserByEmailAndOrg(resetPwdData.getEmail(),userOrg);
+
+        PasswordResetRequest resetRequest = passwordResetRequestService.findByUnvalidatedUserIdAndKeyAndOrgId(user.getId(),resetPwdData.getKey(),userOrg.getId());
+        if(resetRequest!=null) {
+            if (passwordEncoder.matches(resetPwdData.getKey().concat(resetPwdData.getEmail().concat(String.valueOf(user.getOrganization().getId()))),resetRequest.getCode())){
+                if (resetPwdData.getPwd1().equalsIgnoreCase(resetPwdData.getPwd2())) {
+                    user.setPassword(passwordEncoder.encode(resetPwdData.getPwd1()));
+                    user.setPlain(false);
+                    user = userService.save(user);
+                    resetRequest.setValidated(true);
+                    resetRequest.setValidatedOn(DateTime.now().toDate());
+                    passwordResetRequestService.savePasswordResetRequest(resetRequest);
+                } else {
+                    return new ResponseEntity(null,HttpStatus.METHOD_NOT_ALLOWED);
+                }
+
+            }else{
+                return new ResponseEntity(null,HttpStatus.METHOD_NOT_ALLOWED);
+            }
+        }else{
+            return new ResponseEntity(null,HttpStatus.METHOD_NOT_ALLOWED);
+        }
+        return new ResponseEntity(user,HttpStatus.OK);
     }
 }
