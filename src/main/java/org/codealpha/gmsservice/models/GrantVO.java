@@ -53,7 +53,7 @@ public class GrantVO {
   private Long grantId;
   private List<List<TableData>> approvedReportsDisbursements;
   private String referenceNo;
-
+  private Boolean deleted;
   private Date movedOn;
   @JsonIgnore
   private List<GrantStringAttribute> stringAttributes;
@@ -324,6 +324,14 @@ public class GrantVO {
 
   public void setReferenceNo(String referenceNo) {
     this.referenceNo = referenceNo;
+  }
+
+  public Boolean getDeleted() {
+    return deleted;
+  }
+
+  public void setDeleted(Boolean deleted) {
+    this.deleted = deleted;
   }
 
   public GrantVO build(Grant grant, List<GrantSpecificSection> sections,

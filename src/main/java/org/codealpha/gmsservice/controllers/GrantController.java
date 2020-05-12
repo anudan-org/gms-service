@@ -246,6 +246,7 @@ public class GrantController {
         grant.setGrantorOrganization((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
         grant.setRepresentative("");
         grant.setTemplateId(templateId);
+        grant.setDeleted(false);
         grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(templateId));
 
         grant = grantService.saveGrant(grant);
