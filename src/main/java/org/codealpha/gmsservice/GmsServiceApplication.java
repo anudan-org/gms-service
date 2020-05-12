@@ -46,8 +46,8 @@ public class GmsServiceApplication {
         mailSender.setHost("smtp.gmail.com");
         mailSender.setPort(587);
 
-        mailSender.setUsername("admin@anudan.org");
-        mailSender.setPassword("Social@123");
+        mailSender.setUsername("donotreply@anudan.org");
+        mailSender.setPassword("Soci@l123$");
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");

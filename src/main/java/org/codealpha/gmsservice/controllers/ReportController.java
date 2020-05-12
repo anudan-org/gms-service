@@ -775,8 +775,8 @@ public class ReportController {
                     List<UserRole> userRoles = new ArrayList<>();
                     userRoles.add(userRole);
                     granteeUser.setUserRoles(userRoles);
-                    granteeUser.setFirstName("To be set");
-                    granteeUser.setLastName("To be set");
+                    granteeUser.setFirstName("");
+                    granteeUser.setLastName("");
                     granteeUser.setEmailId(customAss);
                     granteeUser.setOrganization(report.getGrant().getOrganization());
                     granteeUser.setActive(false);

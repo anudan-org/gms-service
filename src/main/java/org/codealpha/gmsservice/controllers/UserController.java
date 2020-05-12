@@ -246,7 +246,7 @@ public class UserController {
                                                          @RequestBody String pwd, @RequestHeader("X-TENANT-CODE") String tenantCode) {
         dashboardValidator.validate(userId, tenantCode);
         User user = userService.getUserById(userId);
-        if (user.getPassword().equalsIgnoreCase(pwd)) {
+        if (passwordEncoder.matches(pwd,user.getPassword())) {
             return new ResponseEntity<>(new ErrorMessage(true, ""), HttpStatus.OK);
         } else {
             throw new ResourceNotFoundException("You have entered an invalid previous password");
@@ -391,12 +391,31 @@ public class UserController {
 
     @GetMapping("/forgot/{emailId}")
     public ResponseEntity<PasswordResetRequest> forgotPassword(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("emailId") String emailId){
-        Organization userOrg = organizationService.findOrganizationByTenantCode(tenantCode);
-        User user = userService.getUserByEmailAndOrg(emailId,userOrg);
+        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        User user = null;
         PasswordResetRequest response = new PasswordResetRequest();
-        if(user!=null){
+        if(tenantOrg.getOrganizationType().equalsIgnoreCase("PLATFORM")){
+            List<User> users = userService.getUsersByEmail(emailId);
+            if(users.size()==1){
+                user = users.get(0);
+            }else{
+                response.setMessage("Multiple organizations found for this user.");
+                return new ResponseEntity(response,HttpStatus.EXPECTATION_FAILED);
+            }
+
+
+        }else if(tenantOrg.getOrganizationType().equalsIgnoreCase("GRANTER")){
+            user = userService.getUserByEmailAndOrg(emailId,tenantOrg);
+        }
+
+        if(user!=null && user.isActive()){
             response = sendPasswordResetLink(user);
             response.setMessage("Password reset email sent to " + user.getEmailId());
+            response.setStatus("registered");
+            return new ResponseEntity(response,HttpStatus.OK);
+        }else if(user!=null && !user.isActive()){
+            response.setOrg(user.getOrganization().getName());
+            response.setStatus("unregistered");
             return new ResponseEntity(response,HttpStatus.OK);
         }else{
             response.setMessage("Invalid email address.");

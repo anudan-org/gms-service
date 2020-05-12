@@ -2898,8 +2898,8 @@ public class GrantController {
                     List<UserRole> userRoles = new ArrayList<>();
                     userRoles.add(userRole);
                     granteeUser.setUserRoles(userRoles);
-                    granteeUser.setFirstName("To be set");
-                    granteeUser.setLastName("To be set");
+                    granteeUser.setFirstName("");
+                    granteeUser.setLastName("");
                     granteeUser.setEmailId(invite.getName());
                     granteeUser.setOrganization(grant.getOrganization());
                     granteeUser.setActive(false);

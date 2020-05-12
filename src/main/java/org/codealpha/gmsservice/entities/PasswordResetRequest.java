@@ -32,6 +32,10 @@ public class PasswordResetRequest {
     private Long orgId;
     @Transient
     private String message;
+    @Transient
+    private String org;
+    @Transient
+    private String status;
 
     public PasswordResetRequest() {
     }
@@ -106,5 +110,21 @@ public class PasswordResetRequest {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getOrg() {
+        return org;
+    }
+
+    public void setOrg(String org) {
+        this.org = org;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

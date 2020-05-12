@@ -13,3 +13,5 @@ create table password_reset_request (
 );
 
 alter table password_reset_request add column org_id bigint;
+alter table password_reset_request add column code text;
+update app_config set config_value='<p>Hi %USER_NAME%</p> <p>We have received a request to reset your password for %ORGANIZATION% on Anudan.</p> <p>Please click the link below to reset your password.</p> <p>%RESET_LINK%</p> <p><span style="text-decoration: underline;">Note</span>: <em>This link will work only once and cannot be reused.</em></p>' where config_name='FORGOT_PASSWORD_MAIL_MESSAGE';
