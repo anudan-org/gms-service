@@ -173,6 +173,8 @@ public class Grant {
 
   @Column(columnDefinition = "text")
   private String referenceNo;
+  @Column
+  private Boolean deleted;
 
   public Long getId() {
     return id;
@@ -473,5 +475,13 @@ public class Grant {
 
   public void setReferenceNo(String referenceNo) {
     this.referenceNo = referenceNo;
+  }
+
+  public Boolean getDeleted() {
+    return deleted;
+  }
+
+  public void setDeleted(Boolean deleted) {
+    this.deleted = deleted;
   }
 }

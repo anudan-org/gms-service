@@ -246,6 +246,7 @@ public class GrantController {
         grant.setGrantorOrganization((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
         grant.setRepresentative("");
         grant.setTemplateId(templateId);
+        grant.setDeleted(false);
         grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(templateId));
 
         grant = grantService.saveGrant(grant);
@@ -1751,6 +1752,7 @@ public class GrantController {
     }
 
     private Grant _generateGrantReferenceNo(Grant grant, WorkflowStatus toStatus) {
+        System.out.println("GENERATING SNO");
         if(grant.getStartDate()==null && grant.getEndDate()==null && grant.getOrganization()==null){
             throw new ApplicationException("Cannot generate reference code");
         }
@@ -2897,8 +2899,8 @@ public class GrantController {
                     List<UserRole> userRoles = new ArrayList<>();
                     userRoles.add(userRole);
                     granteeUser.setUserRoles(userRoles);
-                    granteeUser.setFirstName("To be set");
-                    granteeUser.setLastName("To be set");
+                    granteeUser.setFirstName("");
+                    granteeUser.setLastName("");
                     granteeUser.setEmailId(invite.getName());
                     granteeUser.setOrganization(grant.getOrganization());
                     granteeUser.setActive(false);
