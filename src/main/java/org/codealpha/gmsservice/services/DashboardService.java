@@ -14,6 +14,7 @@ import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.entities.dashboard.*;
 import org.codealpha.gmsservice.models.*;
+import org.codealpha.gmsservice.repositories.ReportsCountPerGrantRepository;
 import org.codealpha.gmsservice.repositories.dashboard.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +51,8 @@ public class DashboardService {
     private GranterGrantSummaryDisbursedRepository granterActiveGrantSummaryDisbursedRepository;
     @Autowired
     private GranterReportStatusRepository granterReportStatusRepository;
+    @Autowired
+    private ReportsCountPerGrantRepository reportsCountPerGrantRepository;
 
     List<Tenant> tenants;
 
@@ -227,6 +230,28 @@ public class DashboardService {
 
     public List<GranterReportStatus> getReportStatusSummaryForGranterAndStatus(Long granterId,String status){
         return granterReportStatusRepository.getReportStatusesForGranter(granterId, status);
+    }
+
+    public List<GranterReportStatus> findGrantCountsByReportNumbersAndStatusForGranter(Long granterId,String status){
+        List<GranterReportStatus> reportStatuses = new ArrayList<>();
+        Map<Long,Long> transposedMap = new HashMap<>();
+        List<ReportsCountPerGrant> countPerGrants = reportsCountPerGrantRepository.findGrantCountsByReportNumbersAndStatusForGranter(granterId, status);
+        for (ReportsCountPerGrant countPerGrant : countPerGrants) {
+
+            if(transposedMap.containsKey(countPerGrant.getCount())){
+                transposedMap.replace(countPerGrant.getCount(),transposedMap.get(countPerGrant.getCount())+1);
+            }else{
+                transposedMap.put(countPerGrant.getCount(),1l);
+            }
+
+        }
+        transposedMap.forEach((k,v) ->{
+            GranterReportStatus reportStatus = new GranterReportStatus();
+            reportStatus.setStatus(String.valueOf(k));
+            reportStatus.setCount(v.intValue());
+            reportStatuses.add(reportStatus);
+        });
+        return reportStatuses;
     }
 
     public Map<Integer,String> getActiveGrantsCommittedPeriodsForGranterAndStatus(Long granterId, String status) {
