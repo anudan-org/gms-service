@@ -1,5 +1,7 @@
 package org.codealpha.gmsservice.controllers;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -345,27 +347,39 @@ public class UserController {
         categoryFilter.setPeriod(sd.format(activeGrantSummaryCommitted.getPeriodStart()) + "-" + sd.format(activeGrantSummaryCommitted.getPeriodEnd()));
         categoryFilter.setCommittedAmount(Long.valueOf(activeGrantSummaryCommitted.getCommittedAmount()));
         categoryFilter.setDisbursedAmount(Long.valueOf(disbursedAmount));
-        List<GranterReportStatus> reportStatuses = dashboardService.getReportStatusSummaryForGranterAndStatus(tenantOrg.getId(), status);
-
+        List<GranterReportStatus> reportStatuses = null;
         List<DetailedSummary> reportSummaryList = new ArrayList<>();
-        if (reportStatuses != null && reportStatuses.size() > 0) {
-            for (GranterReportStatus reportStatus : reportStatuses) {
-                reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
-            }
+        if(status.equalsIgnoreCase("ACTIVE")) {
+            reportStatuses = dashboardService.getReportStatusSummaryForGranterAndStatus(tenantOrg.getId(), status);
+            if (reportStatuses != null && reportStatuses.size() > 0) {
+                for (GranterReportStatus reportStatus : reportStatuses) {
+                    reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
+                }
 
-            if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny().isPresent()){
-                reportSummaryList.add(new ReportSummary("Due",Long.valueOf(0)));
+                if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny().isPresent()){
+                    reportSummaryList.add(new ReportSummary("Due",Long.valueOf(0)));
+                }
+                if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("unapproved")).findAny().isPresent()){
+                    reportSummaryList.add(new ReportSummary("Unapproved",Long.valueOf(0)));
+                }
+                if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("approved")).findAny().isPresent()){
+                    reportSummaryList.add(new ReportSummary("Approved",Long.valueOf(0)));
+                }
+                if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny().isPresent()){
+                    reportSummaryList.add(new ReportSummary("Overdue",Long.valueOf(0)));
+                }
             }
-            if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("unapproved")).findAny().isPresent()){
-                reportSummaryList.add(new ReportSummary("Unapproved",Long.valueOf(0)));
-            }
-            if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("approved")).findAny().isPresent()){
-                reportSummaryList.add(new ReportSummary("Approved",Long.valueOf(0)));
-            }
-            if(!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny().isPresent()){
-                reportSummaryList.add(new ReportSummary("Overdue",Long.valueOf(0)));
+        }else if(status.equalsIgnoreCase("CLOSED")){
+            reportStatuses = dashboardService.findGrantCountsByReportNumbersAndStatusForGranter(tenantOrg.getId(), status);
+            if (reportStatuses != null && reportStatuses.size() > 0) {
+                for (GranterReportStatus reportStatus : reportStatuses) {
+                    reportSummaryList.add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
+                }
             }
         }
+
+
+
 
         List<DetailedSummary> disbursalSummaryList = new ArrayList<>();
 
@@ -376,7 +390,7 @@ public class UserController {
         for (Integer period : periodsMap.keySet()) {
             Long[] disbursalTotalAndCount = dashboardService.getDisbursedAmountForGranterAndPeriodAndStatus(period,tenantOrg.getId(),status);
             Long[] committedTotalAndCount = dashboardService.getCommittedAmountForGranterAndPeriodAndStatus(period,tenantOrg.getId(),status);
-            disbursalSummaryList.add(new DisbursalSummary(periodsMap.get(period),new DisbursementData[]{new DisbursementData("Disbursed",String.valueOf(disbursalTotalAndCount[0]/100000),disbursalTotalAndCount[1]),new DisbursementData("Committed",String.valueOf(committedTotalAndCount[0]/100000),committedTotalAndCount[1])}));
+            disbursalSummaryList.add(new DisbursalSummary(periodsMap.get(period),new DisbursementData[]{new DisbursementData("Disbursed",String.valueOf(new BigDecimal(Double.toString(disbursalTotalAndCount[0]/100000.00)).setScale(2, RoundingMode.HALF_UP)),disbursalTotalAndCount[1]),new DisbursementData("Committed",String.valueOf(new BigDecimal(Double.toString(committedTotalAndCount[0]/100000.00)).setScale(2, RoundingMode.HALF_UP)),committedTotalAndCount[1])}));
         }
 
 

@@ -1643,7 +1643,15 @@ public class GrantController {
                         AppConfiguration.GRANT_ALERT_NOTIFICATION_MESSAGE).getConfigValue();*/
 
 
-        User currentOwner = userService.getUserById(grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getGrantId().longValue() == grantId.longValue() && ass.getStateId().longValue() == toStateId.longValue()).collect(Collectors.toList()).get(0).getAssignments());
+        Optional<GrantAssignments> assignmentForCurrentState = grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getGrantId().longValue() == grantId.longValue() && ass.getStateId().longValue() == toStateId.longValue()).findFirst();
+        User currentOwner = null;
+        if(assignmentForCurrentState.isPresent()) {
+            currentOwner = userService.getUserById(assignmentForCurrentState.get().getAssignments());
+        }else{
+            currentOwner = new User();
+            currentOwner.setFirstName("-");
+            currentOwner.setLastName("-");
+        }
 
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState, toStatus);
 
