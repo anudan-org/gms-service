@@ -47,7 +47,6 @@ public class GrantVO {
   private WorkflowActionPermission actionAuthorities;
   private List<WorkFlowPermission> flowAuthorities;
   private GrantDetailVO grantDetails;
-  private List<GrantKpi> kpis;
   private Long templateId;
   private GranterGrantTemplate grantTemplate;
   private Long grantId;
@@ -260,16 +259,6 @@ public class GrantVO {
     this.stringAttributes = stringAttributes;
   }
 
-
-  public List<GrantKpi> getKpis() {
-    return kpis;
-  }
-
-  public void setKpis(List<GrantKpi> kpis) {
-    Collections.sort(kpis);
-    this.kpis = kpis;
-  }
-
   public Long getTemplateId() {
     return templateId;
   }
@@ -371,7 +360,7 @@ public class GrantVO {
 
     Collections.sort(vo.getGrantDetails().getSections());
     vo.setFlowAuthorities(workflowPermissionService
-        .getGrantFlowPermissions(vo.grantorOrganization.getId(), user.getUserRoles(),vo.grantStatus.getId()));
+        .getGrantFlowPermissions(vo.grantStatus.getId(),user.getId(),vo.getId()));
     vo.setActionAuthorities(workflowPermissionService
         .getGrantActionPermissions(vo.getGrantorOrganization().getId(),
             user.getUserRoles(),vo.getGrantStatus().getId(),user.getId(),grant.getId()));
