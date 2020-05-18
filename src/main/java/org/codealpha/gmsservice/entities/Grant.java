@@ -39,11 +39,6 @@ public class Grant {
   @ApiModelProperty(name = "grantorOrganization",value = "Granter or tenant organization associated with the grant",dataType = "Granter")
   private Granter grantorOrganization;
 
-  @OneToMany(mappedBy = "grant")
-  @JsonProperty("kpis")
-  @OrderBy("kpiType ASC")
-  @JsonIgnore
-  private List<GrantKpi> kpis;
 
   @OneToMany(mappedBy = "grant")
   @JsonProperty("stringAttribute")
@@ -275,13 +270,6 @@ public class Grant {
   }
 
 
-  public List<GrantKpi> getKpis() {
-    return kpis;
-  }
-
-  public void setKpis(List<GrantKpi> kpis) {
-    this.kpis = kpis;
-  }
 
   public WorkflowActionPermission getActionAuthorities() {
     return actionAuthorities;

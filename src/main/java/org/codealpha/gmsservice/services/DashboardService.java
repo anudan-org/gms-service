@@ -88,8 +88,7 @@ public class DashboardService {
                                     user.getUserRoles(), grant.getGrantStatus().getId(),user.getId(),grant.getId()));
 
                     grant.setFlowAuthorities(workflowPermissionService
-                            .getGrantFlowPermissions(grant.getGrantorOrganization().getId(),
-                                    user.getUserRoles(), grant.getGrantStatus().getId()));
+                            .getGrantFlowPermissions(grant.getGrantStatus().getId(),user.getId(),grant.getId()));
 
                     for (Submission submission : grant.getSubmissions()) {
                         submission.setActionAuthorities(workflowPermissionService

@@ -411,8 +411,7 @@ public class GrantController {
                         user.getUserRoles(), grant.getGrantStatus().getId(), userId, grant.getId()));
 
         grant.setFlowAuthorities(workflowPermissionService
-                .getGrantFlowPermissions(grant.getGrantorOrganization().getId(),
-                        user.getUserRoles(), grant.getGrantStatus().getId()));
+                .getGrantFlowPermissions(grant.getGrantStatus().getId(),userId,grant.getId()));
 
         grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
 
@@ -919,8 +918,7 @@ public class GrantController {
                         user.getUserRoles(), grant.getGrantStatus().getId(), userId, grant.getId()));
 
         grant.setFlowAuthorities(workflowPermissionService
-                .getGrantFlowPermissions(grant.getGrantorOrganization().getId(),
-                        user.getUserRoles(), grant.getGrantStatus().getId()));
+                .getGrantFlowPermissions(grant.getGrantStatus().getId(),userId,grant.getId()));
 
         for (Submission submission : grant.getSubmissions()) {
             submission.setActionAuthorities(workflowPermissionService
@@ -1206,7 +1204,7 @@ public class GrantController {
 
     }
 
-    private List<GrantKpi> _processGrantKpis(Grant grant, Grant grantToSave, Organization tenant, User user) {
+    /*private List<GrantKpi> _processGrantKpis(Grant grant, Grant grantToSave, Organization tenant, User user) {
         GrantKpi grantKpi = null;
         List<GrantKpi> kpisList = new ArrayList<>();
         for (GrantKpi kpi : grantToSave.getKpis()) {
@@ -1234,10 +1232,10 @@ public class GrantController {
             kpisList.add(grantKpi);
         }
         return kpisList;
-    }
+    }*/
 
 
-    private List<Template> _processKpiTemplates(GrantKpi kpi, GrantKpi kpitoSave, Organization tenant) {
+    /*private List<Template> _processKpiTemplates(GrantKpi kpi, GrantKpi kpitoSave, Organization tenant) {
         List<Template> kpiTemplates = new ArrayList<>();
         try {
 
@@ -1276,9 +1274,9 @@ public class GrantController {
             logger.error("Could not process the uploaded File. Please try again.");
         }
         return kpiTemplates;
-    }
+    }*/
 
-    private List<Submission> _processGrantSubmissions(Grant grant, Grant grantToSave, Organization tenant, User user) {
+    /*private List<Submission> _processGrantSubmissions(Grant grant, Grant grantToSave, Organization tenant, User user) {
         Submission grantSubmission = null;
         List<Submission> grantSubmissions = new ArrayList<>();
 
@@ -1303,8 +1301,8 @@ public class GrantController {
             grantSubmission.setTitle(submission.getTitle());
             grantSubmission = submissionService.saveSubmission(grantSubmission);
 
-            grantSubmission.setDocumentKpiSubmissions(_processDocumentKpis(grantSubmission, submission, tenant, user));
-            grantSubmission.setQualitativeKpiSubmissions(_processQualitativeKpis(grantSubmission, submission, tenant, user));
+            //grantSubmission.setDocumentKpiSubmissions(_processDocumentKpis(grantSubmission, submission, tenant, user));
+            //grantSubmission.setQualitativeKpiSubmissions(_processQualitativeKpis(grantSubmission, submission, tenant, user));
             grantSubmission.setQuantitiaveKpisubmissions(_processQuantitativeKpis(grantSubmission, submission, tenant, user));
             //grantSubmission.setSubmissionNotes(_processSubmissionNote(grantSubmission, submission, tenant, user));
 
@@ -1312,9 +1310,9 @@ public class GrantController {
             grantSubmissions.add(grantSubmission);
         }
         return grantSubmissions;
-    }
+    }*/
 
-    private List<GrantQuantitativeKpiData> _processQuantitativeKpis(Submission submission, Submission submission2Save, Organization tenant, User user) {
+    /*private List<GrantQuantitativeKpiData> _processQuantitativeKpis(Submission submission, Submission submission2Save, Organization tenant, User user) {
         GrantQuantitativeKpiData quantKpiData = null;
         List<GrantQuantitativeKpiData> quantKpiDataList = new ArrayList<>();
         for (GrantQuantitativeKpiData docKpi : submission2Save.getQuantitiaveKpisubmissions()) {
@@ -1345,9 +1343,9 @@ public class GrantController {
             }
         }
         return quantKpiDataList;
-    }
+    }*/
 
-    private List<GrantQualitativeKpiData> _processQualitativeKpis(Submission submission, Submission submission2Save, Organization tenant, User user) {
+    /*private List<GrantQualitativeKpiData> _processQualitativeKpis(Submission submission, Submission submission2Save, Organization tenant, User user) {
         GrantQualitativeKpiData qualKpiData = null;
         List<GrantQualitativeKpiData> qualKpiDataList = new ArrayList<>();
         for (GrantQualitativeKpiData docKpi : submission2Save.getQualitativeKpiSubmissions()) {
@@ -1377,9 +1375,9 @@ public class GrantController {
             }
         }
         return qualKpiDataList;
-    }
+    }*/
 
-    private List<GrantDocumentKpiData> _processDocumentKpis(Submission submission, Submission submission2Save, Organization tenant, User user) {
+    /*private List<GrantDocumentKpiData> _processDocumentKpis(Submission submission, Submission submission2Save, Organization tenant, User user) {
         GrantDocumentKpiData documentKpiData = null;
         List<GrantDocumentKpiData> documentKpiDataList = new ArrayList<>();
         for (GrantDocumentKpiData docKpi : submission2Save.getDocumentKpiSubmissions()) {
@@ -1410,7 +1408,7 @@ public class GrantController {
             }
         }
         return documentKpiDataList;
-    }
+    }*/
 
     public List<QuantKpiDataDocument> _processQuantSubmissionDocs(GrantQuantitativeKpiData documentKpiData, GrantQuantitativeKpiData docKpi2Save, Organization tenant, User user) {
         QuantKpiDataDocument kpiDoc = null;
@@ -1695,8 +1693,7 @@ public class GrantController {
                         user.getUserRoles(), grant.getGrantStatus().getId(), userId, grantId));
 
         grant.setFlowAuthorities(workflowPermissionService
-                .getGrantFlowPermissions(grant.getGrantorOrganization().getId(),
-                        user.getUserRoles(), grant.getGrantStatus().getId()));
+                .getGrantFlowPermissions(grant.getGrantStatus().getId(),userId,grant.getId()));
         GrantVO grantVO = new GrantVO().build(grant, grantService.getGrantSections(grant), workflowPermissionService, user,
                 appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS), userService);
@@ -1746,7 +1743,7 @@ public class GrantController {
         }
 
         //Save Snapshot
-        _saveSnapShot(grant);
+        _saveSnapShot(grant,currentDateTime,assignmentForCurrentState.isPresent()?userService.getUserById(assignmentForCurrentState.get().getAssignments()):null,previousOwner);
         if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
             if(Boolean.valueOf(appConfigService.getAppConfigForGranterOrg(organizationService.findOrganizationByTenantCode(tenantCode).getId(),AppConfiguration.GENERATE_GRANT_REFERENCE).getConfigValue())){
                 grant = _generateGrantReferenceNo(grant,toStatus);
@@ -2274,14 +2271,19 @@ public class GrantController {
         }
     }
 
-    private void _saveSnapShot(Grant grant) {
+    private void _saveSnapShot(Grant grant,Date movedOn, User currentUser, User previousUser) {
 
         try {
-            for (AssignedTo assignment : grant.getCurrentAssignment()) {
                 GrantSnapshot snapshot = new GrantSnapshot();
                 snapshot.setAmount(grant.getAmount());
-                snapshot.setAssignedToId(assignment.getUser().getId());
+                if(currentUser!=null) {
+                    snapshot.setAssignedToId(currentUser.getId());
+                }
+                if(previousUser!=null){
+                    snapshot.setAssignedBy(previousUser.getId());
+                }
                 snapshot.setDescription(grant.getDescription());
+                snapshot.setMovedOn(movedOn);
                 snapshot.setEndDate(grant.getEndDate());
                 snapshot.setGrantee(grant.getOrganization() != null ? grant.getOrganization().getName() : "");
                 snapshot.setGrantId(grant.getId());
@@ -2291,7 +2293,6 @@ public class GrantController {
                 snapshot.setGrantStatusId(grant.getGrantStatus().getId());
                 snapshot.setStringAttributes(new ObjectMapper().writeValueAsString(grant.getGrantDetails()));
                 grantSnapshotService.saveGrantSnapshot(snapshot);
-            }
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
         }

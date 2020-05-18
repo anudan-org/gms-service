@@ -21,13 +21,9 @@ public class WorkflowPermissionService {
     @Autowired
     private WorkflowActionPermissionRepository workflowActionPermissionRepository;
 
-    public List<WorkFlowPermission> getGrantFlowPermissions(Long granterOrgId,
-                                                            List<UserRole> userRoles, Long grantStatusId) {
+    public List<WorkFlowPermission> getGrantFlowPermissions(Long grantStatusId,Long userId,Long grantId) {
 
-        List<Long> userRoleIds = userRoles.stream().map(e -> new Long(e.getRole().getId())).collect(
-                Collectors.toList());
-
-        return workflowPermissionRepository.getPermissionsForGrantFlow(grantStatusId);
+        return workflowPermissionRepository.getPermissionsForGrantFlow(grantStatusId,userId,grantId);
     }
 
     public List<WorkFlowPermission> getFlowPermisionsOfRoleForStateTransition(Long granterOrgId, List<UserRole> userRoles, Long grantStatusId) {

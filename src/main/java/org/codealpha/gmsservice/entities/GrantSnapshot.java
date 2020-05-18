@@ -19,6 +19,9 @@ public class GrantSnapshot {
   private Long assignedToId;
 
   @Column
+  private Long assignedBy;
+
+  @Column
   private Long grantId;
 
   @Column
@@ -47,6 +50,9 @@ public class GrantSnapshot {
 
   @Column
   private String representative;
+
+  @Column
+  private Date movedOn;
 
   public Long getId() {
     return id;
@@ -142,5 +148,21 @@ public class GrantSnapshot {
 
   public void setRepresentative(String representative) {
     this.representative = representative;
+  }
+
+  public Date getMovedOn() {
+    return movedOn;
+  }
+
+  public void setMovedOn(Date movedOn) {
+    this.movedOn = movedOn;
+  }
+
+  public Long getAssignedBy() {
+    return assignedBy;
+  }
+
+  public void setAssignedBy(Long assignedBy) {
+    this.assignedBy = assignedBy;
   }
 }
