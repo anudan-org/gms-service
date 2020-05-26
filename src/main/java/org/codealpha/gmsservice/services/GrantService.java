@@ -446,14 +446,11 @@ public class GrantService {
             }
             UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
             url = uriBuilder.toUriString();
-            url = url+"/home/?action=login&org="+ URLEncoder.encode(finalGrant.getOrganization().getName(), StandardCharsets.UTF_8.toString())+"&g=" + code+"&email=&type=grant";
+            url = url+"/home/?action=login&g=" + code+"&email=&type=grant";
         }catch (Exception e){
             url = link;
-            try {
-                url = url+"/home/?action=login&org="+ URLEncoder.encode(finalGrant.getOrganization().getName(), StandardCharsets.UTF_8.toString())+"&g=" + code+"&email=&type=grant";
-            } catch (UnsupportedEncodingException ex) {
-                ex.printStackTrace();
-            }
+
+            url = url+"/home/?action=login&g=" + code+"&email=&type=grant";   
         }
 
 
