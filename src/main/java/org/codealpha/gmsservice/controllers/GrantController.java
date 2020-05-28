@@ -196,7 +196,7 @@ public class GrantController {
             grantSpecificSections.add(specificSection);
         }
 
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
         return grant;
     }
 
@@ -376,7 +376,7 @@ public class GrantController {
             }
         }
 
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
         return grant;
 
     }
@@ -402,70 +402,6 @@ public class GrantController {
         }
     }
 
-
-    private Grant _grantToReturn(@PathVariable("userId") Long userId, Grant grant) {
-        User user = userService.getUserById(userId);
-
-        grant.setActionAuthorities(workflowPermissionService
-                .getGrantActionPermissions(grant.getGrantorOrganization().getId(),
-                        user.getUserRoles(), grant.getGrantStatus().getId(), userId, grant.getId()));
-
-        grant.setFlowAuthorities(workflowPermissionService
-                .getGrantFlowPermissions(grant.getGrantStatus().getId(),userId,grant.getId()));
-
-        grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
-
-        GrantVO grantVO = new GrantVO();
-
-        grantVO = grantVO.build(grant, grantService.getGrantSections(grant), workflowPermissionService, user, appConfigService
-                .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS), userService);
-        grant.setGrantDetails(grantVO.getGrantDetails());
-        grant.setNoteAddedBy(grantVO.getNoteAddedBy());
-        grant.setNoteAddedByUser(grantVO.getNoteAddedByUser());
-
-        List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
-        for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
-            GrantAssignmentsVO assignmentsVO = new GrantAssignmentsVO();
-            assignmentsVO.setId(assignment.getId());
-            assignmentsVO.setAnchor(assignment.isAnchor());
-            assignmentsVO.setAssignments(assignment.getAssignments());
-            if (assignment.getAssignments() != null && assignment.getAssignments() > 0) {
-                assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
-            }
-            assignmentsVO.setGrantId(assignment.getGrantId());
-            assignmentsVO.setStateId(assignment.getStateId());
-            assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
-            workflowAssignments.add(assignmentsVO);
-        }
-        grant.setWorkflowAssignment(workflowAssignments);
-        List<GrantAssignments> grantAssignments = grantService.getGrantCurrentAssignments(grant);
-        if (grantAssignments != null) {
-            for (GrantAssignments assignment : grantAssignments) {
-                if (grant.getCurrentAssignment() == null) {
-                    List<AssignedTo> assignedToList = new ArrayList<>();
-                    grant.setCurrentAssignment(assignedToList);
-                }
-                AssignedTo newAssignedTo = new AssignedTo();
-                if (assignment.getAssignments() != null && assignment.getAssignments() > 0) {
-                    newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
-                }
-                grant.getCurrentAssignment().add(newAssignedTo);
-            }
-        }
-        grant = grantService.saveGrant(grant);
-
-        grant.getWorkflowAssignment().sort((a, b) -> a.getId().compareTo(b.getId()));
-        grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
-        for (SectionVO section : grant.getGrantDetails().getSections()) {
-            if (section.getAttributes() != null) {
-                section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
-            }
-        }
-
-        grant.setSecurityCode(grantService.buildHashCode(grant));
-        return grant;
-    }
 
     @PostMapping("/{grantId}/section/{sectionId}/field")
     @ApiOperation("Added new field to section")
@@ -502,7 +438,7 @@ public class GrantController {
             _createNewGrantTemplateFromExisiting(grant);
         }
 
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
         return new FieldInfo(newSectionAttribute.getId(), stringAttribute.getId(), grant);
     }
 
@@ -531,7 +467,7 @@ public class GrantController {
         if (_checkIfGrantTemplateChanged(grant, attribute.getSection(), null)) {
             GranterGrantTemplate newTemplate = _createNewGrantTemplateFromExisiting(grant);
         }
-        grant = _grantToReturn(userService.getUserById(userId).getId(), grant);
+        grant = grantService._grantToReturn(userService.getUserById(userId).getId(), grant);
         return grant;
     }
 
@@ -556,7 +492,7 @@ public class GrantController {
         }
 
 
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
         return new FieldInfo(currentAttribute.getId(), stringAttribute.getId(), grant);
     }
 
@@ -583,7 +519,7 @@ public class GrantController {
             templateId = newTemplate.getId();
         }
 
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
         return new SectionInfo(specificSection.getId(), specificSection.getSectionName(), grant);
 
     }
@@ -611,7 +547,7 @@ public class GrantController {
             GranterGrantTemplate newTemplate = _createNewGrantTemplateFromExisiting(grant);
             templateId = newTemplate.getId();
         }
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
         return grant;
     }
 
@@ -708,7 +644,7 @@ public class GrantController {
 
         User user = userService.getUserById(userId);
         Grant grant = grantService.getById(grantId);
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
 
         return grant;
     }
@@ -2317,7 +2253,7 @@ public class GrantController {
         grantService.saveGrantTemplate(template);
 
         Grant grant = grantService.getById(grantId);
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
         return grant;
 
     }
@@ -2643,7 +2579,7 @@ public class GrantController {
         }
 
         grant = grantService.getById(grantId);
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
         return grant;
     }
 
@@ -2692,7 +2628,7 @@ public class GrantController {
             e.printStackTrace();
         }
         Grant grant = grantService.getById(grantId);
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
         return new DocInfo(attachment.getId(), grant);
     }
 
@@ -2715,7 +2651,7 @@ public class GrantController {
 
         Grant grant = grantService.getById(grantId);
 
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
         return grant;
     }
 
@@ -2793,7 +2729,7 @@ public class GrantController {
 
 
         grant = grantService.getById(grantId);
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
 
         return new DocInfo(attachments.get(attachments.size() - 1).getId(), grant);
     }
@@ -2932,7 +2868,7 @@ public class GrantController {
         }
 
 
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
         return grant;
     }
 
@@ -2942,7 +2878,7 @@ public class GrantController {
         logger.info("Grant Id: " + grantId);
         Grant grant = grantService.getById(grantId);
 
-        grant = _grantToReturn(userId, grant);
+        grant = grantService._grantToReturn(userId, grant);
         return grant;
     }
 

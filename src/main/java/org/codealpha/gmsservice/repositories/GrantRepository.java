@@ -48,4 +48,9 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
 
     @Query(value = "select count(*) from grants where start_date=?1 and grant_status_id=?3 and id !=?2 and deleted=false",nativeQuery = true)
     public Long getCountOfOtherGrantsWithStartDateAndStatus(Date startDate,Long grantId,Long statusId);
+
+    @Query(value = "select * from grants g inner join workflow_statuses w on w.id=g.grant_status_id\n" +
+            "inner join grant_assignments ga on ga.grant_id=g.id and ga.state_id=w.id\n" +
+            "where ga.assignments=?1 and w.internal_status=?2",nativeQuery = true)
+    List<Grant> findGrantsOwnedByUserByStatus(Long userId, String status);
 }

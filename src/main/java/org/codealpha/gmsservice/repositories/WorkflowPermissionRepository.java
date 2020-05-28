@@ -16,4 +16,7 @@ public interface WorkflowPermissionRepository extends CrudRepository<WorkFlowPer
 
   @Query(value = "select wst.id, wst.from_state_id, (select name from workflow_statuses where id = wst.from_state_id) from_name, wst.to_state_id, (select name from workflow_statuses where id = wst.to_state_id) to_name, wst.action,wst.note_required from workflow_status_transitions wst inner join workflows B on B.id = wst.workflow_id inner join submissions G on G.submission_status_id = wst.from_state_id where B.object = 'SUBMISSION' and B.granter_id =?1 and wst.role_id  in (?2) and G.submission_status_id =?3 group by (wst.id, wst.from_state_id, wst.to_state_id, wst.action)", nativeQuery = true)
   public List<WorkFlowPermission> getPermissionsForSubmissionFlow(Long granterOrgId, List<Long> roleIds, Long statusId);
+
+  @Query(value = "select wst.id, wst.from_state_id, (select name from workflow_statuses where id = wst.from_state_id) from_name, wst.to_state_id, (select name from workflow_statuses where id = wst.to_state_id) to_name, wst.action, wst.note_required from workflow_status_transitions wst inner join disbursement_assignments c on c.state_id=wst.from_state_id where wst.from_state_id=?1 and c.owner=?2 and c.disbursement_id=?3 group by (wst.id, wst.from_state_id, wst.to_state_id, wst.action)",nativeQuery = true)
+  public List<WorkFlowPermission> getPermissionsForDisbursementFlow(Long statusId,Long userId,Long disbursementId);
 }
