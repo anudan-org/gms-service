@@ -29,3 +29,4 @@ gms.log*
 /dist/
 /nbdist/
 /.nb-gradle/
+.vscode/settings.json

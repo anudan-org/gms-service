@@ -21,7 +21,24 @@ public class DisbursementHistory {
     private Long requestedBy;
     @Column
     private Long statusId;
-
+    @Column(columnDefinition = "text")
+    private String note;
+    @Column
+    private Date noteAdded;
+    @OneToOne
+    @JoinColumn(referencedColumnName = "id")
+    private User noteAddedBy;
+    @Column
+    private String createdBy;
+    @Column
+    private Date createdAt;
+    @Column 
+    private String updatedBy;
+    @Column
+    private Date updatedAt;
+    @Column
+    private Date movedOn;
+    
     public Long getId() {
         return id;
     }
@@ -77,4 +94,71 @@ public class DisbursementHistory {
     public void setSeqid(Long seqid) {
         this.seqid = seqid;
     }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+    public Date getNoteAdded() {
+        return noteAdded;
+    }
+
+    public void setNoteAdded(Date noteAdded) {
+        this.noteAdded = noteAdded;
+    }
+
+    public User getNoteAddedBy() {
+        return noteAddedBy;
+    }
+
+    public void setNoteAddedBy(User noteAddedBy) {
+        this.noteAddedBy = noteAddedBy;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(String updatedBy) {
+        this.updatedBy = updatedBy;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public Date getMovedOn() {
+        return movedOn;
+    }
+
+    public void setMovedOn(Date movedOn) {
+        this.movedOn = movedOn;
+    }
+
+    
+
 }

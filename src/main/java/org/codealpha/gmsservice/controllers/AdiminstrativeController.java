@@ -55,6 +55,8 @@ public class AdiminstrativeController {
     @Autowired private ReportService reportService;
     @Autowired private GrantService grantService;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired
+    private DisbursementService disbursementService;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -82,6 +84,21 @@ public class AdiminstrativeController {
 
 
         return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "REPORT");
+    }
+
+    @GetMapping("/workflow/disbursement/{disbursementId}/user/{userId}")
+    @ApiOperation(value = "Get workflow assignments for disbursement")
+    public List<WorkflowTransitionModel> getDisbursementWorkflows(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode, @ApiParam(name = "disbursementId", value = "Unique identifier of Disbursement") @PathVariable("disbursementId") Long disbursementId, @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
+        Organization org = null;
+        if("ANUDAN".equalsIgnoreCase(tenantCode)){
+            org = disbursementService.getDisbursementById(disbursementId).getGrant().getGrantorOrganization();
+        }else{
+            org = organizationService.findOrganizationByTenantCode(tenantCode);
+        }
+        organizationService.findOrganizationByTenantCode(tenantCode);
+
+
+        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "DISBURSEMENT");
     }
 
     @PostMapping("/workflow")

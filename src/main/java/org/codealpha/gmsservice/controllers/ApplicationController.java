@@ -81,6 +81,7 @@ public class ApplicationController {
 
     @Autowired private AppConfigService appConfigService;
     @Autowired private ReportService reportService;
+    @Autowired private DisbursementService disbursementService;
 
     @GetMapping(value = {"/config/user/{userId}/{host}", "/config"})
     @ApiOperation(value = "Application Configuration for tenant and Anudan platform.",notes = "Publicly available application configuration for tenant.\nIf host is passed then tenant specific configuration is retrieved. If tenant is not passed then Anudan platform level configuration is retrieved.",response = UIConfig.class)
@@ -286,6 +287,10 @@ public class ApplicationController {
             config.setTenantUsers(userService.getAllTenantUsers(report.getGrant().getGrantorOrganization()));
             config.setReportWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("REPORT",report.getGrant().getGrantorOrganization().getId()));
             config.setReportTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(report.getGrant().getGrantorOrganization().getId(),"REPORT"));
+        }else if("disbursement".equalsIgnoreCase(type)){
+            Disbursement disbursement = disbursementService.getDisbursementById(id);
+            config.setTenantUsers(userService.getAllTenantUsers(disbursement.getGrant().getGrantorOrganization()));
+            config.setDisbursementWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",disbursement.getGrant().getGrantorOrganization().getId()));
         }
         return config;
     }

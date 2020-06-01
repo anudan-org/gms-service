@@ -9,8 +9,12 @@ import org.codealpha.gmsservice.repositories.WorkflowPermissionRepository;
 import org.codealpha.gmsservice.repositories.WorkflowStatusTransitionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -87,10 +91,15 @@ public class DisbursementService {
         return disbursement;
     }
 
-    public List<Disbursement> getDisbursementsForUser(User user,Organization org) {
+    public List<Disbursement> getDisbursementsForUserByStatus(User user,Organization org,String status) {
        List<Disbursement> disbursements = new ArrayList<>();
-       disbursements = disbursementRepository.getDisbursementsForUser(user.getId(),org.getId());
- 
+       if(status.equalsIgnoreCase("DRAFT")){
+        disbursements = disbursementRepository.getInprogressDisbursementsForUser(user.getId(),org.getId());
+       }else if(status.equalsIgnoreCase("ACTIVE")){
+        disbursements = disbursementRepository.getActiveDisbursementsForUser(org.getId());
+       }else if(status.equalsIgnoreCase("CLOSED")){
+        disbursements = disbursementRepository.getClosedDisbursementsForUser(org.getId());
+       }
        for(Disbursement d : disbursements){
            d = disbursementToReturn(d, user.getId());
        }
@@ -112,5 +121,45 @@ public class DisbursementService {
 
     public void deleteDisbursement(Disbursement disbursement){
         disbursementRepository.delete(disbursement);
+    }
+
+    public DisbursementAssignment getDisbursementAssignmentById(Long id){
+        return disbursementAssignmentRepository.findById(id).get();
+    }
+
+    public DisbursementAssignment saveAssignmentForDisbursement(DisbursementAssignment assignment){
+        return disbursementAssignmentRepository.save(assignment);
+    }
+
+    public String[] buildEmailNotificationContent(Disbursement finalDisbursement, User user, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment, String hasNotes, String hasNotesComment, String link, User owner, Integer noOfDays) {
+
+        String code = Base64.getEncoder().encodeToString(String.valueOf(finalDisbursement.getId()).getBytes());
+
+        String host = "";
+        String url = "";
+        UriComponents uriComponents = null;
+        try {
+            uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
+            if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
+
+            } else {
+                host = uriComponents.getHost();
+            }
+            UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
+            url = uriBuilder.toUriString();
+            url = url+"/home/?action=login&g=" + code+"&email=&type=disbursement";
+        }catch (Exception e){
+            url = link;
+
+            url = url+"/home/?action=login&g=" + code+"&email=&type=disbursement";   
+        }
+
+
+
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalDisbursement.getGrant().getName()).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalDisbursement.getGrant().getGrantorOrganization().getName()).replaceAll("%GRANT_LINK%",url).replaceAll("%OWNER_NAME%",owner==null?"":owner.getFirstName()+" "+owner.getLastName()).replaceAll("%OWNER_EMAIL%",owner==null?"":owner.getEmailId()).replaceAll("%NO_DAYS%",noOfDays==null?"":String.valueOf(noOfDays));
+        String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalDisbursement.getGrant().getName());
+
+        return new String[]{subject, message};
     }
 }

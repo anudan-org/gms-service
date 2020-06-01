@@ -84,8 +84,8 @@ INSERT INTO workflow_status_transitions(action, created_at, created_by, note_req
 INSERT INTO workflow_status_transitions(action, created_at, created_by, note_required, from_state_id, to_state_id, workflow_id,seq_order)VALUES ('Request Modifications', now(), 'System', true, 32, 31, 9,1);
 INSERT INTO workflow_status_transitions(action, created_at, created_by, note_required, from_state_id, to_state_id, workflow_id,seq_order)VALUES ('Request Modifications', now(), 'System', true, 30, 29, 9,1);
 INSERT INTO workflow_status_transitions(action, created_at, created_by, note_required, from_state_id, to_state_id, workflow_id,seq_order)VALUES ('Request Modifications', now(), 'System', true, 31, 30, 9,1);
-INSERT INTO workflow_status_transitions(action, created_at, created_by, note_required, from_state_id, to_state_id, workflow_id,seq_order)VALUES ('Approve', now(), 'System', true, 32, 33, 9,1);
-INSERT INTO workflow_status_transitions(action, created_at, created_by, note_required, from_state_id, to_state_id, workflow_id,seq_order)VALUES ('Close', now(), 'System', true, 33, 34, 9,1);
+INSERT INTO workflow_status_transitions(action, created_at, created_by, note_required, from_state_id, to_state_id, workflow_id,seq_order)VALUES ('Approve', now(), 'System', true, 32, 33, 9,0);
+INSERT INTO workflow_status_transitions(action, created_at, created_by, note_required, from_state_id, to_state_id, workflow_id,seq_order)VALUES ('Close', now(), 'System', true, 33, 34, 9,0);
 
 
 create sequence disbursement_assignment_seq start 1;
