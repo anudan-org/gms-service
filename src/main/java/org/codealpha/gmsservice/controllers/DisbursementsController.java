@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.controllers;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.Disbursement;
 import org.codealpha.gmsservice.entities.DisbursementAssignment;
+import org.codealpha.gmsservice.entities.DisbursementHistory;
 import org.codealpha.gmsservice.entities.DisbursementSnapshot;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Organization;
@@ -163,7 +164,7 @@ public class DisbursementsController {
     public DisbursementSnapshot getReportHistory(@PathVariable("disbursementId") Long disbursementId, @PathVariable("userId") Long userId) {
         Disbursement disbursement = disbursementService.getDisbursementById(disbursementId);
 
-        return disbursementSnapshotService.getSnapshotByDisbursementIdAndAssignedToIdAndStatusId(disbursementId, userId, disbursement.getStatus().getId());
+        return disbursementSnapshotService.getSnapshotByDisbursementIdAndStatusId(disbursementId, disbursement.getStatus().getId());
     }
 
     @PostMapping("/{disbursementId}/flow/{fromState}/{toState}")
@@ -278,5 +279,21 @@ public class DisbursementsController {
                 
                 disbursementSnapshotService.saveSnapShot(snapshot);
       
+    }
+
+    @GetMapping("/{disbursementId}/history/")
+    public List<DisbursementHistory> getDisbursementHistory(@PathVariable("disbursementId") Long disbursementId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+
+        List<DisbursementHistory> history = null;
+        User user = userService.getUserById(userId);
+        if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
+            history = disbursementService.getDisbursementHistory(disbursementId);
+        } 
+
+        for(DisbursementHistory dh : history){
+            dh.setNoteAddedByUser(userService.getUserById(dh.getNoteAddedBy()));
+        }
+   
+        return history;
     }
 }

@@ -25,9 +25,8 @@ public class DisbursementHistory {
     private String note;
     @Column
     private Date noteAdded;
-    @OneToOne
-    @JoinColumn(referencedColumnName = "id")
-    private User noteAddedBy;
+    @Column
+    private Long noteAddedBy;
     @Column
     private String createdBy;
     @Column
@@ -38,6 +37,8 @@ public class DisbursementHistory {
     private Date updatedAt;
     @Column
     private Date movedOn;
+    @Transient
+    private User noteAddedByUser;
     
     public Long getId() {
         return id;
@@ -111,14 +112,6 @@ public class DisbursementHistory {
         this.noteAdded = noteAdded;
     }
 
-    public User getNoteAddedBy() {
-        return noteAddedBy;
-    }
-
-    public void setNoteAddedBy(User noteAddedBy) {
-        this.noteAddedBy = noteAddedBy;
-    }
-
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -159,6 +152,21 @@ public class DisbursementHistory {
         this.movedOn = movedOn;
     }
 
-    
+    public Long getNoteAddedBy() {
+        return noteAddedBy;
+    }
 
+    public void setNoteAddedBy(Long noteAddedBy) {
+        this.noteAddedBy = noteAddedBy;
+    }
+
+    public User getNoteAddedByUser() {
+        return noteAddedByUser;
+    }
+
+    public void setNoteAddedByUser(User noteAddedByUser) {
+        this.noteAddedByUser = noteAddedByUser;
+    }
+
+    
 }

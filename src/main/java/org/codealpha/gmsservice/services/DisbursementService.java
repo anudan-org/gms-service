@@ -4,6 +4,7 @@ import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.GrantVO;
 import org.codealpha.gmsservice.repositories.DisbursementAssignmentRepository;
+import org.codealpha.gmsservice.repositories.DisbursementHistoryRepository;
 import org.codealpha.gmsservice.repositories.DisbursementRepository;
 import org.codealpha.gmsservice.repositories.WorkflowPermissionRepository;
 import org.codealpha.gmsservice.repositories.WorkflowStatusTransitionRepository;
@@ -36,6 +37,8 @@ public class DisbursementService {
     private UserService userService;
     @Autowired
     private AppConfigService appConfigService;
+    @Autowired
+    private DisbursementHistoryRepository disbursementHistoryRepository;
 
     public Disbursement saveDisbursement(Disbursement disbursement){
         return disbursementRepository.save(disbursement);
@@ -88,6 +91,9 @@ public class DisbursementService {
         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS), userService);
 
         disbursement.getGrant().setGrantDetails(vo.getGrantDetails());
+        if(disbursement.getNoteAddedBy()!=null){
+            disbursement.setNoteAddedByUser(userService.getUserById(disbursement.getNoteAddedBy()));
+        }
         return disbursement;
     }
 
@@ -161,5 +167,9 @@ public class DisbursementService {
         String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalDisbursement.getGrant().getName());
 
         return new String[]{subject, message};
+    }
+
+    public List<DisbursementHistory> getDisbursementHistory(Long disbursementId){
+        return disbursementHistoryRepository.findByDisbursementId(disbursementId);
     }
 }

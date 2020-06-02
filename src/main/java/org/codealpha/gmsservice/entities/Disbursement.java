@@ -44,6 +44,8 @@ public class Disbursement {
     private Date updatedAt;
     @Column
     private Date movedOn;
+    @Transient
+    private User noteAddedByUser;
 
     public Long getId() {
         return id;
@@ -181,6 +183,14 @@ public class Disbursement {
 
     public void setNoteAddedBy(Long noteAddedBy) {
         this.noteAddedBy = noteAddedBy;
+    }
+
+    public User getNoteAddedByUser() {
+        return noteAddedByUser;
+    }
+
+    public void setNoteAddedByUser(User noteAddedByUser) {
+        this.noteAddedByUser = noteAddedByUser;
     }
 
 

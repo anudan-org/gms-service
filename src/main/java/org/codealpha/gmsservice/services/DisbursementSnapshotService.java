@@ -11,8 +11,8 @@ public class DisbursementSnapshotService {
     @Autowired
     private DisbursementSnapshotRepository disbursementSnapshotRepository;
     
-    public DisbursementSnapshot getSnapshotByDisbursementIdAndAssignedToIdAndStatusId(Long disbursementId, Long assignedToId, Long statusId){
-        return disbursementSnapshotRepository.findByDisbursementIdAndAssignedToIdAndStatusId(disbursementId,assignedToId,statusId);
+    public DisbursementSnapshot getSnapshotByDisbursementIdAndStatusId(Long disbursementId, Long statusId){
+        return disbursementSnapshotRepository.findByDisbursementIdAndStatusId(disbursementId,statusId);
     }
 
     public DisbursementSnapshot saveSnapShot(DisbursementSnapshot snapshot){
