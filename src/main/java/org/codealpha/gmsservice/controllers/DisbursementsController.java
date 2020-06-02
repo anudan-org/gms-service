@@ -105,6 +105,12 @@ public class DisbursementsController {
             org = user.getOrganization();
             disbursements = disbursementService.getDisbursementsForUserByStatus(user,org,status);
         }
+
+        if(disbursements!=null){
+            for(Disbursement d : disbursements){
+                d = disbursementService.disbursementToReturn(d, userId);
+            }
+        }
         return disbursements;
     }
 
