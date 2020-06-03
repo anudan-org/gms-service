@@ -195,4 +195,12 @@ public class DisbursementService {
     public ActualDisbursement saveActualDisbursement(ActualDisbursement actualDisbursement){
         return actualDisbursementRepository.save(actualDisbursement);
     }
+
+    public ActualDisbursement getActualDisbursementById(Long actualDisbursementId){
+        return actualDisbursementRepository.findById(actualDisbursementId).get();
+    }
+
+    public void deleteActualDisbursement(ActualDisbursement actualDisbursement){
+         actualDisbursementRepository.delete(actualDisbursement);
+    }
 }

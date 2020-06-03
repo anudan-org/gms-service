@@ -90,6 +90,18 @@ public class DisbursementsController {
         existingDisbursement.setUpdatedBy(userService.getUserById(userId).getEmailId());
         existingDisbursement = disbursementService.saveDisbursement(existingDisbursement);
 
+        if(disbursementToSave.getActualDisbursements()!=null && disbursementToSave.getActualDisbursements().size()>0){
+            for(ActualDisbursement ad : disbursementToSave.getActualDisbursements()){
+                ActualDisbursement existingActualDisbursement = disbursementService.getActualDisbursementById(ad.getId());
+                existingActualDisbursement.setActualAmount(ad.getActualAmount());
+                existingActualDisbursement.setDisbursementDate(ad.getDisbursementDate());
+                existingActualDisbursement.setNote(ad.getNote());
+                existingActualDisbursement.setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
+                existingActualDisbursement.setUpdatedBy(userService.getUserById(userId).getId());
+                existingActualDisbursement = disbursementService.saveActualDisbursement(existingActualDisbursement);
+            }
+        }
+
         return disbursementService.disbursementToReturn(existingDisbursement, userId);
 
     }
@@ -231,7 +243,7 @@ public class DisbursementsController {
                                 AppConfiguration.DISBURSEMENT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(), appConfigService
                         .getAppConfigForGranterOrg(finalDisbursement.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.DISBURSEMENT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
-                workflowStatusService.findById(toStateId).getName(), currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()),
+                workflowStatusService.findById(toStateId).getName(), currentOwner==null?"-":(currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName())),
                 previousState.getName(),
                 previousOwner == null ? " -" : previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
                 transition.getAction(), "Yes",
@@ -243,7 +255,7 @@ public class DisbursementsController {
                                 AppConfiguration.DISBURSEMENT_STATE_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(), appConfigService
                         .getAppConfigForGranterOrg(finalDisbursement.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.DISBURSEMENT_STATE_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
-                workflowStatusService.findById(toStateId).getName(), currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()),
+                workflowStatusService.findById(toStateId).getName(), currentOwner==null?"-":(currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName())),
                 previousState.getName(),
                 previousOwner == null ? " -" : previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
                 transition.getAction(), "Yes",
@@ -313,5 +325,12 @@ public class DisbursementsController {
             actualDisbursements.add(actualDisbursement);
         }
         return actualDisbursement;
+    }
+
+    @DeleteMapping("/{disbursementId}/actual/{actualDisbursementId}")
+    public void deleteActualDisbursement(@PathVariable("disbursementId") Long disbursementId,@PathVariable("actualDisbursementId") Long actualDisbursementId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode){
+       
+        ActualDisbursement actualDisbursement = disbursementService.getActualDisbursementById(actualDisbursementId);
+        disbursementService.deleteActualDisbursement(actualDisbursement);
     }
 }
