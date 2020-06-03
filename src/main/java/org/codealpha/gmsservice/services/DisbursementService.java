@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.services;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.GrantVO;
+import org.codealpha.gmsservice.repositories.ActualDisbursementRepository;
 import org.codealpha.gmsservice.repositories.DisbursementAssignmentRepository;
 import org.codealpha.gmsservice.repositories.DisbursementHistoryRepository;
 import org.codealpha.gmsservice.repositories.DisbursementRepository;
@@ -39,6 +40,8 @@ public class DisbursementService {
     private AppConfigService appConfigService;
     @Autowired
     private DisbursementHistoryRepository disbursementHistoryRepository;
+    @Autowired
+    private ActualDisbursementRepository actualDisbursementRepository;
 
     public Disbursement saveDisbursement(Disbursement disbursement){
         return disbursementRepository.save(disbursement);
@@ -94,6 +97,12 @@ public class DisbursementService {
         if(disbursement.getNoteAddedBy()!=null){
             disbursement.setNoteAddedByUser(userService.getUserById(disbursement.getNoteAddedBy()));
         }
+
+        List<ActualDisbursement> actualDisbursements = getActualDisbursementsForDisbursement(disbursement);
+        if(actualDisbursements!=null){
+            disbursement.setActualDisbursements(actualDisbursements);
+        }
+
         return disbursement;
     }
 
@@ -171,5 +180,19 @@ public class DisbursementService {
 
     public List<DisbursementHistory> getDisbursementHistory(Long disbursementId){
         return disbursementHistoryRepository.findByDisbursementId(disbursementId);
+    }
+
+    public ActualDisbursement createEmtptyActualDisbursement(Disbursement disbursement){
+        ActualDisbursement actualDisbursement = new ActualDisbursement();
+        actualDisbursement.setDisbursementId(disbursement.getId());
+        return actualDisbursementRepository.save(actualDisbursement);
+    }
+
+    public List<ActualDisbursement> getActualDisbursementsForDisbursement(Disbursement disbursement){
+        return actualDisbursementRepository.findByDisbursementId(disbursement.getId());
+    }
+
+    public ActualDisbursement saveActualDisbursement(ActualDisbursement actualDisbursement){
+        return actualDisbursementRepository.save(actualDisbursement);
     }
 }

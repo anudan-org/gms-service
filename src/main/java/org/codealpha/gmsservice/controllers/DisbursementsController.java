@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.controllers;
 
 import org.codealpha.gmsservice.constants.AppConfiguration;
+import org.codealpha.gmsservice.entities.ActualDisbursement;
 import org.codealpha.gmsservice.entities.Disbursement;
 import org.codealpha.gmsservice.entities.DisbursementAssignment;
 import org.codealpha.gmsservice.entities.DisbursementHistory;
@@ -222,10 +223,7 @@ public class DisbursementsController {
 
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState, toStatus);
 
-        WorkflowStatus currentState = workflowStatusService.findById(toStateId);
         
-
-        String finalCurrentOwnerName = currentOwnerName;
         
 
         String emailNotificationContent[] = disbursementService.buildEmailNotificationContent(finalDisbursement, user, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
@@ -261,6 +259,12 @@ public class DisbursementsController {
         });
         usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(), finalDisbursement.getId(), "DISBURSEMENT"));
 
+        
+
+        if(toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")){
+            disbursementService.createEmtptyActualDisbursement(disbursement);
+        }
+
         disbursement = disbursementService.disbursementToReturn(disbursement, userId);
         _saveSnapShot(disbursement);
 
@@ -295,5 +299,19 @@ public class DisbursementsController {
         }
    
         return history;
+    }
+
+    @GetMapping("/{disbursementId}/actual")
+    public ActualDisbursement addNewActualDisbursement(@PathVariable("disbursementId") Long disbursementId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode){
+        Disbursement disbursement = disbursementService.getDisbursementById(disbursementId);
+        List<ActualDisbursement> actualDisbursements = disbursementService.getActualDisbursementsForDisbursement(disbursement);
+        ActualDisbursement actualDisbursement = null;
+        if(actualDisbursements!=null){
+            actualDisbursement = new ActualDisbursement();
+            actualDisbursement.setDisbursementId(disbursement.getId());
+            actualDisbursement = disbursementService.saveActualDisbursement(actualDisbursement);
+            actualDisbursements.add(actualDisbursement);
+        }
+        return actualDisbursement;
     }
 }

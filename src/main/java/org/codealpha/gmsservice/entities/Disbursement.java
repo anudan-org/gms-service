@@ -46,6 +46,8 @@ public class Disbursement {
     private Date movedOn;
     @Transient
     private User noteAddedByUser;
+    @Transient
+    List<ActualDisbursement> actualDisbursements;
 
     public Long getId() {
         return id;
@@ -193,5 +195,14 @@ public class Disbursement {
         this.noteAddedByUser = noteAddedByUser;
     }
 
+    public List<ActualDisbursement> getActualDisbursements() {
+        return actualDisbursements;
+    }
+
+    public void setActualDisbursements(List<ActualDisbursement> actualDisbursements) {
+        this.actualDisbursements = actualDisbursements;
+    }
+
+    
 
 }
