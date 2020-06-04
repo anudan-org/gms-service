@@ -48,6 +48,8 @@ public class Disbursement {
     private User noteAddedByUser;
     @Transient
     List<ActualDisbursement> actualDisbursements;
+    @Transient
+    private List<ActualDisbursement> approvedActualsDibursements;
 
     public Long getId() {
         return id;
@@ -203,6 +205,12 @@ public class Disbursement {
         this.actualDisbursements = actualDisbursements;
     }
 
-    
+    public List<ActualDisbursement> getApprovedActualsDibursements() {
+        return approvedActualsDibursements;
+    }
+
+    public void setApprovedActualsDibursements(List<ActualDisbursement> approvedActualsDibursements) {
+        this.approvedActualsDibursements = approvedActualsDibursements;
+    }
 
 }

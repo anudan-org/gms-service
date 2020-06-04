@@ -8,7 +8,9 @@ import org.codealpha.gmsservice.repositories.DisbursementAssignmentRepository;
 import org.codealpha.gmsservice.repositories.DisbursementHistoryRepository;
 import org.codealpha.gmsservice.repositories.DisbursementRepository;
 import org.codealpha.gmsservice.repositories.WorkflowPermissionRepository;
+import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
 import org.codealpha.gmsservice.repositories.WorkflowStatusTransitionRepository;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -16,8 +18,11 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @Service
 public class DisbursementService {
@@ -42,6 +47,8 @@ public class DisbursementService {
     private DisbursementHistoryRepository disbursementHistoryRepository;
     @Autowired
     private ActualDisbursementRepository actualDisbursementRepository;
+    @Autowired
+    private WorkflowStatusRepository workflowStatusRepository;
 
     public Disbursement saveDisbursement(Disbursement disbursement){
         return disbursementRepository.save(disbursement);
@@ -103,7 +110,28 @@ public class DisbursementService {
             disbursement.setActualDisbursements(actualDisbursements);
         }
 
+        List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses("DISBURSEMENT",disbursement.getGrant().getGrantorOrganization().getId());
+
+        List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream().filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE") || ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
+        List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
+
+        List<Disbursement> approvedDisbursements = getDibursementsForGrantByStatuses(disbursement.getGrant().getId(),statusIds);
+        List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
+        if(approvedDisbursements!=null){
+            approvedDisbursements.removeIf(d -> d.getId().longValue()==disbursement.getId().longValue());
+            approvedDisbursements.removeIf(d -> new DateTime(d.getMovedOn()).isAfter(new DateTime(disbursement.getMovedOn())));
+            for(Disbursement approved: approvedDisbursements){
+               List <ActualDisbursement> approvedActuals =  getActualDisbursementsForDisbursement(approved);
+               approvedActualDisbursements.addAll(approvedActuals);
+            }
+        }
+        disbursement.setApprovedActualsDibursements(approvedActualDisbursements);
+
         return disbursement;
+    }
+
+    public List<Disbursement> getDibursementsForGrantByStatuses(Long grantId,List<Long> statuses){
+        return disbursementRepository.getDisbursementByGrantAndStatuses(grantId, statuses);
     }
 
     public List<Disbursement> getDisbursementsForUserByStatus(User user,Organization org,String status) {

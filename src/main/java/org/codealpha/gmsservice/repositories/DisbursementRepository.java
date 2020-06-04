@@ -39,4 +39,7 @@ public interface DisbursementRepository extends CrudRepository<Disbursement,Long
             "\t(C.internal_status='CLOSED' ) ) \n" +
             "\tand Z.grantor_org_id=?1 and Z.deleted=false order by A.requested_on desc",nativeQuery = true)
     List<Disbursement> getClosedDisbursementsForUser(Long orgId);
+
+    @Query(value = "select * from disbursements where grant_id=?1 and status_id in (?2)",nativeQuery = true)
+    public List<Disbursement> getDisbursementByGrantAndStatuses(Long grantId, List<Long> statusIds);
 }
