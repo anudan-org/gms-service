@@ -339,14 +339,14 @@ public class UserController {
         if(activeGrantSummaryCommitted==null){
             return null;
         }
-        Long disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGranter(tenantOrg.getId(),status);
+        Double disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGranter(tenantOrg.getId(),status);
         Filter categoryFilter = new Filter();
         categoryFilter.setName(WordUtils.capitalizeFully(status+" Grants"));
         categoryFilter.setTotalGrants(Long.valueOf(activeGrantSummaryCommitted.getGrantCount()));
         SimpleDateFormat sd = new SimpleDateFormat("yyyy");
         categoryFilter.setPeriod(sd.format(activeGrantSummaryCommitted.getPeriodStart()) + "-" + sd.format(activeGrantSummaryCommitted.getPeriodEnd()));
         categoryFilter.setCommittedAmount(Long.valueOf(activeGrantSummaryCommitted.getCommittedAmount()));
-        categoryFilter.setDisbursedAmount(Long.valueOf(disbursedAmount));
+        categoryFilter.setDisbursedAmount(disbursedAmount.longValue());
         List<GranterReportStatus> reportStatuses = null;
         List<DetailedSummary> reportSummaryList = new ArrayList<>();
         if(status.equalsIgnoreCase("ACTIVE")) {

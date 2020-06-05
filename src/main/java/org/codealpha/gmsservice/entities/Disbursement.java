@@ -50,6 +50,10 @@ public class Disbursement {
     List<ActualDisbursement> actualDisbursements;
     @Transient
     private List<ActualDisbursement> approvedActualsDibursements;
+    @Column
+    private boolean granteeEntry;
+    @Column
+    private Double otherSources;
 
     public Long getId() {
         return id;
@@ -212,5 +216,23 @@ public class Disbursement {
     public void setApprovedActualsDibursements(List<ActualDisbursement> approvedActualsDibursements) {
         this.approvedActualsDibursements = approvedActualsDibursements;
     }
+
+    public boolean isGranteeEntry() {
+        return granteeEntry;
+    }
+
+    public void setGranteeEntry(boolean granteeEntry) {
+        this.granteeEntry = granteeEntry;
+    }
+
+    public Double getOtherSources() {
+        return otherSources;
+    }
+
+    public void setOtherSources(Double otherSources) {
+        this.otherSources = otherSources;
+    }
+
+    
 
 }

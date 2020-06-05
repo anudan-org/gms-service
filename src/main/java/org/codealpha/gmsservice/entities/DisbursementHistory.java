@@ -39,6 +39,10 @@ public class DisbursementHistory {
     private Date movedOn;
     @Transient
     private User noteAddedByUser;
+    @Column
+    private boolean granteeEntry;
+    @Column
+    private Double otherSources;
     
     public Long getId() {
         return id;
@@ -168,5 +172,22 @@ public class DisbursementHistory {
         this.noteAddedByUser = noteAddedByUser;
     }
 
+    public boolean isGranteeEntry() {
+        return granteeEntry;
+    }
+
+    public void setGranteeEntry(boolean granteeEntry) {
+        this.granteeEntry = granteeEntry;
+    }
+
+    public Double getOtherSources() {
+        return otherSources;
+    }
+
+    public void setOtherSources(Double otherSources) {
+        this.otherSources = otherSources;
+    }
+
+    
     
 }

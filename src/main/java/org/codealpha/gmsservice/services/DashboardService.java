@@ -198,9 +198,9 @@ public class DashboardService {
         return granterActiveGrantSummaryCommittedRepository.getGrantCommittedSummaryForGranter(granterId,status);
     }
 
-    public Long getActiveGrantDisbursedAmountForGranter(Long granterId,String status) {
+    public Double getActiveGrantDisbursedAmountForGranter(Long granterId,String status) {
         List<GranterGrantSummaryDisbursed> disbursedList = granterActiveGrantSummaryDisbursedRepository.getGrantDisbursedSummaryForGranter(granterId,status);
-        AtomicReference<Long> disbursedAmount = new AtomicReference<>(0l);
+        AtomicReference<Double> disbursedAmount = new AtomicReference<>(0d);
         if(disbursedList!=null && disbursedList.size()>0){
             disbursedList.forEach(d ->{
                 ObjectMapper mapper = new ObjectMapper();
@@ -213,7 +213,7 @@ public class DashboardService {
 
                             for (ColumnData column : a.getColumns()) {
                                 if(column.getName().equalsIgnoreCase("Actual Disbursement") && column.getValue()!=null && column.getValue().trim()!="" && column.getDataType().equalsIgnoreCase("currency")){
-                                    disbursedAmount.updateAndGet(v -> v + Long.valueOf(column.getValue()));
+                                    disbursedAmount.updateAndGet(v -> v + Double.valueOf((column.getValue()==null || (column.getValue()!=null && column.getValue().equalsIgnoreCase("null") ))?"0.0":column.getValue()));
                                 }
                             }
                         });

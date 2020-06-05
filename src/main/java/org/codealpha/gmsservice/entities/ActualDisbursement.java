@@ -30,6 +30,8 @@ public class ActualDisbursement {
     private Date updatedAt;
     @Column
     private Long updatedBy;
+    @Column
+    private Double otherSources;
 
     public Long getId() {
         return id;
@@ -101,6 +103,14 @@ public class ActualDisbursement {
 
     public void setUpdatedBy(Long updatedBy) {
         this.updatedBy = updatedBy;
+    }
+
+    public Double getOtherSources() {
+        return otherSources;
+    }
+
+    public void setOtherSources(Double otherSources) {
+        this.otherSources = otherSources;
     }
 
     

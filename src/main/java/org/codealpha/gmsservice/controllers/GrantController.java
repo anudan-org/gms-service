@@ -2165,7 +2165,7 @@ public class GrantController {
                         stringAttribute.setSection(specificSection);
                         stringAttribute.setReport(report);
                         stringAttribute.setSectionAttribute(sectionAttribute);
-                        ObjectMapper mapper = new ObjectMapper();
+                        /* ObjectMapper mapper = new ObjectMapper();
                         String[] colHeaders = new String[]{"Disbursement Date", "Actual Disbursement", "Funds from other Sources", "Notes"};
                         List<TableData> tableDataList = new ArrayList<>();
                         TableData tableData = new TableData();
@@ -2183,7 +2183,7 @@ public class GrantController {
                             stringAttribute.setValue(mapper.writeValueAsString(tableDataList));
                         } catch (JsonProcessingException e) {
                             e.printStackTrace();
-                        }
+                        } */
                         stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
 
                     }
