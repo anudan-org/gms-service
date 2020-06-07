@@ -32,6 +32,8 @@ public class ActualDisbursement {
     private Long updatedBy;
     @Column
     private Double otherSources;
+    @Column
+    private Integer orderPosition;
 
     public Long getId() {
         return id;
@@ -111,6 +113,14 @@ public class ActualDisbursement {
 
     public void setOtherSources(Double otherSources) {
         this.otherSources = otherSources;
+    }
+
+    public Integer getOrderPosition() {
+        return orderPosition;
+    }
+
+    public void setOrderPosition(Integer orderPosition) {
+        this.orderPosition = orderPosition;
     }
 
     

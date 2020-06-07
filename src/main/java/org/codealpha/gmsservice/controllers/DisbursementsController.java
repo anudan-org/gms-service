@@ -130,6 +130,9 @@ public class DisbursementsController {
                 existingActualDisbursement
                         .setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
                 existingActualDisbursement.setUpdatedBy(userService.getUserById(userId).getId());
+                if(existingActualDisbursement.getOrderPosition()==null){
+                    existingActualDisbursement.setOrderPosition(disbursementService.getNewOrderPositionForActualDisbursementOfGrant(disbursementToSave.getGrant().getId()));
+                }
                 existingActualDisbursement = disbursementService.saveActualDisbursement(existingActualDisbursement);
             }
         }
@@ -344,97 +347,7 @@ public class DisbursementsController {
             disbursementService.createEmtptyActualDisbursement(disbursement);
         }
 
-        if (toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
-            List<Report> reportsForGrant = reportService.getReportsForGrant(disbursement.getGrant());
-            if (reportsForGrant != null) {
-                List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses("DISBURSEMENT",
-                        disbursement.getGrant().getGrantorOrganization().getId());
-
-                List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
-                        .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
-                List<Long> statusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
-                        .collect(Collectors.toList());
-                List<Disbursement> closedDisbursements = disbursementService
-                        .getDibursementsForGrantByStatuses(disbursement.getGrant().getId(), statusIds);
-                for (Report report : reportsForGrant) {
-                    if (report.getMovedOn() == null || (report.getMovedOn() != null
-                            && !report.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"))) {
-                        List<ReportStringAttribute> reportStringAttribs = reportService
-                                .getReportStringAttributesForReport(report);
-                        if (reportStringAttribs != null && reportStringAttribs.size() > 0) {
-                            for (ReportStringAttribute stringAttribute : reportStringAttribs) {
-                                if (stringAttribute.getSectionAttribute().getFieldType()
-                                        .equalsIgnoreCase("DISBURSEMENT")) {
-                                    String disbursementEntry = stringAttribute.getValue();
-                                    ObjectMapper mapper = new ObjectMapper();
-                                    List<TableData> tableData = null;
-                                    if (disbursementEntry != null && !disbursementEntry.trim().equalsIgnoreCase("")) {
-
-                                        try {
-                                            tableData = mapper.readValue(disbursementEntry,
-                                                    new TypeReference<List<TableData>>() {
-                                                    });
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                    } else {
-                                        tableData = new ArrayList<>();
-                                    }
-                                    List<ActualDisbursement> actualDisbursements = disbursement
-                                            .getActualDisbursements();
-                                    if (actualDisbursements != null && actualDisbursements.size() > 0) {
-
-                                        for (ActualDisbursement ad : actualDisbursements) {
-                                            TableData td = new TableData();
-                                            ColumnData[] colDataList = new ColumnData[4];
-                                            td.setName(
-                                                    String.valueOf(tableData.size() > 0
-                                                            ? (Integer.valueOf(
-                                                                    tableData.get(tableData.size() - 1).getName()) + 1)
-                                                            : 1));
-                                            td.setHeader("#");
-                                            ColumnData cdDate = new ColumnData();
-                                            cdDate.setDataType("date");
-                                            cdDate.setName("Disbursement Date");
-                                            cdDate.setValue(new SimpleDateFormat("dd-MMM-yyyy")
-                                                    .format(ad.getDisbursementDate()));
-
-                                            ColumnData cdDA = new ColumnData();
-                                            cdDA.setDataType("currency");
-                                            cdDA.setName("Actual Disbursement");
-                                            cdDA.setValue(String.valueOf(ad.getActualAmount()));
-
-                                            ColumnData cdFOS = new ColumnData();
-                                            cdFOS.setDataType("currency");
-                                            cdFOS.setName("Funds from Other Sources");
-                                            cdFOS.setValue(null);
-
-                                            ColumnData cdN = new ColumnData();
-                                            cdN.setName("Notes");
-                                            cdN.setValue(ad.getNote());
-
-                                            colDataList[0] = cdDate;
-                                            colDataList[1] = cdDA;
-                                            colDataList[2] = cdFOS;
-                                            colDataList[3] = cdN;
-                                            td.setColumns(colDataList);
-                                            tableData.add(td);
-                                        }
-                                    }
-
-                                    try {
-                                        stringAttribute.setValue(mapper.writeValueAsString(tableData));
-                                        reportService.saveReportStringAttribute(stringAttribute);
-                                    } catch (JsonProcessingException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        
 
         disbursement = disbursementService.disbursementToReturn(disbursement, userId);
         _saveSnapShot(disbursement);
@@ -482,6 +395,7 @@ public class DisbursementsController {
         if (actualDisbursements != null) {
             actualDisbursement = new ActualDisbursement();
             actualDisbursement.setDisbursementId(disbursement.getId());
+            actualDisbursement.setOrderPosition(disbursementService.getNewOrderPositionForActualDisbursementOfGrant(disbursement.getGrant().getId()));
             actualDisbursement = disbursementService.saveActualDisbursement(actualDisbursement);
             actualDisbursements.add(actualDisbursement);
         }

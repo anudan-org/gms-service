@@ -54,6 +54,8 @@ public class Disbursement {
     private boolean granteeEntry;
     @Column
     private Double otherSources;
+    @Column
+    private Long reportId;
 
     public Long getId() {
         return id;
@@ -231,6 +233,14 @@ public class Disbursement {
 
     public void setOtherSources(Double otherSources) {
         this.otherSources = otherSources;
+    }
+
+    public Long getReportId() {
+        return reportId;
+    }
+
+    public void setReportId(Long reportId) {
+        this.reportId = reportId;
     }
 
     

@@ -213,6 +213,7 @@ public class DisbursementService {
     public ActualDisbursement createEmtptyActualDisbursement(Disbursement disbursement){
         ActualDisbursement actualDisbursement = new ActualDisbursement();
         actualDisbursement.setDisbursementId(disbursement.getId());
+        actualDisbursement.setOrderPosition(getNewOrderPositionForActualDisbursementOfGrant(disbursement.getGrant().getId()));
         return actualDisbursementRepository.save(actualDisbursement);
     }
 
@@ -230,5 +231,14 @@ public class DisbursementService {
 
     public void deleteActualDisbursement(ActualDisbursement actualDisbursement){
          actualDisbursementRepository.delete(actualDisbursement);
+    }
+
+    public Integer getNewOrderPositionForActualDisbursementOfGrant(Long grantId){
+        Integer  returnValue = actualDisbursementRepository.getMaxOrderPositionForClosedDisbursementOfGrant(grantId);
+        if(returnValue==null){
+            return 1;
+        }else{
+            return returnValue+1;
+        }
     }
 }

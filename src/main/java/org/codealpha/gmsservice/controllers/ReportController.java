@@ -262,128 +262,9 @@ public class ReportController {
                 reportService);
         report.setReportDetails(reportVO.getReportDetails());
 
-        List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
-                report.getGrant().getGrantorOrganization().getId());
+        showDisbursementsForReport(report);
 
-        List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
-                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
-        List<Long> statusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
 
-        report.getReportDetails().getSections().forEach(s -> {
-            if (s.getAttributes() != null && s.getAttributes().size() > 0) {
-                s.getAttributes().forEach(a -> {
-                    if (a.getFieldType().equalsIgnoreCase("disbursement")) {
-                        List<Disbursement> closedDisbursements = disbursementService
-                                .getDibursementsForGrantByStatuses(report.getGrant().getId(), statusIds);
-                        if (!report.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
-                            List<TableData> tableDataList = new ArrayList<>();
-                            if (closedDisbursements != null) {
-                                closedDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
-                                AtomicInteger index = new AtomicInteger(1);
-                                closedDisbursements.forEach(cd -> {
-                                    List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
-                                    if(ads!=null && ads.size()>0){
-                                    ads.sort(Comparator.comparing(ActualDisbursement::getCreatedAt));
-                                    ads.forEach(ad -> {
-                                        TableData td = new TableData();
-                                        ColumnData[] colDataList = new ColumnData[4];
-                                        td.setName(String.valueOf(index.getAndIncrement()));
-                                        td.setHeader("#");
-                                        ColumnData cdDate = new ColumnData();
-                                        cdDate.setDataType("date");
-                                        cdDate.setName("Disbursement Date");
-                                        cdDate.setValue(
-                                                new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate()));
-
-                                        ColumnData cdDA = new ColumnData();
-                                        cdDA.setDataType("currency");
-                                        cdDA.setName("Actual Disbursement");
-                                        cdDA.setValue(String.valueOf(ad.getActualAmount()));
-
-                                        ColumnData cdFOS = new ColumnData();
-                                        cdFOS.setDataType("currency");
-                                        cdFOS.setName("Funds from Other Sources");
-                                        cdFOS.setValue(null);
-
-                                        ColumnData cdN = new ColumnData();
-                                        cdN.setName("Notes");
-                                        cdN.setValue(ad.getNote());
-
-                                        colDataList[0] = cdDate;
-                                        colDataList[1] = cdDA;
-                                        colDataList[2] = cdFOS;
-                                        colDataList[3] = cdN;
-                                        td.setColumns(colDataList);
-                                        tableDataList.add(td);
-                                    });
-                                }
-
-                                });
-                            }
-                            a.setFieldTableValue(tableDataList);
-                            try {
-                                a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
-                            } catch (IOException e) {
-                                logger.error(e.getMessage(), e);
-                            }
-                        } else {
-                            List<TableData> tableDataList = new ArrayList<>();
-
-                            if (closedDisbursements != null) {
-                                AtomicInteger index = new AtomicInteger(1);
-                                closedDisbursements.removeIf(
-                                        cd -> new DateTime(cd.getMovedOn()).isAfter(new DateTime(report.getMovedOn())));
-                                if (closedDisbursements != null) {
-                                    closedDisbursements.forEach(cd -> {
-
-                                        disbursementService.getActualDisbursementsForDisbursement(cd).forEach(ad -> {
-                                            TableData td = new TableData();
-                                            ColumnData[] colDataList = new ColumnData[4];
-                                            td.setName(String.valueOf(index.getAndIncrement()));
-                                            td.setHeader("#");
-                                            ColumnData cdDate = new ColumnData();
-                                            cdDate.setDataType("date");
-                                            cdDate.setName("Disbursement Date");
-                                            cdDate.setValue(new SimpleDateFormat("dd-MMM-yyyy")
-                                                    .format(ad.getDisbursementDate()));
-
-                                            ColumnData cdDA = new ColumnData();
-                                            cdDA.setDataType("currency");
-                                            cdDA.setName("Actual Disbursement");
-                                            cdDA.setValue(String.valueOf(ad.getActualAmount()));
-
-                                            ColumnData cdFOS = new ColumnData();
-                                            cdFOS.setDataType("currency");
-                                            cdFOS.setName("Funds from Other Sources");
-                                            cdFOS.setValue(null);
-
-                                            ColumnData cdN = new ColumnData();
-                                            cdN.setName("Notes");
-                                            cdN.setValue(ad.getNote());
-
-                                            colDataList[0] = cdDate;
-                                            colDataList[1] = cdDA;
-                                            colDataList[2] = cdFOS;
-                                            colDataList[3] = cdN;
-                                            td.setColumns(colDataList);
-                                            tableDataList.add(td);
-                                        });
-
-                                    });
-                                }
-                            }
-                            a.setFieldTableValue(tableDataList);
-                            try {
-                                a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
-                            } catch (IOException e) {
-                                logger.error(e.getMessage(), e);
-                            }
-                        }
-
-                    }
-                });
-            }
-        });
 
         report.setNoteAddedBy(reportVO.getNoteAddedBy());
         report.setNoteAddedByUser(reportVO.getNoteAddedByUser());
@@ -465,6 +346,161 @@ public class ReportController {
         report.setSecurityCode(reportService.buildHashCode(report));
         report.setFlowAuthorities(reportService.getFlowAuthority(report, userId));
         return report;
+    }
+
+    private void showDisbursementsForReport(Report report) {
+        List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
+                report.getGrant().getGrantorOrganization().getId());
+
+        List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
+        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
+
+        List<WorkflowStatus>draftStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")).collect(Collectors.toList());
+        List<Long> draftStatusIds = draftStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
+
+        List<ActualDisbursement> finalActualDisbursements = new ArrayList();
+        report.getReportDetails().getSections().forEach(s -> {
+            if (s.getAttributes() != null && s.getAttributes().size() > 0) {
+                s.getAttributes().forEach(a -> {
+                    if (a.getFieldType().equalsIgnoreCase("disbursement")) {
+                        List<Disbursement> closedDisbursements = disbursementService
+                                .getDibursementsForGrantByStatuses(report.getGrant().getId(), closedStatusIds);
+                        List<Disbursement> draftDisbursements = disbursementService
+                                .getDibursementsForGrantByStatuses(report.getGrant().getId(), draftStatusIds);
+                        if (!report.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
+                            List<TableData> tableDataList = new ArrayList<>();
+                            if (closedDisbursements != null) {
+                                closedDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
+                                AtomicInteger index = new AtomicInteger(1);
+                                closedDisbursements.forEach(cd -> {
+                                    List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
+                                    if(ads!=null && ads.size()>0){
+                                        finalActualDisbursements.addAll(ads);                                    
+                                }
+
+                                });
+                            }
+
+                            if(draftDisbursements!=null && draftDisbursements.size()>0){
+                            draftDisbursements.removeIf(dd -> (dd.getReportId()!=null && dd.getReportId().longValue()!=report.getId() && !dd.isGranteeEntry() ));
+                            if (draftDisbursements != null) {
+                                draftDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
+                                AtomicInteger index = new AtomicInteger(1);
+                                draftDisbursements.forEach(cd -> {
+                                    List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
+                                    if(ads!=null && ads.size()>0){
+                                        finalActualDisbursements.addAll(ads);
+                                }
+
+                                });
+                            }
+                            }
+
+                            finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
+                            if(finalActualDisbursements.size()>0){
+                                AtomicInteger index = new AtomicInteger(1);
+                            finalActualDisbursements.forEach(ad -> {
+                                TableData td = new TableData();
+                                ColumnData[] colDataList = new ColumnData[4];
+                                td.setName(String.valueOf(index.getAndIncrement()));
+                                td.setHeader("#");
+                                ColumnData cdDate = new ColumnData();
+                                cdDate.setDataType("date");
+                                cdDate.setName("Disbursement Date");
+                                cdDate.setValue(
+                                        new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate()));
+
+                                ColumnData cdDA = new ColumnData();
+                                cdDA.setDataType("currency");
+                                cdDA.setName("Actual Disbursement");
+                                cdDA.setValue(String.valueOf(ad.getActualAmount()));
+
+                                ColumnData cdFOS = new ColumnData();
+                                cdFOS.setDataType("currency");
+                                cdFOS.setName("Funds from Other Sources");
+                                cdFOS.setValue(null);
+
+                                ColumnData cdN = new ColumnData();
+                                cdN.setName("Notes");
+                                cdN.setValue(ad.getNote());
+
+                                colDataList[0] = cdDate;
+                                colDataList[1] = cdDA;
+                                colDataList[2] = cdFOS;
+                                colDataList[3] = cdN;
+                                td.setColumns(colDataList);
+                                tableDataList.add(td);
+                            });
+                            a.setFieldTableValue(tableDataList);
+                            try {
+                                a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
+                            } catch (IOException e) {
+                                logger.error(e.getMessage(), e);
+                            }
+                        }
+                        } else {
+                            List<TableData> tableDataList = new ArrayList<>();
+
+                            if (closedDisbursements != null) {
+                                AtomicInteger index = new AtomicInteger(1);
+                                closedDisbursements.removeIf(
+                                        cd -> new DateTime(cd.getMovedOn()).isAfter(new DateTime(report.getMovedOn())));
+                                if (closedDisbursements != null) {
+                                    closedDisbursements.forEach(cd -> {
+
+                                        disbursementService.getActualDisbursementsForDisbursement(cd).forEach(ad -> {
+                                            TableData td = new TableData();
+                                            ColumnData[] colDataList = new ColumnData[4];
+                                            td.setName(String.valueOf(index.getAndIncrement()));
+                                            td.setHeader("#");
+                                            ColumnData cdDate = new ColumnData();
+                                            cdDate.setDataType("date");
+                                            cdDate.setName("Disbursement Date");
+                                            cdDate.setValue(new SimpleDateFormat("dd-MMM-yyyy")
+                                                    .format(ad.getDisbursementDate()));
+
+                                            ColumnData cdDA = new ColumnData();
+                                            cdDA.setDataType("currency");
+                                            cdDA.setName("Actual Disbursement");
+                                            cdDA.setValue(String.valueOf(ad.getActualAmount()));
+
+                                            ColumnData cdFOS = new ColumnData();
+                                            cdFOS.setDataType("currency");
+                                            cdFOS.setName("Funds from Other Sources");
+                                            cdFOS.setValue(null);
+
+                                            ColumnData cdN = new ColumnData();
+                                            cdN.setName("Notes");
+                                            cdN.setValue(ad.getNote());
+
+                                            colDataList[0] = cdDate;
+                                            colDataList[1] = cdDA;
+                                            colDataList[2] = cdFOS;
+                                            colDataList[3] = cdN;
+                                            td.setColumns(colDataList);
+                                            tableDataList.add(td);
+                                        });
+
+                                    });
+                                }
+                            }
+                            a.setFieldTableValue(tableDataList);
+                            try {
+                                a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
+                            } catch (IOException e) {
+                                logger.error(e.getMessage(), e);
+                            }
+                        }
+
+                    }
+                });
+            }
+        });
+
+
+
     }
 
     private List<ReportAssignment> determineCanManage(Report report, Long userId) {
@@ -639,21 +675,23 @@ public class ReportController {
                                         newDisbursement.setMovedOn(now.toDate());
                                         newDisbursement.setGrant(report.getGrant());
                                         newDisbursement.setGranteeEntry(true);
+                                        newDisbursement.setReportId(report.getId());
                                         List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",report.getGrant().getGrantorOrganization().getId());
-                                        List<WorkflowStatus> closedStatuses = workflowStatuses.stream().filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
+                                        List<WorkflowStatus> closedStatuses = workflowStatuses.stream().filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")).collect(Collectors.toList());
                                         newDisbursement.setStatus(closedStatuses.get(0));
                                         newDisbursement = disbursementService.saveDisbursement(newDisbursement);
                                     for(TableData nData :newEntries){
                                       
                                         ActualDisbursement actualDisbursement = new ActualDisbursement();
                                         
-                                        actualDisbursement.setOtherSources(Double.valueOf(nData.getColumns()[2].getValue()));
+                                        actualDisbursement.setOtherSources(Double.valueOf(nData.getColumns()[2].getValue()==null?"0d":nData.getColumns()[2].getValue()));
                                         actualDisbursement.setDisbursementDate(new SimpleDateFormat("dd-MMM-yyyy").parse(nData.getColumns()[0].getValue()));
                                         actualDisbursement.setDisbursementId(newDisbursement.getId());
                                         actualDisbursement.setNote(nData.getColumns()[3].getValue());
                                         actualDisbursement.setActualAmount(0d);
                                         actualDisbursement.setCreatedAt(DateTime.now().toDate());
                                         actualDisbursement.setCreatedBy(user.getId());
+                                        actualDisbursement.setOrderPosition(disbursementService.getNewOrderPositionForActualDisbursementOfGrant(report.getGrant().getId()));
                                         disbursementService.saveActualDisbursement(actualDisbursement);
                                     }
                                     
@@ -1314,6 +1352,32 @@ public class ReportController {
         report = _ReportToReturn(report, userId);
         _saveSnapShot(report);
 
+       
+
+        if(toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")){
+            List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
+            report.getGrant().getGrantorOrganization().getId());
+            final Report fReport = report;
+            List<WorkflowStatus>draftStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")).collect(Collectors.toList());
+        List<Long> draftStatusIds = draftStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
+        List<Disbursement> draftDisbursements = disbursementService
+        .getDibursementsForGrantByStatuses(report.getGrant().getId(), draftStatusIds);
+        draftDisbursements.removeIf(dd -> (dd.getReportId().longValue()!=fReport.getId() && !dd.isGranteeEntry() ));
+
+        WorkflowStatus closedtatus = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList()).get(0);
+
+        if(draftDisbursements!=null && draftDisbursements.size()>0){
+            for(Disbursement d: draftDisbursements){
+                d.setStatus(closedtatus);
+                disbursementService.saveDisbursement(d);
+            }
+        }
+
+    }
+
+        
         // Temporary block to continue testing as Grantee has submitted the report
         /*
          * if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) { ReportWithNote
