@@ -1387,6 +1387,13 @@ public class ReportController {
             if(draftDisbursements!=null && draftDisbursements.size()>0){
                 for(Disbursement d: draftDisbursements){
                     d.setStatus(closedtatus);
+                    List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(d);
+                    if(ads!=null && ads.size()>0){
+                        for(ActualDisbursement ad : ads){
+                            ad.setStatus(false);
+                            ad.setSaved(true);
+                        }
+                    }
                     disbursementService.saveDisbursement(d);
                 }
             }

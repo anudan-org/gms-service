@@ -133,6 +133,8 @@ public class DisbursementsController {
                 if(existingActualDisbursement.getOrderPosition()==null){
                     existingActualDisbursement.setOrderPosition(disbursementService.getNewOrderPositionForActualDisbursementOfGrant(disbursementToSave.getGrant().getId()));
                 }
+                existingActualDisbursement.setStatus(false);
+                existingActualDisbursement.setSaved(true);
                 existingActualDisbursement = disbursementService.saveActualDisbursement(existingActualDisbursement);
             }
         }
@@ -396,6 +398,8 @@ public class DisbursementsController {
             actualDisbursement = new ActualDisbursement();
             actualDisbursement.setDisbursementId(disbursement.getId());
             actualDisbursement.setOrderPosition(disbursementService.getNewOrderPositionForActualDisbursementOfGrant(disbursement.getGrant().getId()));
+            actualDisbursement.setStatus(false);
+            actualDisbursement.setSaved(true);
             actualDisbursement = disbursementService.saveActualDisbursement(actualDisbursement);
             actualDisbursements.add(actualDisbursement);
         }
