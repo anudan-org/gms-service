@@ -4,3 +4,4 @@ update workflow_statuses set name='Disbursed',display_name='Disbursed' where int
 ----
 
 alter table actual_disbursements add column status boolean default false;
+alter table actual_disbursements add column saved boolean default false;

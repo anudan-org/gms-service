@@ -36,6 +36,8 @@ public class ActualDisbursement {
     private Integer orderPosition;
     @Column
     private Boolean status;
+    @Column
+    private Boolean saved;
 
     public Long getId() {
         return id;
@@ -131,5 +133,15 @@ public class ActualDisbursement {
 
     public void setStatus(Boolean status) {
         this.status = status;
-    }    
+    }
+
+    public Boolean getSaved() {
+        return saved;
+    }
+
+    public void setSaved(Boolean saved) {
+        this.saved = saved;
+    }
+
+    
 }

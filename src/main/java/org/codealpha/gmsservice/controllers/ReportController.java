@@ -406,7 +406,8 @@ public class ReportController {
                                 ColumnData[] colDataList = new ColumnData[4];
                                 td.setName(String.valueOf(index.getAndIncrement()));
                                 td.setHeader("#");
-                                td.setStatus(false);
+                                td.setStatus(ad.getStatus());
+                                td.setSaved(ad.getSaved());
                                 if(disbursementService.getDisbursementById(ad.getDisbursementId()).isGranteeEntry()){
                                     td.setEnteredByGrantee(true);
                                 }
@@ -470,7 +471,8 @@ public class ReportController {
                                 ColumnData[] colDataList = new ColumnData[4];
                                 td.setName(String.valueOf(index.getAndIncrement()));
                                 td.setHeader("#");
-                                td.setStatus(false);
+                                td.setStatus(ad.getStatus());
+                                td.setSaved(ad.getStatus());
                                 if(disbursementService.getDisbursementById(ad.getDisbursementId()).isGranteeEntry()){
                                     td.setEnteredByGrantee(true);
                                 }
@@ -668,7 +670,7 @@ public class ReportController {
                                 // Find out new entries
                                 if(tableData!=null){
                                     for (TableData td : tableData) {
-                                        if (td.isStatus()) {
+                                        if (td.isStatus() && !td.isSaved()) {
                                             newEntries.add(td);
                                         }
                                     }
@@ -707,6 +709,7 @@ public class ReportController {
                                         actualDisbursement.setCreatedAt(DateTime.now().toDate());
                                         actualDisbursement.setCreatedBy(user.getId());
                                         actualDisbursement.setStatus(nData.isStatus());
+                                        actualDisbursement.setSaved(true);
                                         actualDisbursement.setOrderPosition(disbursementService.getNewOrderPositionForActualDisbursementOfGrant(report.getGrant().getId()));
                                         disbursementService.saveActualDisbursement(actualDisbursement);
                                     }
