@@ -454,48 +454,60 @@ public class ReportController {
                                 if (closedDisbursements != null) {
                                     closedDisbursements.forEach(cd -> {
 
-                                        disbursementService.getActualDisbursementsForDisbursement(cd).forEach(ad -> {
-                                            TableData td = new TableData();
-                                            ColumnData[] colDataList = new ColumnData[4];
-                                            td.setName(String.valueOf(index.getAndIncrement()));
-                                            td.setHeader("#");
-                                            ColumnData cdDate = new ColumnData();
-                                            cdDate.setDataType("date");
-                                            cdDate.setName("Disbursement Date");
-                                            cdDate.setValue(new SimpleDateFormat("dd-MMM-yyyy")
-                                                    .format(ad.getDisbursementDate()));
-
-                                            ColumnData cdDA = new ColumnData();
-                                            cdDA.setDataType("currency");
-                                            cdDA.setName("Actual Disbursement");
-                                            cdDA.setValue(String.valueOf(ad.getActualAmount()));
-
-                                            ColumnData cdFOS = new ColumnData();
-                                            cdFOS.setDataType("currency");
-                                            cdFOS.setName("Funds from Other Sources");
-                                            cdFOS.setValue(null);
-
-                                            ColumnData cdN = new ColumnData();
-                                            cdN.setName("Notes");
-                                            cdN.setValue(ad.getNote());
-
-                                            colDataList[0] = cdDate;
-                                            colDataList[1] = cdDA;
-                                            colDataList[2] = cdFOS;
-                                            colDataList[3] = cdN;
-                                            td.setColumns(colDataList);
-                                            tableDataList.add(td);
-                                        });
-
+                                        List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
+                                        if(ads!=null && ads.size()>0){
+                                            finalActualDisbursements.addAll(ads);
+                                        }
                                     });
                                 }
                             }
+                            
+                            finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
+                            if(finalActualDisbursements.size()>0){
+                                AtomicInteger index = new AtomicInteger(1);
+                            finalActualDisbursements.forEach(ad -> {
+                                TableData td = new TableData();
+                                ColumnData[] colDataList = new ColumnData[4];
+                                td.setName(String.valueOf(index.getAndIncrement()));
+                                td.setHeader("#");
+                                td.setStatus(false);
+                                if(disbursementService.getDisbursementById(ad.getDisbursementId()).isGranteeEntry()){
+                                    td.setEnteredByGrantee(true);
+                                }
+                                ColumnData cdDate = new ColumnData();
+                                cdDate.setDataType("date");
+                                cdDate.setName("Disbursement Date");
+                                cdDate.setValue(
+                                        new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate()));
+
+                                ColumnData cdDA = new ColumnData();
+                                cdDA.setDataType("currency");
+                                cdDA.setName("Actual Disbursement");
+                                cdDA.setValue(String.valueOf(ad.getActualAmount()));
+
+                                ColumnData cdFOS = new ColumnData();
+                                cdFOS.setDataType("currency");
+                                cdFOS.setName("Funds from Other Sources");
+                                cdFOS.setValue(String.valueOf(ad.getOtherSources()));
+
+                                ColumnData cdN = new ColumnData();
+                                cdN.setName("Notes");
+                                cdN.setValue(ad.getNote());
+
+                                colDataList[0] = cdDate;
+                                colDataList[1] = cdDA;
+                                colDataList[2] = cdFOS;
+                                colDataList[3] = cdN;
+                                td.setColumns(colDataList);
+                                tableDataList.add(td);
+                            });
                             a.setFieldTableValue(tableDataList);
                             try {
                                 a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
                             } catch (IOException e) {
                                 logger.error(e.getMessage(), e);
                             }
+                        }
                         }
 
                     }
