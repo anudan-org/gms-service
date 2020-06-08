@@ -1373,15 +1373,18 @@ public class ReportController {
         List<Long> draftStatusIds = draftStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
         List<Disbursement> draftDisbursements = disbursementService
         .getDibursementsForGrantByStatuses(report.getGrant().getId(), draftStatusIds);
-        draftDisbursements.removeIf(dd -> (dd.getReportId().longValue()!=fReport.getId() && !dd.isGranteeEntry() ));
+        
 
         WorkflowStatus closedtatus = workflowStatuses.stream()
                 .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList()).get(0);
 
         if(draftDisbursements!=null && draftDisbursements.size()>0){
-            for(Disbursement d: draftDisbursements){
-                d.setStatus(closedtatus);
-                disbursementService.saveDisbursement(d);
+            draftDisbursements.removeIf(dd -> (dd.getReportId().longValue()!=fReport.getId() && !dd.isGranteeEntry() ));
+            if(draftDisbursements!=null && draftDisbursements.size()>0){
+                for(Disbursement d: draftDisbursements){
+                    d.setStatus(closedtatus);
+                    disbursementService.saveDisbursement(d);
+                }
             }
         }
 
