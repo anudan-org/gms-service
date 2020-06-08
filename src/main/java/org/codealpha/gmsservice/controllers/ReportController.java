@@ -294,7 +294,7 @@ public class ReportController {
         List<TableData> approvedDisbursements = new ArrayList<>();
         AtomicInteger installmentNumber = new AtomicInteger();
 
-        if (report.getLinkedApprovedReports() != null) {
+        /* if (report.getLinkedApprovedReports() != null) {
             approvedReports = reportService.getReportsByIds(report.getLinkedApprovedReports());
             for (Report approvedReport : approvedReports) {
                 reportService.getReportSections(approvedReport).forEach(sec -> {
@@ -311,8 +311,8 @@ public class ReportController {
                                         approvedDisbursements.add(td);
                                         installmentNumber.getAndIncrement();
                                     });
-                                } catch (IOException e) {
-                                    logger.error(e.getMessage(), e);
+                                } catch (Exception e) {
+                                    logger.error("Failed for report "+report.getId(),e);
                                 }
 
                             }
@@ -320,7 +320,7 @@ public class ReportController {
                     }
                 });
             }
-        }
+        } */
 
         report.getGrant().setApprovedReportsDisbursements(approvedDisbursements);
 
