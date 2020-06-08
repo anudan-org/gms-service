@@ -706,6 +706,7 @@ public class ReportController {
                                         actualDisbursement.setActualAmount(0d);
                                         actualDisbursement.setCreatedAt(DateTime.now().toDate());
                                         actualDisbursement.setCreatedBy(user.getId());
+                                        actualDisbursement.setStatus(nData.isStatus());
                                         actualDisbursement.setOrderPosition(disbursementService.getNewOrderPositionForActualDisbursementOfGrant(report.getGrant().getId()));
                                         disbursementService.saveActualDisbursement(actualDisbursement);
                                     }
