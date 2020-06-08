@@ -20,6 +20,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -125,6 +126,7 @@ public class DisbursementService {
                approvedActualDisbursements.addAll(approvedActuals);
             }
         }
+        approvedActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
         disbursement.setApprovedActualsDibursements(approvedActualDisbursements);
 
         return disbursement;

@@ -406,6 +406,10 @@ public class ReportController {
                                 ColumnData[] colDataList = new ColumnData[4];
                                 td.setName(String.valueOf(index.getAndIncrement()));
                                 td.setHeader("#");
+                                td.setStatus(false);
+                                if(disbursementService.getDisbursementById(ad.getDisbursementId()).isGranteeEntry()){
+                                    td.setEnteredByGrantee(true);
+                                }
                                 ColumnData cdDate = new ColumnData();
                                 cdDate.setDataType("date");
                                 cdDate.setName("Disbursement Date");
@@ -420,7 +424,7 @@ public class ReportController {
                                 ColumnData cdFOS = new ColumnData();
                                 cdFOS.setDataType("currency");
                                 cdFOS.setName("Funds from Other Sources");
-                                cdFOS.setValue(null);
+                                cdFOS.setValue(String.valueOf(ad.getOtherSources()));
 
                                 ColumnData cdN = new ColumnData();
                                 cdN.setName("Notes");
@@ -646,24 +650,23 @@ public class ReportController {
                             try {
                                 List<TableData> newEntries = new ArrayList();
                                 List<TableData> missingEntries = new ArrayList();
-                                List<TableData> existingTableData = new ObjectMapper().readValue(
-                                        reportStringAttribute.getValue(), new TypeReference<List<TableData>>() {
-                                        });
+                                
                                 
 
                                 // Find out new entries
-                                for (TableData td : tableData) {
-                                    if (!existingTableData.stream()
-                                            .filter(et -> et.getName().equalsIgnoreCase(td.getName())).findFirst()
-                                            .isPresent()) {
-                                        newEntries.add(td);
+                                if(tableData!=null){
+                                    for (TableData td : tableData) {
+                                        if (td.isStatus()) {
+                                            newEntries.add(td);
+                                        }
                                     }
                                 }
 
-                                for (TableData et : existingTableData) {
-                                    if (!tableData.stream().filter(td -> td.getName().equalsIgnoreCase(et.getName()))
-                                            .findFirst().isPresent()) {
-                                        missingEntries.add(et);
+                                if(tableData!=null){
+                                    for (TableData et : tableData) {
+                                        if (!et.isStatus()) {
+                                            missingEntries.add(et);
+                                        }
                                     }
                                 }
 
@@ -696,16 +699,11 @@ public class ReportController {
                                     }
                                     
                                 }
-                            } catch (IOException | ParseException e) {
+                            } catch (ParseException e) {
                                 logger.error(e.getMessage(), e);
                             }
                         }
-                        ObjectMapper mapper = new ObjectMapper();
-                        try {
-                            reportStringAttribute.setValue(mapper.writeValueAsString(tableData));
-                        } catch (JsonProcessingException e) {
-                            e.printStackTrace();
-                        }
+                        
 
                     } else {
                         reportStringAttribute.setValue(sectionAttributesVO.getFieldValue());
@@ -1197,7 +1195,7 @@ public class ReportController {
          * userId,fromStateId,toStateId);
          */
 
-        for (SectionVO section : reportWithNote.getReport().getReportDetails().getSections()) {
+        /* for (SectionVO section : reportWithNote.getReport().getReportDetails().getSections()) {
             if (section.getAttributes() != null) {
                 for (SectionAttributesVO attribute : section.getAttributes()) {
                     if (attribute.getFieldType().equalsIgnoreCase("disbursement")) {
@@ -1231,7 +1229,7 @@ public class ReportController {
                     }
                 }
             }
-        }
+        } */
 
         saveReport(reportId, reportWithNote.getReport(), userId, tenantCode);
 
@@ -1616,7 +1614,7 @@ public class ReportController {
                     stringAttribute.setGrantLevelTarget(null);
                     stringAttribute.setFrequency(finalReport1.getType().toLowerCase());
                 } else if (sectionAttribute.getFieldType().equalsIgnoreCase("table")
-                        || sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
+                        ) {
                     stringAttribute.setValue(a.getExtras());
                 }
                 stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
