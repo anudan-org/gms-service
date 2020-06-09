@@ -393,6 +393,7 @@ public class ReportService {
                     workFlowPermission.setNoteRequired(tr.getNoteRequired());
                     workFlowPermission.setToName(tr.getToState().getName());
                     workFlowPermission.setToStateId(tr.getToState().getId());
+                    workFlowPermission.setSeqOrder(tr.getSeqOrder());
                     permissions.add(workFlowPermission);
                 });
             }
