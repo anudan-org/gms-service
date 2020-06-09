@@ -388,9 +388,9 @@ public class UserController {
         String[] strings = {"Committed", "Disbursed"};
 
         for (Integer period : periodsMap.keySet()) {
-            Long[] disbursalTotalAndCount = dashboardService.getDisbursedAmountForGranterAndPeriodAndStatus(period,tenantOrg.getId(),status);
+            Double[] disbursalTotalAndCount = dashboardService.getDisbursedAmountForGranterAndPeriodAndStatus(period,tenantOrg.getId(),status);
             Long[] committedTotalAndCount = dashboardService.getCommittedAmountForGranterAndPeriodAndStatus(period,tenantOrg.getId(),status);
-            disbursalSummaryList.add(new DisbursalSummary(periodsMap.get(period),new DisbursementData[]{new DisbursementData("Disbursed",String.valueOf(new BigDecimal(Double.toString(disbursalTotalAndCount[0]/100000.00)).setScale(2, RoundingMode.HALF_UP)),disbursalTotalAndCount[1]),new DisbursementData("Committed",String.valueOf(new BigDecimal(Double.toString(committedTotalAndCount[0]/100000.00)).setScale(2, RoundingMode.HALF_UP)),committedTotalAndCount[1])}));
+            disbursalSummaryList.add(new DisbursalSummary(periodsMap.get(period),new DisbursementData[]{new DisbursementData("Disbursed",String.valueOf(new BigDecimal(disbursalTotalAndCount[0]/100000.00).setScale(2, RoundingMode.HALF_UP)),0l),new DisbursementData("Committed",String.valueOf(new BigDecimal(Double.toString(committedTotalAndCount[0]/100000.00)).setScale(2, RoundingMode.HALF_UP)),committedTotalAndCount[1])}));
         }
 
 
