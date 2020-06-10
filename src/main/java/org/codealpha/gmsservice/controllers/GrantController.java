@@ -2143,7 +2143,7 @@ public class GrantController {
                         specificSection.setGranter((Granter) report.getGrant().getGrantorOrganization());
                         specificSection.setReportId(report.getId());
                         specificSection.setReportTemplateId(reportTemplate.getId());
-                        specificSection.setSectionName("Disbursement Details");
+                        specificSection.setSectionName("Project Funds");
                         List<ReportSpecificSection> reportSections = reportService.getReportSections(report);
                         specificSection.setSectionOrder(Collections.max(reportSections.stream().map(rs->new Integer(rs.getSectionOrder())).collect(Collectors.toList()))+1);
                         specificSection = reportService.saveReportSpecificSection(specificSection);
