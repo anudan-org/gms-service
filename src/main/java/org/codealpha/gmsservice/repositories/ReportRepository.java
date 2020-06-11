@@ -49,4 +49,6 @@ public interface ReportRepository extends CrudRepository<Report,Long> {
 
     public List<Report> findByStatusAndGrant(WorkflowStatus status,Grant grant);
 
+	List<Report> getReportsByGrant(Grant grant);
+
 }

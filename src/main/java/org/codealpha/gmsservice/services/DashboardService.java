@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.time.Month;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -14,6 +15,9 @@ import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.entities.dashboard.*;
 import org.codealpha.gmsservice.models.*;
+import org.codealpha.gmsservice.repositories.ActualDisbursementRepository;
+import org.codealpha.gmsservice.repositories.DisbursementRepository;
+import org.codealpha.gmsservice.repositories.GrantRepository;
 import org.codealpha.gmsservice.repositories.ReportsCountPerGrantRepository;
 import org.codealpha.gmsservice.repositories.dashboard.*;
 import org.joda.time.DateTime;
@@ -53,6 +57,12 @@ public class DashboardService {
     private GranterReportStatusRepository granterReportStatusRepository;
     @Autowired
     private ReportsCountPerGrantRepository reportsCountPerGrantRepository;
+    @Autowired
+    private DisbursementRepository disbursementRepository;
+    @Autowired
+    private ActualDisbursementRepository actualDisbursementRepository;
+    @Autowired
+    private GrantRepository grantRepository;
 
     List<Tenant> tenants;
 
@@ -198,33 +208,40 @@ public class DashboardService {
         return granterActiveGrantSummaryCommittedRepository.getGrantCommittedSummaryForGranter(granterId,status);
     }
 
-    public Long getActiveGrantDisbursedAmountForGranter(Long granterId,String status) {
-        List<GranterGrantSummaryDisbursed> disbursedList = granterActiveGrantSummaryDisbursedRepository.getGrantDisbursedSummaryForGranter(granterId,status);
-        AtomicReference<Long> disbursedAmount = new AtomicReference<>(0l);
-        if(disbursedList!=null && disbursedList.size()>0){
-            disbursedList.forEach(d ->{
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
+    public Double getActiveGrantDisbursedAmountForGranter(Long granterId,String status) {
+        Double disbursedAmount = 0d;
+        
+        List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
+                granterId);
 
-                try {
-                    List<TableData> dataList = mapper.readValue(d.getDisbursementData(),new TypeReference<List<TableData>>() {});
-                    if(dataList!=null){
-                        dataList.forEach(a -> {
+        List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
+        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
 
-                            for (ColumnData column : a.getColumns()) {
-                                if(column.getName().equalsIgnoreCase("Actual Disbursement") && column.getValue()!=null && column.getValue().trim()!="" && column.getDataType().equalsIgnoreCase("currency")){
-                                    disbursedAmount.updateAndGet(v -> v + Long.valueOf(column.getValue()));
-                                }
-                            }
-                        });
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
+        List<Grant> activeGrants = grantRepository.findActiveGrants(granterId);
+        if(activeGrants!=null && !activeGrants.isEmpty()){
+            List<Disbursement> allClosedDisbursements = new ArrayList<>();
+
+            for(Grant ag : activeGrants){
+                List<Disbursement> closedDisbursements = disbursementRepository.getDisbursementByGrantAndStatuses(ag.getId(), closedStatusIds);
+                allClosedDisbursements.addAll(closedDisbursements);
+            }
+
+            List<ActualDisbursement> allActualDisbursements = new ArrayList();
+            for(Disbursement cd : allClosedDisbursements){
+                List<ActualDisbursement> actualDisbursements = actualDisbursementRepository.findByDisbursementId(cd.getId());
+                if(actualDisbursements!=null){
+                    allActualDisbursements.addAll(actualDisbursements);
                 }
-            });
-        }
+            }
 
-        return disbursedAmount.get();
+            for(ActualDisbursement ad : allActualDisbursements){
+                disbursedAmount += ad.getActualAmount()==null?0:ad.getActualAmount();
+            }
+
+        }
+        
+        return disbursedAmount;
     }
 
     public List<GranterReportStatus> getReportStatusSummaryForGranterAndStatus(Long granterId,String status){
@@ -279,51 +296,54 @@ public class DashboardService {
         return periods;
     }
 
-    public Long[] getDisbursedAmountForGranterAndPeriodAndStatus(Integer period,Long granterId,String status) {
-        List<GranterGrantSummaryDisbursed> disbursedList = granterActiveGrantSummaryDisbursedRepository.getGrantDisbursedSummaryForGranter(granterId, status);
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
-        Long total = 0l;
-        Map<Long,String> countMap= new HashMap<>();
-        if (disbursedList != null && disbursedList.size() > 0) {
-            for (GranterGrantSummaryDisbursed granterGrantSummaryDisbursed : disbursedList) {
+    public Double[] getDisbursedAmountForGranterAndPeriodAndStatus(Integer period,Long granterId,String status) {
 
-                try {
-                    List<TableData> tableData = mapper.readValue(granterGrantSummaryDisbursed.getDisbursementData(),new TypeReference<List<TableData>>(){});
-                    for (TableData tableDatum : tableData) {
-                        int datePos=0, amtPos=0;
-                        for (int i = 0; i < tableDatum.getColumns().length; i++) {
-                            if(tableDatum.getColumns()[i].getName().equalsIgnoreCase("Disbursement Date") && tableDatum.getColumns()[i].getValue().trim()!="" && tableDatum.getColumns()[i].getDataType().equalsIgnoreCase("date")){
-                                datePos=i;
-                            }
-                            if(tableDatum.getColumns()[i].getName().equalsIgnoreCase("Actual Disbursement")  && tableDatum.getColumns()[i].getDataType().equalsIgnoreCase("currency")){
-                                amtPos=i;
-                            }
-                        }
-                        SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy");
-                        DateTime disbursementDate = new DateTime(sd.parse(tableDatum.getColumns()[datePos].getValue()));
-                        Long disbursementAmt = Long.valueOf(tableDatum.getColumns()[amtPos].getValue()==null?"0":tableDatum.getColumns()[amtPos].getValue().trim().equalsIgnoreCase("")?"0":tableDatum.getColumns()[amtPos].getValue());
-                        DateTime calendarYearStart = new DateTime().withYear(disbursementDate.getYear()).withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
+        Double total = 0d;
+            
+        List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
+                granterId);
 
-                        int disbursementYear=0;
-                        if(disbursementDate.isAfter(calendarYearStart)){
-                            disbursementYear = disbursementDate.getYear();
-                        }else {
-                            disbursementYear = disbursementDate.getYear()-1;
-                        }
-                        if(period==disbursementYear){
-                            total += disbursementAmt;
-                            countMap.put(granterGrantSummaryDisbursed.getGrantId(),"");
-                        }
+        List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
+        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
 
-                    }
-                } catch (IOException | ParseException | NumberFormatException e) {
-                    continue;
-                }
+        List<Grant> activeGrants = grantRepository.findActiveGrants(granterId);
+        if(activeGrants!=null && !activeGrants.isEmpty()){
+            List<Disbursement> allClosedDisbursements = new ArrayList<>();
 
+            for(Grant ag : activeGrants){
+                List<Disbursement> closedDisbursements = disbursementRepository.getDisbursementByGrantAndStatuses(ag.getId(), closedStatusIds);
+                allClosedDisbursements.addAll(closedDisbursements);
             }
+
+            List<ActualDisbursement> allActualDisbursements = new ArrayList();
+            for(Disbursement cd : allClosedDisbursements){
+                List<ActualDisbursement> actualDisbursements = actualDisbursementRepository.findByDisbursementId(cd.getId());
+                if(actualDisbursements!=null){
+                    allActualDisbursements.addAll(actualDisbursements);
+                }
+            }
+
+            
+            for(ActualDisbursement ad : allActualDisbursements){
+                SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy");
+                DateTime disbursementDate = new DateTime(ad.getDisbursementDate());
+                Double disbursementAmt = ad.getActualAmount();
+                DateTime calendarYearStart = new DateTime().withYear(disbursementDate.getYear()).withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
+
+                int disbursementYear=0;
+                if(disbursementDate.isAfter(calendarYearStart)){
+                    disbursementYear = disbursementDate.getYear();
+                }else {
+                    disbursementYear = disbursementDate.getYear()-1;
+                }
+                if(period==disbursementYear){
+                    total += disbursementAmt==null?0:disbursementAmt;
+                }
+            }
+
         }
-        return new Long[]{total,Long.valueOf(countMap.size())};
+        return new Double[]{total};
     }
 
     public Long[] getCommittedAmountForGranterAndPeriodAndStatus(Integer period,Long granterId,String status) {

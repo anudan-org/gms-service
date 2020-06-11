@@ -1,6 +1,7 @@
 HELP.md
 .gradle
 /build/
+/bin
 !gradle/wrapper/gradle-wrapper.jar
 *.log
 gms.log*
@@ -28,3 +29,4 @@ gms.log*
 /dist/
 /nbdist/
 /.nb-gradle/
+.vscode/settings.json

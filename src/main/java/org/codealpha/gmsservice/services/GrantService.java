@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -13,14 +12,15 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.KpiType;
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.models.SecureEntity;
+import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -81,6 +81,17 @@ public class GrantService {
     private WorkflowStatusRepository workflowStatusRepository;
     @Autowired
     private TemplateLibraryRepository templateLibraryRepository;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private WorkflowPermissionService workflowPermissionService;
+    @Autowired
+    private GranterGrantTemplateService granterGrantTemplateService;
+    @Autowired
+    private WorkflowStatusService workflowStatusService;
+    @Autowired
+    private AppConfigService appConfigService;
+
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -567,5 +578,73 @@ public class GrantService {
 
     public Long getCountOfOtherGrantsWithStartDateAndStatus(Date startDate,Long granterId,Long statusId){
         return grantRepository.getCountOfOtherGrantsWithStartDateAndStatus(startDate,granterId,statusId);
+    }
+
+    public List<Grant> getGrantsOwnedByUserByStatus(Long userId, String status) {
+        return grantRepository.findGrantsOwnedByUserByStatus(userId,status);
+    }
+
+    public Grant _grantToReturn(@PathVariable("userId") Long userId, Grant grant) {
+        User user = userService.getUserById(userId);
+
+        grant.setActionAuthorities(workflowPermissionService
+                .getGrantActionPermissions(grant.getGrantorOrganization().getId(),
+                        user.getUserRoles(), grant.getGrantStatus().getId(), userId, grant.getId()));
+
+        grant.setFlowAuthorities(workflowPermissionService
+                .getGrantFlowPermissions(grant.getGrantStatus().getId(),userId,grant.getId()));
+
+        grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
+
+        GrantVO grantVO = new GrantVO();
+
+        grantVO = grantVO.build(grant, getGrantSections(grant), workflowPermissionService, user, appConfigService
+                .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS), userService);
+        grant.setGrantDetails(grantVO.getGrantDetails());
+        grant.setNoteAddedBy(grantVO.getNoteAddedBy());
+        grant.setNoteAddedByUser(grantVO.getNoteAddedByUser());
+
+        List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
+        for (GrantAssignments assignment : getGrantWorkflowAssignments(grant)) {
+            GrantAssignmentsVO assignmentsVO = new GrantAssignmentsVO();
+            assignmentsVO.setId(assignment.getId());
+            assignmentsVO.setAnchor(assignment.isAnchor());
+            assignmentsVO.setAssignments(assignment.getAssignments());
+            if (assignment.getAssignments() != null && assignment.getAssignments() > 0) {
+                assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
+            }
+            assignmentsVO.setGrantId(assignment.getGrantId());
+            assignmentsVO.setStateId(assignment.getStateId());
+            assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
+            workflowAssignments.add(assignmentsVO);
+        }
+        grant.setWorkflowAssignment(workflowAssignments);
+        List<GrantAssignments> grantAssignments = getGrantCurrentAssignments(grant);
+        if (grantAssignments != null) {
+            for (GrantAssignments assignment : grantAssignments) {
+                if (grant.getCurrentAssignment() == null) {
+                    List<AssignedTo> assignedToList = new ArrayList<>();
+                    grant.setCurrentAssignment(assignedToList);
+                }
+                AssignedTo newAssignedTo = new AssignedTo();
+                if (assignment.getAssignments() != null && assignment.getAssignments() > 0) {
+                    newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
+                }
+                grant.getCurrentAssignment().add(newAssignedTo);
+            }
+        }
+        grant = saveGrant(grant);
+
+        grant.getWorkflowAssignment().sort((a, b) -> a.getId().compareTo(b.getId()));
+        grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+        for (SectionVO section : grant.getGrantDetails().getSections()) {
+            if (section.getAttributes() != null) {
+                section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+            }
+        }
+
+        grant.setSecurityCode(buildHashCode(grant));
+        return grant;
     }
 }

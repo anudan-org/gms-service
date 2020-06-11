@@ -9,6 +9,8 @@ public class TableData {
     private String header;
     private ColumnData[] columns;
     private boolean enteredByGrantee;
+    private boolean status;
+    private boolean saved;
 
     public String getName() {
         return name;
@@ -41,4 +43,22 @@ public class TableData {
     public void setEnteredByGrantee(boolean enteredByGrantee) {
         this.enteredByGrantee = enteredByGrantee;
     }
+
+    public boolean isStatus() {
+        return status;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
+    }
+
+    public boolean isSaved() {
+        return saved;
+    }
+
+    public void setSaved(boolean saved) {
+        this.saved = saved;
+    }
+
+    
 }

@@ -23,6 +23,8 @@ public class WorkFlowPermission {
   private String action;
   @Column
   private Boolean noteRequired;
+  @Column
+  private Integer seqOrder;
 
 
   public Long getId() {
@@ -80,4 +82,14 @@ public class WorkFlowPermission {
   public void setNoteRequired(boolean noteRequired) {
     this.noteRequired = noteRequired;
   }
+
+  public Integer getSeqOrder() {
+    return seqOrder;
+  }
+
+  public void setSeqOrder(Integer seqOrder) {
+    this.seqOrder = seqOrder;
+  }
+
+  
 }

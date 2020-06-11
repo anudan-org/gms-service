@@ -5,7 +5,8 @@ public enum WorkflowObject {
   GRANT("GRANT"),
   APPLICATION("APPLICATION"),
   SUBMISSION("SUBMISSION"),
-  REPORT("REPORT");
+  REPORT("REPORT"),
+  DISBURSEMENT("DISBURSEMENT");
 
   private String val;
 

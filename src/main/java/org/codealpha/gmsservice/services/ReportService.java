@@ -393,6 +393,7 @@ public class ReportService {
                     workFlowPermission.setNoteRequired(tr.getNoteRequired());
                     workFlowPermission.setToName(tr.getToState().getName());
                     workFlowPermission.setToStateId(tr.getToState().getId());
+                    workFlowPermission.setSeqOrder(tr.getSeqOrder());
                     permissions.add(workFlowPermission);
                 });
             }
@@ -525,7 +526,7 @@ public class ReportService {
                 newAttribute.setRequired(currentAttribute.getRequired());
                 newAttribute.setAttributeOrder(currentAttribute.getAttributeOrder());
                 newAttribute.setSection(newSection);
-                if (currentAttribute.getFieldType().equalsIgnoreCase("table") || currentAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
+                if (currentAttribute.getFieldType().equalsIgnoreCase("table")) {
                     ReportStringAttribute stringAttribute = getReportStringAttributeBySectionAttributeAndSection(currentAttribute, currentSection);
 
                     ObjectMapper mapper = new ObjectMapper();
@@ -609,5 +610,9 @@ public class ReportService {
 
     public List<Report> findReportsByStatusForGrant(WorkflowStatus status, Grant grant){
         return reportRepository.findByStatusAndGrant(status,grant);
+    }
+
+    public List<Report> getReportsForGrant(Grant grant){
+        return reportRepository.getReportsByGrant(grant);
     }
 }

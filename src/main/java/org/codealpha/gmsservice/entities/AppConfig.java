@@ -2,7 +2,6 @@ package org.codealpha.gmsservice.entities;
 
 import javax.persistence.*;
 
-import jdk.nashorn.internal.runtime.logging.Logger;
 
 @Entity
 public class AppConfig {

@@ -33,10 +33,13 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.Size;
+
 import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,7 +49,7 @@ import java.util.zip.ZipOutputStream;
 
 @RestController
 @RequestMapping("/user/{userId}/report")
-@Api(value = "Reports", description = "API end points for Reports", tags = {"Grants"})
+@Api(value = "Reports", description = "API end points for Reports", tags = { "Grants" })
 public class ReportController {
 
     private static Logger logger = LoggerFactory.getLogger(ReportController.class);
@@ -89,44 +92,50 @@ public class ReportController {
     private WorkflowPermissionService workflowPermissionService;
     @Autowired
     private WorkflowService workflowService;
+    @Autowired
+    private DisbursementService disbursementService;
 
     @GetMapping("/")
-    public List<Report> getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,@RequestParam(value = "q",required = false) String filterClause) {
+    public List<Report> getAllReports(@PathVariable("userId") Long userId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @RequestParam(value = "q", required = false) String filterClause) {
         Organization org = null;
         User user = userService.getUserById(userId);
 
         List<Report> reports = null;
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
             org = user.getOrganization();
-            if(filterClause!=null && filterClause.equalsIgnoreCase("UPCOMING-DUE")) {
-                reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId(),"ACTIVE");
-            }else if(filterClause!=null && filterClause.equalsIgnoreCase("SUBMITTED")) {
-                reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId(),"REVIEW");
-            }else if(filterClause!=null && filterClause.equalsIgnoreCase("APPROVED")) {
-                reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId(),"CLOSED");
+            if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-DUE")) {
+                reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId(), "ACTIVE");
+            } else if (filterClause != null && filterClause.equalsIgnoreCase("SUBMITTED")) {
+                reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId(), "REVIEW");
+            } else if (filterClause != null && filterClause.equalsIgnoreCase("APPROVED")) {
+                reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId(), "CLOSED");
             }
-        } else{
+        } else {
             org = organizationService.findOrganizationByTenantCode(tenantCode);
             Date start = DateTime.now().withTimeAtStartOfDay().toDate();
-            Date end = new DateTime(start).plusDays(30).withTime(23,59,59,999).toDate();
-            if(filterClause!=null && filterClause.equalsIgnoreCase("UPCOMING")){
-                reports = reportService.getUpcomingReportsForGranterUserByDateRange(userId,org.getId(),start,end);
+            Date end = new DateTime(start).plusDays(30).withTime(23, 59, 59, 999).toDate();
+            if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING")) {
+                reports = reportService.getUpcomingReportsForGranterUserByDateRange(userId, org.getId(), start, end);
                 for (Report report : reports) {
-                    int futureReportsCount = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId,org.getId(),end,report.getGrant().getId()).size();
+                    int futureReportsCount = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId,
+                            org.getId(), end, report.getGrant().getId()).size();
                     report.setFutureReportsCount(futureReportsCount);
                 }
-            }else if(filterClause!=null && filterClause.equalsIgnoreCase("UPCOMING-DUE")){
-                reports = reportService.getReadyToSubmitReportsForGranterUserByDateRange(userId,org.getId(),start,end);
-            }else if(filterClause!=null && filterClause.equalsIgnoreCase("SUBMITTED")){
-                reports = reportService.getSubmittedReportsForGranterUserByDateRange(userId,org.getId());
-            } else if(filterClause!=null && filterClause.equalsIgnoreCase("APPROVED")){
-                reports = reportService.getApprovedReportsForGranterUserByDateRange(userId,org.getId());
+            } else if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-DUE")) {
+                reports = reportService.getReadyToSubmitReportsForGranterUserByDateRange(userId, org.getId(), start,
+                        end);
+            } else if (filterClause != null && filterClause.equalsIgnoreCase("SUBMITTED")) {
+                reports = reportService.getSubmittedReportsForGranterUserByDateRange(userId, org.getId());
+            } else if (filterClause != null && filterClause.equalsIgnoreCase("APPROVED")) {
+                reports = reportService.getApprovedReportsForGranterUserByDateRange(userId, org.getId());
             }
-            //reports = reportService.getAllAssignedReportsForGranterUser(userId, org.getId());
+            // reports = reportService.getAllAssignedReportsForGranterUser(userId,
+            // org.getId());
         }
 
-
-        if(reports!=null) {
+        if (reports != null) {
             for (Report report : reports) {
 
                 report = _ReportToReturn(report, userId);
@@ -134,17 +143,20 @@ public class ReportController {
             }
         }
 
-        if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && filterClause!=null && filterClause.equalsIgnoreCase("SUBMITTED")){
+        if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && filterClause != null
+                && filterClause.equalsIgnoreCase("SUBMITTED")) {
             for (Report report : reports) {
                 try {
-                    ReportHistory historicReport = reportService.getSingleReportHistoryByStatusAndReportId("ACTIVE",report.getId());
-                    if(historicReport!=null && historicReport.getReportDetail()!=null) {
+                    ReportHistory historicReport = reportService.getSingleReportHistoryByStatusAndReportId("ACTIVE",
+                            report.getId());
+                    if (historicReport != null && historicReport.getReportDetail() != null) {
                         ObjectMapper mapper = new ObjectMapper();
                         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                        report.setReportDetails(mapper.readValue(historicReport.getReportDetail(), ReportDetailVO.class));
+                        report.setReportDetails(
+                                mapper.readValue(historicReport.getReportDetail(), ReportDetailVO.class));
                     }
                 } catch (IOException e) {
-                    logger.error(e.getMessage(),e);
+                    logger.error(e.getMessage(), e);
                 }
             }
         }
@@ -152,7 +164,8 @@ public class ReportController {
     }
 
     @GetMapping("/{reportId}")
-    public Report getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("reportId") Long reportId) {
+    public Report getAllReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("reportId") Long reportId) {
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         Report report = reportService.getReportById(reportId);
 
@@ -162,18 +175,20 @@ public class ReportController {
     }
 
     @GetMapping("/{reportId}/{grantId}")
-    public List<Report> getFutureReports(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("reportId") Long reportId,@PathVariable("grantId") Long grantId) {
+    public List<Report> getFutureReports(@PathVariable("userId") Long userId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("reportId") Long reportId,
+            @PathVariable("grantId") Long grantId) {
         User user = userService.getUserById(userId);
 
         List<Report> reports = null;
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
             Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
             Date start = DateTime.now().withTimeAtStartOfDay().toDate();
-            Date end = new DateTime(start).plusDays(30).withTime(23,59,59,999).toDate();
-            reports = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId,org.getId(),end,grantId);
+            Date end = new DateTime(start).plusDays(30).withTime(23, 59, 59, 999).toDate();
+            reports = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId, org.getId(), end, grantId);
         }
 
-        reports.removeIf(r -> r.getId()==reportId);
+        reports.removeIf(r -> r.getId() == reportId);
 
         for (Report report : reports) {
 
@@ -184,15 +199,20 @@ public class ReportController {
     }
 
     @GetMapping("/{grantId}/approved")
-    public List<Report> getApprovedReportsForGrant(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("grantId") Long grantId) {
-        Optional <WorkflowStatus> reportApprovedStatus = workflowStatusService.getTenantWorkflowStatuses("REPORT",organizationService.findOrganizationByTenantCode(tenantCode).getId()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
+    public List<Report> getApprovedReportsForGrant(@PathVariable("userId") Long userId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("grantId") Long grantId) {
+        Optional<WorkflowStatus> reportApprovedStatus = workflowStatusService
+                .getTenantWorkflowStatuses("REPORT",
+                        organizationService.findOrganizationByTenantCode(tenantCode).getId())
+                .stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
         List<Report> reports = new ArrayList<>();
-        if(reportApprovedStatus.isPresent()){
-            reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(),grantService.getById(grantId));
+        if (reportApprovedStatus.isPresent()) {
+            reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(),
+                    grantService.getById(grantId));
         }
 
         for (Report report : reports) {
-            report = _ReportToReturn(report,userId);
+            report = _ReportToReturn(report, userId);
         }
 
         return reports;
@@ -219,9 +239,9 @@ public class ReportController {
         report.setWorkflowAssignments(workflowAssignments);
         List<ReportAssignment> reportAssignments = determineCanManage(report, userId);
 
-        if(userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
+        if (userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
             report.setForGranteeUse(true);
-        }else{
+        } else {
             report.setForGranteeUse(false);
         }
         if (reportAssignments != null) {
@@ -238,25 +258,34 @@ public class ReportController {
             }
         }
 
-        ReportVO reportVO = new ReportVO().build(report, reportService.getReportSections(report), userService, reportService);
+        ReportVO reportVO = new ReportVO().build(report, reportService.getReportSections(report), userService,
+                reportService);
         report.setReportDetails(reportVO.getReportDetails());
+
+        showDisbursementsForReport(report);
+
+
 
         report.setNoteAddedBy(reportVO.getNoteAddedBy());
         report.setNoteAddedByUser(reportVO.getNoteAddedByUser());
 
         report.getWorkflowAssignments().sort((a, b) -> a.getId().compareTo(b.getId()));
-        report.getReportDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+        report.getReportDetails().getSections()
+                .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
         for (SectionVO section : report.getReportDetails().getSections()) {
             if (section.getAttributes() != null) {
-                section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+                section.getAttributes().sort(
+                        (a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
             }
         }
 
         report.setGranteeUsers(userService.getAllGranteeUsers(report.getGrant().getOrganization()));
 
-        GrantVO grantVO = new GrantVO().build(report.getGrant(), grantService.getGrantSections(report.getGrant()), workflowPermissionService, userService.getUserById(userId),
+        GrantVO grantVO = new GrantVO().build(report.getGrant(), grantService.getGrantSections(report.getGrant()),
+                workflowPermissionService, userService.getUserById(userId),
                 appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS), userService);
+                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
+                userService);
 
         ObjectMapper mapper = new ObjectMapper();
         report.getGrant().setGrantDetails(grantVO.getGrantDetails());
@@ -265,23 +294,25 @@ public class ReportController {
         List<TableData> approvedDisbursements = new ArrayList<>();
         AtomicInteger installmentNumber = new AtomicInteger();
 
-        if(report.getLinkedApprovedReports()!=null) {
+        /* if (report.getLinkedApprovedReports() != null) {
             approvedReports = reportService.getReportsByIds(report.getLinkedApprovedReports());
             for (Report approvedReport : approvedReports) {
-                reportService.getReportSections(approvedReport).forEach(sec ->{
-                    if(sec.getAttributes()!=null) {
+                reportService.getReportSections(approvedReport).forEach(sec -> {
+                    if (sec.getAttributes() != null) {
                         sec.getAttributes().forEach(attr -> {
                             if (attr.getFieldType().equalsIgnoreCase("disbursement")) {
 
                                 try {
-                                    List<TableData> tableDataList = mapper.readValue(reportService.getReportStringByStringAttributeId(attr.getId()).getValue(), new TypeReference<List<TableData>>() {
-                                    });
+                                    List<TableData> tableDataList = mapper.readValue(
+                                            reportService.getReportStringByStringAttributeId(attr.getId()).getValue(),
+                                            new TypeReference<List<TableData>>() {
+                                            });
                                     tableDataList.forEach(td -> {
                                         approvedDisbursements.add(td);
                                         installmentNumber.getAndIncrement();
                                     });
-                                } catch (IOException e) {
-                                    logger.error(e.getMessage(), e);
+                                } catch (Exception e) {
+                                    logger.error("Failed for report "+report.getId(),e);
                                 }
 
                             }
@@ -289,17 +320,14 @@ public class ReportController {
                     }
                 });
             }
-        }
-
-
-
+        } */
 
         report.getGrant().setApprovedReportsDisbursements(approvedDisbursements);
 
-        report.getReportDetails().getSections().forEach(sec ->{
-            if(sec.getAttributes()!=null) {
+        report.getReportDetails().getSections().forEach(sec -> {
+            if (sec.getAttributes() != null) {
                 sec.getAttributes().forEach(attr -> {
-                    if (attr.getFieldType().equalsIgnoreCase("disbursement") && attr.getFieldTableValue()!=null) {
+                    if (attr.getFieldType().equalsIgnoreCase("disbursement") && attr.getFieldTableValue() != null) {
                         for (TableData data : attr.getFieldTableValue()) {
                             installmentNumber.getAndIncrement();
                             data.setName(String.valueOf(installmentNumber.get()));
@@ -308,7 +336,7 @@ public class ReportController {
                         try {
                             attr.setFieldValue(mapper.writeValueAsString(attr.getFieldTableValue()));
                         } catch (JsonProcessingException e) {
-                            logger.error(e.getMessage(),e);
+                            logger.error(e.getMessage(), e);
                         }
 
                     }
@@ -320,9 +348,187 @@ public class ReportController {
         return report;
     }
 
+    private void showDisbursementsForReport(Report report) {
+        List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
+                report.getGrant().getGrantorOrganization().getId());
+
+        List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
+        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
+
+        List<WorkflowStatus>draftStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")).collect(Collectors.toList());
+        List<Long> draftStatusIds = draftStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
+
+        List<ActualDisbursement> finalActualDisbursements = new ArrayList();
+        report.getReportDetails().getSections().forEach(s -> {
+            if (s.getAttributes() != null && s.getAttributes().size() > 0) {
+                s.getAttributes().forEach(a -> {
+                    if (a.getFieldType().equalsIgnoreCase("disbursement")) {
+                        List<Disbursement> closedDisbursements = disbursementService
+                                .getDibursementsForGrantByStatuses(report.getGrant().getId(), closedStatusIds);
+                        List<Disbursement> draftDisbursements = disbursementService
+                                .getDibursementsForGrantByStatuses(report.getGrant().getId(), draftStatusIds);
+                        if (!report.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
+                            List<TableData> tableDataList = new ArrayList<>();
+                            if (closedDisbursements != null) {
+                                closedDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
+                                AtomicInteger index = new AtomicInteger(1);
+                                closedDisbursements.forEach(cd -> {
+                                    List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
+                                    if(ads!=null && ads.size()>0){
+                                        finalActualDisbursements.addAll(ads);                                    
+                                }
+
+                                });
+                            }
+
+                            if(draftDisbursements!=null && draftDisbursements.size()>0){
+                            draftDisbursements.removeIf(dd -> (dd.getReportId()!=null && dd.getReportId().longValue()!=report.getId() && !dd.isGranteeEntry() ));
+                            if (draftDisbursements != null) {
+                                draftDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
+                                AtomicInteger index = new AtomicInteger(1);
+                                draftDisbursements.forEach(cd -> {
+                                    List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
+                                    if(ads!=null && ads.size()>0){
+                                        finalActualDisbursements.addAll(ads);
+                                }
+
+                                });
+                            }
+                            }
+
+                            finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
+                            if(finalActualDisbursements.size()>0){
+                                AtomicInteger index = new AtomicInteger(1);
+                            finalActualDisbursements.forEach(ad -> {
+                                TableData td = new TableData();
+                                ColumnData[] colDataList = new ColumnData[4];
+                                td.setName(String.valueOf(index.getAndIncrement()));
+                                td.setHeader("#");
+                                td.setStatus(ad.getStatus());
+                                td.setSaved(ad.getSaved());
+                                if(disbursementService.getDisbursementById(ad.getDisbursementId()).isGranteeEntry()){
+                                    td.setEnteredByGrantee(true);
+                                }
+                                ColumnData cdDate = new ColumnData();
+                                cdDate.setDataType("date");
+                                cdDate.setName("Disbursement Date");
+                                cdDate.setValue(
+                                        new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate()));
+
+                                ColumnData cdDA = new ColumnData();
+                                cdDA.setDataType("currency");
+                                cdDA.setName("Actual Disbursement");
+                                cdDA.setValue(String.valueOf(ad.getActualAmount()));
+
+                                ColumnData cdFOS = new ColumnData();
+                                cdFOS.setDataType("currency");
+                                cdFOS.setName("Funds from Other Sources");
+                                cdFOS.setValue(String.valueOf(ad.getOtherSources()));
+
+                                ColumnData cdN = new ColumnData();
+                                cdN.setName("Notes");
+                                cdN.setValue(ad.getNote());
+
+                                colDataList[0] = cdDate;
+                                colDataList[1] = cdDA;
+                                colDataList[2] = cdFOS;
+                                colDataList[3] = cdN;
+                                td.setColumns(colDataList);
+                                tableDataList.add(td);
+                            });
+                            a.setFieldTableValue(tableDataList);
+                            try {
+                                a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
+                            } catch (IOException e) {
+                                logger.error(e.getMessage(), e);
+                            }
+                        }
+                        } else {
+                            List<TableData> tableDataList = new ArrayList<>();
+
+                            if (closedDisbursements != null) {
+                                AtomicInteger index = new AtomicInteger(1);
+                                closedDisbursements.removeIf(
+                                        cd -> new DateTime(cd.getMovedOn()).isAfter(new DateTime(report.getMovedOn())));
+                                if (closedDisbursements != null) {
+                                    closedDisbursements.forEach(cd -> {
+
+                                        List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
+                                        if(ads!=null && ads.size()>0){
+                                            finalActualDisbursements.addAll(ads);
+                                        }
+                                    });
+                                }
+                            }
+                            
+                            finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
+                            if(finalActualDisbursements.size()>0){
+                                AtomicInteger index = new AtomicInteger(1);
+                            finalActualDisbursements.forEach(ad -> {
+                                TableData td = new TableData();
+                                ColumnData[] colDataList = new ColumnData[4];
+                                td.setName(String.valueOf(index.getAndIncrement()));
+                                td.setHeader("#");
+                                td.setStatus(ad.getStatus());
+                                td.setSaved(ad.getStatus());
+                                if(disbursementService.getDisbursementById(ad.getDisbursementId()).isGranteeEntry()){
+                                    td.setEnteredByGrantee(true);
+                                }
+                                ColumnData cdDate = new ColumnData();
+                                cdDate.setDataType("date");
+                                cdDate.setName("Disbursement Date");
+                                cdDate.setValue(
+                                        new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate()));
+
+                                ColumnData cdDA = new ColumnData();
+                                cdDA.setDataType("currency");
+                                cdDA.setName("Actual Disbursement");
+                                cdDA.setValue(String.valueOf(ad.getActualAmount()));
+
+                                ColumnData cdFOS = new ColumnData();
+                                cdFOS.setDataType("currency");
+                                cdFOS.setName("Funds from Other Sources");
+                                cdFOS.setValue(String.valueOf(ad.getOtherSources()));
+
+                                ColumnData cdN = new ColumnData();
+                                cdN.setName("Notes");
+                                cdN.setValue(ad.getNote());
+
+                                colDataList[0] = cdDate;
+                                colDataList[1] = cdDA;
+                                colDataList[2] = cdFOS;
+                                colDataList[3] = cdN;
+                                td.setColumns(colDataList);
+                                tableDataList.add(td);
+                            });
+                            a.setFieldTableValue(tableDataList);
+                            try {
+                                a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
+                            } catch (IOException e) {
+                                logger.error(e.getMessage(), e);
+                            }
+                        }
+                        }
+
+                    }
+                });
+            }
+        });
+
+
+
+    }
+
     private List<ReportAssignment> determineCanManage(Report report, Long userId) {
         List<ReportAssignment> reportAssignments = reportService.getAssignmentsForReport(report);
-        if ((reportAssignments.stream().filter(ass -> (ass.getAssignment()==null?0L:ass.getAssignment().longValue()) == userId.longValue() && ass.getStateId().longValue() == report.getStatus().getId().longValue()).findAny().isPresent()) || (report.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE") && userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"))) {
+        if ((reportAssignments.stream()
+                .filter(ass -> (ass.getAssignment() == null ? 0L : ass.getAssignment().longValue()) == userId
+                        .longValue() && ass.getStateId().longValue() == report.getStatus().getId().longValue())
+                .findAny().isPresent())
+                || (report.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE") && userService.getUserById(userId)
+                        .getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"))) {
             report.setCanManage(true);
         } else {
             report.setCanManage(false);
@@ -330,21 +536,23 @@ public class ReportController {
         return reportAssignments;
     }
 
-
     @PutMapping("/{reportId}")
     @ApiOperation("Save report")
-    public Report saveReport(@ApiParam(name = "grantId", value = "Unique identifier of report") @PathVariable("reportId") Long reportId, @ApiParam(name = "reportToSave", value = "Report to save in edit mode, passed in Body of request") @RequestBody Report reportToSave, @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
-                             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public Report saveReport(
+            @ApiParam(name = "grantId", value = "Unique identifier of report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "reportToSave", value = "Report to save in edit mode, passed in Body of request") @RequestBody Report reportToSave,
+            @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        //grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
-
+        // grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
 
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         User user = userService.getUserById(userId);
         Report report = null;
         Report savedReports = reportService.getReportById(reportId);
-        determineCanManage(savedReports,userId);
-        if(savedReports.getCanManage()) report = _processReport(reportToSave, tenantOrg, user);
+        determineCanManage(savedReports, userId);
+        if (savedReports.getCanManage())
+            report = _processReport(reportToSave, tenantOrg, user);
 
         report = _ReportToReturn(reportToSave, userId);
         return report;
@@ -362,21 +570,27 @@ public class ReportController {
         try {
             report.setReportDetail(new ObjectMapper().writeValueAsString(reportToSave.getReportDetails()));
         } catch (JsonProcessingException e) {
-            logger.error(e.getMessage(),e);
+            logger.error(e.getMessage(), e);
         }
 
         List<Report> approvedReports = null;
-        if(report.getLinkedApprovedReports()==null || report.getLinkedApprovedReports().isEmpty()){
-            approvedReports = reportService.findByGrantAndStatus(report.getGrant(),workflowStatusService.getTenantWorkflowStatuses("REPORT",report.getGrant().getGrantorOrganization().getId()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get(),report.getId());
-            if(approvedReports==null || approvedReports.isEmpty()){
+        if (report.getLinkedApprovedReports() == null || report.getLinkedApprovedReports().isEmpty()) {
+            approvedReports = reportService.findByGrantAndStatus(report.getGrant(),
+                    workflowStatusService
+                            .getTenantWorkflowStatuses("REPORT", report.getGrant().getGrantorOrganization().getId())
+                            .stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get(),
+                    report.getId());
+            if (approvedReports == null || approvedReports.isEmpty()) {
                 try {
-                    report.setLinkedApprovedReports(new ObjectMapper().writeValueAsString(Arrays.asList(new Long[]{0l})));
+                    report.setLinkedApprovedReports(
+                            new ObjectMapper().writeValueAsString(Arrays.asList(new Long[] { 0l })));
                 } catch (JsonProcessingException e) {
-                   logger.error(e.getMessage(),e);
+                    logger.error(e.getMessage(), e);
                 }
             } else {
                 try {
-                    report.setLinkedApprovedReports(new ObjectMapper().writeValueAsString(approvedReports.stream().map(r -> new Long(r.getId())).collect(Collectors.toList())));
+                    report.setLinkedApprovedReports(new ObjectMapper().writeValueAsString(
+                            approvedReports.stream().map(r -> new Long(r.getId())).collect(Collectors.toList())));
                 } catch (JsonProcessingException e) {
                     logger.error(e.getMessage(), e);
                 }
@@ -384,14 +598,14 @@ public class ReportController {
             report = reportService.saveReport(report);
         }
 
-        _processStringAttributes(user,report, reportToSave, tenantOrg);
+        _processStringAttributes(user, report, reportToSave, tenantOrg);
 
         report = reportService.saveReport(report);
 
         return report;
     }
 
-    private void _processStringAttributes(User user,Report report, Report reportToSave, Organization tenant) {
+    private void _processStringAttributes(User user, Report report, Report reportToSave, Organization tenant) {
         List<ReportStringAttribute> stringAttributes = new ArrayList<>();
         ReportSpecificSection reportSpecificSection = null;
 
@@ -400,9 +614,9 @@ public class ReportController {
 
             reportSpecificSection.setSectionName(sectionVO.getName());
             reportSpecificSection.setSectionOrder(sectionVO.getOrder());
-            if("ANUDAN".equalsIgnoreCase(tenant.getCode())){
-                reportSpecificSection.setGranter((Granter)report.getGrant().getGrantorOrganization());
-            }else{
+            if ("ANUDAN".equalsIgnoreCase(tenant.getCode())) {
+                reportSpecificSection.setGranter((Granter) report.getGrant().getGrantorOrganization());
+            } else {
                 reportSpecificSection.setGranter((Granter) tenant);
             }
 
@@ -415,13 +629,14 @@ public class ReportController {
             if (sectionVO.getAttributes() != null) {
                 for (SectionAttributesVO sectionAttributesVO : sectionVO.getAttributes()) {
 
-                    sectionAttribute = reportService.getReportStringByStringAttributeId(sectionAttributesVO.getId()).getSectionAttribute();
+                    sectionAttribute = reportService.getReportStringByStringAttributeId(sectionAttributesVO.getId())
+                            .getSectionAttribute();
 
                     sectionAttribute.setFieldName(sectionAttributesVO.getFieldName());
                     sectionAttribute.setFieldType(sectionAttributesVO.getFieldType());
-                    if("ANUDAN".equalsIgnoreCase(tenant.getCode())){
+                    if ("ANUDAN".equalsIgnoreCase(tenant.getCode())) {
                         sectionAttribute.setGranter((Granter) report.getGrant().getGrantorOrganization());
-                    }else{
+                    } else {
                         sectionAttribute.setGranter((Granter) tenant);
                     }
 
@@ -431,22 +646,80 @@ public class ReportController {
 
                     sectionAttribute = reportService.saveReportSpecificSectionAttribute(sectionAttribute);
 
-
-                    ReportStringAttribute reportStringAttribute = reportService.getReportStringAttributeBySectionAttributeAndSection(sectionAttribute, reportSpecificSection);
+                    ReportStringAttribute reportStringAttribute = reportService
+                            .getReportStringAttributeBySectionAttributeAndSection(sectionAttribute,
+                                    reportSpecificSection);
 
                     reportStringAttribute.setTarget(sectionAttributesVO.getTarget());
                     reportStringAttribute.setFrequency(sectionAttributesVO.getFrequency());
-                    if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                    if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
                         reportStringAttribute.setActualTarget(sectionAttributesVO.getActualTarget());
                     }
-                    if (sectionAttribute.getFieldType().equalsIgnoreCase("table") || sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
+                    if (sectionAttribute.getFieldType().equalsIgnoreCase("table")
+                            || sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
                         List<TableData> tableData = sectionAttributesVO.getFieldTableValue();
-                        ObjectMapper mapper = new ObjectMapper();
-                        try {
-                            reportStringAttribute.setValue(mapper.writeValueAsString(tableData));
-                        } catch (JsonProcessingException e) {
-                            e.printStackTrace();
+                        // Do the below only if field type is Disbursement
+                        // The idea is to create a real disbursement if a new row is added
+                        if (sectionAttribute.getFieldType().equalsIgnoreCase("disbursement") && user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
+                            try {
+                                List<TableData> newEntries = new ArrayList();
+                                List<TableData> missingEntries = new ArrayList();
+                                
+                                
+
+                                // Find out new entries
+                                if(tableData!=null){
+                                    for (TableData td : tableData) {
+                                        if (td.isStatus() && !td.isSaved()) {
+                                            newEntries.add(td);
+                                        }
+                                    }
+                                }
+
+                                if(tableData!=null){
+                                    for (TableData et : tableData) {
+                                        if (!et.isStatus()) {
+                                            missingEntries.add(et);
+                                        }
+                                    }
+                                }
+
+                                if (newEntries.size() > 0) {
+                                    Disbursement newDisbursement = new Disbursement();
+                                        DateTime now = new DateTime();
+                                        newDisbursement.setCreatedAt(now.withSecondOfMinute(0).withMillis(0).toDate());
+                                        newDisbursement.setCreatedBy(user.getEmailId());
+                                        newDisbursement.setMovedOn(now.toDate());
+                                        newDisbursement.setGrant(report.getGrant());
+                                        newDisbursement.setGranteeEntry(true);
+                                        newDisbursement.setReportId(report.getId());
+                                        List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",report.getGrant().getGrantorOrganization().getId());
+                                        List<WorkflowStatus> closedStatuses = workflowStatuses.stream().filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")).collect(Collectors.toList());
+                                        newDisbursement.setStatus(closedStatuses.get(0));
+                                        newDisbursement = disbursementService.saveDisbursement(newDisbursement);
+                                    for(TableData nData :newEntries){
+                                      
+                                        ActualDisbursement actualDisbursement = new ActualDisbursement();
+                                        
+                                        actualDisbursement.setOtherSources(Double.valueOf(nData.getColumns()[2].getValue()==null?"0d":nData.getColumns()[2].getValue()));
+                                        actualDisbursement.setDisbursementDate(new SimpleDateFormat("dd-MMM-yyyy").parse(nData.getColumns()[0].getValue()));
+                                        actualDisbursement.setDisbursementId(newDisbursement.getId());
+                                        actualDisbursement.setNote(nData.getColumns()[3].getValue());
+                                        actualDisbursement.setActualAmount(0d);
+                                        actualDisbursement.setCreatedAt(DateTime.now().toDate());
+                                        actualDisbursement.setCreatedBy(user.getId());
+                                        actualDisbursement.setStatus(nData.isStatus());
+                                        actualDisbursement.setSaved(true);
+                                        actualDisbursement.setOrderPosition(disbursementService.getNewOrderPositionForActualDisbursementOfGrant(report.getGrant().getId()));
+                                        disbursementService.saveActualDisbursement(actualDisbursement);
+                                    }
+                                    
+                                }
+                            } catch (ParseException e) {
+                                logger.error(e.getMessage(), e);
+                            }
                         }
+                        
 
                     } else {
                         reportStringAttribute.setValue(sectionAttributesVO.getFieldValue());
@@ -459,10 +732,17 @@ public class ReportController {
 
     @PostMapping("/{reportId}/section/{sectionId}/field")
     @ApiOperation("Added new field to section")
-    public ReportFieldInfo createFieldInSection(@ApiParam(name = "reportToSave", value = "Report to save if in edit mode passed in Body of request") @RequestBody Report reportToSave, @ApiParam(name = "reportId", value = "Unique identifier of the grant") @PathVariable("reportId") Long reportId, @ApiParam(name = "sectionId", value = "Unique identifier of the section to which the field is being added") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        //grantService.saveGrant(grantToSave);
-        /*grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
-        grantValidator.validateSectionExists(grantService,grantToSave,sectionId);*/
+    public ReportFieldInfo createFieldInSection(
+            @ApiParam(name = "reportToSave", value = "Report to save if in edit mode passed in Body of request") @RequestBody Report reportToSave,
+            @ApiParam(name = "reportId", value = "Unique identifier of the grant") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "sectionId", value = "Unique identifier of the section to which the field is being added") @PathVariable("sectionId") Long sectionId,
+            @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        // grantService.saveGrant(grantToSave);
+        /*
+         * grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
+         * grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
+         */
         saveReport(reportId, reportToSave, userId, tenantCode);
         Report report = reportService.getReportById(reportId);
         ReportSpecificSection reportSection = reportService.getReportSpecificSectionById(sectionId);
@@ -474,7 +754,8 @@ public class ReportController {
         newSectionAttribute.setFieldName("");
         newSectionAttribute.setDeletable(true);
         newSectionAttribute.setCanEdit(true);
-        newSectionAttribute.setAttributeOrder(reportService.getNextAttributeOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(), sectionId));
+        newSectionAttribute.setAttributeOrder(reportService.getNextAttributeOrder(
+                organizationService.findOrganizationByTenantCode(tenantCode).getId(), sectionId));
         newSectionAttribute.setGranter((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
         newSectionAttribute = reportService.saveReportSpecificSectionAttribute(newSectionAttribute);
         ReportStringAttribute stringAttribute = new ReportStringAttribute();
@@ -482,7 +763,6 @@ public class ReportController {
         stringAttribute.setSectionAttribute(newSectionAttribute);
         stringAttribute.setSection(reportSection);
         stringAttribute.setReport(report);
-
 
         stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
 
@@ -496,28 +776,41 @@ public class ReportController {
 
     @PutMapping("/{reportId}/section/{sectionId}/field/{fieldId}")
     @ApiOperation("Update field information")
-    public ReportFieldInfo updateField(@ApiParam(name = "sectionId", value = "Unique identifier of section") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "attributeToSave", value = "Updated attribute to be saved") @RequestBody ReportAttributeToSaveVO attributeToSave, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "fieldId", value = "Unique identifier of the field being updated") @PathVariable("fieldId") Long fieldId, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        /*grantValidator.validate(grantService,grantId,attributeToSave.getGrant(),userId,tenantCode);
-        grantValidator.validateSectionExists(grantService,attributeToSave.getGrant(),sectionId);
-        grantValidator.validateFieldExists(grantService,attributeToSave.getGrant(),sectionId,fieldId);*/
+    public ReportFieldInfo updateField(
+            @ApiParam(name = "sectionId", value = "Unique identifier of section") @PathVariable("sectionId") Long sectionId,
+            @ApiParam(name = "attributeToSave", value = "Updated attribute to be saved") @RequestBody ReportAttributeToSaveVO attributeToSave,
+            @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "fieldId", value = "Unique identifier of the field being updated") @PathVariable("fieldId") Long fieldId,
+            @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        /*
+         * grantValidator.validate(grantService,grantId,attributeToSave.getGrant(),
+         * userId,tenantCode);
+         * grantValidator.validateSectionExists(grantService,attributeToSave.getGrant(),
+         * sectionId);
+         * grantValidator.validateFieldExists(grantService,attributeToSave.getGrant(),
+         * sectionId,fieldId);
+         */
         Report report = saveReport(reportId, attributeToSave.getReport(), userId, tenantCode);
-        ReportSpecificSectionAttribute currentAttribute = reportService.getReportStringByStringAttributeId(fieldId).getSectionAttribute();
+        ReportSpecificSectionAttribute currentAttribute = reportService.getReportStringByStringAttributeId(fieldId)
+                .getSectionAttribute();
         currentAttribute.setFieldName(attributeToSave.getAttr().getFieldName());
         currentAttribute.setFieldType(attributeToSave.getAttr().getFieldType());
         currentAttribute = reportService.saveReportSpecificSectionAttribute(currentAttribute);
-        ReportStringAttribute stringAttribute = reportService.getReportStringAttributeBySectionAttributeAndSection(currentAttribute, currentAttribute.getSection());
-        //stringAttribute.setValue("");
+        ReportStringAttribute stringAttribute = reportService
+                .getReportStringAttributeBySectionAttributeAndSection(currentAttribute, currentAttribute.getSection());
+        // stringAttribute.setValue("");
         if (currentAttribute.getFieldType().equalsIgnoreCase("kpi")) {
-            //stringAttribute.setFrequency(report.getType().toLowerCase());
+            // stringAttribute.setFrequency(report.getType().toLowerCase());
             stringAttribute.setFrequency("adhoc");
         }
         stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
 
         report = reportService.getReportById(reportId);
-        if (reportService._checkIfReportTemplateChanged(report, currentAttribute.getSection(), currentAttribute, this)) {
+        if (reportService._checkIfReportTemplateChanged(report, currentAttribute.getSection(), currentAttribute,
+                this)) {
             reportService._createNewReportTemplateFromExisiting(report);
         }
-
 
         report = _ReportToReturn(report, userId);
         return new ReportFieldInfo(currentAttribute.getId(), stringAttribute.getId(), report);
@@ -525,7 +818,13 @@ public class ReportController {
 
     @PostMapping("/{reportId}/field/{fieldId}/template/{templateId}")
     @ApiOperation(value = "Attach document to field", notes = "Valid for Document field types only")
-    public ReportDocInfo createDocumentForReportSectionField(@ApiParam(name = "reportToSave", value = "Report to save in edit mode, passed in Body of request") @RequestBody Report reportToSave, @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "fieldId", value = "Unique identifier of the field to which document is being attached") @PathVariable("fieldId") Long fieldId, @ApiParam(name = "temaplteId", value = "Unique identified of the document template being attached") @PathVariable("templateId") Long templateId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public ReportDocInfo createDocumentForReportSectionField(
+            @ApiParam(name = "reportToSave", value = "Report to save in edit mode, passed in Body of request") @RequestBody Report reportToSave,
+            @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "fieldId", value = "Unique identifier of the field to which document is being attached") @PathVariable("fieldId") Long fieldId,
+            @ApiParam(name = "temaplteId", value = "Unique identified of the document template being attached") @PathVariable("templateId") Long templateId,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         saveReport(reportId, reportToSave, userId, tenantCode);
         TemplateLibrary libraryDoc = templateLibraryService.getTemplateLibraryDocumentById(templateId);
 
@@ -535,21 +834,28 @@ public class ReportController {
         String filePath = null;
         try {
             file = resourceLoader
-                    .getResource("file:" + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8")).getFile();
-            //filePath = uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId() + "/";
+                    .getResource("file:" + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8"))
+                    .getFile();
+            // filePath = uploadLocation + tenantCode + "/report-documents/" + reportId +
+            // "/" + stringAttribute.getSection().getId() + "/" +
+            // stringAttribute.getSectionAttribute().getId() + "/";
 
             User user = userService.getUserById(userId);
 
-            if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-                filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + "/report-documents/" + reportId + "/" + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId() + "/";
-            }else{
-                filePath = uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId() + "/";
+            if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + "/report-documents/"
+                        + reportId + "/" + stringAttribute.getSection().getId() + "/"
+                        + stringAttribute.getSectionAttribute().getId() + "/";
+            } else {
+                filePath = uploadLocation + tenantCode + "/report-documents/" + reportId + "/"
+                        + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId()
+                        + "/";
             }
 
             File dir = new File(filePath);
             dir.mkdirs();
             File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
-            FileCopyUtils.copy(file,fileToCreate);
+            FileCopyUtils.copy(file, fileToCreate);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -567,7 +873,8 @@ public class ReportController {
 
         ObjectMapper mapper = new ObjectMapper();
         try {
-            List<ReportStringAttributeAttachments> stringAttributeAttachments = reportService.getStringAttributeAttachmentsByStringAttribute(stringAttribute);
+            List<ReportStringAttributeAttachments> stringAttributeAttachments = reportService
+                    .getStringAttributeAttachmentsByStringAttribute(stringAttribute);
             stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
             stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
         } catch (JsonProcessingException e) {
@@ -578,9 +885,17 @@ public class ReportController {
         return new ReportDocInfo(attachment.getId(), report);
     }
 
-    @PostMapping(value = "/{reportId}/section/{sectionId}/attribute/{attributeId}/upload", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/{reportId}/section/{sectionId}/attribute/{attributeId}/upload", consumes = {
+            "multipart/form-data" })
     @ApiOperation("Upload and attach files to Document field from disk")
-    public ReportDocInfo saveUploadedFiles(@ApiParam(name = "sectionId", value = "Unique identifier of section") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "attributeId", value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId, @ApiParam(name = "reportData", value = "Report data") @RequestParam("reportToSave") String reportToSaveStr, @RequestParam("file") MultipartFile[] files, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public ReportDocInfo saveUploadedFiles(
+            @ApiParam(name = "sectionId", value = "Unique identifier of section") @PathVariable("sectionId") Long sectionId,
+            @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "attributeId", value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId,
+            @ApiParam(name = "reportData", value = "Report data") @RequestParam("reportToSave") String reportToSaveStr,
+            @RequestParam("file") MultipartFile[] files,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -590,10 +905,12 @@ public class ReportController {
         } catch (IOException e) {
             logger.error(e.getMessage());
         }
-        /*grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
-        grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
-        grantValidator.validateFieldExists(grantService,grantToSave,sectionId,attributeId);
-        grantValidator.validateFiles(files,supportedFileTypes);*/
+        /*
+         * grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
+         * grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
+         * grantValidator.validateFieldExists(grantService,grantToSave,sectionId,
+         * attributeId); grantValidator.validateFiles(files,supportedFileTypes);
+         */
 
         Report report = reportService.getReportById(reportId);
 
@@ -601,10 +918,12 @@ public class ReportController {
         User user = userService.getUserById(userId);
 
         String filePath = "";
-        if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-            filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + "/report-documents/" + reportId + "/" + attr.getSection().getId() + "/" + attr.getSectionAttribute().getId() + "/";
-        }else{
-            filePath = uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + attr.getSection().getId() + "/" + attr.getSectionAttribute().getId() + "/";
+        if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+            filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + "/report-documents/" + reportId
+                    + "/" + attr.getSection().getId() + "/" + attr.getSectionAttribute().getId() + "/";
+        } else {
+            filePath = uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + attr.getSection().getId()
+                    + "/" + attr.getSectionAttribute().getId() + "/";
         }
         File dir = new File(filePath);
         dir.mkdirs();
@@ -614,18 +933,21 @@ public class ReportController {
             try {
                 File fileToCreate = new File(dir, file.getOriginalFilename());
                 file.transferTo(fileToCreate);
-                //FileWriter newJsp = new FileWriter(fileToCreate);
+                // FileWriter newJsp = new FileWriter(fileToCreate);
             } catch (IOException e) {
                 e.printStackTrace();
             }
             ReportStringAttributeAttachments attachment = new ReportStringAttributeAttachments();
             attachment.setVersion(1);
             attachment.setType(FilenameUtils.getExtension(file.getOriginalFilename()));
-            attachment.setTitle(file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
+            attachment.setTitle(file.getOriginalFilename()
+                    .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
             attachment.setLocation(filePath);
-            attachment.setName(file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
+            attachment.setName(file.getOriginalFilename()
+                    .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
             attachment.setReportStringAttribute(attr);
-            attachment.setDescription(file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
+            attachment.setDescription(file.getOriginalFilename()
+                    .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
             attachment.setCreatedOn(new Date());
             attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
             attachment = reportService.saveReportStringAttributeAttachment(attachment);
@@ -634,11 +956,12 @@ public class ReportController {
 
         mapper = new ObjectMapper();
         try {
-            if (attr.getValue()==null || attr.getValue().equalsIgnoreCase("") ) {
+            if (attr.getValue() == null || attr.getValue().equalsIgnoreCase("")) {
                 attr.setValue("[]");
             }
-            List<ReportStringAttributeAttachments> currentAttachments = mapper.readValue(attr.getValue(), new TypeReference<List<ReportStringAttributeAttachments>>() {
-            });
+            List<ReportStringAttributeAttachments> currentAttachments = mapper.readValue(attr.getValue(),
+                    new TypeReference<List<ReportStringAttributeAttachments>>() {
+                    });
             if (currentAttachments == null) {
                 currentAttachments = new ArrayList<>();
             }
@@ -648,7 +971,8 @@ public class ReportController {
             attr = reportService.saveReportStringAttribute(attr);
             ReportStringAttribute finalAttr = attr;
             ReportStringAttribute finalAttr1 = finalAttr;
-            finalAttr = report.getStringAttributes().stream().filter(g -> g.getId() == finalAttr1.getId()).findFirst().get();
+            finalAttr = report.getStringAttributes().stream().filter(g -> g.getId() == finalAttr1.getId()).findFirst()
+                    .get();
             finalAttr.setValue(mapper.writeValueAsString(currentAttachments));
             reportService.saveReport(report);
 
@@ -656,19 +980,24 @@ public class ReportController {
             e.printStackTrace();
         }
 
-
         report = reportService.getReportById(reportId);
         report = _ReportToReturn(report, userId);
 
         return new ReportDocInfo(attachments.get(attachments.size() - 1).getId(), report);
     }
 
-
     @PostMapping("/{reportId}/template/{templateId}/section/{sectionName}")
     @ApiOperation("Create new section in grant")
-    public ReportSectionInfo createSection(@RequestBody Report reportToSave, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "templateId", value = "Unique identifier of the report template") @PathVariable("templateId") Long templateId, @ApiParam(name = "sectionName", value = "Name of the new section") @PathVariable("sectionName") String sectionName, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-       /* grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
-        grantValidator.validateTemplateExists(grantService,grantToSave,templateId);*/
+    public ReportSectionInfo createSection(@RequestBody Report reportToSave,
+            @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "templateId", value = "Unique identifier of the report template") @PathVariable("templateId") Long templateId,
+            @ApiParam(name = "sectionName", value = "Name of the new section") @PathVariable("sectionName") String sectionName,
+            @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        /*
+         * grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
+         * grantValidator.validateTemplateExists(grantService,grantToSave,templateId);
+         */
         Report report = saveReport(reportId, reportToSave, userId, tenantCode);
 
         ReportSpecificSection specificSection = new ReportSpecificSection();
@@ -678,7 +1007,8 @@ public class ReportController {
         specificSection.setReportTemplateId(templateId);
         specificSection.setDeletable(true);
         specificSection.setReportId(reportId);
-        specificSection.setSectionOrder(reportService.getNextSectionOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(), templateId));
+        specificSection.setSectionOrder(reportService
+                .getNextSectionOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(), templateId));
         specificSection = reportService.saveSection(specificSection);
 
         if (reportService._checkIfReportTemplateChanged(report, specificSection, null, this)) {
@@ -693,10 +1023,17 @@ public class ReportController {
 
     @PutMapping("/{reportId}/template/{templateId}/section/{sectionId}")
     @ApiOperation("Delete existing section in report")
-    public Report deleteSection(@RequestBody Report reportToSave, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "templateId", value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId, @ApiParam(name = "sectionId", value = "Unique identifier of the section being deleted") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        /*grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
-        grantValidator.validateTemplateExists(grantService,grantToSave,templateId);
-        grantValidator.validateSectionExists(grantService,grantToSave,sectionId);*/
+    public Report deleteSection(@RequestBody Report reportToSave,
+            @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "templateId", value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId,
+            @ApiParam(name = "sectionId", value = "Unique identifier of the section being deleted") @PathVariable("sectionId") Long sectionId,
+            @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        /*
+         * grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
+         * grantValidator.validateTemplateExists(grantService,grantToSave,templateId);
+         * grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
+         */
         ReportSpecificSection section = reportService.getReportSpecificSectionById(sectionId);
         Report report = reportService.getReportById(reportId);
 
@@ -725,15 +1062,20 @@ public class ReportController {
 
     @PostMapping("/{reportId}/assignment")
     @ApiOperation("Set owners for report workflow states")
-    public Report saveReportAssignments(@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "assignmentModel", value = "Set assignment for report per workflow state") @RequestBody ReportAssignmentModel assignmentModel, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public Report saveReportAssignments(
+            @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "assignmentModel", value = "Set assignment for report per workflow state") @RequestBody ReportAssignmentModel assignmentModel,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Report report = saveReport(reportId, assignmentModel.getReport(), userId, tenantCode);
         String customAss = null;
         UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
-        String host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".")+1);
-        UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
+        String host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
+                .host(host).port(uriComponents.getPort());
         String url = uriBuilder.toUriString();
         for (ReportAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
-            if(customAss==null && assignmentsVO.getCustomAssignments()!=null){
+            if (customAss == null && assignmentsVO.getCustomAssignments() != null) {
                 customAss = assignmentsVO.getCustomAssignments();
             }
             ReportAssignment assignment = null;
@@ -747,26 +1089,30 @@ public class ReportController {
 
             assignment.setAssignment(assignmentsVO.getAssignmentId());
 
-            if((customAss!=null && !"".equalsIgnoreCase(customAss.trim()))  && workflowStatusService.getById(assignmentsVO.getStateId()).getInternalStatus().equalsIgnoreCase("ACTIVE")){
+            if ((customAss != null && !"".equalsIgnoreCase(customAss.trim())) && workflowStatusService
+                    .getById(assignmentsVO.getStateId()).getInternalStatus().equalsIgnoreCase("ACTIVE")) {
                 String[] customAssignments = customAss.split(",");
                 User granteeUser = null;
-                User existingUser = userService.getUserByEmailAndOrg(customAss,report.getGrant().getOrganization());
+                User existingUser = userService.getUserByEmailAndOrg(customAss, report.getGrant().getOrganization());
                 ObjectMapper mapper = new ObjectMapper();
                 String code = null;
 
-                    code = Base64.getEncoder().encodeToString(String.valueOf(report.getId()).getBytes());
+                code = Base64.getEncoder().encodeToString(String.valueOf(report.getId()).getBytes());
 
-                if(existingUser != null && existingUser.isActive()){
+                if (existingUser != null && existingUser.isActive()) {
                     granteeUser = existingUser;
-                    url = url+"/home/?action=login&org="+URLEncoder.encode(report.getGrant().getOrganization().getName())+"&r=" + code+"&email="+granteeUser.getEmailId()+"&type=report";
-                }else if(existingUser!=null && !existingUser.isActive()){
+                    url = url + "/home/?action=login&org="
+                            + URLEncoder.encode(report.getGrant().getOrganization().getName()) + "&r=" + code
+                            + "&email=" + granteeUser.getEmailId() + "&type=report";
+                } else if (existingUser != null && !existingUser.isActive()) {
                     granteeUser = existingUser;
-                    url = url+"/home/?action=registration&org="+ URLEncoder.encode(report.getGrant().getOrganization().getName())+"&r=" + code+"&email="+granteeUser.getEmailId()+"&type=report";
+                    url = url + "/home/?action=registration&org="
+                            + URLEncoder.encode(report.getGrant().getOrganization().getName()) + "&r=" + code
+                            + "&email=" + granteeUser.getEmailId() + "&type=report";
 
                 } else {
                     granteeUser = new User();
                     Role newRole = roleService.findByOrganizationAndName(report.getGrant().getOrganization(), "Admin");
-
 
                     UserRole userRole = new UserRole();
                     userRole.setRole(newRole);
@@ -782,19 +1128,27 @@ public class ReportController {
                     granteeUser.setActive(false);
                     granteeUser = userService.save(granteeUser);
                     userRole = userRoleService.saveUserRole(userRole);
-                    url = url+"/home/?action=registration&org="+URLEncoder.encode(report.getGrant().getOrganization().getName())+"&r=" + code+"&email="+granteeUser.getEmailId()+"&type=report";
+                    url = url + "/home/?action=registration&org="
+                            + URLEncoder.encode(report.getGrant().getOrganization().getName()) + "&r=" + code
+                            + "&email=" + granteeUser.getEmailId() + "&type=report";
                 }
 
                 String[] notifications = reportService.buildReportInvitationContent(report,
                         userService.getUserById(userId),
-                        appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(), AppConfiguration.REPORT_INVITE_SUBJECT).getConfigValue(),
-                        appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(), AppConfiguration.REPORT_INVITE_MESSAGE).getConfigValue(),
+                        appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                                AppConfiguration.REPORT_INVITE_SUBJECT).getConfigValue(),
+                        appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                                AppConfiguration.REPORT_INVITE_MESSAGE).getConfigValue(),
                         url);
-                commonEmailSevice.sendMail(granteeUser.getEmailId(),null,notifications[0],notifications[1],new String[]{appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+                commonEmailSevice.sendMail(granteeUser.getEmailId(), null, notifications[0], notifications[1],
+                        new String[] { appConfigService
+                                .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                                        AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                .getConfigValue() });
 
-                if(assignmentsVO.getAssignmentId()==0){
+                if (assignmentsVO.getAssignmentId() == 0) {
                     assignment.setAssignment(granteeUser.getId());
-                }else{
+                } else {
                     ReportAssignment ass = new ReportAssignment();
                     ass.setAssignment(granteeUser.getId());
                     ass.setReportId(reportId);
@@ -802,74 +1156,73 @@ public class ReportController {
                     ass.setAnchor(false);
                     reportService.saveAssignmentForReport(ass);
                 }
-                /*for (String customAssignment : customAssignments) {
-                    User granteeUser = new User();
-                    Role newRole = new Role();
-                    newRole.setName("Admin");
-                    newRole.setOrganization(report.getGrant().getOrganization());
-                    newRole.setCreatedAt(DateTime.now().toDate());
-                    newRole.setCreatedBy("System");
-
-                    newRole = roleService.saveRole(newRole);
-                    UserRole userRole = new UserRole();
-                    userRole.setRole(newRole);
-                    userRole.setUser(granteeUser);
-                    List<UserRole> userRoles = new ArrayList<>();
-                    userRoles.add(userRole);
-                    granteeUser.setUserRoles(userRoles);
-                    granteeUser.setFirstName("To be set");
-                    granteeUser.setLastName("To be set");
-                    granteeUser.setEmailId(customAss);
-                    granteeUser.setOrganization(report.getGrant().getOrganization());
-                    granteeUser = userService.save(granteeUser);
-
-                    if(assignmentsVO.getAssignmentId()==0){
-                        assignment.setAssignment(granteeUser.getId());
-                    }else{
-                        ReportAssignment ass = new ReportAssignment();
-                        ass.setAssignment(granteeUser.getId());
-                        ass.setReportId(reportId);
-                        ass.setStateId(assignmentsVO.getStateId());
-                        ass.setAnchor(false);
-                        reportService.saveAssignmentForReport(ass);
-                    }
-                }*/
+                /*
+                 * for (String customAssignment : customAssignments) { User granteeUser = new
+                 * User(); Role newRole = new Role(); newRole.setName("Admin");
+                 * newRole.setOrganization(report.getGrant().getOrganization());
+                 * newRole.setCreatedAt(DateTime.now().toDate());
+                 * newRole.setCreatedBy("System");
+                 * 
+                 * newRole = roleService.saveRole(newRole); UserRole userRole = new UserRole();
+                 * userRole.setRole(newRole); userRole.setUser(granteeUser); List<UserRole>
+                 * userRoles = new ArrayList<>(); userRoles.add(userRole);
+                 * granteeUser.setUserRoles(userRoles); granteeUser.setFirstName("To be set");
+                 * granteeUser.setLastName("To be set"); granteeUser.setEmailId(customAss);
+                 * granteeUser.setOrganization(report.getGrant().getOrganization()); granteeUser
+                 * = userService.save(granteeUser);
+                 * 
+                 * if(assignmentsVO.getAssignmentId()==0){
+                 * assignment.setAssignment(granteeUser.getId()); }else{ ReportAssignment ass =
+                 * new ReportAssignment(); ass.setAssignment(granteeUser.getId());
+                 * ass.setReportId(reportId); ass.setStateId(assignmentsVO.getStateId());
+                 * ass.setAnchor(false); reportService.saveAssignmentForReport(ass); } }
+                 */
             }
 
             assignment = reportService.saveAssignmentForReport(assignment);
         }
-
-
 
         report = _ReportToReturn(report, userId);
         return report;
     }
 
     @GetMapping("{reportId}/changeHistory")
-    public ReportSnapshot getReportHistory(@PathVariable("reportId") Long reportId, @PathVariable("userId") Long userId) {
+    public ReportSnapshot getReportHistory(@PathVariable("reportId") Long reportId,
+            @PathVariable("userId") Long userId) {
         Report report = reportService.getReportById(reportId);
 
-        return reportSnapshotService.getSnapshotByReportIdAndAssignedToIdAndStatusId(reportId, userId, report.getStatus().getId());
+        return reportSnapshotService.getSnapshotByReportIdAndAssignedToIdAndStatusId(reportId, userId,
+                report.getStatus().getId());
     }
 
     @PostMapping("/{reportId}/flow/{fromState}/{toState}")
     @ApiOperation("Move report through workflow")
-    public Report MoveReportState(@RequestBody ReportWithNote reportWithNote, @ApiParam(name = "userId", value = "Unique identified of logged in user") @PathVariable("userId") Long userId,
-                                  @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "fromStateId", value = "Unique identifier of the starting state of the report in the workflow") @PathVariable("fromState") Long fromStateId,
-                                  @ApiParam(name = "toStateId", value = "Unique identifier of the ending state of the report in the workflow") @PathVariable("toState") Long toStateId,
-                                  @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public Report MoveReportState(@RequestBody ReportWithNote reportWithNote,
+            @ApiParam(name = "userId", value = "Unique identified of logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "fromStateId", value = "Unique identifier of the starting state of the report in the workflow") @PathVariable("fromState") Long fromStateId,
+            @ApiParam(name = "toStateId", value = "Unique identifier of the ending state of the report in the workflow") @PathVariable("toState") Long toStateId,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        /*grantValidator.validate(grantService,grantId,reportWithNote.getGrant(),userId,tenantCode);
-        grantValidator.validateFlow(grantService,reportWithNote.getGrant(),grantId,userId,fromStateId,toStateId);*/
+        /*
+         * grantValidator.validate(grantService,grantId,reportWithNote.getGrant(),userId
+         * ,tenantCode);
+         * grantValidator.validateFlow(grantService,reportWithNote.getGrant(),grantId,
+         * userId,fromStateId,toStateId);
+         */
 
-        for (SectionVO section : reportWithNote.getReport().getReportDetails().getSections()) {
+        /* for (SectionVO section : reportWithNote.getReport().getReportDetails().getSections()) {
             if (section.getAttributes() != null) {
                 for (SectionAttributesVO attribute : section.getAttributes()) {
                     if (attribute.getFieldType().equalsIgnoreCase("disbursement")) {
                         List<String> rowNames = new ArrayList<>();
-                        if(attribute.getFieldTableValue().size()>1) {
+                        if (attribute.getFieldTableValue().size() > 1) {
                             for (int i = 0; i < attribute.getFieldTableValue().size(); i++) {
-                                if (attribute.getFieldTableValue().get(i).getColumns()[0].getValue().trim() == "" && attribute.getFieldTableValue().get(i).getColumns()[1].getValue().trim() == "" && attribute.getFieldTableValue().get(i).getColumns()[2].getValue().trim() == "" && attribute.getFieldTableValue().get(i).getColumns()[3].getValue().trim() == "") {
+                                if (attribute.getFieldTableValue().get(i).getColumns()[0].getValue().trim() == ""
+                                        && attribute.getFieldTableValue().get(i).getColumns()[1].getValue().trim() == ""
+                                        && attribute.getFieldTableValue().get(i).getColumns()[2].getValue().trim() == ""
+                                        && attribute.getFieldTableValue().get(i).getColumns()[3].getValue()
+                                                .trim() == "") {
                                     rowNames.add(attribute.getFieldTableValue().get(i).getName());
                                 }
                             }
@@ -880,37 +1233,43 @@ public class ReportController {
                         }
 
                         for (int i = 0; i < attribute.getFieldTableValue().size(); i++) {
-                            attribute.getFieldTableValue().get(i).setName(String.valueOf(i+1));
+                            attribute.getFieldTableValue().get(i).setName(String.valueOf(i + 1));
                             try {
-                                attribute.setFieldValue(new ObjectMapper().writeValueAsString(attribute.getFieldTableValue()));
+                                attribute.setFieldValue(
+                                        new ObjectMapper().writeValueAsString(attribute.getFieldTableValue()));
                             } catch (JsonProcessingException e) {
-                                logger.error(e.getMessage(),e);
+                                logger.error(e.getMessage(), e);
                             }
                         }
 
                     }
                 }
             }
-        }
+        } */
 
-        saveReport(reportId,reportWithNote.getReport(),userId,tenantCode);
+        saveReport(reportId, reportWithNote.getReport(), userId, tenantCode);
 
         Report report = reportService.getReportById(reportId);
         Report finalReport = report;
         WorkflowStatus previousState = report.getStatus();
 
-
         User updatingUser = userService.getUserById(userId);
-        if(updatingUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && previousState.getInternalStatus().equalsIgnoreCase("ACTIVE")){
-            ReportAssignment changedAssignment = reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == finalReport.getStatus().getId().longValue()).collect(Collectors.toList()).get(0);
+        if (updatingUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")
+                && previousState.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
+            ReportAssignment changedAssignment = reportService.getAssignmentsForReport(report).stream()
+                    .filter(ass -> ass.getReportId().longValue() == reportId.longValue()
+                            && ass.getStateId().longValue() == finalReport.getStatus().getId().longValue())
+                    .collect(Collectors.toList()).get(0);
             changedAssignment.setAssignment(userId);
             reportService.saveAssignmentForReport(changedAssignment);
         }
-        ReportAssignment currentAssignment = reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == finalReport.getStatus().getId().longValue()).collect(Collectors.toList()).get(0);
+        ReportAssignment currentAssignment = reportService.getAssignmentsForReport(report).stream()
+                .filter(ass -> ass.getReportId().longValue() == reportId.longValue()
+                        && ass.getStateId().longValue() == finalReport.getStatus().getId().longValue())
+                .collect(Collectors.toList()).get(0);
         User previousOwner = userService.getUserById(currentAssignment.getAssignment());
 
-
-            report.setStatus(workflowStatusService.findById(toStateId));
+        report.setStatus(workflowStatusService.findById(toStateId));
         if (reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")) {
             report.setNote(reportWithNote.getNote());
             report.setNoteAdded(new Date());
@@ -925,16 +1284,19 @@ public class ReportController {
         User user = userService.getUserById(userId);
         WorkflowStatus toStatus = workflowStatusService.findById(toStateId);
 
-        List<User> usersToNotify = new ArrayList<>();//userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
+        List<User> usersToNotify = new ArrayList<>();// userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
 
         List<ReportAssignment> assigments = reportService.getAssignmentsForReport(report);
         assigments.forEach(ass -> {
-            if(!usersToNotify.stream().filter(u -> u.getId()==ass.getAssignment()).findFirst().isPresent()){
+            if (!usersToNotify.stream().filter(u -> u.getId() == ass.getAssignment()).findFirst().isPresent()) {
                 usersToNotify.add(userService.getUserById(ass.getAssignment()));
             }
         });
 
-        Optional<ReportAssignment> repAss = reportService.getAssignmentsForReport(report).stream().filter(ass -> ass.getReportId().longValue() == reportId.longValue() && ass.getStateId().longValue() == toStateId.longValue()).findAny();
+        Optional<ReportAssignment> repAss = reportService.getAssignmentsForReport(report).stream()
+                .filter(ass -> ass.getReportId().longValue() == reportId.longValue()
+                        && ass.getStateId().longValue() == toStateId.longValue())
+                .findAny();
         User currentOwner = null;
         String currentOwnerName = "";
         if (repAss.isPresent()) {
@@ -942,79 +1304,129 @@ public class ReportController {
             currentOwnerName = currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName());
         }
 
-
-        WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState, toStatus);
+        WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState,
+                toStatus);
 
         WorkflowStatus currentState = workflowStatusService.findById(toStateId);
-        if(!updatingUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && !currentState.getInternalStatus().equalsIgnoreCase("ACTIVE") && !currentState.getInternalStatus().equalsIgnoreCase("CLOSED")){
+        if (!updatingUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")
+                && !currentState.getInternalStatus().equalsIgnoreCase("ACTIVE")
+                && !currentState.getInternalStatus().equalsIgnoreCase("CLOSED")) {
             usersToNotify.removeIf(u -> u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"));
         }
 
         String finalCurrentOwnerName = currentOwnerName;
         usersToNotify.stream().forEach(u -> {
 
-            String emailNotificationContent[] = reportService.buildEmailNotificationContent(finalReport,u, u.getFirstName().concat(" ").concat(u.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
-                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                    AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(), appConfigService
-                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                    AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
-                    workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
-                    previousState.getName(),
+            String emailNotificationContent[] = reportService.buildEmailNotificationContent(finalReport, u,
+                    u.getFirstName().concat(" ").concat(u.getLastName()), toStatus.getVerb(),
+                    new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
+                    workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                    transition.getAction(), "Yes",
-                    "Please review.",
-                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
-                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "", null, null, null);
-            commonEmailSevice.sendMail(u.getEmailId(),null, emailNotificationContent[0], emailNotificationContent[1], new String[]{appConfigService
-                    .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+                    transition.getAction(), "Yes", "Please review.",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
+                            : "No",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                            ? "Please review."
+                            : "",
+                    null, null, null);
+            commonEmailSevice.sendMail(u.getEmailId(), null, emailNotificationContent[0], emailNotificationContent[1],
+                    new String[] { appConfigService
+                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                            .getConfigValue() });
         });
         usersToNotify.stream().forEach(u -> {
-            String notificationContent[] = reportService.buildEmailNotificationContent(finalReport,u, u.getFirstName().concat(" ").concat(u.getLastName()), toStatus.getVerb(), new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()), appConfigService
-                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                    AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(), appConfigService
-                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                    AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
-                    workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
-                    previousState.getName(),
+            String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, u,
+                    u.getFirstName().concat(" ").concat(u.getLastName()), toStatus.getVerb(),
+                    new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                    workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                    transition.getAction(), "Yes",
-                    "Please review.",
-                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
-                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Please review." : "", null, null, null);
+                    transition.getAction(), "Yes", "Please review.",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
+                            : "No",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                            ? "Please review."
+                            : "",
+                    null, null, null);
 
-            notificationsService.saveNotification(notificationContent, u.getId(), finalReport.getId(),"REPORT");
+            notificationsService.saveNotification(notificationContent, u.getId(), finalReport.getId(), "REPORT");
 
         });
 
-        //}
+        // }
 
         report = _ReportToReturn(report, userId);
         _saveSnapShot(report);
 
-        //Temporary block to continue testing as Grantee has submitted the report
-        /*if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
-            ReportWithNote withNote = new ReportWithNote();
+       
 
-            report.getReportDetails().getSections().forEach(sec -> {
-                if (sec.getAttributes() != null) {
-                    sec.getAttributes().forEach(attr -> {
-                        if (attr.getFieldType().equalsIgnoreCase("kpi")) {
-                            attr.setActualTarget(String.valueOf(Math.round(Math.random() * 100)));
-                        }
-                    });
-                }
-            });
-
-            report = saveReport(reportId, report, userId, tenantCode);
-
-            withNote.setNote("Grantee has submitted");
-            withNote.setReport(report);
+        if(toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")){
+            List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
+            report.getGrant().getGrantorOrganization().getId());
             final Report fReport = report;
-            ReportAssignmentsVO ass = report.getWorkflowAssignments().stream().filter(a -> a.getStateId().longValue() == fReport.getStatus().getId().longValue()).findFirst().get();
+            List<WorkflowStatus>draftStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")).collect(Collectors.toList());
+        List<Long> draftStatusIds = draftStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
+        List<Disbursement> draftDisbursements = disbursementService
+        .getDibursementsForGrantByStatuses(report.getGrant().getId(), draftStatusIds);
+        
 
-            MoveReportState(withNote, userService.getUserById(ass.getAssignmentId()).getId(), reportId, report.getStatus().getId(), workflowStatusTransitionService.getByFromStatus(report.getStatus()).getToState().getId(), tenantCode);
-        }*/
+        WorkflowStatus closedtatus = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList()).get(0);
+
+        if(draftDisbursements!=null && draftDisbursements.size()>0){
+            draftDisbursements.removeIf(dd -> (dd.getReportId().longValue()!=fReport.getId() && !dd.isGranteeEntry() ));
+            if(draftDisbursements!=null && draftDisbursements.size()>0){
+                for(Disbursement d: draftDisbursements){
+                    d.setStatus(closedtatus);
+                    List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(d);
+                    if(ads!=null && ads.size()>0){
+                        for(ActualDisbursement ad : ads){
+                            ad.setStatus(false);
+                            ad.setSaved(true);
+                        }
+                    }
+                    disbursementService.saveDisbursement(d);
+                }
+            }
+        }
+
+    }
+
+        
+        // Temporary block to continue testing as Grantee has submitted the report
+        /*
+         * if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) { ReportWithNote
+         * withNote = new ReportWithNote();
+         * 
+         * report.getReportDetails().getSections().forEach(sec -> { if
+         * (sec.getAttributes() != null) { sec.getAttributes().forEach(attr -> { if
+         * (attr.getFieldType().equalsIgnoreCase("kpi")) {
+         * attr.setActualTarget(String.valueOf(Math.round(Math.random() * 100))); } });
+         * } });
+         * 
+         * report = saveReport(reportId, report, userId, tenantCode);
+         * 
+         * withNote.setNote("Grantee has submitted"); withNote.setReport(report); final
+         * Report fReport = report; ReportAssignmentsVO ass =
+         * report.getWorkflowAssignments().stream().filter(a ->
+         * a.getStateId().longValue() ==
+         * fReport.getStatus().getId().longValue()).findFirst().get();
+         * 
+         * MoveReportState(withNote,
+         * userService.getUserById(ass.getAssignmentId()).getId(), reportId,
+         * report.getStatus().getId(),
+         * workflowStatusTransitionService.getByFromStatus(report.getStatus()).
+         * getToState().getId(), tenantCode); }
+         */
 
         return report;
 
@@ -1041,15 +1453,16 @@ public class ReportController {
     }
 
     @GetMapping("/{reportId}/history/")
-    public List<ReportHistory> getReportHistory(@PathVariable("reportId") Long reportId, @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public List<ReportHistory> getReportHistory(@PathVariable("reportId") Long reportId,
+            @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         List<ReportHistory> history = null;
         User user = userService.getUserById(userId);
-        if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
+        if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
             history = reportService.getReportHistory(reportId);
 
-        } else if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
-            history = reportService.getReportHistoryForGrantee(reportId,user.getId());
+        } else if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+            history = reportService.getReportHistoryForGrantee(reportId, user.getId());
         }
         for (ReportHistory historyEntry : history) {
             historyEntry.setNoteAddedByUser(userService.getUserById(historyEntry.getNoteAddedBy()));
@@ -1059,26 +1472,35 @@ public class ReportController {
 
     @PostMapping("/{reportId}/section/{sectionId}/field/{fieldId}")
     @ApiOperation("Delete field in a section")
-    public Report deleteField(@ApiParam(name = "reportToSave", value = "Report to save if in edit mode, passed in Body of request") @RequestBody Report reportToSave, @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "sectionId", value = "Unique identifier of the section being modified") @PathVariable("sectionId") Long sectionId, @ApiParam(name = "fieldId", value = "Unique identifier of the field being deleted") @PathVariable("fieldId") Long fieldId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        /*grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
-        grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
-        grantValidator.validateFieldExists(grantService,grantToSave,sectionId,fieldId);*/
+    public Report deleteField(
+            @ApiParam(name = "reportToSave", value = "Report to save if in edit mode, passed in Body of request") @RequestBody Report reportToSave,
+            @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "sectionId", value = "Unique identifier of the section being modified") @PathVariable("sectionId") Long sectionId,
+            @ApiParam(name = "fieldId", value = "Unique identifier of the field being deleted") @PathVariable("fieldId") Long fieldId,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        /*
+         * grantValidator.validate(grantService,grantId,grantToSave,userId,tenantCode);
+         * grantValidator.validateSectionExists(grantService,grantToSave,sectionId);
+         * grantValidator.validateFieldExists(grantService,grantToSave,sectionId,fieldId
+         * );
+         */
         Report report = saveReport(reportId, reportToSave, userId, tenantCode);
-
 
         ReportStringAttribute stringAttrib = reportService.getReportStringByStringAttributeId(fieldId);
         ReportSpecificSectionAttribute attribute = stringAttrib.getSectionAttribute();
 
         if (stringAttrib.getSectionAttribute().getFieldType().equalsIgnoreCase("document")) {
-            List<ReportStringAttributeAttachments> attachments = reportService.getStringAttributeAttachmentsByStringAttribute(stringAttrib);
+            List<ReportStringAttributeAttachments> attachments = reportService
+                    .getStringAttributeAttachmentsByStringAttribute(stringAttrib);
             reportService.deleteStringAttributeAttachments(attachments);
         }
         reportService.deleteStringAttribute(stringAttrib);
         reportService.deleteSectionAttribute(attribute);
-        ReportStringAttribute rsa2Delete = report.getStringAttributes().stream().filter(g -> g.getId() == stringAttrib.getId()).findFirst().get();
+        ReportStringAttribute rsa2Delete = report.getStringAttributes().stream()
+                .filter(g -> g.getId() == stringAttrib.getId()).findFirst().get();
         report.getStringAttributes().remove(rsa2Delete);
         report = reportService.saveReport(report);
-
 
         if (reportService._checkIfReportTemplateChanged(report, attribute.getSection(), null, this)) {
             GranterReportTemplate newTemplate = reportService._createNewReportTemplateFromExisiting(report);
@@ -1089,17 +1511,21 @@ public class ReportController {
 
     @GetMapping("/templates")
     @ApiOperation("Get all published grant templates for tenant")
-    public List<GranterReportTemplate> getTenantPublishedReportTemplates(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
-        return reportService.findByGranterIdAndPublishedStatusAndPrivateStatus(organizationService.findOrganizationByTenantCode(tenantCode).getId(), true,false);
+    public List<GranterReportTemplate> getTenantPublishedReportTemplates(
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("userId") Long userId) {
+        return reportService.findByGranterIdAndPublishedStatusAndPrivateStatus(
+                organizationService.findOrganizationByTenantCode(tenantCode).getId(), true, false);
     }
 
     @PutMapping("/{reportId}/template/{templateId}/{templateName}")
     @ApiOperation("Save custom grant template with name and description")
-    public Report updateTemplateName(@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
-                                    @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
-                                    @ApiParam(name = "templateId", value = "Unique identfier of the grant template") @PathVariable("templateId") Long templateId,
-                                    @ApiParam(name = "templateName", value = "NName of the template to be saved") @PathVariable("templateName") String templateName,
-                                    @ApiParam(name = "templateDate", value = "Additional information about the template such as descriptio, publish or save as private") @RequestBody TemplateMetaData templateData) {
+    public Report updateTemplateName(
+            @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "templateId", value = "Unique identfier of the grant template") @PathVariable("templateId") Long templateId,
+            @ApiParam(name = "templateName", value = "NName of the template to be saved") @PathVariable("templateName") String templateName,
+            @ApiParam(name = "templateDate", value = "Additional information about the template such as descriptio, publish or save as private") @RequestBody TemplateMetaData templateData) {
 
         GranterReportTemplate template = granterReportTemplateService.findByTemplateId(templateId);
         template.setName(templateName);
@@ -1110,14 +1536,18 @@ public class ReportController {
         reportService.saveReportTemplate(template);
 
         Report report = reportService.getReportById(reportId);
-        report = _ReportToReturn(report,userId);
+        report = _ReportToReturn(report, userId);
         return report;
 
     }
 
     @GetMapping("/create/grant/{grantId}/template/{templateId}")
     @ApiOperation("Create new report with a template")
-    public Report createReport(@ApiParam(name = "grantId", value = "Unique identifier for the selected grant") @PathVariable("grantId") Long grantId,@ApiParam(name = "templateId", value = "Unique identifier for the selected template") @PathVariable("templateId") Long templateId, @PathVariable("userId") Long userId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public Report createReport(
+            @ApiParam(name = "grantId", value = "Unique identifier for the selected grant") @PathVariable("grantId") Long grantId,
+            @ApiParam(name = "templateId", value = "Unique identifier for the selected template") @PathVariable("templateId") Long templateId,
+            @PathVariable("userId") Long userId,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Report report = new Report();
         Grant reportForGrant = grantService.getById(grantId);
         GranterReportTemplate reportTemplate = reportService.findByTemplateId(templateId);
@@ -1125,7 +1555,8 @@ public class ReportController {
         report.setName("");
         report.setStartDate(null);
         report.setStDate("");
-        report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT", organizationService.findOrganizationByTenantCode(tenantCode).getId()));
+        report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",
+                organizationService.findOrganizationByTenantCode(tenantCode).getId()));
         report.setEndDate(null);
         report.setEnDate("");
         report.setGrant(reportForGrant);
@@ -1140,12 +1571,18 @@ public class ReportController {
 
         Organization granterOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         List<WorkflowStatus> statuses = new ArrayList<>();
-        List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionService.getStatusTransitionsForWorkflow(workflowService.findByGranterAndObject(granterOrg, WorkflowObject.REPORT));
+        List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionService
+                .getStatusTransitionsForWorkflow(
+                        workflowService.findByGranterAndObject(granterOrg, WorkflowObject.REPORT));
         for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
-            if(!statuses.stream().filter(s -> Long.valueOf(s.getId())==Long.valueOf(supportedTransition.getFromState().getId())).findAny().isPresent()) {
+            if (!statuses.stream()
+                    .filter(s -> Long.valueOf(s.getId()) == Long.valueOf(supportedTransition.getFromState().getId()))
+                    .findAny().isPresent()) {
                 statuses.add(supportedTransition.getFromState());
             }
-            if(!statuses.stream().filter(s -> Long.valueOf(s.getId())==Long.valueOf(supportedTransition.getToState().getId())).findAny().isPresent()) {
+            if (!statuses.stream()
+                    .filter(s -> Long.valueOf(s.getId()) == Long.valueOf(supportedTransition.getToState().getId()))
+                    .findAny().isPresent()) {
                 statuses.add(supportedTransition.getToState());
             }
         }
@@ -1164,15 +1601,13 @@ public class ReportController {
             }
         }
 
-
-
         List<GranterReportSection> granterReportSections = reportTemplate.getSections();
         report.setStringAttributes(new ArrayList<>());
 
         for (GranterReportSection reportSection : granterReportSections) {
             ReportSpecificSection specificSection = new ReportSpecificSection();
             specificSection.setDeletable(true);
-            specificSection.setGranter((Granter)organizationService.findOrganizationByTenantCode(tenantCode));
+            specificSection.setGranter((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
             specificSection.setReportId(report.getId());
             specificSection.setReportTemplateId(reportTemplate.getId());
             specificSection.setSectionName(reportSection.getSectionName());
@@ -1181,7 +1616,7 @@ public class ReportController {
             specificSection = reportService.saveReportSpecificSection(specificSection);
             ReportSpecificSection finalSpecificSection = specificSection;
             Report finalReport = report;
-            final AtomicInteger[] attribVOOrder = {new AtomicInteger(1)};
+            final AtomicInteger[] attribVOOrder = { new AtomicInteger(1) };
             Report finalReport1 = report;
             reportSection.getAttributes().forEach(a -> {
                 ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
@@ -1204,57 +1639,81 @@ public class ReportController {
                 if (sectionAttribute.getFieldType().equalsIgnoreCase("kpi")) {
                     stringAttribute.setGrantLevelTarget(null);
                     stringAttribute.setFrequency(finalReport1.getType().toLowerCase());
-                } else if (sectionAttribute.getFieldType().equalsIgnoreCase("table") || sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
+                } else if (sectionAttribute.getFieldType().equalsIgnoreCase("table")
+                        ) {
                     stringAttribute.setValue(a.getExtras());
                 }
                 stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
             });
         }
 
-        report = _ReportToReturn(report,userId);
+        report = _ReportToReturn(report, userId);
         return report;
     }
 
     @PostMapping(value = "/{reportId}/attachments", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public byte[] downloadSelectedAttachments(@PathVariable("userId") Long userId, @PathVariable("reportId") Long reportId, @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest, HttpServletResponse response) throws IOException {
+    public byte[] downloadSelectedAttachments(@PathVariable("userId") Long userId,
+            @PathVariable("reportId") Long reportId, @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @RequestBody AttachmentDownloadRequest downloadRequest, HttpServletResponse response) throws IOException {
 
         ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
-        //setting headers
+        // setting headers
         response.setContentType("application/zip");
         response.setStatus(HttpServletResponse.SC_OK);
         response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
 
-        //creating byteArray stream, make it bufforable and passing this buffor to ZipOutputStream
+        // creating byteArray stream, make it bufforable and passing this buffor to
+        // ZipOutputStream
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
         ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
 
-        //simple file list, just for tests
+        // simple file list, just for tests
 
         ArrayList<File> files = new ArrayList<>(2);
         files.add(new File("README.md"));
 
-        User user= userService.getUserById(userId);
+        User user = userService.getUserById(userId);
 
-        //packing files
+        // packing files
         for (Long attachmentId : downloadRequest.getAttachmentIds()) {
-            ReportStringAttributeAttachments attachment = reportService.getStringAttributeAttachmentsByAttachmentId(attachmentId);
+            ReportStringAttributeAttachments attachment = reportService
+                    .getStringAttributeAttachmentsByAttachmentId(attachmentId);
             Long sectionId = attachment.getReportStringAttribute().getSectionAttribute().getSection().getId();
             Long attributeId = attachment.getReportStringAttribute().getSectionAttribute().getId();
             File file = null;
-            if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-                 file = resourceLoader.getResource("file:" + uploadLocation + user.getOrganization().getName().toUpperCase() + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType()).getFile();
-                 if(!file.exists()){
-                     file = resourceLoader.getResource("file:" + uploadLocation + reportService.getReportById(reportId).getGrant().getGrantorOrganization().getCode().toUpperCase() + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType()).getFile();
-                 }
-            } else{
-                file = resourceLoader.getResource("file:" + uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType()).getFile();
-                if(!file.exists()){
+            if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                file = resourceLoader.getResource("file:" + uploadLocation
+                        + user.getOrganization().getName().toUpperCase() + "/report-documents/" + reportId + "/"
+                        + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType())
+                        .getFile();
+                if (!file.exists()) {
+                    file = resourceLoader
+                            .getResource("file:" + uploadLocation
+                                    + reportService.getReportById(reportId).getGrant().getGrantorOrganization()
+                                            .getCode().toUpperCase()
+                                    + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/"
+                                    + attachment.getName() + "." + attachment.getType())
+                            .getFile();
+                }
+            } else {
+                file = resourceLoader.getResource(
+                        "file:" + uploadLocation + tenantCode + "/report-documents/" + reportId + "/" + sectionId + "/"
+                                + attributeId + "/" + attachment.getName() + "." + attachment.getType())
+                        .getFile();
+                if (!file.exists()) {
 
-                    file = resourceLoader.getResource("file:" + uploadLocation + reportService.getReportById(reportId).getGrant().getOrganization().getName().toUpperCase() + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType()).getFile();
+                    file = resourceLoader
+                            .getResource("file:" + uploadLocation
+                                    + reportService.getReportById(reportId).getGrant().getOrganization().getName()
+                                            .toUpperCase()
+                                    + "/report-documents/" + reportId + "/" + sectionId + "/" + attributeId + "/"
+                                    + attachment.getName() + "." + attachment.getType())
+                            .getFile();
                 }
             }
-            //new zip entry and copying inputstream with file to zipOutputStream, after all closing streams
+            // new zip entry and copying inputstream with file to zipOutputStream, after all
+            // closing streams
             zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
             FileInputStream fileInputStream = new FileInputStream(file);
 
@@ -1274,26 +1733,31 @@ public class ReportController {
         return byteArrayOutputStream.toByteArray();
     }
 
-
     @GetMapping("/{reportId}/file/{fileId}")
     @ApiOperation(value = "Get file for download")
-    public ResponseEntity<Resource> getFileForDownload(HttpServletResponse servletResponse, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("reportId") Long reportId, @PathVariable("fileId") Long fileId) {
+    public ResponseEntity<Resource> getFileForDownload(HttpServletResponse servletResponse,
+            @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("reportId") Long reportId,
+            @PathVariable("fileId") Long fileId) {
 
         ReportStringAttributeAttachments attachment = reportService.getStringAttributeAttachmentsByAttachmentId(fileId);
-        String filePath = attachment.getLocation() + attachment.getName()+"."+attachment.getType();
+        String filePath = attachment.getLocation() + attachment.getName() + "." + attachment.getType();
 
-        /*servletResponse.setContentType(file.getcMediaType.IMAGE_PNG_VALUE);
-        servletResponse.setHeader("org-name",organizationService.findOrganizationByTenantCode(tenant).getName());*/
+        /*
+         * servletResponse.setContentType(file.getcMediaType.IMAGE_PNG_VALUE);
+         * servletResponse.setHeader("org-name",organizationService.
+         * findOrganizationByTenantCode(tenant).getName());
+         */
         try {
             File file = resourceLoader.getResource("file:" + filePath).getFile();
             InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
 
             HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+attachment.getName()+"."+attachment.getType());
-            servletResponse.setHeader("filename", attachment.getName()+"."+attachment.getType());
-            return  ResponseEntity.ok().headers(headers).contentLength(file.length()).contentType(MediaType.parseMediaType("application/octet-stream"))
-                    .body(resource);
-            //StreamUtils.copy(file.getInputStream(), servletResponse.getOutputStream());
+            headers.add(HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=" + attachment.getName() + "." + attachment.getType());
+            servletResponse.setHeader("filename", attachment.getName() + "." + attachment.getType());
+            return ResponseEntity.ok().headers(headers).contentLength(file.length())
+                    .contentType(MediaType.parseMediaType("application/octet-stream")).body(resource);
+            // StreamUtils.copy(file.getInputStream(), servletResponse.getOutputStream());
         } catch (IOException ex) {
             logger.error(ex.getMessage(), ex);
         }
@@ -1302,12 +1766,20 @@ public class ReportController {
 
     @PostMapping("{reportId}/attribute/{attributeId}/attachment/{attachmentId}")
     @ApiOperation("Delete attachment from document field")
-    public Report deleteReportStringAttributeAttachment(@ApiParam(name = "reportToSave", value = "Report to save in edit mode, pass in Body of request") @RequestBody Report reportToSave, @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId, @ApiParam(name = "userId", value = "Unique identifier og logged in user") @PathVariable("userId") Long userId, @ApiParam(name = "attachmentId", value = "Unique identifier of the document attachment being deleted") @PathVariable("attachmentId") Long attachmentId, @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode, @ApiParam(name = "attributeId", value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId) {
-        saveReport(reportId,reportToSave, userId, tenantCode);
-        ReportStringAttributeAttachments attch = reportService.getStringAttributeAttachmentsByAttachmentId(attachmentId);
-        reportService.deleteStringAttributeAttachments(Arrays.asList(new ReportStringAttributeAttachments[]{attch}));
+    public Report deleteReportStringAttributeAttachment(
+            @ApiParam(name = "reportToSave", value = "Report to save in edit mode, pass in Body of request") @RequestBody Report reportToSave,
+            @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "userId", value = "Unique identifier og logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "attachmentId", value = "Unique identifier of the document attachment being deleted") @PathVariable("attachmentId") Long attachmentId,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @ApiParam(name = "attributeId", value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId) {
+        saveReport(reportId, reportToSave, userId, tenantCode);
+        ReportStringAttributeAttachments attch = reportService
+                .getStringAttributeAttachmentsByAttachmentId(attachmentId);
+        reportService.deleteStringAttributeAttachments(Arrays.asList(new ReportStringAttributeAttachments[] { attch }));
         ReportStringAttribute stringAttribute = reportService.findReportStringAttributeById(attributeId);
-        List<ReportStringAttributeAttachments> stringAttributeAttachments = reportService.getStringAttributeAttachmentsByStringAttribute(stringAttribute);
+        List<ReportStringAttributeAttachments> stringAttributeAttachments = reportService
+                .getStringAttributeAttachmentsByStringAttribute(stringAttribute);
         ObjectMapper mapper = new ObjectMapper();
         try {
             stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
@@ -1316,27 +1788,29 @@ public class ReportController {
             logger.error(e.getMessage(), e);
         }
 
-
         Report report = reportService.getReportById(reportId);
 
-        report = _ReportToReturn(report,userId);
+        report = _ReportToReturn(report, userId);
         return report;
     }
 
     @GetMapping("/resolve")
-    public Report resolveReport(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,@RequestParam("r") String reportCode){
+    public Report resolveReport(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @RequestParam("r") String reportCode) {
         Long reportId = Long.valueOf(new String(Base64.getDecoder().decode(reportCode), StandardCharsets.UTF_8));
         Report report = reportService.getReportById(reportId);
 
-        report = _ReportToReturn(report,userId);
+        report = _ReportToReturn(report, userId);
         _checkAndReturnHistoricalReport(userId, report);
         return report;
     }
 
     private void _checkAndReturnHistoricalReport(@PathVariable("userId") Long userId, Report report) {
-        if (userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && report.getStatus().getInternalStatus().equalsIgnoreCase("REVIEW")) {
+        if (userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")
+                && report.getStatus().getInternalStatus().equalsIgnoreCase("REVIEW")) {
             try {
-                ReportHistory historicReport = reportService.getSingleReportHistoryByStatusAndReportId("ACTIVE", report.getId());
+                ReportHistory historicReport = reportService.getSingleReportHistoryByStatusAndReportId("ACTIVE",
+                        report.getId());
                 if (historicReport != null && historicReport.getReportDetail() != null) {
                     ObjectMapper mapper = new ObjectMapper();
                     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

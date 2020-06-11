@@ -91,7 +91,7 @@ public class ReportDetailVO {
             e.printStackTrace();
           }
           sectionAttribute.setFieldTableValue(tableData);
-        } else if(sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")){
+        } /*else if(sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")){
           ObjectMapper mapper = new ObjectMapper();
           String[] colHeaders = new String[]{"Disbursement Date","Actual Disbursement","Funds from other Sources","Notes"};
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){
@@ -120,7 +120,7 @@ public class ReportDetailVO {
             e.printStackTrace();
           }
           sectionAttribute.setFieldTableValue(tableData);
-        } else if(sectionAttribute.getFieldType().equalsIgnoreCase("document")){
+        }*/ else if(sectionAttribute.getFieldType().equalsIgnoreCase("document")){
 
           ObjectMapper mapper = new ObjectMapper();
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
