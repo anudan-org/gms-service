@@ -29,17 +29,15 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/user/{userId}/disbursements")
@@ -413,5 +411,16 @@ public class DisbursementsController {
 
         ActualDisbursement actualDisbursement = disbursementService.getActualDisbursementById(actualDisbursementId);
         disbursementService.deleteActualDisbursement(actualDisbursement);
+    }
+
+
+    @GetMapping("/resolve")
+    public Disbursement resolveDisbursement(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @RequestParam("d") String disbursementCode) {
+        Long disbursementId = Long.valueOf(new String(Base64.getDecoder().decode(disbursementCode), StandardCharsets.UTF_8));
+        Disbursement disbursement = disbursementService.getDisbursementById(disbursementId);
+
+        disbursement = disbursementService.disbursementToReturn(disbursement,userId);
+        return disbursement;
     }
 }

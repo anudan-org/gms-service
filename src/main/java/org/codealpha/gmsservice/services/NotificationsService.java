@@ -34,7 +34,9 @@ public List<Notifications> getAllUserNotifications(Long userId){
           notification.setReportId(id);
       }else if(notificationFor.equalsIgnoreCase("GRANT")){
           notification.setGrantId(id);
-      }
+      }else if(notificationFor.equalsIgnoreCase("DISBURSEMENT")){
+        notification.setDisbursementId(id);
+    }
       return notificationsRepository.save(notification);
   }
 
