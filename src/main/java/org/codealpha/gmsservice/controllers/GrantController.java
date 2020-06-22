@@ -1633,7 +1633,7 @@ public class GrantController {
 
         List<User> usersToNotify = new ArrayList<>();// userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
 
-        List<GrantAssignments> assigments = grantService.getGrantWorkflowAssignments(grant);
+        final List<GrantAssignments> assigments = grantService.getGrantWorkflowAssignments(grant);
         assigments.forEach(ass -> {
             if (!usersToNotify.stream().filter(u -> u.getId() == ass.getAssignments()).findFirst().isPresent()) {
                 usersToNotify.add(userService.getUserById(ass.getAssignments()));
@@ -1709,17 +1709,36 @@ public class GrantController {
                     new String[] {
                             appConfigService.getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                                     AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
+
+            usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
+                    finalGrant.getId(), "GRANT"));
+            notificationsService.saveNotification(notificationContent, currentOwner.getId(), finalGrant.getId(),
+                    "GRANT");
         } else {
-            usersToNotify.forEach(u -> {
-                commonEmailSevice.sendMail(u.getEmailId(), null, emailNotificationContent[0],
-                        emailNotificationContent[1],
-                        new String[] {
-                                appConfigService.getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                                        AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
-            });
+
+            WorkflowStatus activeStatus = workflowStatusService
+                    .getTenantWorkflowStatuses("GRANT", grant.getGrantorOrganization().getId()).stream()
+                    .filter(st -> st.getInternalStatus().equalsIgnoreCase("ACTIVE")).findFirst().get();
+            GrantAssignments activeStateAssignment = grantService.getGrantWorkflowAssignments(grant).stream()
+                    .filter(ass -> ass.getStateId().longValue() == activeStatus.getId().longValue()).findFirst().get();
+
+            User activeStateOwner = userService.getUserById(activeStateAssignment.getAssignments());
+            usersToNotify.removeIf(u -> u.getId().longValue() == activeStateOwner.getId().longValue());
+
+            commonEmailSevice.sendMail(activeStateOwner.getEmailId(),
+                    usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                            .toArray(new String[usersToNotify.size()]),
+                    emailNotificationContent[0], emailNotificationContent[1],
+                    new String[] {
+                            appConfigService.getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
+                                    AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
+
+            usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
+                    finalGrant.getId(), "GRANT"));
+            notificationsService.saveNotification(notificationContent, activeStateOwner.getId(), finalGrant.getId(),
+                    "GRANT");
+
         }
-        usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
-                finalGrant.getId(), "GRANT"));
 
         // }
 

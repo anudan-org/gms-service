@@ -358,20 +358,39 @@ public class DisbursementsController {
                                                                         .getGrantorOrganization().getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue() });
+                        usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent,
+                                        u.getId(), finalDisbursement.getId(), "DISBURSEMENT"));
+                        notificationsService.saveNotification(notificationContent, finalCurrentOwner.getId(),
+                                        finalDisbursement.getId(), "DISBURSEMENT");
 
                 } else {
-                        usersToNotify.forEach(u -> {
-                                commonEmailSevice.sendMail(u.getEmailId(), null, emailNotificationContent[0],
-                                                emailNotificationContent[1],
-                                                new String[] { appConfigService
-                                                                .getAppConfigForGranterOrg(finalDisbursement.getGrant()
-                                                                                .getGrantorOrganization().getId(),
-                                                                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                                .getConfigValue() });
-                        });
+
+                        WorkflowStatus activeStatus = workflowStatusService
+                                        .getTenantWorkflowStatuses("DISBURSEMENT",
+                                                        disbursement.getGrant().getGrantorOrganization().getId())
+                                        .stream().filter(st -> st.getInternalStatus().equalsIgnoreCase("ACTIVE"))
+                                        .findFirst().get();
+                        User activeStatusOwner = userService.getUserById(disbursementService
+                                        .getDisbursementAssignments(disbursement).stream()
+                                        .filter(ass -> ass.getStateId().longValue() == activeStatus.getId().longValue())
+                                        .findFirst().get().getOwner());
+                        usersToNotify.removeIf(u -> u.getId().longValue() == activeStatusOwner.getId().longValue());
+
+                        commonEmailSevice.sendMail(activeStatusOwner.getEmailId(),
+                                        usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                                                        .toArray(new String[usersToNotify.size()]),
+                                        emailNotificationContent[0], emailNotificationContent[1],
+                                        new String[] { appConfigService
+                                                        .getAppConfigForGranterOrg(finalDisbursement.getGrant()
+                                                                        .getGrantorOrganization().getId(),
+                                                                        AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                                        .getConfigValue() });
+                        usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent,
+                                        u.getId(), finalDisbursement.getId(), "DISBURSEMENT"));
+                        notificationsService.saveNotification(notificationContent, activeStatusOwner.getId(),
+                                        finalDisbursement.getId(), "DISBURSEMENT");
+
                 }
-                usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent,
-                                u.getId(), finalDisbursement.getId(), "DISBURSEMENT"));
 
                 if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
                         disbursementService.createEmtptyActualDisbursement(disbursement);
