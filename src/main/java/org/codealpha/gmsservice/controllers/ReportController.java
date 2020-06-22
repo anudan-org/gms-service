@@ -264,8 +264,6 @@ public class ReportController {
 
         showDisbursementsForReport(report);
 
-
-
         report.setNoteAddedBy(reportVO.getNoteAddedBy());
         report.setNoteAddedByUser(reportVO.getNoteAddedByUser());
 
@@ -294,33 +292,22 @@ public class ReportController {
         List<TableData> approvedDisbursements = new ArrayList<>();
         AtomicInteger installmentNumber = new AtomicInteger();
 
-        /* if (report.getLinkedApprovedReports() != null) {
-            approvedReports = reportService.getReportsByIds(report.getLinkedApprovedReports());
-            for (Report approvedReport : approvedReports) {
-                reportService.getReportSections(approvedReport).forEach(sec -> {
-                    if (sec.getAttributes() != null) {
-                        sec.getAttributes().forEach(attr -> {
-                            if (attr.getFieldType().equalsIgnoreCase("disbursement")) {
-
-                                try {
-                                    List<TableData> tableDataList = mapper.readValue(
-                                            reportService.getReportStringByStringAttributeId(attr.getId()).getValue(),
-                                            new TypeReference<List<TableData>>() {
-                                            });
-                                    tableDataList.forEach(td -> {
-                                        approvedDisbursements.add(td);
-                                        installmentNumber.getAndIncrement();
-                                    });
-                                } catch (Exception e) {
-                                    logger.error("Failed for report "+report.getId(),e);
-                                }
-
-                            }
-                        });
-                    }
-                });
-            }
-        } */
+        /*
+         * if (report.getLinkedApprovedReports() != null) { approvedReports =
+         * reportService.getReportsByIds(report.getLinkedApprovedReports()); for (Report
+         * approvedReport : approvedReports) {
+         * reportService.getReportSections(approvedReport).forEach(sec -> { if
+         * (sec.getAttributes() != null) { sec.getAttributes().forEach(attr -> { if
+         * (attr.getFieldType().equalsIgnoreCase("disbursement")) {
+         * 
+         * try { List<TableData> tableDataList = mapper.readValue(
+         * reportService.getReportStringByStringAttributeId(attr.getId()).getValue(),
+         * new TypeReference<List<TableData>>() { }); tableDataList.forEach(td -> {
+         * approvedDisbursements.add(td); installmentNumber.getAndIncrement(); }); }
+         * catch (Exception e) { logger.error("Failed for report "+report.getId(),e); }
+         * 
+         * } }); } }); } }
+         */
 
         report.getGrant().setApprovedReportsDisbursements(approvedDisbursements);
 
@@ -354,11 +341,13 @@ public class ReportController {
 
         List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
                 .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
-        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
+        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                .collect(Collectors.toList());
 
-        List<WorkflowStatus>draftStatuses = workflowStatuses.stream()
+        List<WorkflowStatus> draftStatuses = workflowStatuses.stream()
                 .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")).collect(Collectors.toList());
-        List<Long> draftStatusIds = draftStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
+        List<Long> draftStatusIds = draftStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                .collect(Collectors.toList());
 
         List<ActualDisbursement> finalActualDisbursements = new ArrayList();
         report.getReportDetails().getSections().forEach(s -> {
@@ -375,76 +364,80 @@ public class ReportController {
                                 closedDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
                                 AtomicInteger index = new AtomicInteger(1);
                                 closedDisbursements.forEach(cd -> {
-                                    List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
-                                    if(ads!=null && ads.size()>0){
-                                        finalActualDisbursements.addAll(ads);                                    
-                                }
-
-                                });
-                            }
-
-                            if(draftDisbursements!=null && draftDisbursements.size()>0){
-                            draftDisbursements.removeIf(dd -> (dd.getReportId()!=null && dd.getReportId().longValue()!=report.getId() && !dd.isGranteeEntry() ));
-                            if (draftDisbursements != null) {
-                                draftDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
-                                AtomicInteger index = new AtomicInteger(1);
-                                draftDisbursements.forEach(cd -> {
-                                    List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
-                                    if(ads!=null && ads.size()>0){
+                                    List<ActualDisbursement> ads = disbursementService
+                                            .getActualDisbursementsForDisbursement(cd);
+                                    if (ads != null && ads.size() > 0) {
                                         finalActualDisbursements.addAll(ads);
-                                }
+                                    }
 
                                 });
                             }
+
+                            if (draftDisbursements != null && draftDisbursements.size() > 0) {
+                                draftDisbursements.removeIf(dd -> (dd.getReportId() != null
+                                        && dd.getReportId().longValue() != report.getId() && !dd.isGranteeEntry()));
+                                if (draftDisbursements != null) {
+                                    draftDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
+                                    AtomicInteger index = new AtomicInteger(1);
+                                    draftDisbursements.forEach(cd -> {
+                                        List<ActualDisbursement> ads = disbursementService
+                                                .getActualDisbursementsForDisbursement(cd);
+                                        if (ads != null && ads.size() > 0) {
+                                            finalActualDisbursements.addAll(ads);
+                                        }
+
+                                    });
+                                }
                             }
 
                             finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
-                            if(finalActualDisbursements.size()>0){
+                            if (finalActualDisbursements.size() > 0) {
                                 AtomicInteger index = new AtomicInteger(1);
-                            finalActualDisbursements.forEach(ad -> {
-                                TableData td = new TableData();
-                                ColumnData[] colDataList = new ColumnData[4];
-                                td.setName(String.valueOf(index.getAndIncrement()));
-                                td.setHeader("#");
-                                td.setStatus(ad.getStatus());
-                                td.setSaved(ad.getSaved());
-                                if(disbursementService.getDisbursementById(ad.getDisbursementId()).isGranteeEntry()){
-                                    td.setEnteredByGrantee(true);
+                                finalActualDisbursements.forEach(ad -> {
+                                    TableData td = new TableData();
+                                    ColumnData[] colDataList = new ColumnData[4];
+                                    td.setName(String.valueOf(index.getAndIncrement()));
+                                    td.setHeader("#");
+                                    td.setStatus(ad.getStatus());
+                                    td.setSaved(ad.getSaved());
+                                    if (disbursementService.getDisbursementById(ad.getDisbursementId())
+                                            .isGranteeEntry()) {
+                                        td.setEnteredByGrantee(true);
+                                    }
+                                    ColumnData cdDate = new ColumnData();
+                                    cdDate.setDataType("date");
+                                    cdDate.setName("Disbursement Date");
+                                    cdDate.setValue(
+                                            new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate()));
+
+                                    ColumnData cdDA = new ColumnData();
+                                    cdDA.setDataType("currency");
+                                    cdDA.setName("Actual Disbursement");
+                                    cdDA.setValue(String.valueOf(ad.getActualAmount()));
+
+                                    ColumnData cdFOS = new ColumnData();
+                                    cdFOS.setDataType("currency");
+                                    cdFOS.setName("Funds from Other Sources");
+                                    cdFOS.setValue(String.valueOf(ad.getOtherSources()));
+
+                                    ColumnData cdN = new ColumnData();
+                                    cdN.setName("Notes");
+                                    cdN.setValue(ad.getNote());
+
+                                    colDataList[0] = cdDate;
+                                    colDataList[1] = cdDA;
+                                    colDataList[2] = cdFOS;
+                                    colDataList[3] = cdN;
+                                    td.setColumns(colDataList);
+                                    tableDataList.add(td);
+                                });
+                                a.setFieldTableValue(tableDataList);
+                                try {
+                                    a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
+                                } catch (IOException e) {
+                                    logger.error(e.getMessage(), e);
                                 }
-                                ColumnData cdDate = new ColumnData();
-                                cdDate.setDataType("date");
-                                cdDate.setName("Disbursement Date");
-                                cdDate.setValue(
-                                        new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate()));
-
-                                ColumnData cdDA = new ColumnData();
-                                cdDA.setDataType("currency");
-                                cdDA.setName("Actual Disbursement");
-                                cdDA.setValue(String.valueOf(ad.getActualAmount()));
-
-                                ColumnData cdFOS = new ColumnData();
-                                cdFOS.setDataType("currency");
-                                cdFOS.setName("Funds from Other Sources");
-                                cdFOS.setValue(String.valueOf(ad.getOtherSources()));
-
-                                ColumnData cdN = new ColumnData();
-                                cdN.setName("Notes");
-                                cdN.setValue(ad.getNote());
-
-                                colDataList[0] = cdDate;
-                                colDataList[1] = cdDA;
-                                colDataList[2] = cdFOS;
-                                colDataList[3] = cdN;
-                                td.setColumns(colDataList);
-                                tableDataList.add(td);
-                            });
-                            a.setFieldTableValue(tableDataList);
-                            try {
-                                a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
-                            } catch (IOException e) {
-                                logger.error(e.getMessage(), e);
                             }
-                        }
                         } else {
                             List<TableData> tableDataList = new ArrayList<>();
 
@@ -455,69 +448,69 @@ public class ReportController {
                                 if (closedDisbursements != null) {
                                     closedDisbursements.forEach(cd -> {
 
-                                        List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
-                                        if(ads!=null && ads.size()>0){
+                                        List<ActualDisbursement> ads = disbursementService
+                                                .getActualDisbursementsForDisbursement(cd);
+                                        if (ads != null && ads.size() > 0) {
                                             finalActualDisbursements.addAll(ads);
                                         }
                                     });
                                 }
                             }
-                            
+
                             finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
-                            if(finalActualDisbursements.size()>0){
+                            if (finalActualDisbursements.size() > 0) {
                                 AtomicInteger index = new AtomicInteger(1);
-                            finalActualDisbursements.forEach(ad -> {
-                                TableData td = new TableData();
-                                ColumnData[] colDataList = new ColumnData[4];
-                                td.setName(String.valueOf(index.getAndIncrement()));
-                                td.setHeader("#");
-                                td.setStatus(ad.getStatus());
-                                td.setSaved(ad.getStatus());
-                                if(disbursementService.getDisbursementById(ad.getDisbursementId()).isGranteeEntry()){
-                                    td.setEnteredByGrantee(true);
+                                finalActualDisbursements.forEach(ad -> {
+                                    TableData td = new TableData();
+                                    ColumnData[] colDataList = new ColumnData[4];
+                                    td.setName(String.valueOf(index.getAndIncrement()));
+                                    td.setHeader("#");
+                                    td.setStatus(ad.getStatus());
+                                    td.setSaved(ad.getStatus());
+                                    if (disbursementService.getDisbursementById(ad.getDisbursementId())
+                                            .isGranteeEntry()) {
+                                        td.setEnteredByGrantee(true);
+                                    }
+                                    ColumnData cdDate = new ColumnData();
+                                    cdDate.setDataType("date");
+                                    cdDate.setName("Disbursement Date");
+                                    cdDate.setValue(
+                                            new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate()));
+
+                                    ColumnData cdDA = new ColumnData();
+                                    cdDA.setDataType("currency");
+                                    cdDA.setName("Actual Disbursement");
+                                    cdDA.setValue(String.valueOf(ad.getActualAmount()));
+
+                                    ColumnData cdFOS = new ColumnData();
+                                    cdFOS.setDataType("currency");
+                                    cdFOS.setName("Funds from Other Sources");
+                                    cdFOS.setValue(String.valueOf(ad.getOtherSources()));
+
+                                    ColumnData cdN = new ColumnData();
+                                    cdN.setName("Notes");
+                                    cdN.setValue(ad.getNote());
+
+                                    colDataList[0] = cdDate;
+                                    colDataList[1] = cdDA;
+                                    colDataList[2] = cdFOS;
+                                    colDataList[3] = cdN;
+                                    td.setColumns(colDataList);
+                                    tableDataList.add(td);
+                                });
+                                a.setFieldTableValue(tableDataList);
+                                try {
+                                    a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
+                                } catch (IOException e) {
+                                    logger.error(e.getMessage(), e);
                                 }
-                                ColumnData cdDate = new ColumnData();
-                                cdDate.setDataType("date");
-                                cdDate.setName("Disbursement Date");
-                                cdDate.setValue(
-                                        new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate()));
-
-                                ColumnData cdDA = new ColumnData();
-                                cdDA.setDataType("currency");
-                                cdDA.setName("Actual Disbursement");
-                                cdDA.setValue(String.valueOf(ad.getActualAmount()));
-
-                                ColumnData cdFOS = new ColumnData();
-                                cdFOS.setDataType("currency");
-                                cdFOS.setName("Funds from Other Sources");
-                                cdFOS.setValue(String.valueOf(ad.getOtherSources()));
-
-                                ColumnData cdN = new ColumnData();
-                                cdN.setName("Notes");
-                                cdN.setValue(ad.getNote());
-
-                                colDataList[0] = cdDate;
-                                colDataList[1] = cdDA;
-                                colDataList[2] = cdFOS;
-                                colDataList[3] = cdN;
-                                td.setColumns(colDataList);
-                                tableDataList.add(td);
-                            });
-                            a.setFieldTableValue(tableDataList);
-                            try {
-                                a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
-                            } catch (IOException e) {
-                                logger.error(e.getMessage(), e);
                             }
-                        }
                         }
 
                     }
                 });
             }
         });
-
-
 
     }
 
@@ -660,15 +653,14 @@ public class ReportController {
                         List<TableData> tableData = sectionAttributesVO.getFieldTableValue();
                         // Do the below only if field type is Disbursement
                         // The idea is to create a real disbursement if a new row is added
-                        if (sectionAttribute.getFieldType().equalsIgnoreCase("disbursement") && user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")){
+                        if (sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")
+                                && user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
                             try {
                                 List<TableData> newEntries = new ArrayList();
                                 List<TableData> missingEntries = new ArrayList();
-                                
-                                
 
                                 // Find out new entries
-                                if(tableData!=null){
+                                if (tableData != null) {
                                     for (TableData td : tableData) {
                                         if (td.isStatus() && !td.isSaved()) {
                                             newEntries.add(td);
@@ -676,7 +668,7 @@ public class ReportController {
                                     }
                                 }
 
-                                if(tableData!=null){
+                                if (tableData != null) {
                                     for (TableData et : tableData) {
                                         if (!et.isStatus()) {
                                             missingEntries.add(et);
@@ -686,23 +678,30 @@ public class ReportController {
 
                                 if (newEntries.size() > 0) {
                                     Disbursement newDisbursement = new Disbursement();
-                                        DateTime now = new DateTime();
-                                        newDisbursement.setCreatedAt(now.withSecondOfMinute(0).withMillis(0).toDate());
-                                        newDisbursement.setCreatedBy(user.getEmailId());
-                                        newDisbursement.setMovedOn(now.toDate());
-                                        newDisbursement.setGrant(report.getGrant());
-                                        newDisbursement.setGranteeEntry(true);
-                                        newDisbursement.setReportId(report.getId());
-                                        List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",report.getGrant().getGrantorOrganization().getId());
-                                        List<WorkflowStatus> closedStatuses = workflowStatuses.stream().filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")).collect(Collectors.toList());
-                                        newDisbursement.setStatus(closedStatuses.get(0));
-                                        newDisbursement = disbursementService.saveDisbursement(newDisbursement);
-                                    for(TableData nData :newEntries){
-                                      
+                                    DateTime now = new DateTime();
+                                    newDisbursement.setCreatedAt(now.withSecondOfMinute(0).withMillis(0).toDate());
+                                    newDisbursement.setCreatedBy(user.getEmailId());
+                                    newDisbursement.setMovedOn(now.toDate());
+                                    newDisbursement.setGrant(report.getGrant());
+                                    newDisbursement.setGranteeEntry(true);
+                                    newDisbursement.setReportId(report.getId());
+                                    List<WorkflowStatus> workflowStatuses = workflowStatusService
+                                            .getTenantWorkflowStatuses("DISBURSEMENT",
+                                                    report.getGrant().getGrantorOrganization().getId());
+                                    List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
+                                            .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT"))
+                                            .collect(Collectors.toList());
+                                    newDisbursement.setStatus(closedStatuses.get(0));
+                                    newDisbursement = disbursementService.saveDisbursement(newDisbursement);
+                                    for (TableData nData : newEntries) {
+
                                         ActualDisbursement actualDisbursement = new ActualDisbursement();
-                                        
-                                        actualDisbursement.setOtherSources(Double.valueOf(nData.getColumns()[2].getValue()==null?"0d":nData.getColumns()[2].getValue()));
-                                        actualDisbursement.setDisbursementDate(new SimpleDateFormat("dd-MMM-yyyy").parse(nData.getColumns()[0].getValue()));
+
+                                        actualDisbursement.setOtherSources(
+                                                Double.valueOf(nData.getColumns()[2].getValue() == null ? "0d"
+                                                        : nData.getColumns()[2].getValue()));
+                                        actualDisbursement.setDisbursementDate(new SimpleDateFormat("dd-MMM-yyyy")
+                                                .parse(nData.getColumns()[0].getValue()));
                                         actualDisbursement.setDisbursementId(newDisbursement.getId());
                                         actualDisbursement.setNote(nData.getColumns()[3].getValue());
                                         actualDisbursement.setActualAmount(0d);
@@ -710,16 +709,17 @@ public class ReportController {
                                         actualDisbursement.setCreatedBy(user.getId());
                                         actualDisbursement.setStatus(nData.isStatus());
                                         actualDisbursement.setSaved(true);
-                                        actualDisbursement.setOrderPosition(disbursementService.getNewOrderPositionForActualDisbursementOfGrant(report.getGrant().getId()));
+                                        actualDisbursement.setOrderPosition(
+                                                disbursementService.getNewOrderPositionForActualDisbursementOfGrant(
+                                                        report.getGrant().getId()));
                                         disbursementService.saveActualDisbursement(actualDisbursement);
                                     }
-                                    
+
                                 }
                             } catch (ParseException e) {
                                 logger.error(e.getMessage(), e);
                             }
                         }
-                        
 
                     } else {
                         reportStringAttribute.setValue(sectionAttributesVO.getFieldValue());
@@ -1211,41 +1211,32 @@ public class ReportController {
          * userId,fromStateId,toStateId);
          */
 
-        /* for (SectionVO section : reportWithNote.getReport().getReportDetails().getSections()) {
-            if (section.getAttributes() != null) {
-                for (SectionAttributesVO attribute : section.getAttributes()) {
-                    if (attribute.getFieldType().equalsIgnoreCase("disbursement")) {
-                        List<String> rowNames = new ArrayList<>();
-                        if (attribute.getFieldTableValue().size() > 1) {
-                            for (int i = 0; i < attribute.getFieldTableValue().size(); i++) {
-                                if (attribute.getFieldTableValue().get(i).getColumns()[0].getValue().trim() == ""
-                                        && attribute.getFieldTableValue().get(i).getColumns()[1].getValue().trim() == ""
-                                        && attribute.getFieldTableValue().get(i).getColumns()[2].getValue().trim() == ""
-                                        && attribute.getFieldTableValue().get(i).getColumns()[3].getValue()
-                                                .trim() == "") {
-                                    rowNames.add(attribute.getFieldTableValue().get(i).getName());
-                                }
-                            }
-                        }
-
-                        for (String rowName : rowNames) {
-                            attribute.getFieldTableValue().removeIf(e -> e.getName().equalsIgnoreCase(rowName));
-                        }
-
-                        for (int i = 0; i < attribute.getFieldTableValue().size(); i++) {
-                            attribute.getFieldTableValue().get(i).setName(String.valueOf(i + 1));
-                            try {
-                                attribute.setFieldValue(
-                                        new ObjectMapper().writeValueAsString(attribute.getFieldTableValue()));
-                            } catch (JsonProcessingException e) {
-                                logger.error(e.getMessage(), e);
-                            }
-                        }
-
-                    }
-                }
-            }
-        } */
+        /*
+         * for (SectionVO section :
+         * reportWithNote.getReport().getReportDetails().getSections()) { if
+         * (section.getAttributes() != null) { for (SectionAttributesVO attribute :
+         * section.getAttributes()) { if
+         * (attribute.getFieldType().equalsIgnoreCase("disbursement")) { List<String>
+         * rowNames = new ArrayList<>(); if (attribute.getFieldTableValue().size() > 1)
+         * { for (int i = 0; i < attribute.getFieldTableValue().size(); i++) { if
+         * (attribute.getFieldTableValue().get(i).getColumns()[0].getValue().trim() ==
+         * "" && attribute.getFieldTableValue().get(i).getColumns()[1].getValue().trim()
+         * == "" &&
+         * attribute.getFieldTableValue().get(i).getColumns()[2].getValue().trim() == ""
+         * && attribute.getFieldTableValue().get(i).getColumns()[3].getValue() .trim()
+         * == "") { rowNames.add(attribute.getFieldTableValue().get(i).getName()); } } }
+         * 
+         * for (String rowName : rowNames) { attribute.getFieldTableValue().removeIf(e
+         * -> e.getName().equalsIgnoreCase(rowName)); }
+         * 
+         * for (int i = 0; i < attribute.getFieldTableValue().size(); i++) {
+         * attribute.getFieldTableValue().get(i).setName(String.valueOf(i + 1)); try {
+         * attribute.setFieldValue( new
+         * ObjectMapper().writeValueAsString(attribute.getFieldTableValue())); } catch
+         * (JsonProcessingException e) { logger.error(e.getMessage(), e); } }
+         * 
+         * } } } }
+         */
 
         saveReport(reportId, reportWithNote.getReport(), userId, tenantCode);
 
@@ -1315,10 +1306,11 @@ public class ReportController {
         }
 
         String finalCurrentOwnerName = currentOwnerName;
-        usersToNotify.stream().forEach(u -> {
-
-            String emailNotificationContent[] = reportService.buildEmailNotificationContent(finalReport, u,
-                    u.getFirstName().concat(" ").concat(u.getLastName()), toStatus.getVerb(),
+        User finalCurrentOwner = currentOwner;
+        if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
+            usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue());
+            String emailNotificationContent[] = reportService.buildEmailNotificationContent(finalReport,
+                    finalCurrentOwner, currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), null,
                     new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
                     appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
@@ -1333,15 +1325,17 @@ public class ReportController {
                             ? "Please review."
                             : "",
                     null, null, null);
-            commonEmailSevice.sendMail(u.getEmailId(), null, emailNotificationContent[0], emailNotificationContent[1],
+            commonEmailSevice.sendMail(currentOwner.getEmailId(),
+                    usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
+                            .toArray(new String[usersToNotify.size()]),
+                    emailNotificationContent[0], emailNotificationContent[1],
                     new String[] { appConfigService
                             .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
                                     AppConfiguration.PLATFORM_EMAIL_FOOTER)
                             .getConfigValue() });
-        });
-        usersToNotify.stream().forEach(u -> {
-            String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, u,
-                    u.getFirstName().concat(" ").concat(u.getLastName()), toStatus.getVerb(),
+
+            String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, currentOwner,
+                    currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), toStatus.getVerb(),
                     new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
                     appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
@@ -1357,51 +1351,231 @@ public class ReportController {
                             : "",
                     null, null, null);
 
-            notificationsService.saveNotification(notificationContent, u.getId(), finalReport.getId(), "REPORT");
+            notificationsService.saveNotification(notificationContent, currentOwner.getId(), finalReport.getId(),
+                    "REPORT");
 
-        });
+            usersToNotify.stream().forEach(u -> {
+                final String[] nc = reportService.buildEmailNotificationContent(finalReport, u,
+                        u.getFirstName().concat(" ").concat(u.getLastName()), toStatus.getVerb(),
+                        new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                        appConfigService
+                                .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                        AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT)
+                                .getConfigValue(),
+                        appConfigService
+                                .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                        AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE)
+                                .getConfigValue(),
+                        workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
+                        previousState.getName(),
+                        previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                        transition.getAction(), "Yes", "Please review.",
+                        reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                                ? "Yes"
+                                : "No",
+                        reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                                ? "Please review."
+                                : "",
+                        null, null, null);
 
-        // }
+                notificationsService.saveNotification(nc, u.getId(), finalReport.getId(), "REPORT");
+            });
+        } else if (!toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
+            usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue());
+            if (!workflowStatusService.findById(fromStateId).getInternalStatus().equalsIgnoreCase("ACTIVE")) {
+                usersToNotify.removeIf(u -> u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"));
+            }
+
+            String emailNotificationContent[] = reportService.buildEmailNotificationContent(finalReport,
+                    finalCurrentOwner, currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), null,
+                    new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
+                    workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
+                    previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                    transition.getAction(), "Yes", "Please review.",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
+                            : "No",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                            ? "Please review."
+                            : "",
+                    null, null, null);
+            commonEmailSevice.sendMail(currentOwner.getEmailId(),
+                    usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
+                            .toArray(new String[usersToNotify.size()]),
+                    emailNotificationContent[0], emailNotificationContent[1],
+                    new String[] { appConfigService
+                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                            .getConfigValue() });
+
+            String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, currentOwner,
+                    currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), toStatus.getVerb(),
+                    new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                    workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
+                    previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                    transition.getAction(), "Yes", "Please review.",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
+                            : "No",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                            ? "Please review."
+                            : "",
+                    null, null, null);
+
+            notificationsService.saveNotification(notificationContent, currentOwner.getId(), finalReport.getId(),
+                    "REPORT");
+
+            usersToNotify.stream().forEach(u -> {
+                final String[] nc = reportService.buildEmailNotificationContent(finalReport, u,
+                        u.getFirstName().concat(" ").concat(u.getLastName()), toStatus.getVerb(),
+                        new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                        appConfigService
+                                .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                        AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT)
+                                .getConfigValue(),
+                        appConfigService
+                                .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                        AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE)
+                                .getConfigValue(),
+                        workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
+                        previousState.getName(),
+                        previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                        transition.getAction(), "Yes", "Please review.",
+                        reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                                ? "Yes"
+                                : "No",
+                        reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                                ? "Please review."
+                                : "",
+                        null, null, null);
+
+                notificationsService.saveNotification(nc, u.getId(), finalReport.getId(), "REPORT");
+            });
+        } else {
+
+            User granteeUser = usersToNotify.stream()
+                    .filter(u -> u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")).findFirst()
+                    .get();
+            usersToNotify.removeIf(u -> u.getId().longValue() == granteeUser.getId().longValue());
+
+            String emailNotificationContent[] = reportService.buildEmailNotificationContent(finalReport, granteeUser,
+                    granteeUser.getFirstName().concat(" ").concat(granteeUser.getLastName()), null,
+                    new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
+                    workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
+                    previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                    transition.getAction(), "Yes", "Please review.",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
+                            : "No",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                            ? "Please review."
+                            : "",
+                    null, null, null);
+            commonEmailSevice.sendMail(granteeUser.getEmailId(),
+                    usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
+                            .toArray(new String[usersToNotify.size()]),
+                    emailNotificationContent[0], emailNotificationContent[1],
+                    new String[] { appConfigService
+                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                            .getConfigValue() });
+
+            String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, granteeUser,
+                    granteeUser.getFirstName().concat(" ").concat(granteeUser.getLastName()), toStatus.getVerb(),
+                    new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                    workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
+                    previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                    transition.getAction(), "Yes", "Please review.",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
+                            : "No",
+                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                            ? "Please review."
+                            : "",
+                    null, null, null);
+
+            notificationsService.saveNotification(notificationContent, granteeUser.getId(), finalReport.getId(),
+                    "REPORT");
+
+            usersToNotify.stream().forEach(u -> {
+                final String[] nc = reportService.buildEmailNotificationContent(finalReport, u,
+                        u.getFirstName().concat(" ").concat(u.getLastName()), toStatus.getVerb(),
+                        new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                        appConfigService
+                                .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                        AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT)
+                                .getConfigValue(),
+                        appConfigService
+                                .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                        AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE)
+                                .getConfigValue(),
+                        workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
+                        previousState.getName(),
+                        previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                        transition.getAction(), "Yes", "Please review.",
+                        reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                                ? "Yes"
+                                : "No",
+                        reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                                ? "Please review."
+                                : "",
+                        null, null, null);
+
+                notificationsService.saveNotification(nc, u.getId(), finalReport.getId(), "REPORT");
+            });
+
+        }
 
         report = _ReportToReturn(report, userId);
         _saveSnapShot(report);
 
-       
-
-        if(toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")){
+        if (toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
             List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
-            report.getGrant().getGrantorOrganization().getId());
+                    report.getGrant().getGrantorOrganization().getId());
             final Report fReport = report;
-            List<WorkflowStatus>draftStatuses = workflowStatuses.stream()
-                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")).collect(Collectors.toList());
-        List<Long> draftStatusIds = draftStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
-        List<Disbursement> draftDisbursements = disbursementService
-        .getDibursementsForGrantByStatuses(report.getGrant().getId(), draftStatusIds);
-        
+            List<WorkflowStatus> draftStatuses = workflowStatuses.stream()
+                    .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")).collect(Collectors.toList());
+            List<Long> draftStatusIds = draftStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                    .collect(Collectors.toList());
+            List<Disbursement> draftDisbursements = disbursementService
+                    .getDibursementsForGrantByStatuses(report.getGrant().getId(), draftStatusIds);
 
-        WorkflowStatus closedtatus = workflowStatuses.stream()
-                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList()).get(0);
+            WorkflowStatus closedtatus = workflowStatuses.stream()
+                    .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList())
+                    .get(0);
 
-        if(draftDisbursements!=null && draftDisbursements.size()>0){
-            draftDisbursements.removeIf(dd -> (dd.getReportId().longValue()!=fReport.getId() && !dd.isGranteeEntry() ));
-            if(draftDisbursements!=null && draftDisbursements.size()>0){
-                for(Disbursement d: draftDisbursements){
-                    d.setStatus(closedtatus);
-                    List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(d);
-                    if(ads!=null && ads.size()>0){
-                        for(ActualDisbursement ad : ads){
-                            ad.setStatus(false);
-                            ad.setSaved(true);
+            if (draftDisbursements != null && draftDisbursements.size() > 0) {
+                draftDisbursements
+                        .removeIf(dd -> (dd.getReportId().longValue() != fReport.getId() && !dd.isGranteeEntry()));
+                if (draftDisbursements != null && draftDisbursements.size() > 0) {
+                    for (Disbursement d : draftDisbursements) {
+                        d.setStatus(closedtatus);
+                        List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(d);
+                        if (ads != null && ads.size() > 0) {
+                            for (ActualDisbursement ad : ads) {
+                                ad.setStatus(false);
+                                ad.setSaved(true);
+                            }
                         }
+                        disbursementService.saveDisbursement(d);
                     }
-                    disbursementService.saveDisbursement(d);
                 }
             }
+
         }
 
-    }
-
-        
         // Temporary block to continue testing as Grantee has submitted the report
         /*
          * if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) { ReportWithNote
@@ -1639,8 +1813,7 @@ public class ReportController {
                 if (sectionAttribute.getFieldType().equalsIgnoreCase("kpi")) {
                     stringAttribute.setGrantLevelTarget(null);
                     stringAttribute.setFrequency(finalReport1.getType().toLowerCase());
-                } else if (sectionAttribute.getFieldType().equalsIgnoreCase("table")
-                        ) {
+                } else if (sectionAttribute.getFieldType().equalsIgnoreCase("table")) {
                     stringAttribute.setValue(a.getExtras());
                 }
                 stringAttribute = reportService.saveReportStringAttribute(stringAttribute);

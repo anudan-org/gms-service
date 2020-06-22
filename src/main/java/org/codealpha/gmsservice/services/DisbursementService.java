@@ -193,16 +193,16 @@ public class DisbursementService {
             }
             UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
             url = uriBuilder.toUriString();
-            url = url+"/home/?action=login&g=" + code+"&email=&type=disbursement";
+            url = url+"/home/?action=login&d=" + code+"&email=&type=disbursement";
         }catch (Exception e){
             url = link;
 
-            url = url+"/home/?action=login&g=" + code+"&email=&type=disbursement";   
+            url = url+"/home/?action=login&d=" + code+"&email=&type=disbursement";   
         }
 
 
 
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalDisbursement.getGrant().getName()).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalDisbursement.getGrant().getGrantorOrganization().getName()).replaceAll("%GRANT_LINK%",url).replaceAll("%OWNER_NAME%",owner==null?"":owner.getFirstName()+" "+owner.getLastName()).replaceAll("%OWNER_EMAIL%",owner==null?"":owner.getEmailId()).replaceAll("%NO_DAYS%",noOfDays==null?"":String.valueOf(noOfDays));
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalDisbursement.getGrant().getName()).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalDisbursement.getGrant().getGrantorOrganization().getName()).replaceAll("%DISBURSEMENT_LINK%",url).replaceAll("%OWNER_NAME%",owner==null?"":owner.getFirstName()+" "+owner.getLastName()).replaceAll("%OWNER_EMAIL%",owner==null?"":owner.getEmailId()).replaceAll("%NO_DAYS%",noOfDays==null?"":String.valueOf(noOfDays)).replaceAll("%GRANTEE%", finalDisbursement.getGrant().getOrganization().getName());
         String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalDisbursement.getGrant().getName());
 
         return new String[]{subject, message};

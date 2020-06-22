@@ -93,7 +93,8 @@ public class UserService {
         try {
             uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-                host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
+                //host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
+                host = uriComponents.getHost();
 
             } else {
                 host = uriComponents.getHost();

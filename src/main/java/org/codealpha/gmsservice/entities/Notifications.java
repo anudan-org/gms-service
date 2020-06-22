@@ -36,6 +36,9 @@ public class Notifications {
     @Column
 	private Long reportId;
 
+	@Column
+	private Long disbursementId;
+
     @Column
 	private String notificationFor;
 
@@ -118,4 +121,13 @@ public class Notifications {
 	public void setNotificationFor(String notificationFor) {
 		this.notificationFor = notificationFor;
 	}
+
+	public Long getDisbursementId() {
+		return disbursementId;
+	}
+
+	public void setDisbursementId(Long disbursementId) {
+		this.disbursementId = disbursementId;
+	}
+
 }
