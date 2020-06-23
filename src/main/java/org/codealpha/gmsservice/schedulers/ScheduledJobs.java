@@ -43,6 +43,8 @@ public class ScheduledJobs {
     private WorkflowStatusService workflowStatusService;
     @Autowired
     private GrantService grantService;
+    @Autowired
+    private DisbursementService disbursementService;
 
     private boolean appLevelSettingsProcessed = false;
 
@@ -452,6 +454,150 @@ public class ScheduledJobs {
                                                 new String[] { appConfigService
                                                         .getAppConfigForGranterOrg(
                                                                 grant.getGrantorOrganization().getId(),
+                                                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                                        .getConfigValue() });
+                                    }
+                                }
+
+                            }
+                        }
+
+                    }
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Scheduled(cron = "0 * * * * *")
+    public void disbursementsActionDueChecker() {
+        DateTime now = DateTime.now();
+
+        List<Granter> granters = granterService.getAllGranters();
+
+        Map<Long, AppConfig> configs = new HashMap<>();
+
+        for (Granter granter : granters) {
+            AppConfig config = appConfigService.getSpecialAppConfigForGranterOrg(granter.getId(),
+                    AppConfiguration.ACTION_DUE_REPORTS_REMINDER_SETTINGS);
+            configs.put(config.getId(), config);
+        }
+
+        Map<Long, AppConfig> grantIdsToSkip = new HashMap<>();
+        configs.keySet().forEach(c -> {
+            grantIdsToSkip.put(c, configs.get(c));
+        });
+
+        for (Long configId : configs.keySet()) {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+            try {
+                ScheduledTaskVO taskConfiguration = mapper.readValue(configs.get(configId).getConfigValue(),
+                        ScheduledTaskVO.class);
+                String[] hourAndMinute = taskConfiguration.getTime().split(":");
+                if (configId == 0) {
+
+                    if (Integer.valueOf(hourAndMinute[0]) == now.hourOfDay().get()
+                            && Integer.valueOf(hourAndMinute[1]) == now.minuteOfHour().get()) {
+                        List<DisbursementAssignment> usersToNotify = disbursementService
+                                .getActionDueDisbursementsForPlatform(
+                                        grantIdsToSkip.keySet().stream().collect(Collectors.toList()));
+                        if (usersToNotify != null && usersToNotify.size() > 0) {
+                            for (DisbursementAssignment disbursementtAssignment : usersToNotify) {
+                                Disbursement disbursement = disbursementService
+                                        .getDisbursementById(disbursementtAssignment.getOwner());
+
+                                List<DisbursementAssignment> disbursementAssignments = disbursementService
+                                        .getDisbursementAssignments(disbursement);
+
+                                disbursementAssignments.removeIf(u -> u.getOwner()
+                                        .longValue() == disbursementtAssignment.getOwner().longValue());
+
+                                String[] ccList = new String[disbursementAssignments.size()];
+
+                                if (disbursementAssignments != null && disbursementAssignments.size() > 0) {
+                                    List<User> uList = new ArrayList<>();
+                                    for (DisbursementAssignment ass : disbursementAssignments) {
+                                        uList.add(userService.getUserById(ass.getOwner()));
+                                    }
+                                    ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                                            .toArray(new String[disbursementAssignments.size()]);
+                                }
+                                for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
+                                    int minuetsLapsed = Minutes
+                                            .minutesBetween(new DateTime(disbursement.getMovedOn()), now).getMinutes();
+                                    if (Minutes.minutesBetween(new DateTime(disbursement.getMovedOn()), now)
+                                            .getMinutes() > afterNoOfHour) {
+                                        User user = userService.getUserById(disbursementtAssignment.getOwner());
+                                        String[] messageMetadata = disbursementService.buildEmailNotificationContent(
+                                                disbursement, user, user.getFirstName() + " " + user.getLastName(), "",
+                                                null, taskConfiguration.getSubjectGrant(),
+                                                taskConfiguration.getMessageGrant(), "", "", "", "", "", "", "", "", "",
+                                                buildLink(environment, true,
+                                                        user.getOrganization().getCode().toLowerCase()),
+                                                null, minuetsLapsed / (24 * 60));
+                                        emailSevice.sendMail(user.getEmailId(), ccList, messageMetadata[0],
+                                                messageMetadata[1],
+                                                new String[] { appConfigService
+                                                        .getAppConfigForGranterOrg(
+                                                                disbursement.getGrant().getGrantorOrganization()
+                                                                        .getId(),
+                                                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                                        .getConfigValue() });
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                } else {
+                    if (Integer.valueOf(hourAndMinute[0]) == now.hourOfDay().get()
+                            && Integer.valueOf(hourAndMinute[1]) == now.minuteOfHour().get()) {
+
+                        List<DisbursementAssignment> usersToNotify = disbursementService
+                                .getActionDueDisbursementsForGranterOrg(configId);
+                        if (usersToNotify != null && usersToNotify.size() > 0) {
+                            for (DisbursementAssignment disbursementAssignment : usersToNotify) {
+                                Disbursement disbursement = disbursementService
+                                        .getDisbursementById(disbursementAssignment.getOwner());
+
+                                List<DisbursementAssignment> disbursementAssignments = disbursementService
+                                        .getDisbursementAssignments(disbursement);
+
+                                disbursementAssignments.removeIf(
+                                        u -> u.getOwner().longValue() == disbursementAssignment.getOwner().longValue());
+
+                                String[] ccList = new String[disbursementAssignments.size()];
+
+                                if (disbursementAssignments != null && disbursementAssignments.size() > 0) {
+                                    List<User> uList = new ArrayList<>();
+                                    for (DisbursementAssignment ass : disbursementAssignments) {
+                                        uList.add(userService.getUserById(ass.getOwner()));
+                                    }
+                                    ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                                            .toArray(new String[disbursementAssignments.size()]);
+                                }
+                                for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
+                                    int minuetsLapsed = Minutes
+                                            .minutesBetween(new DateTime(disbursement.getMovedOn()), now).getMinutes();
+                                    if (Minutes.minutesBetween(new DateTime(disbursement.getMovedOn()), now)
+                                            .getMinutes() > afterNoOfHour) {
+                                        User user = userService.getUserById(disbursementAssignment.getOwner());
+                                        String[] messageMetadata = disbursementService.buildEmailNotificationContent(
+                                                disbursement, user, user.getFirstName() + " " + user.getLastName(), "",
+                                                null, taskConfiguration.getSubjectGrant(),
+                                                taskConfiguration.getMessageGrant(), "", "", "", "", "", "", "", "", "",
+                                                buildLink(environment, true,
+                                                        user.getOrganization().getCode().toLowerCase()),
+                                                null, minuetsLapsed / (24 * 60));
+                                        emailSevice.sendMail(user.getEmailId(), ccList, messageMetadata[0],
+                                                messageMetadata[1],
+                                                new String[] { appConfigService
+                                                        .getAppConfigForGranterOrg(
+                                                                disbursement.getGrant().getGrantorOrganization()
+                                                                        .getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue() });
                                     }
