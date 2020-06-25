@@ -72,11 +72,44 @@ public class DisbursementsController {
         public List<Grant> getActiveGrantsOwnedByUser(@PathVariable("userId") Long userId,
                         @RequestHeader("X-TENANT-CODE") String tenantCode) {
                 List<Grant> ownerGrants = grantService.getGrantsOwnedByUserByStatus(userId, "ACTIVE");
-                for (Grant ownerGrant : ownerGrants) {
-                        ownerGrant = grantService._grantToReturn(userId, ownerGrant);
+                List<Grant> grantsToReturn = new ArrayList<>();
+                if (ownerGrants != null && ownerGrants.size() > 0) {
+                        List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses(
+                                        "DISBURSEMENT", ownerGrants.get(0).getGrantorOrganization().getId());
+
+                        List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream()
+                                        .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED"))
+                                        .collect(Collectors.toList());
+                        List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                                        .collect(Collectors.toList());
+
+                        for (Grant g : ownerGrants) {
+                                Double total = 0d;
+                                List<Disbursement> closedDisbursements = disbursementService
+                                                .getDibursementsForGrantByStatuses(g.getId(), statusIds);
+                                if (closedDisbursements != null && closedDisbursements.size() > 0) {
+                                        for (Disbursement d : closedDisbursements) {
+                                                List<ActualDisbursement> actualDisbursements = disbursementService
+                                                                .getActualDisbursementsForDisbursement(d);
+                                                if (actualDisbursements != null && actualDisbursements.size() > 0) {
+                                                        for (ActualDisbursement ad : actualDisbursements) {
+                                                                total += ad.getActualAmount() == null ? 0d
+                                                                                : ad.getActualAmount();
+                                                        }
+                                                }
+                                        }
+                                }
+                                if (total < g.getAmount()) {
+                                        grantsToReturn.add(g);
+                                }
+                        }
+
+                        for (Grant ownerGrant : grantsToReturn) {
+                                ownerGrant = grantService._grantToReturn(userId, ownerGrant);
+                        }
                 }
 
-                return ownerGrants;
+                return grantsToReturn;
         }
 
         @PostMapping("/grant/{grantId}")
