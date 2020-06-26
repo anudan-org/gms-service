@@ -30,3 +30,4 @@ gms.log*
 /nbdist/
 /.nb-gradle/
 .vscode/settings.json
+.vscode/launch.json

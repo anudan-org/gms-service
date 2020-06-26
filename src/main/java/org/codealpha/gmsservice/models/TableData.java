@@ -11,6 +11,8 @@ public class TableData {
     private boolean enteredByGrantee;
     private boolean status;
     private boolean saved;
+    private Long actualDisbursementId;
+    private Long disbursementId;
 
     public String getName() {
         return name;
@@ -60,5 +62,20 @@ public class TableData {
         this.saved = saved;
     }
 
-    
+    public Long getActualDisbursementId() {
+        return actualDisbursementId;
+    }
+
+    public void setActualDisbursementId(Long actualDisbursementId) {
+        this.actualDisbursementId = actualDisbursementId;
+    }
+
+    public Long getDisbursementId() {
+        return disbursementId;
+    }
+
+    public void setDisbursementId(Long disbursementId) {
+        this.disbursementId = disbursementId;
+    }
+
 }
