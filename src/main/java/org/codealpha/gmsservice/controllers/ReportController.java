@@ -400,6 +400,8 @@ public class ReportController {
                                     td.setHeader("#");
                                     td.setStatus(ad.getStatus());
                                     td.setSaved(ad.getSaved());
+                                    td.setActualDisbursementId(ad.getId());
+                                    td.setDisbursementId(ad.getDisbursementId());
                                     if (disbursementService.getDisbursementById(ad.getDisbursementId())
                                             .isGranteeEntry()) {
                                         td.setEnteredByGrantee(true);
@@ -407,18 +409,21 @@ public class ReportController {
                                     ColumnData cdDate = new ColumnData();
                                     cdDate.setDataType("date");
                                     cdDate.setName("Disbursement Date");
-                                    cdDate.setValue(
-                                            new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate()));
+                                    cdDate.setValue(ad.getDisbursementDate() != null
+                                            ? new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate())
+                                            : null);
 
                                     ColumnData cdDA = new ColumnData();
                                     cdDA.setDataType("currency");
                                     cdDA.setName("Actual Disbursement");
-                                    cdDA.setValue(String.valueOf(ad.getActualAmount()));
+                                    cdDA.setValue(
+                                            ad.getActualAmount() != null ? String.valueOf(ad.getActualAmount()) : null);
 
                                     ColumnData cdFOS = new ColumnData();
                                     cdFOS.setDataType("currency");
                                     cdFOS.setName("Funds from Other Sources");
-                                    cdFOS.setValue(String.valueOf(ad.getOtherSources()));
+                                    cdFOS.setValue(
+                                            ad.getOtherSources() != null ? String.valueOf(ad.getOtherSources()) : null);
 
                                     ColumnData cdN = new ColumnData();
                                     cdN.setName("Notes");
@@ -467,6 +472,8 @@ public class ReportController {
                                     td.setHeader("#");
                                     td.setStatus(ad.getStatus());
                                     td.setSaved(ad.getStatus());
+                                    td.setActualDisbursementId(ad.getId());
+                                    td.setDisbursementId(ad.getDisbursementId());
                                     if (disbursementService.getDisbursementById(ad.getDisbursementId())
                                             .isGranteeEntry()) {
                                         td.setEnteredByGrantee(true);
@@ -676,43 +683,31 @@ public class ReportController {
                                     }
                                 }
 
-                                if (newEntries.size() > 0) {
-                                    Disbursement newDisbursement = new Disbursement();
-                                    DateTime now = new DateTime();
-                                    newDisbursement.setCreatedAt(now.withSecondOfMinute(0).withMillis(0).toDate());
-                                    newDisbursement.setCreatedBy(user.getEmailId());
-                                    newDisbursement.setMovedOn(now.toDate());
-                                    newDisbursement.setGrant(report.getGrant());
-                                    newDisbursement.setGranteeEntry(true);
-                                    newDisbursement.setReportId(report.getId());
-                                    List<WorkflowStatus> workflowStatuses = workflowStatusService
-                                            .getTenantWorkflowStatuses("DISBURSEMENT",
-                                                    report.getGrant().getGrantorOrganization().getId());
-                                    List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
-                                            .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT"))
-                                            .collect(Collectors.toList());
-                                    newDisbursement.setStatus(closedStatuses.get(0));
-                                    newDisbursement = disbursementService.saveDisbursement(newDisbursement);
-                                    for (TableData nData : newEntries) {
+                                if (tableData != null && tableData.size() > 0) {
 
-                                        ActualDisbursement actualDisbursement = new ActualDisbursement();
+                                    for (TableData nData : tableData) {
 
-                                        actualDisbursement.setOtherSources(
-                                                Double.valueOf(nData.getColumns()[2].getValue() == null ? "0d"
-                                                        : nData.getColumns()[2].getValue()));
-                                        actualDisbursement.setDisbursementDate(new SimpleDateFormat("dd-MMM-yyyy")
-                                                .parse(nData.getColumns()[0].getValue()));
-                                        actualDisbursement.setDisbursementId(newDisbursement.getId());
-                                        actualDisbursement.setNote(nData.getColumns()[3].getValue());
-                                        actualDisbursement.setActualAmount(0d);
-                                        actualDisbursement.setCreatedAt(DateTime.now().toDate());
-                                        actualDisbursement.setCreatedBy(user.getId());
-                                        actualDisbursement.setStatus(nData.isStatus());
-                                        actualDisbursement.setSaved(true);
-                                        actualDisbursement.setOrderPosition(
-                                                disbursementService.getNewOrderPositionForActualDisbursementOfGrant(
-                                                        report.getGrant().getId()));
-                                        disbursementService.saveActualDisbursement(actualDisbursement);
+                                        if (!nData.isSaved()) {
+                                            ActualDisbursement actualDisbursement = disbursementService
+                                                    .getActualDisbursementById(nData.getActualDisbursementId());
+
+                                            actualDisbursement.setOtherSources(
+                                                    Double.valueOf(nData.getColumns()[2].getValue() == null ? "0d"
+                                                            : nData.getColumns()[2].getValue()));
+                                            actualDisbursement.setDisbursementDate(new SimpleDateFormat("dd-MMM-yyyy")
+                                                    .parse(nData.getColumns()[0].getValue()));
+                                            // actualDisbursement.setDisbursementId(newDisbursement.getId());
+                                            actualDisbursement.setNote(nData.getColumns()[3].getValue());
+                                            actualDisbursement.setActualAmount(0d);
+                                            actualDisbursement.setCreatedAt(DateTime.now().toDate());
+                                            actualDisbursement.setCreatedBy(user.getId());
+                                            actualDisbursement.setStatus(nData.isStatus());
+                                            actualDisbursement.setSaved(false);
+                                            actualDisbursement.setOrderPosition(
+                                                    disbursementService.getNewOrderPositionForActualDisbursementOfGrant(
+                                                            report.getGrant().getId()));
+                                            disbursementService.saveActualDisbursement(actualDisbursement);
+                                        }
                                     }
 
                                 }

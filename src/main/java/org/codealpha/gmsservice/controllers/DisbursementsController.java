@@ -72,11 +72,44 @@ public class DisbursementsController {
         public List<Grant> getActiveGrantsOwnedByUser(@PathVariable("userId") Long userId,
                         @RequestHeader("X-TENANT-CODE") String tenantCode) {
                 List<Grant> ownerGrants = grantService.getGrantsOwnedByUserByStatus(userId, "ACTIVE");
-                for (Grant ownerGrant : ownerGrants) {
-                        ownerGrant = grantService._grantToReturn(userId, ownerGrant);
+                List<Grant> grantsToReturn = new ArrayList<>();
+                if (ownerGrants != null && ownerGrants.size() > 0) {
+                        List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses(
+                                        "DISBURSEMENT", ownerGrants.get(0).getGrantorOrganization().getId());
+
+                        List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream()
+                                        .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED"))
+                                        .collect(Collectors.toList());
+                        List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                                        .collect(Collectors.toList());
+
+                        for (Grant g : ownerGrants) {
+                                Double total = 0d;
+                                List<Disbursement> closedDisbursements = disbursementService
+                                                .getDibursementsForGrantByStatuses(g.getId(), statusIds);
+                                if (closedDisbursements != null && closedDisbursements.size() > 0) {
+                                        for (Disbursement d : closedDisbursements) {
+                                                List<ActualDisbursement> actualDisbursements = disbursementService
+                                                                .getActualDisbursementsForDisbursement(d);
+                                                if (actualDisbursements != null && actualDisbursements.size() > 0) {
+                                                        for (ActualDisbursement ad : actualDisbursements) {
+                                                                total += ad.getActualAmount() == null ? 0d
+                                                                                : ad.getActualAmount();
+                                                        }
+                                                }
+                                        }
+                                }
+                                if (total < g.getAmount()) {
+                                        grantsToReturn.add(g);
+                                }
+                        }
+
+                        for (Grant ownerGrant : grantsToReturn) {
+                                ownerGrant = grantService._grantToReturn(userId, ownerGrant);
+                        }
                 }
 
-                return ownerGrants;
+                return grantsToReturn;
         }
 
         @PostMapping("/grant/{grantId}")
@@ -473,5 +506,85 @@ public class DisbursementsController {
 
                 disbursement = disbursementService.disbursementToReturn(disbursement, userId);
                 return disbursement;
+        }
+
+        @PostMapping("/grant/{grantId}/report/{reportId}/record")
+        public TableData recordNewActualDisbursement(@PathVariable("grantId") Long grantId,
+                        @PathVariable("reportId") Long reportId, @PathVariable("userId") Long userId,
+                        @RequestHeader("X-TENANT-CODE") String tenantCode) {
+
+                Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+                Disbursement disbursementToSave = new Disbursement();
+                Grant grant = grantService._grantToReturn(userId, grantService.getById(grantId));
+                disbursementToSave.setGrant(grant);
+                disbursementToSave.setReason(null);
+                disbursementToSave.setRequestedAmount(null);
+                disbursementToSave.setGranteeEntry(true);
+                disbursementToSave.setReportId(reportId);
+                disbursementToSave.setMovedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
+                disbursementToSave.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId(
+                                "DISBURSEMENT", grant.getGrantorOrganization().getId()));
+                disbursementToSave.setCreatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
+                disbursementToSave.setCreatedBy(userService.getUserById(userId).getEmailId());
+
+                disbursementToSave = disbursementService.saveDisbursement(disbursementToSave);
+                ActualDisbursement ad = addNewActualDisbursement(disbursementToSave.getId(), userId, tenantCode);
+                ad.setStatus(true);
+                ad.setSaved(false);
+
+                List<ActualDisbursement> existingActualDisbursements = disbursementService
+                                .getActualDisbursementsForDisbursement(
+                                                disbursementService.getDisbursementById(disbursementToSave.getId()));
+                int index = (existingActualDisbursements != null && existingActualDisbursements.size() > 0)
+                                ? existingActualDisbursements.size()
+                                : 0;
+                TableData td = new TableData();
+                ColumnData[] colDataList = new ColumnData[4];
+                td.setName(String.valueOf(index));
+                td.setHeader("#");
+                td.setStatus(ad.getStatus());
+                td.setSaved(ad.getSaved());
+                td.setActualDisbursementId(ad.getId());
+                td.setDisbursementId(ad.getDisbursementId());
+                if (disbursementToSave.isGranteeEntry()) {
+                        td.setEnteredByGrantee(true);
+                }
+                ColumnData cdDate = new ColumnData();
+                cdDate.setDataType("date");
+                cdDate.setName("Disbursement Date");
+                cdDate.setValue(null);
+
+                ColumnData cdDA = new ColumnData();
+                cdDA.setDataType("currency");
+                cdDA.setName("Actual Disbursement");
+                cdDA.setValue(null);
+
+                ColumnData cdFOS = new ColumnData();
+                cdFOS.setDataType("currency");
+                cdFOS.setName("Funds from Other Sources");
+                cdFOS.setValue(null);
+
+                ColumnData cdN = new ColumnData();
+                cdN.setName("Notes");
+                cdN.setValue(ad.getNote());
+
+                colDataList[0] = cdDate;
+                colDataList[1] = cdDA;
+                colDataList[2] = cdFOS;
+                colDataList[3] = cdN;
+                td.setColumns(colDataList);
+                return td;
+        }
+
+        @DeleteMapping("/remove/{actualDisbursementId}")
+        public void recordNewActualDisbursement(@PathVariable("userId") Long userId,
+                        @RequestHeader("X-TENANT-CODE") String tenantCode,
+                        @PathVariable("actualDisbursementId") Long actualDisbursementId) {
+
+                ActualDisbursement actualDisbursement = disbursementService
+                                .getActualDisbursementById(actualDisbursementId);
+                disbursementService.deleteActualDisbursement(actualDisbursement);
+                disbursementService.deleteDisbursement(
+                                disbursementService.getDisbursementById(actualDisbursement.getDisbursementId()));
         }
 }
