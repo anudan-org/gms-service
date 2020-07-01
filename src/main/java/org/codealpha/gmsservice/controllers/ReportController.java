@@ -234,6 +234,9 @@ public class ReportController {
             assignmentsVO.setReportId(assignment.getReportId());
             assignmentsVO.setStateId(assignment.getStateId());
             assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
+
+            reportService.setAssignmentHistory(assignmentsVO);
+
             workflowAssignments.add(assignmentsVO);
         }
         report.setWorkflowAssignments(workflowAssignments);
@@ -1141,16 +1144,15 @@ public class ReportController {
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                 .getConfigValue() });
 
-                if (assignmentsVO.getAssignmentId() == 0) {
-                    assignment.setAssignment(granteeUser.getId());
-                } else {
-                    ReportAssignment ass = new ReportAssignment();
-                    ass.setAssignment(granteeUser.getId());
-                    ass.setReportId(reportId);
-                    ass.setStateId(assignmentsVO.getStateId());
-                    ass.setAnchor(false);
-                    reportService.saveAssignmentForReport(ass);
-                }
+                assignment.setAssignment(granteeUser.getId());
+
+                /*
+                 * if (assignmentsVO.getAssignmentId() == 0) {
+                 * assignment.setAssignment(granteeUser.getId()); } else { ReportAssignment ass
+                 * = new ReportAssignment(); ass.setAssignment(granteeUser.getId());
+                 * ass.setReportId(reportId); ass.setStateId(assignmentsVO.getStateId());
+                 * ass.setAnchor(false); reportService.saveAssignmentForReport(ass); }
+                 */
                 /*
                  * for (String customAssignment : customAssignments) { User granteeUser = new
                  * User(); Role newRole = new Role(); newRole.setName("Admin");

@@ -91,7 +91,8 @@ public class GrantService {
     private WorkflowStatusService workflowStatusService;
     @Autowired
     private AppConfigService appConfigService;
-
+    @Autowired
+    private GrantAssignmentHistoryRepository assignmentHistoryRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -118,8 +119,7 @@ public class GrantService {
         return grantSpecificSectionAttributeRepository.findById(attributeId).get();
     }
 
-    public GrantSpecificSectionAttribute getSectionAttributeByAttributeIdAndType(
-            Long attributeId, String type) {
+    public GrantSpecificSectionAttribute getSectionAttributeByAttributeIdAndType(Long attributeId, String type) {
         if (type.equalsIgnoreCase("text")) {
             Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
             if (grantStringAttribute.isPresent()) {
@@ -163,8 +163,7 @@ public class GrantService {
         return grantStringAttributeRepository.save(grantStringAttribute);
     }
 
-    public GrantSpecificSectionAttribute saveSectionAttribute(
-            GrantSpecificSectionAttribute sectionAttribute) {
+    public GrantSpecificSectionAttribute saveSectionAttribute(GrantSpecificSectionAttribute sectionAttribute) {
         return grantSpecificSectionAttributeRepository.save(sectionAttribute);
     }
 
@@ -285,20 +284,26 @@ public class GrantService {
         return quantKpiDocumentRepository.save(dataDocument);
     }
 
-    public GrantStringAttribute findGrantStringBySectionAttribueAndGrant(GrantSpecificSection granterGrantSection, GrantSpecificSectionAttribute granterGrantSectionAttribute, Grant grant) {
-        return grantStringAttributeRepository.findBySectionAndSectionAttributeAndGrant(granterGrantSection, granterGrantSectionAttribute, grant);
+    public GrantStringAttribute findGrantStringBySectionAttribueAndGrant(GrantSpecificSection granterGrantSection,
+            GrantSpecificSectionAttribute granterGrantSectionAttribute, Grant grant) {
+        return grantStringAttributeRepository.findBySectionAndSectionAttributeAndGrant(granterGrantSection,
+                granterGrantSectionAttribute, grant);
     }
 
-    public GrantStringAttribute findGrantStringBySectionIdAttribueIdAndGrantId(Long granterGrantSectionId, Long granterGrantSectionAttributeId, Long grantId) {
-        return grantStringAttributeRepository.findBySectionAndSectionIdAttributeIdAndGrantId(granterGrantSectionId, granterGrantSectionAttributeId, grantId);
+    public GrantStringAttribute findGrantStringBySectionIdAttribueIdAndGrantId(Long granterGrantSectionId,
+            Long granterGrantSectionAttributeId, Long grantId) {
+        return grantStringAttributeRepository.findBySectionAndSectionIdAttributeIdAndGrantId(granterGrantSectionId,
+                granterGrantSectionAttributeId, grantId);
     }
 
     public GrantStringAttribute findGrantStringAttributeById(Long grantStringAttributeId) {
         return grantStringAttributeRepository.findById(grantStringAttributeId).get();
     }
 
-    public GrantDocumentAttributes findGrantDocumentBySectionAttribueAndGrant(GrantSpecificSection granterGrantSection, GrantSpecificSectionAttribute granterGrantSectionAttribute, Grant grant) {
-        return grantDocumentAttributesRepository.findBySectionAndSectionAttributeAndGrant(granterGrantSection, granterGrantSectionAttribute, grant);
+    public GrantDocumentAttributes findGrantDocumentBySectionAttribueAndGrant(GrantSpecificSection granterGrantSection,
+            GrantSpecificSectionAttribute granterGrantSectionAttribute, Grant grant) {
+        return grantDocumentAttributesRepository.findBySectionAndSectionAttributeAndGrant(granterGrantSection,
+                granterGrantSectionAttribute, grant);
     }
 
     public GrantStringAttribute saveGrantStringAttribute(GrantStringAttribute stringAttribute) {
@@ -322,19 +327,17 @@ public class GrantService {
     }
 
     public String buildNotificationContent(Grant grant, WorkflowStatus status, String configValue) {
-        return configValue.replace("%GRANT_NAME%",
-                grant.getName())
-                .replace("%GRANT_STATUS%", status.getVerb());
+        return configValue.replace("%GRANT_NAME%", grant.getName()).replace("%GRANT_STATUS%", status.getVerb());
     }
 
     public List<GrantSpecificSection> getGrantSections(Grant grant) {
-        return grantSpecificSectionRepository.findByGranterAndGrantId((Granter) grant.getGrantorOrganization(), grant.getId());
+        return grantSpecificSectionRepository.findByGranterAndGrantId((Granter) grant.getGrantorOrganization(),
+                grant.getId());
     }
 
     public List<GrantSpecificSectionAttribute> getAttributesBySection(GrantSpecificSection section) {
         return grantSpecificSectionAttributeRepository.findBySection(section);
     }
-
 
     public void deleteSections(List<GrantSpecificSection> sections) {
         grantSpecificSectionRepository.deleteAll(sections);
@@ -372,7 +375,6 @@ public class GrantService {
         return granterGrantSectionAttributeRepository.save(attribute);
     }
 
-
     public void deleteGrantTemplateSections(List<GranterGrantSection> sections) {
         granterGrantSectionRepository.deleteAll(sections);
     }
@@ -401,8 +403,9 @@ public class GrantService {
         return grantAssignmentRepository.findByGrantIdAndStateId(grant.getId(), grant.getGrantStatus().getId());
     }
 
-    public GrantAssignments getGrantAssignmentForGrantStateAndUser(Grant grant, WorkflowStatus status, User user){
-        return grantAssignmentRepository.findByGrantIdAndStateIdAndAssignments(grant.getId(),status.getId(),user.getId());
+    public GrantAssignments getGrantAssignmentForGrantStateAndUser(Grant grant, WorkflowStatus status, User user) {
+        return grantAssignmentRepository.findByGrantIdAndStateIdAndAssignments(grant.getId(), status.getId(),
+                user.getId());
     }
 
     public List<GrantAssignments> getGrantWorkflowAssignments(Grant grant) {
@@ -416,11 +419,13 @@ public class GrantService {
         return null;
     }
 
-    public GrantStringAttributeAttachments saveGrantStringAttributeAttachment(GrantStringAttributeAttachments attachment) {
+    public GrantStringAttributeAttachments saveGrantStringAttributeAttachment(
+            GrantStringAttributeAttachments attachment) {
         return grantStringAttributeAttachmentRepository.save(attachment);
     }
 
-    public List<GrantStringAttributeAttachments> getStringAttributeAttachmentsByStringAttribute(GrantStringAttribute grantStringAttribute) {
+    public List<GrantStringAttributeAttachments> getStringAttributeAttachmentsByStringAttribute(
+            GrantStringAttribute grantStringAttribute) {
         return grantStringAttributeAttachmentRepository.findByGrantStringAttribute(grantStringAttribute);
     }
 
@@ -440,7 +445,11 @@ public class GrantService {
         return grantHistoryRepository.findByGrantId(grantId);
     }
 
-    public String[] buildEmailNotificationContent(Grant finalGrant, User user, String userName, String action, String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges, String hasChangesComment, String hasNotes, String hasNotesComment, String link, User owner, Integer noOfDays) {
+    public String[] buildEmailNotificationContent(Grant finalGrant, User user, String userName, String action,
+            String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner,
+            String previousState, String previousOwner, String previousAction, String hasChanges,
+            String hasChangesComment, String hasNotes, String hasNotesComment, String link, User owner,
+            Integer noOfDays) {
 
         String code = Base64.getEncoder().encodeToString(String.valueOf(finalGrant.getId()).getBytes());
 
@@ -455,27 +464,37 @@ public class GrantService {
             } else {
                 host = uriComponents.getHost();
             }
-            UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
+            UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
+                    .host(host).port(uriComponents.getPort());
             url = uriBuilder.toUriString();
-            url = url+"/home/?action=login&g=" + code+"&email=&type=grant";
-        }catch (Exception e){
+            url = url + "/home/?action=login&g=" + code + "&email=&type=grant";
+        } catch (Exception e) {
             url = link;
 
-            url = url+"/home/?action=login&g=" + code+"&email=&type=grant";   
+            url = url + "/home/?action=login&g=" + code + "&email=&type=grant";
         }
 
-
-
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName()).replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner).replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner).replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges).replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%",hasNotes).replaceAll("%HAS_NOTES_COMMENT%",hasNotesComment).replaceAll("%TENANT%",finalGrant.getGrantorOrganization().getName()).replaceAll("%GRANT_LINK%",url).replaceAll("%OWNER_NAME%",owner==null?"":owner.getFirstName()+" "+owner.getLastName()).replaceAll("%OWNER_EMAIL%",owner==null?"":owner.getEmailId()).replaceAll("%NO_DAYS%",noOfDays==null?"":String.valueOf(noOfDays)).replaceAll("%GRANTEE%", finalGrant.getOrganization().getName());
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName())
+                .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
+                .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
+                .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
+                .replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%", hasNotes)
+                .replaceAll("%HAS_NOTES_COMMENT%", hasNotesComment)
+                .replaceAll("%TENANT%", finalGrant.getGrantorOrganization().getName()).replaceAll("%GRANT_LINK%", url)
+                .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
+                .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
+                .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
+                .replaceAll("%GRANTEE%", finalGrant.getOrganization().getName());
         String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName());
 
-        return new String[]{subject, message};
+        return new String[] { subject, message };
     }
 
-    public String[] buildGrantInvitationContent(Grant grant,User user, String sub,String msg,String url){
-        sub = sub.replace("%GRANT_NAME%",grant.getName());
-        msg = msg.replace("%GRANT_NAME%",grant.getName()).replace("%TENANT_NAME%",grant.getGrantorOrganization().getName()).replace("%LINK%",url);
-        return new String[]{sub,msg};
+    public String[] buildGrantInvitationContent(Grant grant, User user, String sub, String msg, String url) {
+        sub = sub.replace("%GRANT_NAME%", grant.getName());
+        msg = msg.replace("%GRANT_NAME%", grant.getName())
+                .replace("%TENANT_NAME%", grant.getGrantorOrganization().getName()).replace("%LINK%", url);
+        return new String[] { sub, msg };
     }
 
     public String buildHashCode(Grant grant) {
@@ -487,7 +506,7 @@ public class GrantService {
         Map<Long, List<Long>> map = new HashMap<>();
         grant.getGrantDetails().getSections().forEach(sec -> {
             List<Long> attribIds = new ArrayList<>();
-            if(sec.getAttributes()!=null) {
+            if (sec.getAttributes() != null) {
                 sec.getAttributes().forEach(a -> {
                     attribIds.add(a.getId());
                 });
@@ -497,33 +516,32 @@ public class GrantService {
         });
         secureEntity.setSectionAndAtrribIds(map);
         List<Long> templateIds = new ArrayList<>();
-        granterGrantTemplateRepository.findByGranterId(grant.getGrantorOrganization().getId()).forEach(t ->{
+        granterGrantTemplateRepository.findByGranterId(grant.getGrantorOrganization().getId()).forEach(t -> {
             templateIds.add(t.getId());
         });
         secureEntity.setGrantTemplateIds(templateIds);
 
         List<Long> grantWorkflowIds = new ArrayList<>();
-        Map<Long,List<Long>> grantWorkflowStatusIds = new HashMap<>();
-        Map<Long,Long[][]> grantWorkflowTransitionIds = new HashMap<>();
+        Map<Long, List<Long>> grantWorkflowStatusIds = new HashMap<>();
+        Map<Long, Long[][]> grantWorkflowTransitionIds = new HashMap<>();
         workflowRepository.findByGranterAndObject(grant.getGrantorOrganization(), WorkflowObject.GRANT).forEach(w -> {
             grantWorkflowIds.add(w.getId());
             List<Long> wfStatusIds = new ArrayList<>();
             workflowStatusRepository.findByWorkflow(w).forEach(ws -> {
                 wfStatusIds.add(ws.getId());
             });
-            grantWorkflowStatusIds.put(w.getId(),wfStatusIds);
+            grantWorkflowStatusIds.put(w.getId(), wfStatusIds);
 
             List<WorkflowStatusTransition> transitions = workflowStatusTransitionRepository.findByWorkflow(w);
             Long[][] stransitions = new Long[transitions.size()][2];
-            final int[] counter = {0};
+            final int[] counter = { 0 };
             workflowStatusTransitionRepository.findByWorkflow(w).forEach(st -> {
-                stransitions[counter[0]][0]=st.getFromState().getId();
-                stransitions[counter[0]][1]=st.getToState().getId();
+                stransitions[counter[0]][0] = st.getFromState().getId();
+                stransitions[counter[0]][1] = st.getToState().getId();
                 counter[0]++;
             });
-            grantWorkflowTransitionIds.put(w.getId(),stransitions);
+            grantWorkflowTransitionIds.put(w.getId(), stransitions);
         });
-
 
         secureEntity.setGrantWorkflowIds(grantWorkflowIds);
         secureEntity.setWorkflowStatusIds(grantWorkflowStatusIds);
@@ -540,15 +558,15 @@ public class GrantService {
             String secureCode = Jwts.builder().setSubject(new ObjectMapper().writeValueAsString(secureEntity))
                     .signWith(SignatureAlgorithm.HS512, SECRET).compact();
             return secureCode;
-        }catch (JsonProcessingException e){
+        } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
         return "";
     }
 
-    public SecureEntity unBuildGrantHashCode(Grant grant){
-        String grantSecureCode = Jwts.parser().setSigningKey(SECRET)
-                .parseClaimsJws(grant.getSecurityCode()).getBody().getSubject();
+    public SecureEntity unBuildGrantHashCode(Grant grant) {
+        String grantSecureCode = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(grant.getSecurityCode()).getBody()
+                .getSubject();
         SecureEntity secureHash = null;
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -559,7 +577,7 @@ public class GrantService {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             return secureHash;
         }
     }
@@ -568,39 +586,40 @@ public class GrantService {
         return grantRepository.findActiveGrants(organization.getId());
     }
 
-    public List<GrantAssignments> getActionDueGrantsForPlatform(List<Long> granterIds){
+    public List<GrantAssignments> getActionDueGrantsForPlatform(List<Long> granterIds) {
         return grantAssignmentRepository.getActionDueGrantsForPlatform(granterIds);
     }
 
-    public List<GrantAssignments> getActionDueGrantsForGranterOrg(Long granterId){
+    public List<GrantAssignments> getActionDueGrantsForGranterOrg(Long granterId) {
         return grantAssignmentRepository.getActionDueGrantsForGranterOrg(granterId);
     }
 
-    public Long getCountOfOtherGrantsWithStartDateAndStatus(Date startDate,Long granterId,Long statusId){
-        return grantRepository.getCountOfOtherGrantsWithStartDateAndStatus(startDate,granterId,statusId);
+    public Long getCountOfOtherGrantsWithStartDateAndStatus(Date startDate, Long granterId, Long statusId) {
+        return grantRepository.getCountOfOtherGrantsWithStartDateAndStatus(startDate, granterId, statusId);
     }
 
     public List<Grant> getGrantsOwnedByUserByStatus(Long userId, String status) {
-        return grantRepository.findGrantsOwnedByUserByStatus(userId,status);
+        return grantRepository.findGrantsOwnedByUserByStatus(userId, status);
     }
 
     public Grant _grantToReturn(@PathVariable("userId") Long userId, Grant grant) {
         User user = userService.getUserById(userId);
 
-        grant.setActionAuthorities(workflowPermissionService
-                .getGrantActionPermissions(grant.getGrantorOrganization().getId(),
+        grant.setActionAuthorities(
+                workflowPermissionService.getGrantActionPermissions(grant.getGrantorOrganization().getId(),
                         user.getUserRoles(), grant.getGrantStatus().getId(), userId, grant.getId()));
 
-        grant.setFlowAuthorities(workflowPermissionService
-                .getGrantFlowPermissions(grant.getGrantStatus().getId(),userId,grant.getId()));
+        grant.setFlowAuthorities(workflowPermissionService.getGrantFlowPermissions(grant.getGrantStatus().getId(),
+                userId, grant.getId()));
 
         grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
 
         GrantVO grantVO = new GrantVO();
 
-        grantVO = grantVO.build(grant, getGrantSections(grant), workflowPermissionService, user, appConfigService
-                .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS), userService);
+        grantVO = grantVO.build(grant, getGrantSections(grant), workflowPermissionService, user,
+                appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
+                userService);
         grant.setGrantDetails(grantVO.getGrantDetails());
         grant.setNoteAddedBy(grantVO.getNoteAddedBy());
         grant.setNoteAddedByUser(grantVO.getNoteAddedByUser());
@@ -617,6 +636,8 @@ public class GrantService {
             assignmentsVO.setGrantId(assignment.getGrantId());
             assignmentsVO.setStateId(assignment.getStateId());
             assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
+
+            setAssignmentHistory(grant, assignmentsVO);
             workflowAssignments.add(assignmentsVO);
         }
         grant.setWorkflowAssignment(workflowAssignments);
@@ -637,14 +658,30 @@ public class GrantService {
         grant = saveGrant(grant);
 
         grant.getWorkflowAssignment().sort((a, b) -> a.getId().compareTo(b.getId()));
-        grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+        grant.getGrantDetails().getSections()
+                .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
         for (SectionVO section : grant.getGrantDetails().getSections()) {
             if (section.getAttributes() != null) {
-                section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+                section.getAttributes().sort(
+                        (a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
             }
         }
 
         grant.setSecurityCode(buildHashCode(grant));
         return grant;
+    }
+
+    public void setAssignmentHistory(Grant grant, GrantAssignmentsVO assignmentsVO) {
+        if (grantRepository.findGrantsThatMovedAtleastOnce(grant.getId()).size() > 0) {
+            List<GrantAssignmentHistory> assignmentHistories = assignmentHistoryRepository
+                    .findByGrantIdAndStateIdOrderByUpdatedOnDesc(grant.getId(), assignmentsVO.getStateId());
+            for (GrantAssignmentHistory grantAss : assignmentHistories) {
+                if (grantAss.getAssignments() != null && grantAss.getAssignments() != 0) {
+                    grantAss.setAssignmentUser(userService.getUserById(grantAss.getAssignments()));
+                }
+
+            }
+            assignmentsVO.setHistory(assignmentHistories);
+        }
     }
 }

@@ -1,9 +1,10 @@
 package org.codealpha.gmsservice.models;
 
+import org.codealpha.gmsservice.entities.GrantAssignmentHistory;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
 
-import javax.persistence.*;
+import java.util.List;
 
 public class GrantAssignmentsVO {
 
@@ -14,6 +15,7 @@ public class GrantAssignmentsVO {
     private Long assignments;
     private User assignmentUser;
     private boolean anchor = false;
+    private List<GrantAssignmentHistory> history;
 
     public Long getId() {
         return id;
@@ -70,4 +72,13 @@ public class GrantAssignmentsVO {
     public void setAnchor(boolean anchor) {
         this.anchor = anchor;
     }
+
+    public List<GrantAssignmentHistory> getHistory() {
+        return history;
+    }
+
+    public void setHistory(List<GrantAssignmentHistory> history) {
+        this.history = history;
+    }
+
 }

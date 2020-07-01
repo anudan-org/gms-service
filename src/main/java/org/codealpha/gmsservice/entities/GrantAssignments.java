@@ -1,5 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
+import java.util.List;
+
 import javax.persistence.*;
 
 @Entity
@@ -19,6 +21,9 @@ public class GrantAssignments {
 
     @Column
     private boolean anchor = false;
+
+    @Transient
+    private List<GrantAssignmentHistory> history;
 
     public Long getId() {
         return id;
@@ -59,4 +64,13 @@ public class GrantAssignments {
     public void setAnchor(boolean anchor) {
         this.anchor = anchor;
     }
+
+    public List<GrantAssignmentHistory> getHistory() {
+        return history;
+    }
+
+    public void setHistory(List<GrantAssignmentHistory> history) {
+        this.history = history;
+    }
+
 }

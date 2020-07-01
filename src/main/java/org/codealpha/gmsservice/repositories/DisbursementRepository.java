@@ -34,4 +34,7 @@ public interface DisbursementRepository extends CrudRepository<Disbursement, Lon
 
         @Query(value = "select * from disbursements where grant_id=?1 and status_id in (?2)", nativeQuery = true)
         public List<Disbursement> getDisbursementByGrantAndStatuses(Long grantId, List<Long> statusIds);
+
+        @Query(value = "select A.* from disbursements A inner join workflow_statuses B on B.id=A.status_id where ( (B.internal_status='DRAFT' and (select count(*) from disbursement_history where id=A.id) >0   ) or B.internal_status!='DRAFT') and A.id=?1", nativeQuery = true)
+        List<Disbursement> findDisbursementsThatMovedAtleastOnce(Long disbursementId);
 }

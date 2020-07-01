@@ -52,4 +52,7 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
 
     List<Report> getReportsByGrant(Grant grant);
 
+    @Query(value = "select A.* from reports A inner join workflow_statuses B on B.id=A.status_id where ( (B.internal_status='DRAFT' and (select count(*) from report_history where id=A.id) >0   ) or B.internal_status!='DRAFT') and A.id=?1", nativeQuery = true)
+    List<Report> findReportsThatMovedAtleastOnce(Long reportId);
+
 }

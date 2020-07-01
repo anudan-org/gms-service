@@ -1,5 +1,8 @@
 package org.codealpha.gmsservice.models;
 
+import java.util.List;
+
+import org.codealpha.gmsservice.entities.ReportAssignmentHistory;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
 
@@ -13,6 +16,7 @@ public class ReportAssignmentsVO {
     private User assignmentUser;
     private boolean anchor = false;
     private String customAssignments;
+    private List<ReportAssignmentHistory> history;
 
     public Long getId() {
         return id;
@@ -77,4 +81,13 @@ public class ReportAssignmentsVO {
     public void setCustomAssignments(String customAssignments) {
         this.customAssignments = customAssignments;
     }
+
+    public List<ReportAssignmentHistory> getHistory() {
+        return history;
+    }
+
+    public void setHistory(List<ReportAssignmentHistory> history) {
+        this.history = history;
+    }
+
 }

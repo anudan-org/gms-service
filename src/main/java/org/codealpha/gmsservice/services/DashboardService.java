@@ -17,6 +17,7 @@ import org.codealpha.gmsservice.entities.dashboard.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.ActualDisbursementRepository;
 import org.codealpha.gmsservice.repositories.DisbursementRepository;
+import org.codealpha.gmsservice.repositories.GrantAssignmentHistoryRepository;
 import org.codealpha.gmsservice.repositories.GrantRepository;
 import org.codealpha.gmsservice.repositories.ReportsCountPerGrantRepository;
 import org.codealpha.gmsservice.repositories.dashboard.*;
@@ -63,9 +64,10 @@ public class DashboardService {
     private ActualDisbursementRepository actualDisbursementRepository;
     @Autowired
     private GrantRepository grantRepository;
+    @Autowired
+    private GrantAssignmentHistoryRepository assignmentHistoryRepository;
 
     List<Tenant> tenants;
-
 
     public DashboardService build(User user, List<Grant> grants, Organization tenantOrg) {
         this.user = user;
@@ -80,34 +82,36 @@ public class DashboardService {
             tenant.setName(name);
             List<Grant> grantsList = new ArrayList<>();
             tenant.setGrants(grantsList);
-            tenant.setGrantTemplates(granterGrantTemplateService.findByGranterIdAndPublishedStatusAndPrivateStatus(user.getOrganization().getId(),true,false));
-            if(user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
-                tenant.setTemplateLibrary(templateLibraryService.getTemplateLibraryForGranter((Granter) user.getOrganization()));
+            tenant.setGrantTemplates(granterGrantTemplateService
+                    .findByGranterIdAndPublishedStatusAndPrivateStatus(user.getOrganization().getId(), true, false));
+            if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
+                tenant.setTemplateLibrary(
+                        templateLibraryService.getTemplateLibraryForGranter((Granter) user.getOrganization()));
             }
             tenants.add(tenant);
         }
 
         for (Grant grant : grants) {
             for (Tenant tenant : tenants) {
-                if ((user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER") && tenant.getName().equalsIgnoreCase(grant.getGrantorOrganization().getCode()))
-                || (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"))) {
+                if ((user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")
+                        && tenant.getName().equalsIgnoreCase(grant.getGrantorOrganization().getCode()))
+                        || (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"))) {
                     List<Grant> grantList = tenant.getGrants();
 
-                    grant.setActionAuthorities(workflowPermissionService
-                            .getGrantActionPermissions(grant.getGrantorOrganization().getId(),
-                                    user.getUserRoles(), grant.getGrantStatus().getId(),user.getId(),grant.getId()));
+                    grant.setActionAuthorities(
+                            workflowPermissionService.getGrantActionPermissions(grant.getGrantorOrganization().getId(),
+                                    user.getUserRoles(), grant.getGrantStatus().getId(), user.getId(), grant.getId()));
 
                     grant.setFlowAuthorities(workflowPermissionService
-                            .getGrantFlowPermissions(grant.getGrantStatus().getId(),user.getId(),grant.getId()));
+                            .getGrantFlowPermissions(grant.getGrantStatus().getId(), user.getId(), grant.getId()));
 
                     for (Submission submission : grant.getSubmissions()) {
-                        submission.setActionAuthorities(workflowPermissionService
-                                .getSubmissionActionPermission(grant.getGrantorOrganization().getId(),
-                                        user.getUserRoles()));
+                        submission.setActionAuthorities(workflowPermissionService.getSubmissionActionPermission(
+                                grant.getGrantorOrganization().getId(), user.getUserRoles()));
 
-                        AppConfig submissionWindow = appConfigService
-                                .getAppConfigForGranterOrg(submission.getGrant().getGrantorOrganization().getId(),
-                                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS);
+                        AppConfig submissionWindow = appConfigService.getAppConfigForGranterOrg(
+                                submission.getGrant().getGrantorOrganization().getId(),
+                                AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS);
                         Date submissionWindowStart = new DateTime(submission.getSubmitBy())
                                 .minusDays(Integer.valueOf(submissionWindow.getConfigValue()) + 1).toDate();
 
@@ -115,13 +119,11 @@ public class DashboardService {
                                 .getSubmissionFlowPermissions(grant.getGrantorOrganization().getId(),
                                         user.getUserRoles(), submission.getSubmissionStatus().getId());
 
-                        if (!flowPermissions.isEmpty() && DateTime.now().toDate()
-                                .after(submissionWindowStart)) {
+                        if (!flowPermissions.isEmpty() && DateTime.now().toDate().after(submissionWindowStart)) {
                             submission.setFlowAuthorities(flowPermissions);
                         }
 
-                        if (DateTime.now().toDate()
-                                .after(submissionWindowStart)) {
+                        if (DateTime.now().toDate().after(submissionWindowStart)) {
                             submission.setOpenForReporting(true);
                         } else {
                             submission.setOpenForReporting(false);
@@ -129,12 +131,14 @@ public class DashboardService {
                     }
 
                     GrantVO grantVO = new GrantVO();
-                    grantVO = grantVO.build(grant, grantService.getGrantSections(grant), workflowPermissionService, user, appConfigService
-                            .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                                    AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),userService);
+                    grantVO = grantVO.build(grant, grantService.getGrantSections(grant), workflowPermissionService,
+                            user, appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                    AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
+                            userService);
                     grant.setGrantDetails(grantVO.getGrantDetails());
-                    //grant.setNoteAddedBy(grantVO.getNoteAddedBy());
-                    grant.setNoteAddedByUser(userService.getUserByEmailAndOrg(grant.getNoteAddedBy(),grant.getGrantorOrganization()));
+                    // grant.setNoteAddedBy(grantVO.getNoteAddedBy());
+                    grant.setNoteAddedByUser(
+                            userService.getUserByEmailAndOrg(grant.getNoteAddedBy(), grant.getGrantorOrganization()));
                     grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
                     List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
                     for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
@@ -142,12 +146,24 @@ public class DashboardService {
                         assignmentsVO.setId(assignment.getId());
                         assignmentsVO.setAnchor(assignment.isAnchor());
                         assignmentsVO.setAssignments(assignment.getAssignments());
-                        if(assignment.getAssignments()!=null && assignment.getAssignments()>0) {
+                        if (assignment.getAssignments() != null && assignment.getAssignments() > 0) {
                             assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
                         }
                         assignmentsVO.setGrantId(assignment.getGrantId());
                         assignmentsVO.setStateId(assignment.getStateId());
                         assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
+
+                        if (grantRepository.findGrantsThatMovedAtleastOnce(grant.getId()).size() > 0) {
+                            List<GrantAssignmentHistory> history = assignmentHistoryRepository
+                                    .findByGrantIdAndStateIdOrderByUpdatedOnDesc(grant.getId(),
+                                            assignment.getStateId());
+                            for (GrantAssignmentHistory h : history) {
+                                if (h.getAssignments() != null && h.getAssignments() != 0) {
+                                    h.setAssignmentUser(userService.getUserById(h.getAssignments()));
+                                }
+                            }
+                            assignmentsVO.setHistory(history);
+                        }
                         workflowAssignments.add(assignmentsVO);
                     }
                     grant.setWorkflowAssignment(workflowAssignments);
@@ -160,18 +176,20 @@ public class DashboardService {
                                 grant.setCurrentAssignment(assignedToList);
                             }
                             AssignedTo newAssignedTo = new AssignedTo();
-                            if(assignment.getAssignments()!=null && assignment.getAssignments()>0) {
+                            if (assignment.getAssignments() != null && assignment.getAssignments() > 0) {
                                 newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
                             }
                             grant.getCurrentAssignment().add(newAssignedTo);
                         }
                     }
-                    grant.getWorkflowAssignment().sort((a,b) -> a.getId().compareTo(b.getId()));
+                    grant.getWorkflowAssignment().sort((a, b) -> a.getId().compareTo(b.getId()));
 
-                    grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+                    grant.getGrantDetails().getSections()
+                            .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
                     for (SectionVO section : grant.getGrantDetails().getSections()) {
                         if (section.getAttributes() != null) {
-                            section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+                            section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder())
+                                    .compareTo(Long.valueOf(b.getAttributeOrder())));
                         }
                     }
                     grant.setSecurityCode(grantService.buildHashCode(grant));
@@ -191,77 +209,80 @@ public class DashboardService {
         this.tenants = tenants;
     }
 
-
-    public GranterCountAndAmountTotal getSummaryForGranter(Long granterId){
+    public GranterCountAndAmountTotal getSummaryForGranter(Long granterId) {
         return granterCountAndAmountTotalRepository.getSummaryForGranter(granterId);
     }
 
-    public GranterGrantee getGranteesSummaryForGranter(Long granterId){
+    public GranterGrantee getGranteesSummaryForGranter(Long granterId) {
         return granterGranteeRepository.getGranteeSummaryForGranter(granterId);
     }
 
-    public GranterActiveUser getActiveUserSummaryForGranter(Long granterId){
+    public GranterActiveUser getActiveUserSummaryForGranter(Long granterId) {
         return granterActiveUserRepository.getActiveUserSummaryForGranter(granterId);
     }
 
-    public GranterGrantSummaryCommitted getActiveGrantCommittedSummaryForGranter(Long granterId,String status){
-        return granterActiveGrantSummaryCommittedRepository.getGrantCommittedSummaryForGranter(granterId,status);
+    public GranterGrantSummaryCommitted getActiveGrantCommittedSummaryForGranter(Long granterId, String status) {
+        return granterActiveGrantSummaryCommittedRepository.getGrantCommittedSummaryForGranter(granterId, status);
     }
 
-    public Double getActiveGrantDisbursedAmountForGranter(Long granterId,String status) {
+    public Double getActiveGrantDisbursedAmountForGranter(Long granterId, String status) {
         Double disbursedAmount = 0d;
-        
+
         List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
                 granterId);
 
         List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
                 .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
-        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
+        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                .collect(Collectors.toList());
 
         List<Grant> activeGrants = grantRepository.findActiveGrants(granterId);
-        if(activeGrants!=null && !activeGrants.isEmpty()){
+        if (activeGrants != null && !activeGrants.isEmpty()) {
             List<Disbursement> allClosedDisbursements = new ArrayList<>();
 
-            for(Grant ag : activeGrants){
-                List<Disbursement> closedDisbursements = disbursementRepository.getDisbursementByGrantAndStatuses(ag.getId(), closedStatusIds);
+            for (Grant ag : activeGrants) {
+                List<Disbursement> closedDisbursements = disbursementRepository
+                        .getDisbursementByGrantAndStatuses(ag.getId(), closedStatusIds);
                 allClosedDisbursements.addAll(closedDisbursements);
             }
 
             List<ActualDisbursement> allActualDisbursements = new ArrayList();
-            for(Disbursement cd : allClosedDisbursements){
-                List<ActualDisbursement> actualDisbursements = actualDisbursementRepository.findByDisbursementId(cd.getId());
-                if(actualDisbursements!=null){
+            for (Disbursement cd : allClosedDisbursements) {
+                List<ActualDisbursement> actualDisbursements = actualDisbursementRepository
+                        .findByDisbursementId(cd.getId());
+                if (actualDisbursements != null) {
                     allActualDisbursements.addAll(actualDisbursements);
                 }
             }
 
-            for(ActualDisbursement ad : allActualDisbursements){
-                disbursedAmount += ad.getActualAmount()==null?0:ad.getActualAmount();
+            for (ActualDisbursement ad : allActualDisbursements) {
+                disbursedAmount += ad.getActualAmount() == null ? 0 : ad.getActualAmount();
             }
 
         }
-        
+
         return disbursedAmount;
     }
 
-    public List<GranterReportStatus> getReportStatusSummaryForGranterAndStatus(Long granterId,String status){
+    public List<GranterReportStatus> getReportStatusSummaryForGranterAndStatus(Long granterId, String status) {
         return granterReportStatusRepository.getReportStatusesForGranter(granterId, status);
     }
 
-    public List<GranterReportStatus> findGrantCountsByReportNumbersAndStatusForGranter(Long granterId,String status){
+    public List<GranterReportStatus> findGrantCountsByReportNumbersAndStatusForGranter(Long granterId, String status) {
         List<GranterReportStatus> reportStatuses = new ArrayList<>();
-        Map<Long,Long> transposedMap = new HashMap<>();
-        List<ReportsCountPerGrant> countPerGrants = reportsCountPerGrantRepository.findGrantCountsByReportNumbersAndStatusForGranter(granterId, status);
+        Map<Long, Long> transposedMap = new HashMap<>();
+        List<ReportsCountPerGrant> countPerGrants = reportsCountPerGrantRepository
+                .findGrantCountsByReportNumbersAndStatusForGranter(granterId, status);
         for (ReportsCountPerGrant countPerGrant : countPerGrants) {
 
-            if(transposedMap.containsKey(countPerGrant.getCount())){
-                transposedMap.replace(countPerGrant.getCount(),transposedMap.get(countPerGrant.getCount())+1);
-            }else{
-                transposedMap.put(countPerGrant.getCount(),1l);
+            if (transposedMap.containsKey(countPerGrant.getCount())) {
+                transposedMap.replace(countPerGrant.getCount(), transposedMap.get(countPerGrant.getCount()) + 1);
+            } else {
+                transposedMap.put(countPerGrant.getCount(), 1l);
             }
 
         }
-        transposedMap.forEach((k,v) ->{
+        transposedMap.forEach((k, v) -> {
             GranterReportStatus reportStatus = new GranterReportStatus();
             reportStatus.setStatus(String.valueOf(k));
             reportStatus.setCount(v.intValue());
@@ -270,113 +291,121 @@ public class DashboardService {
         return reportStatuses;
     }
 
-    public Map<Integer,String> getActiveGrantsCommittedPeriodsForGranterAndStatus(Long granterId, String status) {
+    public Map<Integer, String> getActiveGrantsCommittedPeriodsForGranterAndStatus(Long granterId, String status) {
 
         List<GranterGrantSummaryDisbursed> disbursedList = null;
-        if(status.equalsIgnoreCase("ACTIVE")){
-            disbursedList = granterActiveGrantSummaryDisbursedRepository.getActiveGrantCommittedSummaryForGranter(granterId);
-        } else if(status.equalsIgnoreCase("CLOSED")){
-            disbursedList = granterActiveGrantSummaryDisbursedRepository.getClosedGrantCommittedSummaryForGranter(granterId);
+        if (status.equalsIgnoreCase("ACTIVE")) {
+            disbursedList = granterActiveGrantSummaryDisbursedRepository
+                    .getActiveGrantCommittedSummaryForGranter(granterId);
+        } else if (status.equalsIgnoreCase("CLOSED")) {
+            disbursedList = granterActiveGrantSummaryDisbursedRepository
+                    .getClosedGrantCommittedSummaryForGranter(granterId);
         }
-        Map<Integer,String> periods = new HashMap<>();
-        if(disbursedList!=null && disbursedList.size()>0){
+        Map<Integer, String> periods = new HashMap<>();
+        if (disbursedList != null && disbursedList.size() > 0) {
             for (GranterGrantSummaryDisbursed granterGrantSummaryDisbursed : disbursedList) {
                 DateTime grantDate = new DateTime(granterGrantSummaryDisbursed.getStartDate());
-                DateTime calendarYearStart = new DateTime().withYear(grantDate.getYear()).withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
+                DateTime calendarYearStart = new DateTime().withYear(grantDate.getYear())
+                        .withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
                 String period = null;
-                if(grantDate.isAfter(calendarYearStart)){
-                    period = String.valueOf(grantDate.getYear())+" - "+ String.valueOf(grantDate.getYear()+1);
-                    periods.put(grantDate.getYear(),period);
-                }else {
-                    period = String.valueOf(grantDate.getYear()-1)+" - "+ String.valueOf(grantDate.getYear());
-                    periods.put(grantDate.getYear()-1,period);
+                if (grantDate.isAfter(calendarYearStart)) {
+                    period = String.valueOf(grantDate.getYear()) + " - " + String.valueOf(grantDate.getYear() + 1);
+                    periods.put(grantDate.getYear(), period);
+                } else {
+                    period = String.valueOf(grantDate.getYear() - 1) + " - " + String.valueOf(grantDate.getYear());
+                    periods.put(grantDate.getYear() - 1, period);
                 }
             }
         }
         return periods;
     }
 
-    public Double[] getDisbursedAmountForGranterAndPeriodAndStatus(Integer period,Long granterId,String status) {
+    public Double[] getDisbursedAmountForGranterAndPeriodAndStatus(Integer period, Long granterId, String status) {
 
         Double total = 0d;
-            
+
         List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
                 granterId);
 
         List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
                 .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
-        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed().collect(Collectors.toList());
+        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                .collect(Collectors.toList());
 
         List<Grant> activeGrants = grantRepository.findActiveGrants(granterId);
-        if(activeGrants!=null && !activeGrants.isEmpty()){
+        if (activeGrants != null && !activeGrants.isEmpty()) {
             List<Disbursement> allClosedDisbursements = new ArrayList<>();
 
-            for(Grant ag : activeGrants){
-                List<Disbursement> closedDisbursements = disbursementRepository.getDisbursementByGrantAndStatuses(ag.getId(), closedStatusIds);
+            for (Grant ag : activeGrants) {
+                List<Disbursement> closedDisbursements = disbursementRepository
+                        .getDisbursementByGrantAndStatuses(ag.getId(), closedStatusIds);
                 allClosedDisbursements.addAll(closedDisbursements);
             }
 
             List<ActualDisbursement> allActualDisbursements = new ArrayList();
-            for(Disbursement cd : allClosedDisbursements){
-                List<ActualDisbursement> actualDisbursements = actualDisbursementRepository.findByDisbursementId(cd.getId());
-                if(actualDisbursements!=null){
+            for (Disbursement cd : allClosedDisbursements) {
+                List<ActualDisbursement> actualDisbursements = actualDisbursementRepository
+                        .findByDisbursementId(cd.getId());
+                if (actualDisbursements != null) {
                     allActualDisbursements.addAll(actualDisbursements);
                 }
             }
 
-            
-            for(ActualDisbursement ad : allActualDisbursements){
+            for (ActualDisbursement ad : allActualDisbursements) {
                 SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy");
                 DateTime disbursementDate = new DateTime(ad.getDisbursementDate());
                 Double disbursementAmt = ad.getActualAmount();
-                DateTime calendarYearStart = new DateTime().withYear(disbursementDate.getYear()).withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
+                DateTime calendarYearStart = new DateTime().withYear(disbursementDate.getYear())
+                        .withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
 
-                int disbursementYear=0;
-                if(disbursementDate.isAfter(calendarYearStart)){
+                int disbursementYear = 0;
+                if (disbursementDate.isAfter(calendarYearStart)) {
                     disbursementYear = disbursementDate.getYear();
-                }else {
-                    disbursementYear = disbursementDate.getYear()-1;
+                } else {
+                    disbursementYear = disbursementDate.getYear() - 1;
                 }
-                if(period==disbursementYear){
-                    total += disbursementAmt==null?0:disbursementAmt;
+                if (period == disbursementYear) {
+                    total += disbursementAmt == null ? 0 : disbursementAmt;
                 }
             }
 
         }
-        return new Double[]{total};
+        return new Double[] { total };
     }
 
-    public Long[] getCommittedAmountForGranterAndPeriodAndStatus(Integer period,Long granterId,String status) {
+    public Long[] getCommittedAmountForGranterAndPeriodAndStatus(Integer period, Long granterId, String status) {
         List<GranterGrantSummaryDisbursed> disbursedList = null;
-        if(status.equalsIgnoreCase("ACTIVE")){
-            disbursedList = granterActiveGrantSummaryDisbursedRepository.getActiveGrantCommittedSummaryForGranter(granterId);
-        } else if(status.equalsIgnoreCase("CLOSED")){
-            disbursedList = granterActiveGrantSummaryDisbursedRepository.getClosedGrantCommittedSummaryForGranter(granterId);
+        if (status.equalsIgnoreCase("ACTIVE")) {
+            disbursedList = granterActiveGrantSummaryDisbursedRepository
+                    .getActiveGrantCommittedSummaryForGranter(granterId);
+        } else if (status.equalsIgnoreCase("CLOSED")) {
+            disbursedList = granterActiveGrantSummaryDisbursedRepository
+                    .getClosedGrantCommittedSummaryForGranter(granterId);
         }
         ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         Long total = 0l;
-        Map<Long,String> countMap= new HashMap<>();
+        Map<Long, String> countMap = new HashMap<>();
         if (disbursedList != null && disbursedList.size() > 0) {
             for (GranterGrantSummaryDisbursed granterGrantSummaryDisbursed : disbursedList) {
 
+                DateTime committedDate = new DateTime(granterGrantSummaryDisbursed.getStartDate());
+                Long disbursementAmt = Long.valueOf(granterGrantSummaryDisbursed.getGrantAmount());
+                DateTime calendarYearStart = new DateTime().withYear(committedDate.getYear())
+                        .withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
 
-                        DateTime committedDate = new DateTime(granterGrantSummaryDisbursed.getStartDate());
-                        Long disbursementAmt = Long.valueOf(granterGrantSummaryDisbursed.getGrantAmount());
-                        DateTime calendarYearStart = new DateTime().withYear(committedDate.getYear()).withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
-
-                        int disbursementYear=0;
-                        if(committedDate.isAfter(calendarYearStart)){
-                            disbursementYear = committedDate.getYear();
-                        }else {
-                            disbursementYear = committedDate.getYear()-1;
-                        }
-                        if(period==disbursementYear){
-                            total += disbursementAmt;
-                            countMap.put(granterGrantSummaryDisbursed.getGrantId(),"");
-                        }
+                int disbursementYear = 0;
+                if (committedDate.isAfter(calendarYearStart)) {
+                    disbursementYear = committedDate.getYear();
+                } else {
+                    disbursementYear = committedDate.getYear() - 1;
+                }
+                if (period == disbursementYear) {
+                    total += disbursementAmt;
+                    countMap.put(granterGrantSummaryDisbursed.getGrantId(), "");
+                }
             }
         }
-        return new Long[]{total,Long.valueOf(countMap.size())};
+        return new Long[] { total, Long.valueOf(countMap.size()) };
     }
 }

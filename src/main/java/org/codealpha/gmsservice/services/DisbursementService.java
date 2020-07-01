@@ -4,6 +4,7 @@ import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.GrantVO;
 import org.codealpha.gmsservice.repositories.ActualDisbursementRepository;
+import org.codealpha.gmsservice.repositories.DisbursementAssignmentHistoryRepository;
 import org.codealpha.gmsservice.repositories.DisbursementAssignmentRepository;
 import org.codealpha.gmsservice.repositories.DisbursementHistoryRepository;
 import org.codealpha.gmsservice.repositories.DisbursementRepository;
@@ -50,6 +51,8 @@ public class DisbursementService {
     private ActualDisbursementRepository actualDisbursementRepository;
     @Autowired
     private WorkflowStatusRepository workflowStatusRepository;
+    @Autowired
+    private DisbursementAssignmentHistoryRepository assignmentHistoryRepository;
 
     public Disbursement saveDisbursement(Disbursement disbursement) {
         return disbursementRepository.save(disbursement);
@@ -102,7 +105,23 @@ public class DisbursementService {
                 .getPermissionsForDisbursementFlow(disbursement.getStatus().getId(), userId, disbursement.getId());
 
         disbursement.setFlowPermissions(permissions);
-        disbursement.setAssignments(disbursementAssignmentRepository.findByDisbursementId(disbursement.getId()));
+        List<DisbursementAssignment> disbursementAssignments = disbursementAssignmentRepository
+                .findByDisbursementId(disbursement.getId());
+
+        for (DisbursementAssignment ass : disbursementAssignments) {
+            if (disbursementRepository.findDisbursementsThatMovedAtleastOnce(ass.getDisbursementId()).size() > 0) {
+                List<DisbursementAssignmentHistory> assignmentHistories = assignmentHistoryRepository
+                        .findByDisbursementIdAndStateIdOrderByUpdatedOnDesc(ass.getDisbursementId(), ass.getStateId());
+                for (DisbursementAssignmentHistory assHist : assignmentHistories) {
+                    if (assHist.getOwner() != null && assHist.getOwner() != 0) {
+                        assHist.setAssignmentUser(userService.getUserById(assHist.getOwner()));
+                    }
+
+                }
+                ass.setHistory(assignmentHistories);
+            }
+        }
+        disbursement.setAssignments(disbursementAssignments);
 
         GrantVO vo = new GrantVO().build(disbursement.getGrant(),
                 grantService.getGrantSections(disbursement.getGrant()), workflowPermissionService,

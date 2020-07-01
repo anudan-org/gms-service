@@ -969,7 +969,9 @@ public class GrantController {
             assignmentsVO.setGrantId(assignment.getGrantId());
             assignmentsVO.setStateId(assignment.getStateId());
             assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
+            grantService.setAssignmentHistory(grant, assignmentsVO);
             workflowAssignments.add(assignmentsVO);
+
         }
         grant.setWorkflowAssignment(workflowAssignments);
         List<GrantAssignments> grantAssignments = grantService.getGrantCurrentAssignments(grant);
