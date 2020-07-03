@@ -241,6 +241,8 @@ public class DisbursementsController {
                         }
 
                         assignment.setOwner(assignmentsVO.getAssignmentId());
+                        assignment.setUpdatedBy(userId);
+                        assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
 
                         disbursementService.saveAssignmentForDisbursement(assignment);
                 }

@@ -1,16 +1,23 @@
 package org.codealpha.gmsservice.entities;
 
 import java.util.Date;
-import java.util.List;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Transient;
 
-@Entity(name = "disbursement_assignments")
-public class DisbursementAssignment {
-
+@Entity
+public class DisbursementAssignmentHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long seqid;
+
+    @Column
     private Long id;
+
     @Column
     private Long disbursementId;
     @Column
@@ -19,7 +26,8 @@ public class DisbursementAssignment {
     private Boolean anchor;
     @Column
     private Long stateId;
-
+    @Column
+    private Date updatedOn;
     @Column
     private Date assignedOn;
 
@@ -27,7 +35,18 @@ public class DisbursementAssignment {
     private Long updatedBy;
 
     @Transient
-    private List<DisbursementAssignmentHistory> history;
+    private User updatedByUser;
+
+    @Transient
+    private User assignmentUser;
+
+    public Long getSeqid() {
+        return seqid;
+    }
+
+    public void setSeqid(Long seqid) {
+        this.seqid = seqid;
+    }
 
     public Long getId() {
         return id;
@@ -69,12 +88,20 @@ public class DisbursementAssignment {
         this.stateId = stateId;
     }
 
-    public List<DisbursementAssignmentHistory> getHistory() {
-        return history;
+    public Date getUpdatedOn() {
+        return updatedOn;
     }
 
-    public void setHistory(List<DisbursementAssignmentHistory> history) {
-        this.history = history;
+    public void setUpdatedOn(Date updatedOn) {
+        this.updatedOn = updatedOn;
+    }
+
+    public User getAssignmentUser() {
+        return assignmentUser;
+    }
+
+    public void setAssignmentUser(User assignmentUser) {
+        this.assignmentUser = assignmentUser;
     }
 
     public Date getAssignedOn() {
@@ -91,6 +118,14 @@ public class DisbursementAssignment {
 
     public void setUpdatedBy(Long updatedBy) {
         this.updatedBy = updatedBy;
+    }
+
+    public User getUpdatedByUser() {
+        return updatedByUser;
+    }
+
+    public void setUpdatedByUser(User updatedByUser) {
+        this.updatedByUser = updatedByUser;
     }
 
 }

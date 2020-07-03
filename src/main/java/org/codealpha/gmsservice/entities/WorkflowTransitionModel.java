@@ -26,6 +26,8 @@ public class WorkflowTransitionModel {
     private Boolean noteRequired;
     @Column
     private Integer seqOrder;
+    @Column
+    private String internalStatus;
 
     public Long getId() {
         return id;
@@ -106,4 +108,13 @@ public class WorkflowTransitionModel {
     public void setSeqOrder(Integer seqOrder) {
         this.seqOrder = seqOrder;
     }
+
+    public String getInternalStatus() {
+        return internalStatus;
+    }
+
+    public void setInternalStatus(String internalStatus) {
+        this.internalStatus = internalStatus;
+    }
+
 }

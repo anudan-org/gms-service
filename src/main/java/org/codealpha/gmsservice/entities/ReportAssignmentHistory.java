@@ -1,15 +1,21 @@
 package org.codealpha.gmsservice.entities;
 
 import java.util.Date;
-import java.util.List;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Transient;
 
-@Entity(name = "report_assignments")
-public class ReportAssignment {
-
+@Entity
+public class ReportAssignmentHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long seqid;
+
+    @Column
     private Long id;
 
     @Column
@@ -22,16 +28,27 @@ public class ReportAssignment {
     private Long assignment;
 
     @Column
-    private boolean anchor = false;
+    private Date updatedOn;
 
     @Transient
-    private List<ReportAssignmentHistory> history;
+    private User assignmentUser;
 
     @Column
     private Date assignedOn;
 
     @Column
     private Long updatedBy;
+
+    @Transient
+    private User updatedByUser;
+
+    public Long getSeqid() {
+        return seqid;
+    }
+
+    public void setSeqid(Long seqid) {
+        this.seqid = seqid;
+    }
 
     public Long getId() {
         return id;
@@ -45,8 +62,8 @@ public class ReportAssignment {
         return reportId;
     }
 
-    public void setReportId(Long grantId) {
-        this.reportId = grantId;
+    public void setReportId(Long reportId) {
+        this.reportId = reportId;
     }
 
     public Long getStateId() {
@@ -65,20 +82,20 @@ public class ReportAssignment {
         this.assignment = assignment;
     }
 
-    public boolean isAnchor() {
-        return anchor;
+    public Date getUpdatedOn() {
+        return updatedOn;
     }
 
-    public void setAnchor(boolean anchor) {
-        this.anchor = anchor;
+    public void setUpdatedOn(Date updatedOn) {
+        this.updatedOn = updatedOn;
     }
 
-    public List<ReportAssignmentHistory> getHistory() {
-        return history;
+    public User getAssignmentUser() {
+        return assignmentUser;
     }
 
-    public void setHistory(List<ReportAssignmentHistory> history) {
-        this.history = history;
+    public void setAssignmentUser(User assignmentUser) {
+        this.assignmentUser = assignmentUser;
     }
 
     public Date getAssignedOn() {
@@ -95,6 +112,14 @@ public class ReportAssignment {
 
     public void setUpdatedBy(Long updatedBy) {
         this.updatedBy = updatedBy;
+    }
+
+    public User getUpdatedByUser() {
+        return updatedByUser;
+    }
+
+    public void setUpdatedByUser(User updatedByUser) {
+        this.updatedByUser = updatedByUser;
     }
 
 }

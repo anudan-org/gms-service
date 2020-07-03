@@ -11,6 +11,7 @@ import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.controllers.ReportController;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.ColumnData;
+import org.codealpha.gmsservice.models.ReportAssignmentsVO;
 import org.codealpha.gmsservice.models.SecureReportEntity;
 import org.codealpha.gmsservice.models.TableData;
 import org.codealpha.gmsservice.repositories.*;
@@ -72,6 +73,8 @@ public class ReportService {
     private UserRepository userRepository;
     @Autowired
     private ServletContext servletContext;
+    @Autowired
+    private ReportAssignmentHistoryRepository assignmentHistoryRepository;
 
     public Report saveReport(Report report) {
         return reportRepository.save(report);
@@ -709,5 +712,24 @@ public class ReportService {
 
     public List<Report> getReportsForGrant(Grant grant) {
         return reportRepository.getReportsByGrant(grant);
+    }
+
+    public void setAssignmentHistory(ReportAssignmentsVO assignmentsVO) {
+
+        if (reportRepository.findReportsThatMovedAtleastOnce(assignmentsVO.getReportId()).size() > 0) {
+            List<ReportAssignmentHistory> assignmentHistories = assignmentHistoryRepository
+                    .findByReportIdAndStateIdOrderByUpdatedOnDesc(assignmentsVO.getReportId(),
+                            assignmentsVO.getStateId());
+            for (ReportAssignmentHistory reportAss : assignmentHistories) {
+                if (reportAss.getAssignment() != null && reportAss.getAssignment() != 0) {
+                    reportAss.setAssignmentUser(userRepository.findById(reportAss.getAssignment()).get());
+                }
+                if (reportAss.getUpdatedBy() != null && reportAss.getUpdatedBy() != 0) {
+                    reportAss.setUpdatedByUser(userRepository.findById(reportAss.getUpdatedBy()).get());
+                }
+
+            }
+            assignmentsVO.setHistory(assignmentHistories);
+        }
     }
 }
