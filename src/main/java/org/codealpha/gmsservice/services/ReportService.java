@@ -724,6 +724,9 @@ public class ReportService {
                 if (reportAss.getAssignment() != null && reportAss.getAssignment() != 0) {
                     reportAss.setAssignmentUser(userRepository.findById(reportAss.getAssignment()).get());
                 }
+                if (reportAss.getUpdatedBy() != null && reportAss.getUpdatedBy() != 0) {
+                    reportAss.setUpdatedByUser(userRepository.findById(reportAss.getUpdatedBy()).get());
+                }
 
             }
             assignmentsVO.setHistory(assignmentHistories);

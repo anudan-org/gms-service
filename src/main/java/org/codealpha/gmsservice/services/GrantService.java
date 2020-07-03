@@ -679,7 +679,9 @@ public class GrantService {
                 if (grantAss.getAssignments() != null && grantAss.getAssignments() != 0) {
                     grantAss.setAssignmentUser(userService.getUserById(grantAss.getAssignments()));
                 }
-
+                if (grantAss.getUpdatedBy() != null && grantAss.getUpdatedBy() != 0) {
+                    grantAss.setUpdatedByUser(userService.getUserById(grantAss.getUpdatedBy()));
+                }
             }
             assignmentsVO.setHistory(assignmentHistories);
         }

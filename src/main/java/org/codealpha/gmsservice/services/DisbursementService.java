@@ -117,6 +117,10 @@ public class DisbursementService {
                         assHist.setAssignmentUser(userService.getUserById(assHist.getOwner()));
                     }
 
+                    if (assHist.getUpdatedBy() != null && assHist.getUpdatedBy() != 0) {
+                        assHist.setUpdatedByUser(userService.getUserById(assHist.getUpdatedBy()));
+                    }
+
                 }
                 ass.setHistory(assignmentHistories);
             }

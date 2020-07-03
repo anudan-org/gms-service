@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.*;
@@ -18,6 +19,12 @@ public class DisbursementAssignment {
     private Boolean anchor;
     @Column
     private Long stateId;
+
+    @Column
+    private Date assignedOn;
+
+    @Column
+    private Long updatedBy;
 
     @Transient
     private List<DisbursementAssignmentHistory> history;
@@ -68,6 +75,22 @@ public class DisbursementAssignment {
 
     public void setHistory(List<DisbursementAssignmentHistory> history) {
         this.history = history;
+    }
+
+    public Date getAssignedOn() {
+        return assignedOn;
+    }
+
+    public void setAssignedOn(Date assignedOn) {
+        this.assignedOn = assignedOn;
+    }
+
+    public Long getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(Long updatedBy) {
+        this.updatedBy = updatedBy;
     }
 
 }

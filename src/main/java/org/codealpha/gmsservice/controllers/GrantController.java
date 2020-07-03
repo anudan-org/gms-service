@@ -2729,6 +2729,8 @@ public class GrantController {
             }
 
             assignment.setAssignments(assignmentsVO.getAssignments());
+            assignment.setUpdatedBy(userId);
+            assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
 
             grantService.saveAssignmentForGrant(assignment);
         }

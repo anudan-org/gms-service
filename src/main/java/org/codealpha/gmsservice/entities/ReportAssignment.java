@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.*;
@@ -25,6 +26,12 @@ public class ReportAssignment {
 
     @Transient
     private List<ReportAssignmentHistory> history;
+
+    @Column
+    private Date assignedOn;
+
+    @Column
+    private Long updatedBy;
 
     public Long getId() {
         return id;
@@ -72,6 +79,22 @@ public class ReportAssignment {
 
     public void setHistory(List<ReportAssignmentHistory> history) {
         this.history = history;
+    }
+
+    public Date getAssignedOn() {
+        return assignedOn;
+    }
+
+    public void setAssignedOn(Date assignedOn) {
+        this.assignedOn = assignedOn;
+    }
+
+    public Long getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(Long updatedBy) {
+        this.updatedBy = updatedBy;
     }
 
 }

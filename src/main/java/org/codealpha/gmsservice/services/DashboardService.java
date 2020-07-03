@@ -161,6 +161,10 @@ public class DashboardService {
                                 if (h.getAssignments() != null && h.getAssignments() != 0) {
                                     h.setAssignmentUser(userService.getUserById(h.getAssignments()));
                                 }
+
+                                if (h.getUpdatedBy() != null && h.getUpdatedBy() != 0) {
+                                    h.setUpdatedByUser(userService.getUserById(h.getUpdatedBy()));
+                                }
                             }
                             assignmentsVO.setHistory(history);
                         }

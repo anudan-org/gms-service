@@ -1086,6 +1086,8 @@ public class ReportController {
             }
 
             assignment.setAssignment(assignmentsVO.getAssignmentId());
+            assignment.setUpdatedBy(userId);
+            assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
 
             if ((customAss != null && !"".equalsIgnoreCase(customAss.trim())) && workflowStatusService
                     .getById(assignmentsVO.getStateId()).getInternalStatus().equalsIgnoreCase("ACTIVE")) {

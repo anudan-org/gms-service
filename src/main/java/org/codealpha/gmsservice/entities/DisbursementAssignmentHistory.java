@@ -28,6 +28,14 @@ public class DisbursementAssignmentHistory {
     private Long stateId;
     @Column
     private Date updatedOn;
+    @Column
+    private Date assignedOn;
+
+    @Column
+    private Long updatedBy;
+
+    @Transient
+    private User updatedByUser;
 
     @Transient
     private User assignmentUser;
@@ -94,6 +102,30 @@ public class DisbursementAssignmentHistory {
 
     public void setAssignmentUser(User assignmentUser) {
         this.assignmentUser = assignmentUser;
+    }
+
+    public Date getAssignedOn() {
+        return assignedOn;
+    }
+
+    public void setAssignedOn(Date assignedOn) {
+        this.assignedOn = assignedOn;
+    }
+
+    public Long getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(Long updatedBy) {
+        this.updatedBy = updatedBy;
+    }
+
+    public User getUpdatedByUser() {
+        return updatedByUser;
+    }
+
+    public void setUpdatedByUser(User updatedByUser) {
+        this.updatedByUser = updatedByUser;
     }
 
 }
