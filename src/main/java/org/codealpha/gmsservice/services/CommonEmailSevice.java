@@ -1,13 +1,18 @@
 package org.codealpha.gmsservice.services;
 
+import org.codealpha.gmsservice.entities.MailLog;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.mail.MailAuthenticationException;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -23,29 +28,36 @@ public class CommonEmailSevice {
   @Value("${spring.send-mail}")
   private boolean sendMail;
 
+  @Autowired
+  private MailLogService mailLogService;
+
   @Async("threadPoolTaskExecutor")
-  public void sendMail(String to,String[] ccList, String subject, String messageText, String footer[]){
-    if(!sendMail){
+  public void sendMail(String to, String[] ccList, String subject, String messageText, String footer[]) {
+    if (!sendMail) {
       return;
     }
 
     try {
       MimeMessage message = mailSender.createMimeMessage();
       MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message);
-      //SimpleMailMessage message = new SimpleMailMessage();
+      // SimpleMailMessage message = new SimpleMailMessage();
       mimeMessageHelper.setTo(to);
-      if(ccList!=null) {
+      if (ccList != null) {
         mimeMessageHelper.setCc(ccList);
       }
-      mimeMessageHelper.setFrom("admin@anudan.org","Anudan Admin");
+      mimeMessageHelper.setFrom("admin@anudan.org", "Anudan Admin");
       mimeMessageHelper.setSubject(subject);
-      for(String footerBlock: footer){
-          messageText = messageText.concat(footerBlock);
+      for (String footerBlock : footer) {
+        messageText = messageText.concat(footerBlock);
       }
-      mimeMessageHelper.setText(messageText,true);
+      mimeMessageHelper.setText(messageText, true);
       mailSender.send(message);
-    }catch (MessagingException | UnsupportedEncodingException mse){
-      mse.printStackTrace();
+      mailLogService.saveMailLog(new MailLog(DateTime.now().toDate(), StringUtils.arrayToCommaDelimitedString(ccList),
+          to, messageText, subject, true));
+
+    } catch (MessagingException | UnsupportedEncodingException | MailSendException | MailAuthenticationException mse) {
+      mailLogService.saveMailLog(new MailLog(DateTime.now().toDate(), StringUtils.arrayToCommaDelimitedString(ccList),
+          to, mse.getMessage(), null, true));
     }
   }
 

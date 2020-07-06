@@ -483,8 +483,8 @@ public class GrantService {
                 .replaceAll("%TENANT%", finalGrant.getGrantorOrganization().getName()).replaceAll("%GRANT_LINK%", url)
                 .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
                 .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
-                .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replaceAll("%GRANTEE%", finalGrant.getOrganization().getName());
+                .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays)).replaceAll("%GRANTEE%",
+                        finalGrant.getOrganization() != null ? finalGrant.getOrganization().getName() : "");
         String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName());
 
         return new String[] { subject, message };
