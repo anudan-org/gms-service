@@ -1674,7 +1674,7 @@ public class GrantController {
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("")
                         ? "Please review."
                         : "",
-                "", null, null);
+                "", null, null, null, null);
         String notificationContent[] = grantService.buildEmailNotificationContent(finalGrant, user,
                 user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(),
                 new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
@@ -1691,7 +1691,7 @@ public class GrantController {
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("")
                         ? "Please review."
                         : "",
-                "", null, null);
+                "", null, null, null, null);
         /*
          * usersToNotify.stream().forEach(u -> {
          * 
@@ -2718,6 +2718,24 @@ public class GrantController {
             @ApiParam(name = "assignmentModel", value = "Set assignment for grant per workflow state") @RequestBody GrantAssignmentModel assignmentModel,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Grant grant = saveGrant(assignmentModel.getGrant().getId(), assignmentModel.getGrant(), userId, tenantCode);
+        List<Long[]> newAndOldOwners = new ArrayList<>();
+        if (grantService.checkIfGrantMovedThroughWFAtleastOnce(grant.getId())) {
+
+            List<GrantAssignments> currentAssignments = grantService.getGrantWorkflowAssignments(grant);
+            for (GrantAssignments currentAssignment : currentAssignments) {
+                if (!Arrays.asList(assignmentModel.getAssignments()).stream()
+                        .filter(a -> a.getStateId().longValue() == currentAssignment.getStateId().longValue()
+                                && a.getAssignments().longValue() == currentAssignment.getAssignments().longValue())
+                        .findFirst().isPresent()) {
+                    Long[] owners = new Long[2];
+                    owners[0] = Arrays.asList(assignmentModel.getAssignments()).stream()
+                            .filter(a -> a.getId().longValue() == currentAssignment.getId().longValue()).findFirst()
+                            .get().getAssignments();
+                    owners[1] = currentAssignment.getAssignments();
+                    newAndOldOwners.add(owners);
+                }
+            }
+        }
         for (GrantAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
             GrantAssignments assignment = null;
             if (assignmentsVO.getId() == null) {
@@ -2733,6 +2751,59 @@ public class GrantController {
             assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
 
             grantService.saveAssignmentForGrant(assignment);
+        }
+
+        if (newAndOldOwners.size() > 0) {
+            for (Long[] owner : newAndOldOwners) {
+                List<GrantAssignments> assignees = grantService.getGrantWorkflowAssignments(grant);
+                assignees.removeIf(a -> a.getAssignments().longValue() == owner[0]);
+                List<String> ccList = assignees.stream()
+                        .map(u -> userService.getUserById(u.getAssignments()).getEmailId())
+                        .collect(Collectors.toList());
+                ccList.add(userService.getUserById(owner[1]).getEmailId());
+
+                String[] notifications = grantService.buildEmailNotificationContent(grant,
+                        userService.getUserById(userId), null, null, null,
+                        appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
+                        appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
+                        null, null, null, null, null, null, null, null, null, null, null, null,
+                        userService.getUserById(owner[1]).getFirstName().concat(" ")
+                                .concat(userService.getUserById(owner[1]).getLastName()),
+                        userService.getUserById(owner[0]).getFirstName().concat(" ")
+                                .concat(userService.getUserById(owner[0]).getLastName()));
+                commonEmailSevice.sendMail(userService.getUserById(owner[0]).getEmailId(),
+                        ccList.toArray(new String[ccList.size()]), notifications[0], notifications[1],
+                        new String[] {
+                                appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                        AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
+                notifications = grantService.buildEmailNotificationContent(grant, userService.getUserById(userId), null,
+                        null, null,
+                        appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
+                        appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                        null, null, null, null, null, null, null, null, null, null, null, null,
+                        userService.getUserById(owner[1]).getFirstName().concat(" ")
+                                .concat(userService.getUserById(owner[1]).getLastName()),
+                        userService.getUserById(owner[0]).getFirstName().concat(" ")
+                                .concat(userService.getUserById(owner[0]).getLastName()));
+
+                final String[] finaNotifications = notifications;
+                final Grant finalGrant = grant;
+
+                Map<Long, Long> cleanAsigneesList = new HashMap();
+                for (GrantAssignments ass : assignees) {
+                    cleanAsigneesList.put(ass.getAssignments(), ass.getAssignments());
+                }
+
+                cleanAsigneesList.keySet().stream().forEach(
+                        u -> notificationsService.saveNotification(finaNotifications, u, finalGrant.getId(), "GRANT"));
+                notificationsService.saveNotification(notifications, owner[0], grant.getId(), "GRANT");
+
+            }
+
         }
 
         grant = grantService.getById(grantId);

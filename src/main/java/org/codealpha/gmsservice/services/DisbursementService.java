@@ -220,7 +220,7 @@ public class DisbursementService {
             String action, String date, String subConfigValue, String msgConfigValue, String currentState,
             String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges,
             String hasChangesComment, String hasNotes, String hasNotesComment, String link, User owner,
-            Integer noOfDays) {
+            Integer noOfDays, String previousApprover, String newApprover) {
 
         String code = Base64.getEncoder().encodeToString(String.valueOf(finalDisbursement.getId()).getBytes());
 
@@ -256,7 +256,9 @@ public class DisbursementService {
                 .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
                 .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
                 .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replaceAll("%GRANTEE%", finalDisbursement.getGrant().getOrganization().getName());
+                .replaceAll("%GRANTEE%", finalDisbursement.getGrant().getOrganization().getName())
+                .replaceAll("%APPROVER_TYPE%", "Approver").replaceAll("%ENTITY_TYPE%", "grant")
+                .replaceAll("%PREVIOUS_APPROVER%", previousApprover).replaceAll("%NEW_APPROVER%", newApprover);
         String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalDisbursement.getGrant().getName());
 
         return new String[] { subject, message };
@@ -305,5 +307,9 @@ public class DisbursementService {
 
     public List<DisbursementAssignment> getActionDueDisbursementsForGranterOrg(Long granterId) {
         return disbursementAssignmentRepository.getActionDueDisbursementsForOrg(granterId);
+    }
+
+    public boolean checkIfDisbursementMovedThroughWFAtleastOnce(Long id) {
+        return disbursementRepository.findDisbursementsThatMovedAtleastOnce(id).size() > 0;
     }
 }

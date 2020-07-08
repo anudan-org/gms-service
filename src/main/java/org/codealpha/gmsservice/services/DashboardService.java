@@ -412,4 +412,5 @@ public class DashboardService {
         }
         return new Long[] { total, Long.valueOf(countMap.size()) };
     }
+
 }

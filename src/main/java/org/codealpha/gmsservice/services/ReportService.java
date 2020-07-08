@@ -464,7 +464,7 @@ public class ReportService {
             String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner,
             String previousState, String previousOwner, String previousAction, String hasChanges,
             String hasChangesComment, String hasNotes, String hasNotesComment, String link, User owner,
-            Integer noOfDays) {
+            Integer noOfDays, String previousApprover, String newApprover) {
 
         String code = Base64.getEncoder().encodeToString(String.valueOf(finalReport.getId()).getBytes());
 
@@ -530,7 +530,9 @@ public class ReportService {
                 .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
                 .replaceAll("%GRANTEE%", finalReport.getGrant().getOrganization().getName())
                 .replaceAll("%GRANTEE_REPORT_LINK%", granteeUrl).replaceAll("%GRANTER_REPORT_LINK%", granterUrl)
-                .replaceAll("%GRANTER%", finalReport.getGrant().getGrantorOrganization().getName());
+                .replaceAll("%GRANTER%", finalReport.getGrant().getGrantorOrganization().getName())
+                .replaceAll("%APPROVER_TYPE%", "Approver").replaceAll("%ENTITY_TYPE%", "grant")
+                .replaceAll("%PREVIOUS_APPROVER%", previousApprover).replaceAll("%NEW_APPROVER%", newApprover);
         String subject = subConfigValue.replaceAll("%REPORT_NAME%", finalReport.getName());
 
         return new String[] { subject, message };
@@ -731,5 +733,9 @@ public class ReportService {
             }
             assignmentsVO.setHistory(assignmentHistories);
         }
+    }
+
+    public boolean checkIfReportMovedThroughWFAtleastOnce(Long reportId) {
+        return reportRepository.findReportsThatMovedAtleastOnce(reportId).size() > 0;
     }
 }

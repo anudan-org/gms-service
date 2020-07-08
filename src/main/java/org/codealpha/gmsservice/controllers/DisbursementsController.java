@@ -32,10 +32,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -230,6 +233,30 @@ public class DisbursementsController {
                         @ApiParam(name = "assignmentModel", value = "Set assignment for disbursement per workflow state") @RequestBody DisbursementAssignmentModel assignmentModel,
                         @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
                 Disbursement disbursement = saveDisbursement(tenantCode, userId, assignmentModel.getDisbursement());
+
+                List<Long[]> newAndOldOwners = new ArrayList<>();
+                if (disbursementService.checkIfDisbursementMovedThroughWFAtleastOnce(disbursement.getId())) {
+
+                        List<DisbursementAssignment> currentAssignments = disbursementService
+                                        .getDisbursementAssignments(disbursement);
+                        for (DisbursementAssignment currentAssignment : currentAssignments) {
+                                if (!Arrays.asList(assignmentModel.getAssignments()).stream()
+                                                .filter(a -> a.getStateId().longValue() == currentAssignment
+                                                                .getStateId().longValue()
+                                                                && a.getAssignmentId().longValue() == currentAssignment
+                                                                                .getOwner().longValue())
+                                                .findFirst().isPresent()) {
+                                        Long[] owners = new Long[2];
+                                        owners[0] = Arrays.asList(assignmentModel.getAssignments()).stream()
+                                                        .filter(a -> a.getId().longValue() == currentAssignment.getId()
+                                                                        .longValue())
+                                                        .findFirst().get().getAssignmentId();
+                                        owners[1] = currentAssignment.getOwner();
+                                        newAndOldOwners.add(owners);
+                                }
+                        }
+                }
+
                 for (DisbursementAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
                         DisbursementAssignment assignment = null;
                         if (assignmentsVO.getId() == null) {
@@ -245,6 +272,77 @@ public class DisbursementsController {
                         assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
 
                         disbursementService.saveAssignmentForDisbursement(assignment);
+                }
+
+                if (newAndOldOwners.size() > 0) {
+                        for (Long[] owner : newAndOldOwners) {
+                                List<DisbursementAssignment> assignees = disbursementService
+                                                .getDisbursementAssignments(disbursement);
+                                assignees.removeIf(a -> a.getOwner().longValue() == owner[0]);
+                                List<String> ccList = assignees.stream()
+                                                .map(u -> userService.getUserById(u.getOwner()).getEmailId())
+                                                .collect(Collectors.toList());
+                                ccList.add(userService.getUserById(owner[1]).getEmailId());
+
+                                String[] notifications = disbursementService.buildEmailNotificationContent(disbursement,
+                                                userService.getUserById(userId), null, null, null,
+                                                appConfigService.getAppConfigForGranterOrg(
+                                                                disbursement.getGrant().getGrantorOrganization()
+                                                                                .getId(),
+                                                                AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT)
+                                                                .getConfigValue(),
+                                                appConfigService.getAppConfigForGranterOrg(
+                                                                disbursement.getGrant().getGrantorOrganization()
+                                                                                .getId(),
+                                                                AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE)
+                                                                .getConfigValue(),
+                                                null, null, null, null, null, null, null, null, null, null, null, null,
+                                                userService.getUserById(owner[1]).getFirstName().concat(" ").concat(
+                                                                userService.getUserById(owner[1]).getLastName()),
+                                                userService.getUserById(owner[0]).getFirstName().concat(" ").concat(
+                                                                userService.getUserById(owner[0]).getLastName()));
+                                commonEmailSevice.sendMail(userService.getUserById(owner[0]).getEmailId(),
+                                                ccList.toArray(new String[ccList.size()]), notifications[0],
+                                                notifications[1],
+                                                new String[] { appConfigService
+                                                                .getAppConfigForGranterOrg(disbursement.getGrant()
+                                                                                .getGrantorOrganization().getId(),
+                                                                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                                                .getConfigValue() });
+                                notifications = grantService.buildEmailNotificationContent(disbursement.getGrant(),
+                                                userService.getUserById(userId), null, null, null,
+                                                appConfigService.getAppConfigForGranterOrg(
+                                                                disbursement.getGrant().getGrantorOrganization()
+                                                                                .getId(),
+                                                                AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_SUBJECT)
+                                                                .getConfigValue(),
+                                                appConfigService.getAppConfigForGranterOrg(
+                                                                disbursement.getGrant().getGrantorOrganization()
+                                                                                .getId(),
+                                                                AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_MESSAGE)
+                                                                .getConfigValue(),
+                                                null, null, null, null, null, null, null, null, null, null, null, null,
+                                                userService.getUserById(owner[1]).getFirstName().concat(" ").concat(
+                                                                userService.getUserById(owner[1]).getLastName()),
+                                                userService.getUserById(owner[0]).getFirstName().concat(" ").concat(
+                                                                userService.getUserById(owner[0]).getLastName()));
+
+                                final String[] finaNotifications = notifications;
+                                final Disbursement finalDisbursement = disbursement;
+
+                                Map<Long, Long> cleanAsigneesList = new HashMap();
+                                for (DisbursementAssignment ass : assignees) {
+                                        cleanAsigneesList.put(ass.getOwner(), ass.getOwner());
+                                }
+
+                                cleanAsigneesList.keySet().stream()
+                                                .forEach(u -> notificationsService.saveNotification(finaNotifications,
+                                                                u, finalDisbursement.getId(), "DISBURSEMENT"));
+                                notificationsService.saveNotification(notifications, owner[0], disbursement.getId(),
+                                                "DISBURSEMENT");
+
+                        }
+
                 }
 
                 disbursement = disbursementService.getDisbursementById(disbursementId);
@@ -351,7 +449,7 @@ public class DisbursementsController {
                                                 && !disbursementWithNote.getNote().trim().equalsIgnoreCase("")
                                                                 ? "Please review."
                                                                 : "",
-                                "", null, null);
+                                "", null, null, null, null);
                 String notificationContent[] = disbursementService.buildEmailNotificationContent(finalDisbursement,
                                 user, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(),
                                 new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
@@ -379,7 +477,7 @@ public class DisbursementsController {
                                                 && !disbursementWithNote.getNote().trim().equalsIgnoreCase("")
                                                                 ? "Please review."
                                                                 : "",
-                                "", null, null);
+                                "", null, null, null, null);
                 final User finalCurrentOwner = currentOwner;
                 if (!toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
                         usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue());

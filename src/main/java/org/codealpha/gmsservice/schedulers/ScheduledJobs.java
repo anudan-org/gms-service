@@ -148,7 +148,7 @@ public class ScheduledJobs {
         String[] messageMetadata = reportService.buildEmailNotificationContent(report, granteeToNotify,
                 granteeToNotify.getFirstName() + " " + granteeToNotify.getLastName(), "", null,
                 taskConfiguration.getSubjectReport(), taskConfiguration.getMessageReport(), "", "", "", "", "", "", "",
-                "", "", link, owner, null);
+                "", "", link, owner, null, null, null);
 
         emailSevice.sendMail(granteeToNotify.getEmailId(), otherUsersToNotify.toArray(new String[] {}),
                 messageMetadata[0], messageMetadata[1],
@@ -253,7 +253,7 @@ public class ScheduledJobs {
                                                 "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
-                                                null, minuetsLapsed / (24 * 60));
+                                                null, minuetsLapsed / (24 * 60), null, null);
                                         emailSevice
                                                 .sendMail(user.getEmailId(), ccList, messageMetadata[0],
                                                         messageMetadata[1],
@@ -308,7 +308,7 @@ public class ScheduledJobs {
                                                 "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
-                                                null, minuetsLapsed / (24 * 60));
+                                                null, minuetsLapsed / (24 * 60), null, null);
                                         emailSevice
                                                 .sendMail(user.getEmailId(), ccList, messageMetadata[0],
                                                         messageMetadata[1],
@@ -397,7 +397,7 @@ public class ScheduledJobs {
                                                 taskConfiguration.getMessageGrant(), "", "", "", "", "", "", "", "", "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
-                                                null, minuetsLapsed / (24 * 60));
+                                                null, minuetsLapsed / (24 * 60), null, null);
                                         emailSevice.sendMail(user.getEmailId(), ccList, messageMetadata[0],
                                                 messageMetadata[1],
                                                 new String[] { appConfigService
@@ -448,7 +448,7 @@ public class ScheduledJobs {
                                                 taskConfiguration.getMessageGrant(), "", "", "", "", "", "", "", "", "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
-                                                null, minuetsLapsed / (24 * 60));
+                                                null, minuetsLapsed / (24 * 60), null, null);
                                         emailSevice.sendMail(user.getEmailId(), ccList, messageMetadata[0],
                                                 messageMetadata[1],
                                                 new String[] { appConfigService
@@ -537,7 +537,7 @@ public class ScheduledJobs {
                                                 taskConfiguration.getMessageGrant(), "", "", "", "", "", "", "", "", "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
-                                                null, minuetsLapsed / (24 * 60));
+                                                null, minuetsLapsed / (24 * 60), null, null);
                                         emailSevice.sendMail(user.getEmailId(), ccList, messageMetadata[0],
                                                 messageMetadata[1],
                                                 new String[] { appConfigService
@@ -591,7 +591,7 @@ public class ScheduledJobs {
                                                 taskConfiguration.getMessageGrant(), "", "", "", "", "", "", "", "", "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
-                                                null, minuetsLapsed / (24 * 60));
+                                                null, minuetsLapsed / (24 * 60), null, null);
                                         emailSevice.sendMail(user.getEmailId(), ccList, messageMetadata[0],
                                                 messageMetadata[1],
                                                 new String[] { appConfigService
