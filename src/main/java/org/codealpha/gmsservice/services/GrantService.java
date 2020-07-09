@@ -741,4 +741,12 @@ public class GrantService {
     public GrantDocument saveGrantDocument(GrantDocument attachment) {
         return grantDocumentRepository.save(attachment);
     }
+
+    public GrantDocument getGrantDocumentById(Long attachmentId) {
+        return grantDocumentRepository.findById(attachmentId).get();
+    }
+
+    public void deleteGrantDocument(GrantDocument doc) {
+        grantDocumentRepository.delete(doc);
+    }
 }

@@ -933,17 +933,11 @@ public class ReportController {
         for (MultipartFile file : files) {
             try {
                 String fileName = file.getOriginalFilename();
-                String prefix = fileName.substring(0, fileName.lastIndexOf("."));
-                String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
-                File tempFile = File.createTempFile(prefix, "." + suffix);
-                FileOutputStream fos = new FileOutputStream(tempFile);
+
+                File fileToCreate = new File(dir, fileName);
+                FileOutputStream fos = new FileOutputStream(fileToCreate);
                 fos.write(file.getBytes());
                 fos.close();
-                File fileToCreate = new File(dir, tempFile.getName());
-                IOUtils.copy(Files.asByteSource(tempFile).openStream(),
-                        Files.asByteSink(fileToCreate, FileWriteMode.APPEND).openStream());
-
-                // FileWriter newJsp = new FileWriter(fileToCreate);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -2021,6 +2015,9 @@ public class ReportController {
         ReportStringAttributeAttachments attch = reportService
                 .getStringAttributeAttachmentsByAttachmentId(attachmentId);
         reportService.deleteStringAttributeAttachments(Arrays.asList(new ReportStringAttributeAttachments[] { attch }));
+
+        File file = new File(attch.getLocation() + attch.getName() + "." + attch.getType());
+        file.delete();
         ReportStringAttribute stringAttribute = reportService.findReportStringAttributeById(attributeId);
         List<ReportStringAttributeAttachments> stringAttributeAttachments = reportService
                 .getStringAttributeAttachmentsByStringAttribute(stringAttribute);
