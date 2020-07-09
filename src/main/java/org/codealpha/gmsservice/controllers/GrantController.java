@@ -3170,4 +3170,44 @@ public class GrantController {
         }
         return null;
     }
+
+    @GetMapping("{grantId}/documents")
+    public List<GrantDocument> getDocumentForGrant(@RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId) {
+        return grantService.getGrantsDocuments(grantId);
+    }
+
+    @PostMapping(value = "/{grantId}/documents/upload", consumes = { "multipart/form-data" })
+    public List<GrantDocument> saveUploadedFiles(
+
+            @PathVariable("userId") Long userId,
+            @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,
+            @RequestParam("file") MultipartFile[] files,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+
+        String filePath = uploadLocation + tenantCode + "/grant-documents/" + grantId + "/";
+        File dir = new File(filePath);
+        dir.mkdirs();
+        List<GrantDocument> attachments = new ArrayList();
+        for (MultipartFile file : files) {
+            try {
+                File fileToCreate = new File(dir, file.getOriginalFilename());
+                file.transferTo(fileToCreate);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            GrantDocument attachment = new GrantDocument();
+            attachment.setExtension(FilenameUtils.getExtension(file.getOriginalFilename()));
+            attachment.setName(file.getOriginalFilename()
+                    .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
+            attachment.setLocation(filePath);
+            attachment.setUploadedOn(new Date());
+            attachment.setUploadedBy(userId);
+            attachment.setGrantId(grantId);
+            attachment = grantService.saveGrantDocument(attachment);
+            attachments.add(attachment);
+        }
+
+        return attachments;
+    }
 }
