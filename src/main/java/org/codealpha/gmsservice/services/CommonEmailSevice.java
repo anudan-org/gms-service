@@ -32,7 +32,7 @@ public class CommonEmailSevice {
   private MailLogService mailLogService;
 
   @Async("threadPoolTaskExecutor")
-  public void sendMail(String to, String[] ccList, String subject, String messageText, String footer[]) {
+  public void sendMail(String[] to, String[] ccList, String subject, String messageText, String footer[]) {
     if (!sendMail) {
       return;
     }
@@ -53,11 +53,11 @@ public class CommonEmailSevice {
       mimeMessageHelper.setText(messageText, true);
       mailSender.send(message);
       mailLogService.saveMailLog(new MailLog(DateTime.now().toDate(), StringUtils.arrayToCommaDelimitedString(ccList),
-          to, messageText, subject, true));
+          StringUtils.arrayToCommaDelimitedString(to), messageText, subject, true));
 
     } catch (MessagingException | UnsupportedEncodingException | MailSendException | MailAuthenticationException mse) {
       mailLogService.saveMailLog(new MailLog(DateTime.now().toDate(), StringUtils.arrayToCommaDelimitedString(ccList),
-          to, mse.getMessage(), null, true));
+          StringUtils.arrayToCommaDelimitedString(to), mse.getMessage(), null, true));
     }
   }
 

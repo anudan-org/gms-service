@@ -32,7 +32,6 @@ public class UserService {
     @Autowired
     private PasswordResetRequestService passwordResetRequestService;
 
-
     public User getUserByEmailAndOrg(String email, Organization org) {
         User user = userRepository.findByEmailIdAndOrganization(email, org);
         return user;
@@ -78,14 +77,18 @@ public class UserService {
         return userRepository.findByOrganization(org);
     }
 
-    public String[] buildJoiningInvitationContent(Organization org, Role role, User inviter, String sub, String msg, String url) {
+    public String[] buildJoiningInvitationContent(Organization org, Role role, User inviter, String sub, String msg,
+            String url) {
         sub = sub.replace("%ORG_NAME%", org.getName());
 
-        msg = msg.replace("%ROLE_NAME%", role.getName()).replace("%ORG_NAME%", org.getName()).replace("%INVITE_FROM%", inviter.getFirstName().concat(" ").concat(inviter.getLastName())).replace("%LINK%", url);
-        return new String[]{sub, msg};
+        msg = msg.replace("%ROLE_NAME%", role.getName()).replace("%ORG_NAME%", org.getName())
+                .replace("%INVITE_FROM%", inviter.getFirstName().concat(" ").concat(inviter.getLastName()))
+                .replace("%LINK%", url);
+        return new String[] { sub, msg };
     }
 
-    public PasswordResetRequest sendPasswordResetMail(User user, String mailSubject, String mailMessage, String mailFooter) {
+    public PasswordResetRequest sendPasswordResetMail(User user, String mailSubject, String mailMessage,
+            String mailFooter) {
         PasswordResetRequest resetRequest = null;
         UriComponents uriComponents = null;
         String host = "";
@@ -93,16 +96,19 @@ public class UserService {
         try {
             uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-                //host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
+                // host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".")
+                // + 1);
                 host = uriComponents.getHost();
 
             } else {
                 host = uriComponents.getHost();
             }
-            UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
+            UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
+                    .host(host).port(uriComponents.getPort());
             url = uriBuilder.toUriString();
-            String key = RandomStringUtils.randomAlphabetic(40,60);
-            String code = passwordEncoder.encode(key.concat(user.getEmailId().concat(String.valueOf(user.getOrganization().getId()))));
+            String key = RandomStringUtils.randomAlphabetic(40, 60);
+            String code = passwordEncoder
+                    .encode(key.concat(user.getEmailId().concat(String.valueOf(user.getOrganization().getId()))));
             resetRequest = new PasswordResetRequest();
             resetRequest.setKey(key);
             resetRequest.setRequestedOn(DateTime.now().toDate());
@@ -112,11 +118,13 @@ public class UserService {
             resetRequest.setOrgId(user.getOrganization().getId());
             resetRequest = passwordResetRequestService.savePasswordResetRequest(resetRequest);
 
-            url = url + "/home?action=reset-password&email=" + user.getEmailId() + "&key=" + key+"&org="+user.getOrganization().getName().replaceAll(" ","%20");
+            url = url + "/home?action=reset-password&email=" + user.getEmailId() + "&key=" + key + "&org="
+                    + user.getOrganization().getName().replaceAll(" ", "%20");
             mailMessage = mailMessage.replaceAll("%RESET_LINK%", url);
             mailMessage = mailMessage.replaceAll("%USER_NAME%", user.getFirstName());
-            mailMessage = mailMessage.replaceAll("%ORGANIZATION%",user.getOrganization().getName());
-            commonEmailSevice.sendMail(user.getEmailId(),null,mailSubject,mailMessage,new String[] {mailFooter});
+            mailMessage = mailMessage.replaceAll("%ORGANIZATION%", user.getOrganization().getName());
+            commonEmailSevice.sendMail(new String[] { user.getEmailId() }, null, mailSubject, mailMessage,
+                    new String[] { mailFooter });
 
         } catch (Exception e) {
             e.printStackTrace();

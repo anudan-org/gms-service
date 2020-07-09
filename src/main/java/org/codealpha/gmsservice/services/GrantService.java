@@ -449,7 +449,7 @@ public class GrantService {
             String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner,
             String previousState, String previousOwner, String previousAction, String hasChanges,
             String hasChangesComment, String hasNotes, String hasNotesComment, String link, User owner,
-            Integer noOfDays, String previousApprover, String newApprover) {
+            Integer noOfDays, Map<Long, Long> previousApprover, List<GrantAssignments> newApprover) {
 
         String code = Base64.getEncoder().encodeToString(String.valueOf(finalGrant.getId()).getBytes());
 
@@ -487,10 +487,48 @@ public class GrantService {
                 .replaceAll("%GRANTEE%",
                         finalGrant.getOrganization() != null ? finalGrant.getOrganization().getName() : "")
                 .replaceAll("%APPROVER_TYPE%", "Approver").replaceAll("%ENTITY_TYPE%", "grant")
-                .replaceAll("%PREVIOUS_APPROVER%", previousApprover).replaceAll("%NEW_APPROVER%", newApprover);
+                .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover))
+                .replaceAll("%CURRENT_ASSIGNMENTS%", getAssignmentsTable(newApprover))
+                .replaceAll("%ENTITY_NAME%", finalGrant.getName());
         String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName());
 
         return new String[] { subject, message };
+    }
+
+    private String getAssignmentsTable(Map<Long, Long> assignments) {
+        if (assignments == null) {
+            return "";
+        }
+        String[] table = {
+                "<table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>State Owner</b></td></tr>" };
+        assignments.keySet().forEach(a -> {
+            table[0] = table[0].concat("<tr>").concat("<td width='30%'>")
+                    .concat(workflowStatusRepository.findById(a).get().getName()).concat("</td>").concat("<td>")
+                    .concat(userService.getUserById(assignments.get(a)).getFirstName().concat(" ")
+                            .concat(userService.getUserById(assignments.get(a)).getLastName()))
+                    .concat("</td>").concat("</tr>");
+        });
+
+        table[0] = table[0].concat("</table>");
+        return table[0];
+
+    }
+
+    private String getAssignmentsTable(List<GrantAssignments> assignments) {
+        if (assignments == null) {
+            return "";
+        }
+        String table = "<Table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>State Owner</b></td></tr>";
+        for (GrantAssignments ass : assignments) {
+            table = table.concat("<tr>").concat("<td width='30%'>")
+                    .concat(workflowStatusRepository.findById(ass.getStateId()).get().getName()).concat("</td>")
+                    .concat("<td>")
+                    .concat(userService.getUserById(ass.getAssignments()).getFirstName().concat(" ")
+                            .concat(userService.getUserById(ass.getAssignments()).getLastName()))
+                    .concat("</td>").concat("</tr>");
+        }
+        table = table.concat("</table>");
+        return table;
     }
 
     public String[] buildGrantInvitationContent(Grant grant, User user, String sub, String msg, String url) {

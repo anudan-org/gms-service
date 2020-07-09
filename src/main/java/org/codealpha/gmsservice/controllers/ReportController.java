@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.FileWriteMode;
+import com.google.common.io.Files;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -929,8 +932,17 @@ public class ReportController {
         List<ReportStringAttributeAttachments> attachments = new ArrayList<>();
         for (MultipartFile file : files) {
             try {
-                File fileToCreate = new File(dir, file.getOriginalFilename());
-                file.transferTo(fileToCreate);
+                String fileName = file.getOriginalFilename();
+                String prefix = fileName.substring(0, fileName.lastIndexOf("."));
+                String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
+                File tempFile = File.createTempFile(prefix, "." + suffix);
+                FileOutputStream fos = new FileOutputStream(tempFile);
+                fos.write(file.getBytes());
+                fos.close();
+                File fileToCreate = new File(dir, tempFile.getName());
+                IOUtils.copy(Files.asByteSource(tempFile).openStream(),
+                        Files.asByteSink(fileToCreate, FileWriteMode.APPEND).openStream());
+
                 // FileWriter newJsp = new FileWriter(fileToCreate);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -1067,23 +1079,12 @@ public class ReportController {
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Report report = saveReport(reportId, assignmentModel.getReport(), userId, tenantCode);
 
-        List<Long[]> newAndOldOwners = new ArrayList<>();
+        Map<Long, Long> currentAssignments = new LinkedHashMap();
         if (reportService.checkIfReportMovedThroughWFAtleastOnce(report.getId())) {
 
-            List<ReportAssignment> currentAssignments = reportService.getAssignmentsForReport(report);
-            for (ReportAssignment currentAssignment : currentAssignments) {
-                if (!Arrays.asList(assignmentModel.getAssignments()).stream()
-                        .filter(a -> a.getStateId().longValue() == currentAssignment.getStateId().longValue()
-                                && a.getAssignmentId().longValue() == currentAssignment.getAssignment().longValue())
-                        .findFirst().isPresent()) {
-                    Long[] owners = new Long[2];
-                    owners[0] = Arrays.asList(assignmentModel.getAssignments()).stream()
-                            .filter(a -> a.getId().longValue() == currentAssignment.getId().longValue()).findFirst()
-                            .get().getAssignmentId();
-                    owners[1] = currentAssignment.getAssignment();
-                    newAndOldOwners.add(owners);
-                }
-            }
+            reportService.getAssignmentsForReport(report).stream().forEach(a -> {
+                currentAssignments.put(a.getStateId(), a.getAssignment());
+            });
         }
         String customAss = null;
         UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
@@ -1159,7 +1160,8 @@ public class ReportController {
                         appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.REPORT_INVITE_MESSAGE).getConfigValue(),
                         url);
-                commonEmailSevice.sendMail(granteeUser.getEmailId(), null, notifications[0], notifications[1],
+                commonEmailSevice.sendMail(new String[] { granteeUser.getEmailId() }, null, notifications[0],
+                        notifications[1],
                         new String[] { appConfigService
                                 .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
@@ -1200,62 +1202,54 @@ public class ReportController {
             assignment = reportService.saveAssignmentForReport(assignment);
         }
 
-        if (newAndOldOwners.size() > 0) {
-            for (Long[] owner : newAndOldOwners) {
-                List<ReportAssignment> assignees = reportService.getAssignmentsForReport(report);
-                assignees.removeIf(a -> a.getAssignment().longValue() == owner[0]);
-                List<String> ccList = assignees.stream()
-                        .map(u -> userService.getUserById(u.getAssignment()).getEmailId()).collect(Collectors.toList());
-                ccList.add(userService.getUserById(owner[1]).getEmailId());
+        if (currentAssignments.size() > 0) {
 
-                String[] notifications = reportService.buildEmailNotificationContent(report,
-                        userService.getUserById(userId), null, null, null,
-                        appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                                AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
-                        appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                                AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
-                        null, null, null, null, null, null, null, null, null, null, null, null,
-                        userService.getUserById(owner[1]).getFirstName().concat(" ")
-                                .concat(userService.getUserById(owner[1]).getLastName()),
-                        userService.getUserById(owner[0]).getFirstName().concat(" ")
-                                .concat(userService.getUserById(owner[0]).getLastName()));
-                if (!userService.getUserById(owner[0]).getOrganization().getOrganizationType()
-                        .equalsIgnoreCase("GRANTEE")) {
-                    assignees.removeIf(a -> userService.getUserById(a.getAssignment()).getOrganization()
-                            .getOrganizationType().equalsIgnoreCase("GRANTEE"));
-                }
-                commonEmailSevice.sendMail(userService.getUserById(owner[0]).getEmailId(),
-                        ccList.toArray(new String[ccList.size()]), notifications[0], notifications[1],
-                        new String[] { appConfigService
-                                .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                                        AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                .getConfigValue() });
-                notifications = grantService.buildEmailNotificationContent(report.getGrant(),
-                        userService.getUserById(userId), null, null, null,
-                        appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                                AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
-                        appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                                AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
-                        null, null, null, null, null, null, null, null, null, null, null, null,
-                        userService.getUserById(owner[1]).getFirstName().concat(" ")
-                                .concat(userService.getUserById(owner[1]).getLastName()),
-                        userService.getUserById(owner[0]).getFirstName().concat(" ")
-                                .concat(userService.getUserById(owner[0]).getLastName()));
+            List<ReportAssignment> newAssignments = reportService.getAssignmentsForReport(report);
 
-                final String[] finaNotifications = notifications;
-                final Report finalGrant = report;
+            String[] notifications = reportService.buildEmailNotificationContent(report,
+                    userService.getUserById(userId), null, null, null,
+                    appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
+                    null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+                    newAssignments);
 
-                Map<Long, Long> cleanAsigneesList = new HashMap();
-                for (ReportAssignment ass : assignees) {
-                    cleanAsigneesList.put(ass.getAssignment(), ass.getAssignment());
-                }
-                cleanAsigneesList.keySet().stream().forEach(u -> {
+            commonEmailSevice.sendMail(
+                    newAssignments.stream().map(a -> a.getAssignment())
+                            .map(uid -> userService.getUserById(uid).getEmailId()).collect(Collectors.toList())
+                            .toArray(new String[newAssignments.size()]),
+                    currentAssignments.values().stream().map(uid -> userService.getUserById(uid).getEmailId())
+                            .collect(Collectors.toList()).toArray(new String[currentAssignments.size()]),
+                    notifications[0], notifications[1],
+                    new String[] { appConfigService
+                            .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                            .getConfigValue() });
 
-                    notificationsService.saveNotification(finaNotifications, u, finalGrant.getId(), "REPORT");
-                });
-                notificationsService.saveNotification(notifications, owner[0], report.getId(), "REPORT");
-
+            Map<Long, Long> cleanAsigneesList = new HashMap();
+            for (Long ass : currentAssignments.values()) {
+                cleanAsigneesList.put(ass, ass);
             }
+            for (ReportAssignment ass : newAssignments) {
+                cleanAsigneesList.put(ass.getAssignment(), ass.getAssignment());
+            }
+            notifications = reportService.buildEmailNotificationContent(report, userService.getUserById(userId), null,
+                    null, null,
+                    appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                    null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+                    newAssignments);
+
+            final String[] finaNotifications = notifications;
+            final Report finalGrant = report;
+
+            cleanAsigneesList.keySet().stream().forEach(u -> {
+
+                notificationsService.saveNotification(finaNotifications, u, finalGrant.getId(), "REPORT");
+            });
 
         }
 
@@ -1402,7 +1396,7 @@ public class ReportController {
                             ? "Please review."
                             : "",
                     null, null, null, null, null);
-            commonEmailSevice.sendMail(currentOwner.getEmailId(),
+            commonEmailSevice.sendMail(new String[] { currentOwner.getEmailId() },
                     usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
                             .toArray(new String[usersToNotify.size()]),
                     emailNotificationContent[0], emailNotificationContent[1],
@@ -1479,7 +1473,7 @@ public class ReportController {
                             ? "Please review."
                             : "",
                     null, null, null, null, null);
-            commonEmailSevice.sendMail(currentOwner.getEmailId(),
+            commonEmailSevice.sendMail(new String[] { currentOwner.getEmailId() },
                     usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
                             .toArray(new String[usersToNotify.size()]),
                     emailNotificationContent[0], emailNotificationContent[1],
@@ -1557,7 +1551,7 @@ public class ReportController {
                             ? "Please review."
                             : "",
                     null, null, null, null, null);
-            commonEmailSevice.sendMail(granteeUser.getEmailId(),
+            commonEmailSevice.sendMail(new String[] { granteeUser.getEmailId() },
                     usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
                             .toArray(new String[usersToNotify.size()]),
                     emailNotificationContent[0], emailNotificationContent[1],
