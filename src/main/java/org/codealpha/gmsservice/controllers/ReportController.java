@@ -933,17 +933,11 @@ public class ReportController {
         for (MultipartFile file : files) {
             try {
                 String fileName = file.getOriginalFilename();
-                String prefix = fileName.substring(0, fileName.lastIndexOf("."));
-                String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
-                File tempFile = File.createTempFile(prefix, "." + suffix);
-                FileOutputStream fos = new FileOutputStream(tempFile);
+
+                File fileToCreate = new File(dir, fileName);
+                FileOutputStream fos = new FileOutputStream(fileToCreate);
                 fos.write(file.getBytes());
                 fos.close();
-                File fileToCreate = new File(dir, tempFile.getName());
-                IOUtils.copy(Files.asByteSource(tempFile).openStream(),
-                        Files.asByteSink(fileToCreate, FileWriteMode.APPEND).openStream());
-
-                // FileWriter newJsp = new FileWriter(fileToCreate);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -2021,6 +2015,9 @@ public class ReportController {
         ReportStringAttributeAttachments attch = reportService
                 .getStringAttributeAttachmentsByAttachmentId(attachmentId);
         reportService.deleteStringAttributeAttachments(Arrays.asList(new ReportStringAttributeAttachments[] { attch }));
+
+        File file = new File(attch.getLocation() + attch.getName() + "." + attch.getType());
+        file.delete();
         ReportStringAttribute stringAttribute = reportService.findReportStringAttributeById(attributeId);
         List<ReportStringAttributeAttachments> stringAttributeAttachments = reportService
                 .getStringAttributeAttachmentsByStringAttribute(stringAttribute);
@@ -2063,6 +2060,30 @@ public class ReportController {
             } catch (IOException e) {
                 logger.error(e.getMessage(), e);
             }
+        }
+    }
+
+    @DeleteMapping("/{reportId}")
+    @ApiOperation("Delete report")
+    public void deleteReport(
+            @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code ") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        Report report = reportService.getReportById(reportId);
+        for (ReportSpecificSection section : reportService.getReportSections(report)) {
+            List<ReportSpecificSectionAttribute> attribs = reportService.getSpecificSectionAttributesBySection(section);
+            for (ReportSpecificSectionAttribute attribute : attribs) {
+                List<ReportStringAttribute> strAttribs = reportService.getReportStringAttributesByAttribute(attribute);
+                reportService.deleteStringAttributes(strAttribs);
+            }
+            reportService.deleteSectionAttributes(attribs);
+            reportService.deleteSection(section);
+        }
+        reportService.deleteReport(report);
+
+        GranterReportTemplate template = granterReportTemplateService.findByTemplateId(report.getTemplate().getId());
+        if (!template.isPublished()) {
+            reportService.deleteReportTemplate(template);
         }
     }
 }

@@ -93,6 +93,8 @@ public class GrantService {
     private AppConfigService appConfigService;
     @Autowired
     private GrantAssignmentHistoryRepository assignmentHistoryRepository;
+    @Autowired
+    private GrantDocumentRepository grantDocumentRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -730,5 +732,21 @@ public class GrantService {
 
     public boolean checkIfGrantMovedThroughWFAtleastOnce(Long grantId) {
         return grantRepository.findGrantsThatMovedAtleastOnce(grantId).size() > 0;
+    }
+
+    public List<GrantDocument> getGrantsDocuments(Long grantId) {
+        return grantDocumentRepository.findByGrantId(grantId);
+    }
+
+    public GrantDocument saveGrantDocument(GrantDocument attachment) {
+        return grantDocumentRepository.save(attachment);
+    }
+
+    public GrantDocument getGrantDocumentById(Long attachmentId) {
+        return grantDocumentRepository.findById(attachmentId).get();
+    }
+
+    public void deleteGrantDocument(GrantDocument doc) {
+        grantDocumentRepository.delete(doc);
     }
 }

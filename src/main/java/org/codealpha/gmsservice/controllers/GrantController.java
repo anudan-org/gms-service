@@ -5,7 +5,6 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.Month;
@@ -28,6 +27,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
+import com.google.common.io.FileWriteMode;
+import com.google.common.io.Files;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -1400,166 +1402,6 @@ public class GrantController {
      * documentKpiDataList.add(documentKpiData); } } } return documentKpiDataList; }
      */
 
-    public List<QuantKpiDataDocument> _processQuantSubmissionDocs(GrantQuantitativeKpiData documentKpiData,
-            GrantQuantitativeKpiData docKpi2Save, Organization tenant, User user) {
-        QuantKpiDataDocument kpiDoc = null;
-        List<QuantKpiDataDocument> quantKpiDataDocuments = new ArrayList<>();
-        if (docKpi2Save.getSubmissionDocs() != null) {
-            for (QuantKpiDataDocument doc : docKpi2Save.getSubmissionDocs()) {
-                if (doc.getId() < 0) {
-                    kpiDoc = new QuantKpiDataDocument();
-                } else {
-                    kpiDoc = grantService.getQuantkpiDocById(doc.getId());
-                }
-
-                kpiDoc.setFileName(doc.getFileName());
-                kpiDoc.setFileType(doc.getFileType());
-                kpiDoc.setVersion(doc.getVersion());
-
-                if (doc.getData() != null) {
-                    String uploadFolder = uploadLocation + tenant.getCode() + "/grants/"
-                            + documentKpiData.getGrantKpi().getGrant().getId() + "/kpi-documents";
-                    try {
-
-                        Files.createDirectories(Paths.get(uploadFolder));
-
-                        FileOutputStream fileOutputStream = new FileOutputStream(
-                                uploadFolder + "/" + doc.getFileName());
-                        byte[] dataBytes = Base64.getDecoder()
-                                .decode(doc.getData().substring(doc.getData().indexOf(",") + 1));
-                        fileOutputStream.write(dataBytes);
-                        fileOutputStream.close();
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    kpiDoc.setQuantKpiData(documentKpiData);
-                    kpiDoc = grantService.saveQuantKpiDataDoc(kpiDoc);
-                    quantKpiDataDocuments.add(kpiDoc);
-                }
-            }
-        }
-        return quantKpiDataDocuments;
-    }
-
-    public List<QuantitativeKpiNotes> _processQuantNotesHistory(GrantQuantitativeKpiData documentKpiData,
-            GrantQuantitativeKpiData docKpi2Save, Organization tenant, User user) {
-        QuantitativeKpiNotes kpiNote = null;
-        List<QuantitativeKpiNotes> quantKpiNote = new ArrayList<>();
-        if (docKpi2Save.getNotesHistory() != null) {
-            for (QuantitativeKpiNotes docNote : docKpi2Save.getNotesHistory()) {
-                if (docNote.getId() < 0) {
-                    kpiNote = new QuantitativeKpiNotes();
-                } else {
-                    kpiNote = grantService.getQuantKpiNoteById(docNote.getId());
-                }
-
-                kpiNote.setPostedOn(DateTime.now().toDate());
-                kpiNote.setPostedBy(user);
-                kpiNote.setMessage(docNote.getMessage());
-                kpiNote.setKpiData(documentKpiData);
-                kpiNote = grantService.saveQuantKpiNote(kpiNote);
-                quantKpiNote.add(kpiNote);
-            }
-        }
-        return quantKpiNote;
-    }
-
-    public List<QualKpiDataDocument> _processQualSubmissionDocs(GrantQualitativeKpiData documentKpiData,
-            GrantQualitativeKpiData docKpi2Save, Organization tenant, User user) {
-        QualKpiDataDocument kpiDoc = null;
-        List<QualKpiDataDocument> qualKpiDataDocuments = new ArrayList<>();
-        if (docKpi2Save.getSubmissionDocs() != null) {
-            for (QualKpiDataDocument doc : docKpi2Save.getSubmissionDocs()) {
-                if (doc.getId() < 0) {
-                    kpiDoc = new QualKpiDataDocument();
-                } else {
-                    kpiDoc = grantService.getQualkpiDocById(doc.getId());
-                }
-
-                kpiDoc.setFileName(doc.getFileName());
-                kpiDoc.setFileType(doc.getFileType());
-                kpiDoc.setVersion(doc.getVersion());
-                kpiDoc.setQualKpiData(documentKpiData);
-                kpiDoc = grantService.saveQualKpiDataDoc(kpiDoc);
-                qualKpiDataDocuments.add(kpiDoc);
-            }
-        }
-        return qualKpiDataDocuments;
-    }
-
-    public List<QualitativeKpiNotes> _processQualNotesHistory(GrantQualitativeKpiData documentKpiData,
-            GrantQualitativeKpiData docKpi2Save, Organization tenant, User user) {
-        QualitativeKpiNotes kpiNote = null;
-        List<QualitativeKpiNotes> qualKpiNote = new ArrayList<>();
-        if (docKpi2Save.getNotesHistory() != null) {
-            for (QualitativeKpiNotes docNote : docKpi2Save.getNotesHistory()) {
-                if (docNote.getId() < 0) {
-                    kpiNote = new QualitativeKpiNotes();
-                } else {
-                    kpiNote = grantService.getQualKpiNoteById(docNote.getId());
-                }
-
-                kpiNote.setPostedOn(DateTime.now().toDate());
-                kpiNote.setPostedBy(user);
-                kpiNote.setMessage(docNote.getMessage());
-                kpiNote.setKpiData(documentKpiData);
-                kpiNote = grantService.saveQualKpiNote(kpiNote);
-                qualKpiNote.add(kpiNote);
-            }
-        }
-        return qualKpiNote;
-    }
-
-    public List<DocKpiDataDocument> _processDocSubmissionDocs(GrantDocumentKpiData documentKpiData,
-            GrantDocumentKpiData docKpi2Save, Organization tenant, User user) {
-        DocKpiDataDocument kpiDoc = null;
-        List<DocKpiDataDocument> docKpiDataDocuments = new ArrayList<>();
-        if (docKpi2Save.getSubmissionDocs() != null) {
-            for (DocKpiDataDocument doc : docKpi2Save.getSubmissionDocs()) {
-                if (doc.getId() < 0) {
-                    kpiDoc = new DocKpiDataDocument();
-                } else {
-                    kpiDoc = grantService.getDockpiDocById(doc.getId());
-                }
-
-                kpiDoc.setDocKpiData(documentKpiData);
-                kpiDoc.setFileName(doc.getFileName());
-                kpiDoc.setFileType(doc.getFileType());
-                kpiDoc.setVersion(doc.getVersion());
-                kpiDoc = grantService.saveDocKpiDataDoc(kpiDoc);
-                docKpiDataDocuments.add(kpiDoc);
-            }
-        }
-        return docKpiDataDocuments;
-    }
-
-    public List<DocumentKpiNotes> _processDocNotesHistory(GrantDocumentKpiData documentKpiData,
-            GrantDocumentKpiData docKpi2Save, Organization tenant, User user) {
-        DocumentKpiNotes kpiNote = null;
-        List<DocumentKpiNotes> docKpiNotes = null;
-        if (docKpi2Save.getNotesHistory() != null) {
-            for (DocumentKpiNotes docNote : docKpi2Save.getNotesHistory()) {
-                if (docNote.getId() < 0) {
-                    kpiNote = new DocumentKpiNotes();
-                } else {
-                    kpiNote = grantService.getDocKpiNoteById(docNote.getId());
-                }
-
-                kpiNote.setPostedOn(DateTime.now().toDate());
-                kpiNote.setPostedBy(user);
-                kpiNote.setMessage(docNote.getMessage());
-                kpiNote.setKpiData(documentKpiData);
-                kpiNote = grantService.saveDocumentKpiNote(kpiNote);
-                if (docKpiNotes == null) {
-                    docKpiNotes = new ArrayList<>();
-                }
-                docKpiNotes.add(kpiNote);
-            }
-        }
-        return docKpiNotes;
-    }
-
     @PostMapping("/{grantId}/flow/{fromState}/{toState}")
     @ApiOperation("Move grant through workflow")
     public Grant MoveGrantState(@RequestBody GrantWithNote grantwithNote,
@@ -2862,10 +2704,17 @@ public class GrantController {
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode,
             @ApiParam(name = "attributeId", value = "Unique identifier of the document field") @PathVariable("attributeId") Long attributeId) {
         saveGrant(grantToSave.getId(), grantToSave, userId, tenantCode);
+        GrantStringAttributeAttachments attachment = grantService
+                .getStringAttributeAttachmentsByAttachmentId(attachmentId);
         grantService.deleteStringAttributeAttachmentsByAttachmentId(attachmentId);
+
+        File file = new File(attachment.getLocation() + attachment.getName() + "." + attachment.getType());
+        file.delete();
+
         GrantStringAttribute stringAttribute = grantService.findGrantStringAttributeById(attributeId);
         List<GrantStringAttributeAttachments> stringAttributeAttachments = grantService
                 .getStringAttributeAttachmentsByStringAttribute(stringAttribute);
+
         ObjectMapper mapper = new ObjectMapper();
         try {
             stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
@@ -2916,9 +2765,12 @@ public class GrantController {
         List<GrantStringAttributeAttachments> attachments = new ArrayList<>();
         for (MultipartFile file : files) {
             try {
-                File fileToCreate = new File(dir, file.getOriginalFilename());
-                file.transferTo(fileToCreate);
-                // FileWriter newJsp = new FileWriter(fileToCreate);
+                String fileName = file.getOriginalFilename();
+
+                File fileToCreate = new File(dir, fileName);
+                FileOutputStream fos = new FileOutputStream(fileToCreate);
+                fos.write(file.getBytes());
+                fos.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -3169,5 +3021,109 @@ public class GrantController {
             logger.error(ex.getMessage(), ex);
         }
         return null;
+    }
+
+    @GetMapping("{grantId}/documents")
+    public List<GrantDocument> getDocumentForGrant(@RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId) {
+        return grantService.getGrantsDocuments(grantId);
+    }
+
+    @PostMapping(value = "/{grantId}/documents/upload", consumes = { "multipart/form-data" })
+    public List<GrantDocument> saveUploadedFiles(
+
+            @PathVariable("userId") Long userId,
+            @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,
+            @RequestParam("file") MultipartFile[] files,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+
+        String filePath = uploadLocation + tenantCode + "/grant-documents/" + grantId + "/";
+        File dir = new File(filePath);
+        dir.mkdirs();
+        List<GrantDocument> attachments = new ArrayList();
+        for (MultipartFile file : files) {
+            try {
+                String fileName = file.getOriginalFilename();
+
+                File fileToCreate = new File(dir, fileName);
+                FileOutputStream fos = new FileOutputStream(fileToCreate);
+                fos.write(file.getBytes());
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            GrantDocument attachment = new GrantDocument();
+            attachment.setExtension(FilenameUtils.getExtension(file.getOriginalFilename()));
+            attachment.setName(file.getOriginalFilename()
+                    .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
+            attachment.setLocation(filePath + file.getOriginalFilename());
+            attachment.setUploadedOn(new Date());
+            attachment.setUploadedBy(userId);
+            attachment.setGrantId(grantId);
+            attachment = grantService.saveGrantDocument(attachment);
+            attachments.add(attachment);
+        }
+
+        return attachments;
+    }
+
+    @PostMapping(value = "/{grantId}/documents/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public byte[] downloadProjectDocuments(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest,
+            HttpServletResponse response) throws IOException {
+
+        ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
+        // setting headers
+        response.setContentType("application/zip");
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
+
+        // creating byteArray stream, make it bufforable and passing this buffor to
+        // ZipOutputStream
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+        ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+
+        // simple file list, just for tests
+
+        ArrayList<File> files = new ArrayList<>(2);
+        files.add(new File("README.md"));
+
+        // packing files
+        for (Long attachmentId : downloadRequest.getAttachmentIds()) {
+            GrantDocument attachment = grantService.getGrantDocumentById(attachmentId);
+
+            File file = resourceLoader.getResource("file:" + uploadLocation + tenantCode + "/grant-documents/" + grantId
+                    + "/" + attachment.getName() + "." + attachment.getExtension()).getFile();
+            // new zip entry and copying inputstream with file to zipOutputStream, after all
+            // closing streams
+            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+            FileInputStream fileInputStream = new FileInputStream(file);
+
+            IOUtils.copy(fileInputStream, zipOutputStream);
+
+            fileInputStream.close();
+            zipOutputStream.closeEntry();
+        }
+
+        if (zipOutputStream != null) {
+            zipOutputStream.finish();
+            zipOutputStream.flush();
+            IOUtils.closeQuietly(zipOutputStream);
+        }
+        IOUtils.closeQuietly(bufferedOutputStream);
+        IOUtils.closeQuietly(byteArrayOutputStream);
+        return byteArrayOutputStream.toByteArray();
+    }
+
+    @DeleteMapping(value = "/{grantId}/document/{documentId}")
+    public void downloadProjectDocuments(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("documentId") Long attachmentId) {
+
+        GrantDocument doc = grantService.getGrantDocumentById(attachmentId);
+        File file = new File(doc.getLocation());
+        grantService.deleteGrantDocument(doc);
+        file.delete();
+
     }
 }
