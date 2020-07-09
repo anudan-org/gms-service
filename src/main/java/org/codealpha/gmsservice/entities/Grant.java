@@ -20,77 +20,74 @@ import org.codealpha.gmsservice.models.*;
  **/
 @Entity
 @Table(name = "grants")
-@ApiModel(value = "Grant Model",description = "Data model of a Grant")
+@ApiModel(value = "Grant Model", description = "Data model of a Grant")
 public class Grant {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @OrderBy("id ASC")
-  @ApiModelProperty(name = "id",value = "Unique identifier of the grant",dataType = "Long")
+  @ApiModelProperty(name = "id", value = "Unique identifier of the grant", dataType = "Long")
   private Long id;
 
   @ManyToOne
   @JoinColumn(name = "organization_id")
-  @ApiModelProperty(name = "organization",value = "Grantee organization associated with the grant",dataType = "Organization")
+  @ApiModelProperty(name = "organization", value = "Grantee organization associated with the grant", dataType = "Organization")
   private Grantee organization;
 
   @ManyToOne
   @JoinColumn(name = "grantor_org_id")
-  @ApiModelProperty(name = "grantorOrganization",value = "Granter or tenant organization associated with the grant",dataType = "Granter")
+  @ApiModelProperty(name = "grantorOrganization", value = "Granter or tenant organization associated with the grant", dataType = "Granter")
   private Granter grantorOrganization;
-
 
   @OneToMany(mappedBy = "grant")
   @JsonProperty("stringAttribute")
-  @ApiModelProperty(name = "stringAttributes",value = "Grant template structure with values",dataType = "List<GrantStringAttributes>")
+  @ApiModelProperty(name = "stringAttributes", value = "Grant template structure with values", dataType = "List<GrantStringAttributes>")
   private List<GrantStringAttribute> stringAttributes;
 
-
-
-  @Column(name = "name",columnDefinition = "text")
-  @ApiModelProperty(name = "name",value = "Title of the grant",dataType = "String")
+  @Column(name = "name", columnDefinition = "text")
+  @ApiModelProperty(name = "name", value = "Title of the grant", dataType = "String")
   private String name;
 
-  @Column(name = "description",columnDefinition = "text")
-  @ApiModelProperty(name = "description",value = "Description of the grant",dataType = "String")
+  @Column(name = "description", columnDefinition = "text")
+  @ApiModelProperty(name = "description", value = "Description of the grant", dataType = "String")
   private String description;
 
   @Column
-  @ApiModelProperty(name = "templateId",value = "Unique identified of teamplte associated with the grant",dataType = "Long")
+  @ApiModelProperty(name = "templateId", value = "Unique identified of teamplte associated with the grant", dataType = "Long")
   private Long templateId;
 
   @Transient
-  @ApiModelProperty(name = "grantTemplate",value = "Template associated with the grant",dataType = "GranterGrantTemplate")
+  @ApiModelProperty(name = "grantTemplate", value = "Template associated with the grant", dataType = "GranterGrantTemplate")
   private GranterGrantTemplate grantTemplate;
 
   @Column
-  @ApiModelProperty(name = "amount",value = "Grant amount",dataType = "Double")
+  @ApiModelProperty(name = "amount", value = "Grant amount", dataType = "Double")
   private Double amount;
 
   @Column
-  @ApiModelProperty(name = "createdAt",value = "Date when grant was created",dataType = "Date")
+  @ApiModelProperty(name = "createdAt", value = "Date when grant was created", dataType = "Date")
   private Date createdAt;
 
   @Column
-  @ApiModelProperty(name = "createdBy",value = "Email id of user who created the grant",dataType = "String")
+  @ApiModelProperty(name = "createdBy", value = "Email id of user who created the grant", dataType = "String")
   private String createdBy;
 
   @Column
-  @ApiModelProperty(name = "updatedAt",value = "Date when grant was updated",dataType = "Date")
+  @ApiModelProperty(name = "updatedAt", value = "Date when grant was updated", dataType = "Date")
   private Date updatedAt;
 
   @Column
-  @ApiModelProperty(name = "updatedBy",value = "Email id of user who updated the grant",dataType = "String")
+  @ApiModelProperty(name = "updatedBy", value = "Email id of user who updated the grant", dataType = "String")
   private String updatedBy;
 
   @OneToOne
   @JoinColumn(referencedColumnName = "id")
-  @ApiModelProperty(name = "grantStatus",value = "Grant workflow status",dataType = "WorkflowStatus")
+  @ApiModelProperty(name = "grantStatus", value = "Grant workflow status", dataType = "WorkflowStatus")
   private WorkflowStatus grantStatus;
 
   @Column
   @Enumerated(EnumType.STRING)
-  @ApiModelProperty(name = "statusName",value = "Grant status in text format",dataType = "String")
+  @ApiModelProperty(name = "statusName", value = "Grant status in text format", dataType = "String")
   private GrantStatus statusName;
 
   @OneToOne
@@ -99,39 +96,39 @@ public class Grant {
   private WorkflowStatus substatus;
 
   @Column
-  @ApiModelProperty(name = "startDate",value = "Start date of the grant",dataType = "Date")
+  @ApiModelProperty(name = "startDate", value = "Start date of the grant", dataType = "Date")
   private Date startDate;
 
   @Transient
-  @ApiModelProperty(name = "stDate",value = "Formatted start date of the grant ",dataType = "String")
+  @ApiModelProperty(name = "stDate", value = "Formatted start date of the grant ", dataType = "String")
   private String stDate;
 
   @Column
-  @ApiModelProperty(name = "endDate",value = "End date of the grant",dataType = "Date")
+  @ApiModelProperty(name = "endDate", value = "End date of the grant", dataType = "Date")
   private Date endDate;
   @Transient
-  @ApiModelProperty(name = "enDate",value = "Formatted end date of the grant",dataType = "Date")
+  @ApiModelProperty(name = "enDate", value = "Formatted end date of the grant", dataType = "Date")
   private String enDate;
 
   @Column
-  @ApiModelProperty(name = "representative",value = "Name of representative from Grantee organization",dataType = "String")
+  @ApiModelProperty(name = "representative", value = "Name of representative from Grantee organization", dataType = "String")
   private String representative;
 
   @Column
-  @ApiModelProperty(name = "note",value = "Current note associated with the grant",dataType = "String")
+  @ApiModelProperty(name = "note", value = "Current note associated with the grant", dataType = "String")
   private String note;
 
   @Column
-  @ApiModelProperty(name = "noteAdded",value = "Date when current note was associated with the grant",dataType = "Date")
+  @ApiModelProperty(name = "noteAdded", value = "Date when current note was associated with the grant", dataType = "Date")
   private Date noteAdded;
 
   @Column
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  @ApiModelProperty(name = "noteAddedBy",value = "Email id of the user who added the current note",dataType = "String")
+  @ApiModelProperty(name = "noteAddedBy", value = "Email id of the user who added the current note", dataType = "String")
   private String noteAddedBy;
 
   @Transient
-  @ApiModelProperty(name = "noteAddedByUser",value = "User who added the current note",dataType = "User")
+  @ApiModelProperty(name = "noteAddedByUser", value = "User who added the current note", dataType = "User")
   private User noteAddedByUser;
 
   @OneToMany(mappedBy = "grant", cascade = CascadeType.ALL)
@@ -141,23 +138,23 @@ public class Grant {
   private List<Submission> submissions;
 
   @Transient
-  @ApiModelProperty(name = "actionAuthorities",value = "Allowed actions that can be performed by the user for current grant status",dataType = "List<WorkflowActionPermission>")
+  @ApiModelProperty(name = "actionAuthorities", value = "Allowed actions that can be performed by the user for current grant status", dataType = "List<WorkflowActionPermission>")
   private WorkflowActionPermission actionAuthorities;
   @Transient
-  @ApiModelProperty(name = "actionAuthorities",value = "Allowed workflow status changes that can be performed by the user for current grant status",dataType = "List<WorkflowPermission>")
+  @ApiModelProperty(name = "actionAuthorities", value = "Allowed workflow status changes that can be performed by the user for current grant status", dataType = "List<WorkflowPermission>")
   private List<WorkFlowPermission> flowAuthorities;
   @Transient
-  @ApiModelProperty(name = "grantDetails",value = "All grant section and section attributes and values of the grant",dataType = "GrantDetailVO")
+  @ApiModelProperty(name = "grantDetails", value = "All grant section and section attributes and values of the grant", dataType = "GrantDetailVO")
   private GrantDetailVO grantDetails;
   @Transient
-  @ApiModelProperty(name = "currentAssignment",value = "Current owner of grant based on grant status",dataType = "List<AssignedTo>")
+  @ApiModelProperty(name = "currentAssignment", value = "Current owner of grant based on grant status", dataType = "List<AssignedTo>")
   private List<AssignedTo> currentAssignment;
   @Transient
-  @ApiModelProperty(name = "workflowAssignment",value = "Allowed workflow ownership assignments for the grant",dataType = "List<GrantAssignmentsVO>")
+  @ApiModelProperty(name = "workflowAssignment", value = "Allowed workflow ownership assignments for the grant", dataType = "List<GrantAssignmentsVO>")
   private List<GrantAssignmentsVO> workflowAssignment;
 
   @Transient
-  @ApiModelProperty(name = "securityCode",value = "Secure code for grant")
+  @ApiModelProperty(name = "securityCode", value = "Secure code for grant")
   private String securityCode;
 
   @Column
@@ -170,6 +167,8 @@ public class Grant {
   private String referenceNo;
   @Column
   private Boolean deleted;
+  @Transient
+  private Boolean hasOngoingDisbursement = false;
 
   public Long getId() {
     return id;
@@ -202,7 +201,6 @@ public class Grant {
   public void setDescription(String description) {
     this.description = description;
   }
-
 
   public Organization getGrantorOrganization() {
     return grantorOrganization;
@@ -264,19 +262,15 @@ public class Grant {
     return stringAttributes;
   }
 
-  public void setStringAttributes(
-      List<GrantStringAttribute> stringAttributes) {
+  public void setStringAttributes(List<GrantStringAttribute> stringAttributes) {
     this.stringAttributes = stringAttributes;
   }
-
-
 
   public WorkflowActionPermission getActionAuthorities() {
     return actionAuthorities;
   }
 
-  public void setActionAuthorities(
-      WorkflowActionPermission actionAuthorities) {
+  public void setActionAuthorities(WorkflowActionPermission actionAuthorities) {
     this.actionAuthorities = actionAuthorities;
   }
 
@@ -284,8 +278,7 @@ public class Grant {
     return flowAuthorities;
   }
 
-  public void setFlowAuthorities(
-      List<WorkFlowPermission> flowAuthorities) {
+  public void setFlowAuthorities(List<WorkFlowPermission> flowAuthorities) {
     this.flowAuthorities = flowAuthorities;
   }
 
@@ -298,7 +291,7 @@ public class Grant {
   }
 
   public String getStDate() {
-    if(startDate==null){
+    if (startDate == null) {
       return "";
     }
 
@@ -311,7 +304,7 @@ public class Grant {
 
   public String getEnDate() {
 
-  if(endDate==null){
+    if (endDate == null) {
       return "";
     }
     return new SimpleDateFormat("yyyy-MM-dd").format(endDate);
@@ -321,19 +314,19 @@ public class Grant {
     this.enDate = enDate;
   }
 
-  public void setAmount(Double amount){
+  public void setAmount(Double amount) {
     this.amount = amount;
   }
 
-  public Double getAmount(){
+  public Double getAmount() {
     return this.amount;
   }
 
-  public void setRepresentative(String rep){
+  public void setRepresentative(String rep) {
     this.representative = rep;
   }
 
-  public String getRepresentative(){
+  public String getRepresentative() {
     return this.representative;
   }
 
@@ -345,45 +338,45 @@ public class Grant {
     this.templateId = templateId;
   }
 
-    public GranterGrantTemplate getGrantTemplate() {
-        return grantTemplate;
-    }
+  public GranterGrantTemplate getGrantTemplate() {
+    return grantTemplate;
+  }
 
-    public void setGrantTemplate(GranterGrantTemplate grantTemplate) {
-        this.grantTemplate = grantTemplate;
-    }
+  public void setGrantTemplate(GranterGrantTemplate grantTemplate) {
+    this.grantTemplate = grantTemplate;
+  }
 
-    public Date getCreatedAt() {
-        return createdAt;
-    }
+  public Date getCreatedAt() {
+    return createdAt;
+  }
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
+  public void setCreatedAt(Date createdAt) {
+    this.createdAt = createdAt;
+  }
 
-    public String getCreatedBy() {
-        return createdBy;
-    }
+  public String getCreatedBy() {
+    return createdBy;
+  }
 
-    public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
-    }
+  public void setCreatedBy(String createdBy) {
+    this.createdBy = createdBy;
+  }
 
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
+  public Date getUpdatedAt() {
+    return updatedAt;
+  }
 
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+  public void setUpdatedAt(Date updatedAt) {
+    this.updatedAt = updatedAt;
+  }
 
-    public String getUpdatedBy() {
-        return updatedBy;
-    }
+  public String getUpdatedBy() {
+    return updatedBy;
+  }
 
-    public void setUpdatedBy(String updatedBy) {
-        this.updatedBy = updatedBy;
-    }
+  public void setUpdatedBy(String updatedBy) {
+    this.updatedBy = updatedBy;
+  }
 
   public List<AssignedTo> getCurrentAssignment() {
     return currentAssignment;
@@ -472,4 +465,13 @@ public class Grant {
   public void setDeleted(Boolean deleted) {
     this.deleted = deleted;
   }
+
+  public Boolean getHasOngoingDisbursement() {
+    return hasOngoingDisbursement;
+  }
+
+  public void setHasOngoingDisbursement(Boolean hasOngoingDisbursement) {
+    this.hasOngoingDisbursement = hasOngoingDisbursement;
+  }
+
 }

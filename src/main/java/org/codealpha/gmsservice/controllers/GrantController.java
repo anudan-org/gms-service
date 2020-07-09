@@ -33,6 +33,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -868,7 +869,7 @@ public class GrantController {
                 .usersToNotifyOnWorkflowSateChangeTo(submission.getSubmissionStatus().getId());
 
         for (User userToNotify : usersToNotify) {
-            commonEmailSevice.sendMail(userToNotify.getEmailId(), null,
+            commonEmailSevice.sendMail(new String[] { userToNotify.getEmailId() }, null,
                     appConfigService
                             .getAppConfigForGranterOrg(submission.getGrant().getGrantorOrganization().getId(),
                                     AppConfiguration.SUBMISSION_ALTER_MAIL_SUBJECT)
@@ -1674,7 +1675,7 @@ public class GrantController {
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("")
                         ? "Please review."
                         : "",
-                "", null, null);
+                "", null, null, null, null);
         String notificationContent[] = grantService.buildEmailNotificationContent(finalGrant, user,
                 user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(),
                 new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
@@ -1691,7 +1692,7 @@ public class GrantController {
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("")
                         ? "Please review."
                         : "",
-                "", null, null);
+                "", null, null, null, null);
         /*
          * usersToNotify.stream().forEach(u -> {
          * 
@@ -1704,7 +1705,7 @@ public class GrantController {
         if (!toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
             final User currentOwnerFinal = currentOwner;
             usersToNotify.removeIf(u -> u.getId().longValue() == currentOwnerFinal.getId());
-            commonEmailSevice.sendMail(currentOwner.getEmailId(),
+            commonEmailSevice.sendMail(new String[] { currentOwner.getEmailId() },
                     usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                             .toArray(new String[usersToNotify.size()]),
                     emailNotificationContent[0], emailNotificationContent[1],
@@ -1727,7 +1728,7 @@ public class GrantController {
             User activeStateOwner = userService.getUserById(activeStateAssignment.getAssignments());
             usersToNotify.removeIf(u -> u.getId().longValue() == activeStateOwner.getId().longValue());
 
-            commonEmailSevice.sendMail(activeStateOwner.getEmailId(),
+            commonEmailSevice.sendMail(new String[] { activeStateOwner.getEmailId() },
                     usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                             .toArray(new String[usersToNotify.size()]),
                     emailNotificationContent[0], emailNotificationContent[1],
@@ -2717,7 +2718,15 @@ public class GrantController {
             @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,
             @ApiParam(name = "assignmentModel", value = "Set assignment for grant per workflow state") @RequestBody GrantAssignmentModel assignmentModel,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        Map<Long, Long> currentAssignments = new LinkedHashMap();
+        if (grantService.checkIfGrantMovedThroughWFAtleastOnce(grantId)) {
+            grantService.getGrantWorkflowAssignments(grantService.getById(grantId)).stream().forEach(a -> {
+                currentAssignments.put(a.getStateId(), a.getAssignments());
+            });
+
+        }
         Grant grant = saveGrant(assignmentModel.getGrant().getId(), assignmentModel.getGrant(), userId, tenantCode);
+
         for (GrantAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
             GrantAssignments assignment = null;
             if (assignmentsVO.getId() == null) {
@@ -2733,6 +2742,52 @@ public class GrantController {
             assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
 
             grantService.saveAssignmentForGrant(assignment);
+        }
+
+        if (currentAssignments.size() > 0) {
+
+            List<GrantAssignments> newAssignments = grantService.getGrantWorkflowAssignments(grant);
+
+            String[] notifications = grantService.buildEmailNotificationContent(grant, userService.getUserById(userId),
+                    null, null, null,
+                    appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
+                    null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+                    newAssignments);
+            commonEmailSevice.sendMail(
+                    newAssignments.stream().map(a -> a.getAssignments())
+                            .map(uid -> userService.getUserById(uid).getEmailId()).collect(Collectors.toList())
+                            .toArray(new String[newAssignments.size()]),
+                    currentAssignments.values().stream().map(uid -> userService.getUserById(uid).getEmailId())
+                            .collect(Collectors.toList()).toArray(new String[currentAssignments.size()]),
+                    notifications[0], notifications[1],
+                    new String[] { appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                            AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
+
+            Map<Long, Long> cleanAsigneesList = new HashMap();
+            for (Long ass : currentAssignments.values()) {
+                cleanAsigneesList.put(ass, ass);
+            }
+            for (GrantAssignments ass : newAssignments) {
+                cleanAsigneesList.put(ass.getAssignments(), ass.getAssignments());
+            }
+
+            final String[] finaNotifications = grantService.buildEmailNotificationContent(grant,
+                    userService.getUserById(userId), null, null, null,
+                    appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                            AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                            AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                    null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+                    newAssignments);
+
+            final Grant finalGrant = grant;
+
+            cleanAsigneesList.keySet().stream().forEach(
+                    u -> notificationsService.saveNotification(finaNotifications, u, finalGrant.getId(), "GRANT"));
+
         }
 
         grant = grantService.getById(grantId);
@@ -3060,7 +3115,8 @@ public class GrantController {
                                 AppConfiguration.GRANT_INVITE_MESSAGE).getConfigValue(),
                         url);
 
-                commonEmailSevice.sendMail(granteeUser.getEmailId(), null, notifications[0], notifications[1],
+                commonEmailSevice.sendMail(new String[] { granteeUser.getEmailId() }, null, notifications[0],
+                        notifications[1],
                         new String[] {
                                 appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });

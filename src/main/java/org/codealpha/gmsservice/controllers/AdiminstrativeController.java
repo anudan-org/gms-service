@@ -52,19 +52,25 @@ public class AdiminstrativeController {
     private AppConfigService appConfigService;
     @Autowired
     private CommonEmailSevice commonEmailSevice;
-    @Autowired private ReportService reportService;
-    @Autowired private GrantService grantService;
-    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired
+    private ReportService reportService;
+    @Autowired
+    private GrantService grantService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     @Autowired
     private DisbursementService disbursementService;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
-    public List<WorkflowTransitionModel> getGrantWorkflows(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode, @ApiParam(name = "grantId", value = "Unique identifier of grant") @PathVariable("grantId") Long grantId, @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
+    public List<WorkflowTransitionModel> getGrantWorkflows(
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @ApiParam(name = "grantId", value = "Unique identifier of grant") @PathVariable("grantId") Long grantId,
+            @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
         Organization org = null;
-        if("ANUDAN".equalsIgnoreCase(tenantCode)){
+        if ("ANUDAN".equalsIgnoreCase(tenantCode)) {
             org = grantService.getById(grantId).getGrantorOrganization();
-        }else{
+        } else {
             org = organizationService.findOrganizationByTenantCode(tenantCode);
         }
 
@@ -73,36 +79,41 @@ public class AdiminstrativeController {
 
     @GetMapping("/workflow/report/{reportId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for report")
-    public List<WorkflowTransitionModel> getReportWorkflows(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode, @ApiParam(name = "reportId", value = "Unique identifier of Report") @PathVariable("reportId") Long reportId, @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
+    public List<WorkflowTransitionModel> getReportWorkflows(
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @ApiParam(name = "reportId", value = "Unique identifier of Report") @PathVariable("reportId") Long reportId,
+            @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
         Organization org = null;
-        if("ANUDAN".equalsIgnoreCase(tenantCode)){
+        if ("ANUDAN".equalsIgnoreCase(tenantCode)) {
             org = reportService.getReportById(reportId).getGrant().getGrantorOrganization();
-        }else{
+        } else {
             org = organizationService.findOrganizationByTenantCode(tenantCode);
         }
         organizationService.findOrganizationByTenantCode(tenantCode);
-
 
         return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "REPORT");
     }
 
     @GetMapping("/workflow/disbursement/{disbursementId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for disbursement")
-    public List<WorkflowTransitionModel> getDisbursementWorkflows(@ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode, @ApiParam(name = "disbursementId", value = "Unique identifier of Disbursement") @PathVariable("disbursementId") Long disbursementId, @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
+    public List<WorkflowTransitionModel> getDisbursementWorkflows(
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @ApiParam(name = "disbursementId", value = "Unique identifier of Disbursement") @PathVariable("disbursementId") Long disbursementId,
+            @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
         Organization org = null;
-        if("ANUDAN".equalsIgnoreCase(tenantCode)){
+        if ("ANUDAN".equalsIgnoreCase(tenantCode)) {
             org = disbursementService.getDisbursementById(disbursementId).getGrant().getGrantorOrganization();
-        }else{
+        } else {
             org = organizationService.findOrganizationByTenantCode(tenantCode);
         }
         organizationService.findOrganizationByTenantCode(tenantCode);
-
 
         return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "DISBURSEMENT");
     }
 
     @PostMapping("/workflow")
-    public void createBasicWorkflow(@RequestBody WorkFlowDataModel workFlowDataModel, @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    public void createBasicWorkflow(@RequestBody WorkFlowDataModel workFlowDataModel,
+            @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Workflow workflow = new Workflow();
         workflow.setObject(WorkflowObject.valueOf(workFlowDataModel.getType()));
         workflow.setName(workFlowDataModel.getName());
@@ -123,10 +134,10 @@ public class AdiminstrativeController {
             }
         }
 
-
     }
 
-    private boolean _checkIfTerminal(WorkflowTransitionDataModel transition, List<WorkflowTransitionDataModel> transitions) {
+    private boolean _checkIfTerminal(WorkflowTransitionDataModel transition,
+            List<WorkflowTransitionDataModel> transitions) {
         transitions.stream().filter(t -> t.getFrom().equalsIgnoreCase(transition.getFrom()));
         return true;
     }
@@ -140,7 +151,6 @@ public class AdiminstrativeController {
                 GranterReportTemplate reportTemplate = _extractReportTemplate(org, template);
                 reportTemplateService.saveReportTemplate(reportTemplate);
         }
-
 
     }
 
@@ -195,7 +205,8 @@ public class AdiminstrativeController {
     }
 
     @GetMapping("/user/{userId}/role")
-    public List<Role> getRolesForOrg(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
+    public List<Role> getRolesForOrg(@RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("userId") Long userId) {
 
         User user = userService.getUserById(userId);
 
@@ -204,7 +215,8 @@ public class AdiminstrativeController {
     }
 
     @GetMapping("/user/{userId}/user")
-    public List<User> getUsersForOrg(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
+    public List<User> getUsersForOrg(@RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("userId") Long userId) {
 
         User user = userService.getUserById(userId);
 
@@ -212,7 +224,7 @@ public class AdiminstrativeController {
         return users;
     }
 
-    private List<Role> getCurrentSystemRoles(User user){
+    private List<Role> getCurrentSystemRoles(User user) {
         List<Role> roles = roleService.getInternalRolesForOrganization(user.getOrganization());
         for (Role role : roles) {
             List<UserRole> userRoles = userRoleService.findUsersForRole(role);
@@ -240,18 +252,19 @@ public class AdiminstrativeController {
         List<User> users = userService.findByOrganization(user.getOrganization());
         users.forEach(u -> {
             u.getUserRoles().forEach(ur -> {
-                if(ur.getRole().isInternal()){
+                if (ur.getRole().isInternal()) {
                     u.setAdmin(true);
                 }
             });
             u.getUserRoles().removeIf(ur -> ur.getRole().isInternal());
 
         });
-        return  users;
+        return users;
     }
 
     @PutMapping("/user/{userId}/role")
-    public Role saveRole(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId, @RequestBody Role newRole) {
+    public Role saveRole(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
+            @RequestBody Role newRole) {
         Role role = null;
         if (newRole.getId() == 0) {
             role = new Role();
@@ -275,7 +288,8 @@ public class AdiminstrativeController {
     }
 
     @DeleteMapping("/user/{userId}/role/{roleId}")
-    public List<Role> deleteRole(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId, @PathVariable("roleId") Long roleId) {
+    public List<Role> deleteRole(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
+            @PathVariable("roleId") Long roleId) {
 
         Role role = roleService.getById(roleId);
         roleService.deleteRole(role);
@@ -285,7 +299,8 @@ public class AdiminstrativeController {
     }
 
     @PostMapping("/user/{userId}/user")
-    public User createUser(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId, @RequestBody User newUser) {
+    public User createUser(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
+            @RequestBody User newUser) {
 
         User adminUser = userService.getUserById(userId);
         Organization org = adminUser.getOrganization();
@@ -307,36 +322,46 @@ public class AdiminstrativeController {
             userRoles.add(userRole1);
         }
 
-       user.setUserRoles(userRoles);
+        user.setUserRoles(userRoles);
 
         UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
         String host = null;
-        if(org.getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+        if (org.getOrganizationType().equalsIgnoreCase("GRANTEE")) {
             host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
-        }else if(org.getOrganizationType().equalsIgnoreCase("GRANTER")){
+        } else if (org.getOrganizationType().equalsIgnoreCase("GRANTER")) {
             host = uriComponents.getHost();
         }
-        UriComponentsBuilder uriBuilder =  UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(host).port(uriComponents.getPort());
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
+                .host(host).port(uriComponents.getPort());
         String url = uriBuilder.toUriString();
-        url = url+"/home/?action=registration&org="+ StringEscapeUtils.escapeHtml4(user.getOrganization().getName()).replaceAll(" ","%20")+"&email="+user.getEmailId()+"&type=join";
-        String[] notifications = userService.buildJoiningInvitationContent(
-                user.getOrganization(),userRoles.get(0).getRole(),adminUser,
-                appConfigService.getAppConfigForGranterOrg(user.getOrganization().getId(), AppConfiguration.INVITE_SUBJECT).getConfigValue(),
-                appConfigService.getAppConfigForGranterOrg(user.getOrganization().getId(), AppConfiguration.INVITE_MESSAGE).getConfigValue(),
+        url = url + "/home/?action=registration&org="
+                + StringEscapeUtils.escapeHtml4(user.getOrganization().getName()).replaceAll(" ", "%20") + "&email="
+                + user.getEmailId() + "&type=join";
+        String[] notifications = userService.buildJoiningInvitationContent(user.getOrganization(),
+                userRoles.get(0).getRole(), adminUser,
+                appConfigService
+                        .getAppConfigForGranterOrg(user.getOrganization().getId(), AppConfiguration.INVITE_SUBJECT)
+                        .getConfigValue(),
+                appConfigService
+                        .getAppConfigForGranterOrg(user.getOrganization().getId(), AppConfiguration.INVITE_MESSAGE)
+                        .getConfigValue(),
                 url);
-        commonEmailSevice.sendMail(user.getEmailId(),null,notifications[0],notifications[1],new String[]{appConfigService.getAppConfigForGranterOrg(user.getOrganization().getId(),AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()});
+        commonEmailSevice.sendMail(new String[] { user.getEmailId() }, null, notifications[0], notifications[1],
+                new String[] { appConfigService.getAppConfigForGranterOrg(user.getOrganization().getId(),
+                        AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
         return user;
     }
 
     @GetMapping("/settings/{userId}/{orgId}")
-    public List<AppConfigVO> getAppConfigsForOrg(@PathVariable("orgId") Long orgId,@RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable("userId") Long userId){
+    public List<AppConfigVO> getAppConfigsForOrg(@PathVariable("orgId") Long orgId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
         Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
-        if(org.getOrganizationType().equalsIgnoreCase("PLATFORM")){
+        if (org.getOrganizationType().equalsIgnoreCase("PLATFORM")) {
             List<AppConfig> configs = appConfigService.getAllAppConfigForGrantorOrg(0L);
             List<AppConfigVO> configVOs = new ArrayList<>();
             buildConfigVOList(configs, configVOs);
             return configVOs;
-        }else if(org.getOrganizationType().equalsIgnoreCase("GRANTER")){
+        } else if (org.getOrganizationType().equalsIgnoreCase("GRANTER")) {
             List<AppConfig> configs = appConfigService.getAllAppConfigForGrantorOrg(orgId);
             List<AppConfigVO> configVOs = new ArrayList<>();
             buildConfigVOList(configs, configVOs);
@@ -361,7 +386,8 @@ public class AdiminstrativeController {
         configVO.setConfigurable(config.getConfigurable());
         configVO.setKey(config.getKey());
         configVO.setType(config.getType());
-        if(config.getConfigName().equalsIgnoreCase(AppConfiguration.DUE_REPORTS_REMINDER_SETTINGS.toString()) || config.getConfigName().equalsIgnoreCase(AppConfiguration.ACTION_DUE_REPORTS_REMINDER_SETTINGS.toString()) ){
+        if (config.getConfigName().equalsIgnoreCase(AppConfiguration.DUE_REPORTS_REMINDER_SETTINGS.toString()) || config
+                .getConfigName().equalsIgnoreCase(AppConfiguration.ACTION_DUE_REPORTS_REMINDER_SETTINGS.toString())) {
             ObjectMapper mapper = new ObjectMapper();
             mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
             try {
@@ -387,7 +413,8 @@ public class AdiminstrativeController {
         configVO.setConfigurable(config.getConfigurable());
         configVO.setKey(config.getKey());
         configVO.setType(config.getType());
-        if(config.getConfigName().equalsIgnoreCase(AppConfiguration.DUE_REPORTS_REMINDER_SETTINGS.toString()) || config.getConfigName().equalsIgnoreCase(AppConfiguration.ACTION_DUE_REPORTS_REMINDER_SETTINGS.toString()) ){
+        if (config.getConfigName().equalsIgnoreCase(AppConfiguration.DUE_REPORTS_REMINDER_SETTINGS.toString()) || config
+                .getConfigName().equalsIgnoreCase(AppConfiguration.ACTION_DUE_REPORTS_REMINDER_SETTINGS.toString())) {
             ObjectMapper mapper = new ObjectMapper();
             mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
             try {
@@ -404,26 +431,28 @@ public class AdiminstrativeController {
         return configVO;
     }
 
-
     @PostMapping("/settings/{userId}/{orgId}")
-    public AppConfigVO saveSetting(@RequestBody AppConfigVO config, @PathVariable("orgId") Long orgId,@RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable("userId") Long userId){
+    public AppConfigVO saveSetting(@RequestBody AppConfigVO config, @PathVariable("orgId") Long orgId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
 
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
-        if(config.getType().equalsIgnoreCase("app") && tenantOrg.getOrganizationType().equalsIgnoreCase("PLATFORM")){
+        if (config.getType().equalsIgnoreCase("app") && tenantOrg.getOrganizationType().equalsIgnoreCase("PLATFORM")) {
             AppConfig existingConfig = appConfigService.getAppConfigById(config.getKey());
-            if(config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS") || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")){
+            if (config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS")
+                    || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")) {
                 ObjectMapper mapper = new ObjectMapper();
                 try {
                     existingConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                 }
-            }else{
+            } else {
                 existingConfig.setConfigValue(config.getConfigValue());
             }
 
             existingConfig = appConfigService.saveAppConfig(existingConfig);
-        } else if(config.getType().equalsIgnoreCase("app") && tenantOrg.getOrganizationType().equalsIgnoreCase("GRANTER")){
+        } else if (config.getType().equalsIgnoreCase("app")
+                && tenantOrg.getOrganizationType().equalsIgnoreCase("GRANTER")) {
             AppConfig existingConfig = appConfigService.getAppConfigById(config.getKey());
             OrgConfig orgConfig = new OrgConfig();
             orgConfig.setConfigName(existingConfig.getConfigName());
@@ -431,14 +460,15 @@ public class AdiminstrativeController {
             orgConfig.setDescription(existingConfig.getDescription());
             orgConfig.setGranterId(orgId);
 
-            if(config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS") || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")){
+            if (config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS")
+                    || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")) {
                 ObjectMapper mapper = new ObjectMapper();
                 try {
                     orgConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                 }
-            }else{
+            } else {
                 existingConfig.setConfigValue(config.getConfigValue());
             }
 
@@ -446,16 +476,17 @@ public class AdiminstrativeController {
             config = convertOrgConfigToVO(orgConfig);
             config.setType("org");
             config.setKey(orgConfig.getId());
-        } else if(config.getType().equalsIgnoreCase("org")){
+        } else if (config.getType().equalsIgnoreCase("org")) {
             OrgConfig existingConfig = appConfigService.getOrgConfigById(config.getKey());
-            if(config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS") || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")){
+            if (config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS")
+                    || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")) {
                 ObjectMapper mapper = new ObjectMapper();
                 try {
                     existingConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                 }
-            }else{
+            } else {
                 existingConfig.setConfigValue(config.getConfigValue());
             }
 
@@ -467,16 +498,18 @@ public class AdiminstrativeController {
     }
 
     @PostMapping("/{userId}/encryptpasswords/{tenant}")
-    public HttpStatus encryptAllPasswords(@PathVariable("tenant") String tenant,@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId")Long userId){
+    public HttpStatus encryptAllPasswords(@PathVariable("tenant") String tenant,
+            @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
 
-            List<User> tenantUsers = userService.getAllTenantUsers(organizationService.findOrganizationByTenantCode(tenant));
-            for (User tenantUser : tenantUsers) {
-                if(!tenantUser.isPlain()){
-                    tenantUser.setPassword(passwordEncoder.encode(tenantUser.getPassword()));
-                    userService.save(tenantUser);
-                }
+        List<User> tenantUsers = userService
+                .getAllTenantUsers(organizationService.findOrganizationByTenantCode(tenant));
+        for (User tenantUser : tenantUsers) {
+            if (!tenantUser.isPlain()) {
+                tenantUser.setPassword(passwordEncoder.encode(tenantUser.getPassword()));
+                userService.save(tenantUser);
             }
+        }
 
-        return  HttpStatus.OK;
+        return HttpStatus.OK;
     }
 }

@@ -32,10 +32,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -83,6 +87,13 @@ public class DisbursementsController {
                         List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
                                         .collect(Collectors.toList());
 
+                        List<WorkflowStatus> draftAndReviewStatuses = workflowStatuses.stream()
+                                        .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")
+                                                        || ws.getInternalStatus().equalsIgnoreCase("REVIEW"))
+                                        .collect(Collectors.toList());
+                        List<Long> draftAndReviewStatusIds = draftAndReviewStatuses.stream().mapToLong(s -> s.getId())
+                                        .boxed().collect(Collectors.toList());
+
                         for (Grant g : ownerGrants) {
                                 Double total = 0d;
                                 List<Disbursement> closedDisbursements = disbursementService
@@ -106,6 +117,20 @@ public class DisbursementsController {
 
                         for (Grant ownerGrant : grantsToReturn) {
                                 ownerGrant = grantService._grantToReturn(userId, ownerGrant);
+                        }
+
+                        for (Grant ownerGrant : grantsToReturn) {
+                                List<Disbursement> draftAndReviewDisbursements = disbursementService
+                                                .getDibursementsForGrantByStatuses(ownerGrant.getId(),
+                                                                draftAndReviewStatusIds);
+                                if (draftAndReviewDisbursements != null && draftAndReviewDisbursements.size() > 0) {
+                                        for (Disbursement d : draftAndReviewDisbursements) {
+                                                if (disbursementService.checkIfDisbursementMovedThroughWFAtleastOnce(
+                                                                d.getId())) {
+                                                        ownerGrant.setHasOngoingDisbursement(true);
+                                                }
+                                        }
+                                }
                         }
                 }
 
@@ -229,7 +254,21 @@ public class DisbursementsController {
                         @ApiParam(name = "disbursementId", value = "Unique identifier of the disbursement") @PathVariable("disbursementId") Long disbursementId,
                         @ApiParam(name = "assignmentModel", value = "Set assignment for disbursement per workflow state") @RequestBody DisbursementAssignmentModel assignmentModel,
                         @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+
+                Map<Long, Long> currentAssignments = new LinkedHashMap();
+
+                if (disbursementService.checkIfDisbursementMovedThroughWFAtleastOnce(
+                                assignmentModel.getDisbursement().getId())) {
+                        disbursementService
+                                        .getDisbursementAssignments(disbursementService
+                                                        .getDisbursementById(assignmentModel.getDisbursement().getId()))
+                                        .stream().forEach(a -> {
+                                                currentAssignments.put(a.getStateId(), a.getOwner());
+                                        });
+                }
+
                 Disbursement disbursement = saveDisbursement(tenantCode, userId, assignmentModel.getDisbursement());
+
                 for (DisbursementAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
                         DisbursementAssignment assignment = null;
                         if (assignmentsVO.getId() == null) {
@@ -245,6 +284,65 @@ public class DisbursementsController {
                         assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
 
                         disbursementService.saveAssignmentForDisbursement(assignment);
+                }
+
+                if (currentAssignments.size() > 0) {
+
+                        List<DisbursementAssignment> newAssignments = disbursementService
+                                        .getDisbursementAssignments(disbursement);
+                        String[] notifications = disbursementService.buildEmailNotificationContent(disbursement,
+                                        userService.getUserById(userId), null, null, null,
+                                        appConfigService.getAppConfigForGranterOrg(
+                                                        disbursement.getGrant().getGrantorOrganization().getId(),
+                                                        AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT)
+                                                        .getConfigValue(),
+                                        appConfigService.getAppConfigForGranterOrg(
+                                                        disbursement.getGrant().getGrantorOrganization().getId(),
+                                                        AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE)
+                                                        .getConfigValue(),
+                                        null, null, null, null, null, null, null, null, null, null, null, null,
+                                        currentAssignments, newAssignments);
+                        commonEmailSevice.sendMail(newAssignments.stream().map(a -> a.getOwner())
+                                        .map(uid -> userService.getUserById(uid).getEmailId())
+                                        .collect(Collectors.toList()).toArray(new String[newAssignments.size()]),
+                                        currentAssignments.values().stream()
+                                                        .map(uid -> userService.getUserById(uid).getEmailId())
+                                                        .collect(Collectors.toList())
+                                                        .toArray(new String[currentAssignments.size()]),
+                                        notifications[0], notifications[1],
+                                        new String[] { appConfigService
+                                                        .getAppConfigForGranterOrg(
+                                                                        disbursement.getGrant().getGrantorOrganization()
+                                                                                        .getId(),
+                                                                        AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                                        .getConfigValue() });
+
+                        Map<Long, Long> cleanAsigneesList = new HashMap();
+                        for (Long ass : currentAssignments.values()) {
+                                cleanAsigneesList.put(ass, ass);
+                        }
+                        for (DisbursementAssignment ass : newAssignments) {
+                                cleanAsigneesList.put(ass.getOwner(), ass.getOwner());
+                        }
+                        final String[] finaNotifications = disbursementService.buildEmailNotificationContent(
+                                        disbursement, userService.getUserById(userId), null, null, null,
+                                        appConfigService.getAppConfigForGranterOrg(
+                                                        disbursement.getGrant().getGrantorOrganization().getId(),
+                                                        AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_SUBJECT)
+                                                        .getConfigValue(),
+                                        appConfigService.getAppConfigForGranterOrg(
+                                                        disbursement.getGrant().getGrantorOrganization().getId(),
+                                                        AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_MESSAGE)
+                                                        .getConfigValue(),
+                                        null, null, null, null, null, null, null, null, null, null, null, null,
+                                        currentAssignments, newAssignments);
+
+                        final Disbursement finalDisbursement = disbursement;
+
+                        cleanAsigneesList.keySet().stream()
+                                        .forEach(u -> notificationsService.saveNotification(finaNotifications, u,
+                                                        finalDisbursement.getId(), "DISBURSEMENT"));
+
                 }
 
                 disbursement = disbursementService.getDisbursementById(disbursementId);
@@ -351,7 +449,7 @@ public class DisbursementsController {
                                                 && !disbursementWithNote.getNote().trim().equalsIgnoreCase("")
                                                                 ? "Please review."
                                                                 : "",
-                                "", null, null);
+                                "", null, null, null, null);
                 String notificationContent[] = disbursementService.buildEmailNotificationContent(finalDisbursement,
                                 user, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(),
                                 new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
@@ -379,12 +477,12 @@ public class DisbursementsController {
                                                 && !disbursementWithNote.getNote().trim().equalsIgnoreCase("")
                                                                 ? "Please review."
                                                                 : "",
-                                "", null, null);
+                                "", null, null, null, null);
                 final User finalCurrentOwner = currentOwner;
                 if (!toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
                         usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue());
 
-                        commonEmailSevice.sendMail(finalCurrentOwner.getEmailId(),
+                        commonEmailSevice.sendMail(new String[] { finalCurrentOwner.getEmailId() },
                                         usersToNotify.stream().map(mapper -> mapper.getEmailId())
                                                         .collect(Collectors.toList())
                                                         .toArray(new String[usersToNotify.size()]),
@@ -412,7 +510,7 @@ public class DisbursementsController {
                                         .findFirst().get().getOwner());
                         usersToNotify.removeIf(u -> u.getId().longValue() == activeStatusOwner.getId().longValue());
 
-                        commonEmailSevice.sendMail(activeStatusOwner.getEmailId(),
+                        commonEmailSevice.sendMail(new String[] { activeStatusOwner.getEmailId() },
                                         usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                                         .toArray(new String[usersToNotify.size()]),
                                         emailNotificationContent[0], emailNotificationContent[1],

@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.FileWriteMode;
+import com.google.common.io.Files;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -929,8 +932,17 @@ public class ReportController {
         List<ReportStringAttributeAttachments> attachments = new ArrayList<>();
         for (MultipartFile file : files) {
             try {
-                File fileToCreate = new File(dir, file.getOriginalFilename());
-                file.transferTo(fileToCreate);
+                String fileName = file.getOriginalFilename();
+                String prefix = fileName.substring(0, fileName.lastIndexOf("."));
+                String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
+                File tempFile = File.createTempFile(prefix, "." + suffix);
+                FileOutputStream fos = new FileOutputStream(tempFile);
+                fos.write(file.getBytes());
+                fos.close();
+                File fileToCreate = new File(dir, tempFile.getName());
+                IOUtils.copy(Files.asByteSource(tempFile).openStream(),
+                        Files.asByteSink(fileToCreate, FileWriteMode.APPEND).openStream());
+
                 // FileWriter newJsp = new FileWriter(fileToCreate);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -1066,6 +1078,14 @@ public class ReportController {
             @ApiParam(name = "assignmentModel", value = "Set assignment for report per workflow state") @RequestBody ReportAssignmentModel assignmentModel,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Report report = saveReport(reportId, assignmentModel.getReport(), userId, tenantCode);
+
+        Map<Long, Long> currentAssignments = new LinkedHashMap();
+        if (reportService.checkIfReportMovedThroughWFAtleastOnce(report.getId())) {
+
+            reportService.getAssignmentsForReport(report).stream().forEach(a -> {
+                currentAssignments.put(a.getStateId(), a.getAssignment());
+            });
+        }
         String customAss = null;
         UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
         String host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
@@ -1140,7 +1160,8 @@ public class ReportController {
                         appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.REPORT_INVITE_MESSAGE).getConfigValue(),
                         url);
-                commonEmailSevice.sendMail(granteeUser.getEmailId(), null, notifications[0], notifications[1],
+                commonEmailSevice.sendMail(new String[] { granteeUser.getEmailId() }, null, notifications[0],
+                        notifications[1],
                         new String[] { appConfigService
                                 .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
@@ -1179,6 +1200,57 @@ public class ReportController {
             }
 
             assignment = reportService.saveAssignmentForReport(assignment);
+        }
+
+        if (currentAssignments.size() > 0) {
+
+            List<ReportAssignment> newAssignments = reportService.getAssignmentsForReport(report);
+
+            String[] notifications = reportService.buildEmailNotificationContent(report,
+                    userService.getUserById(userId), null, null, null,
+                    appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
+                    null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+                    newAssignments);
+
+            commonEmailSevice.sendMail(
+                    newAssignments.stream().map(a -> a.getAssignment())
+                            .map(uid -> userService.getUserById(uid).getEmailId()).collect(Collectors.toList())
+                            .toArray(new String[newAssignments.size()]),
+                    currentAssignments.values().stream().map(uid -> userService.getUserById(uid).getEmailId())
+                            .collect(Collectors.toList()).toArray(new String[currentAssignments.size()]),
+                    notifications[0], notifications[1],
+                    new String[] { appConfigService
+                            .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                            .getConfigValue() });
+
+            Map<Long, Long> cleanAsigneesList = new HashMap();
+            for (Long ass : currentAssignments.values()) {
+                cleanAsigneesList.put(ass, ass);
+            }
+            for (ReportAssignment ass : newAssignments) {
+                cleanAsigneesList.put(ass.getAssignment(), ass.getAssignment());
+            }
+            notifications = reportService.buildEmailNotificationContent(report, userService.getUserById(userId), null,
+                    null, null,
+                    appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                    null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+                    newAssignments);
+
+            final String[] finaNotifications = notifications;
+            final Report finalGrant = report;
+
+            cleanAsigneesList.keySet().stream().forEach(u -> {
+
+                notificationsService.saveNotification(finaNotifications, u, finalGrant.getId(), "REPORT");
+            });
+
         }
 
         report = _ReportToReturn(report, userId);
@@ -1323,8 +1395,8 @@ public class ReportController {
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                             ? "Please review."
                             : "",
-                    null, null, null);
-            commonEmailSevice.sendMail(currentOwner.getEmailId(),
+                    null, null, null, null, null);
+            commonEmailSevice.sendMail(new String[] { currentOwner.getEmailId() },
                     usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
                             .toArray(new String[usersToNotify.size()]),
                     emailNotificationContent[0], emailNotificationContent[1],
@@ -1348,7 +1420,7 @@ public class ReportController {
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                             ? "Please review."
                             : "",
-                    null, null, null);
+                    null, null, null, null, null);
 
             notificationsService.saveNotification(notificationContent, currentOwner.getId(), finalReport.getId(),
                     "REPORT");
@@ -1375,7 +1447,7 @@ public class ReportController {
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                                 ? "Please review."
                                 : "",
-                        null, null, null);
+                        null, null, null, null, null);
 
                 notificationsService.saveNotification(nc, u.getId(), finalReport.getId(), "REPORT");
             });
@@ -1400,8 +1472,8 @@ public class ReportController {
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                             ? "Please review."
                             : "",
-                    null, null, null);
-            commonEmailSevice.sendMail(currentOwner.getEmailId(),
+                    null, null, null, null, null);
+            commonEmailSevice.sendMail(new String[] { currentOwner.getEmailId() },
                     usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
                             .toArray(new String[usersToNotify.size()]),
                     emailNotificationContent[0], emailNotificationContent[1],
@@ -1425,7 +1497,7 @@ public class ReportController {
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                             ? "Please review."
                             : "",
-                    null, null, null);
+                    null, null, null, null, null);
 
             notificationsService.saveNotification(notificationContent, currentOwner.getId(), finalReport.getId(),
                     "REPORT");
@@ -1452,7 +1524,7 @@ public class ReportController {
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                                 ? "Please review."
                                 : "",
-                        null, null, null);
+                        null, null, null, null, null);
 
                 notificationsService.saveNotification(nc, u.getId(), finalReport.getId(), "REPORT");
             });
@@ -1478,8 +1550,8 @@ public class ReportController {
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                             ? "Please review."
                             : "",
-                    null, null, null);
-            commonEmailSevice.sendMail(granteeUser.getEmailId(),
+                    null, null, null, null, null);
+            commonEmailSevice.sendMail(new String[] { granteeUser.getEmailId() },
                     usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
                             .toArray(new String[usersToNotify.size()]),
                     emailNotificationContent[0], emailNotificationContent[1],
@@ -1503,7 +1575,7 @@ public class ReportController {
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                             ? "Please review."
                             : "",
-                    null, null, null);
+                    null, null, null, null, null);
 
             notificationsService.saveNotification(notificationContent, granteeUser.getId(), finalReport.getId(),
                     "REPORT");
@@ -1530,7 +1602,7 @@ public class ReportController {
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                                 ? "Please review."
                                 : "",
-                        null, null, null);
+                        null, null, null, null, null);
 
                 notificationsService.saveNotification(nc, u.getId(), finalReport.getId(), "REPORT");
             });

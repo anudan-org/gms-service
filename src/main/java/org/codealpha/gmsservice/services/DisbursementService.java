@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -220,7 +221,7 @@ public class DisbursementService {
             String action, String date, String subConfigValue, String msgConfigValue, String currentState,
             String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges,
             String hasChangesComment, String hasNotes, String hasNotesComment, String link, User owner,
-            Integer noOfDays) {
+            Integer noOfDays, Map<Long, Long> previousApprover, List<DisbursementAssignment> newApprover) {
 
         String code = Base64.getEncoder().encodeToString(String.valueOf(finalDisbursement.getId()).getBytes());
 
@@ -256,10 +257,50 @@ public class DisbursementService {
                 .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
                 .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
                 .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replaceAll("%GRANTEE%", finalDisbursement.getGrant().getOrganization().getName());
+                .replaceAll("%GRANTEE%", finalDisbursement.getGrant().getOrganization().getName())
+                .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover))
+                .replaceAll("%ENTITY_TYPE%", "Approval Request Note of ")
+                .replaceAll("%CURRENT_ASSIGNMENTS%", getAssignmentsTable(newApprover))
+                .replaceAll("%ENTITY_NAME%", finalDisbursement.getGrant().getName());
         String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalDisbursement.getGrant().getName());
 
         return new String[] { subject, message };
+    }
+
+    private String getAssignmentsTable(Map<Long, Long> assignments) {
+        if (assignments == null) {
+            return "";
+        }
+        String[] table = {
+                "<table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>State Owner</b></td></tr>" };
+        assignments.keySet().forEach(a -> {
+            table[0] = table[0].concat("<tr>").concat("<td width='30%'>")
+                    .concat(workflowStatusRepository.findById(a).get().getName()).concat("</td>").concat("<td>")
+                    .concat(userService.getUserById(assignments.get(a)).getFirstName().concat(" ")
+                            .concat(userService.getUserById(assignments.get(a)).getLastName()))
+                    .concat("</td>").concat("</tr>");
+        });
+
+        table[0] = table[0].concat("</table>");
+        return table[0];
+
+    }
+
+    private String getAssignmentsTable(List<DisbursementAssignment> assignments) {
+        if (assignments == null) {
+            return "";
+        }
+        String table = "<Table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>State Owner</b></td></tr>";
+        for (DisbursementAssignment ass : assignments) {
+            table = table.concat("<tr>").concat("<td>")
+                    .concat(workflowStatusRepository.findById(ass.getStateId()).get().getName()).concat("</td>")
+                    .concat("<td>")
+                    .concat(userService.getUserById(ass.getOwner()).getFirstName().concat(" ")
+                            .concat(userService.getUserById(ass.getOwner()).getLastName()))
+                    .concat("</td>").concat("</tr>");
+        }
+        table = table.concat("</table>");
+        return table;
     }
 
     public List<DisbursementHistory> getDisbursementHistory(Long disbursementId) {
@@ -305,5 +346,9 @@ public class DisbursementService {
 
     public List<DisbursementAssignment> getActionDueDisbursementsForGranterOrg(Long granterId) {
         return disbursementAssignmentRepository.getActionDueDisbursementsForOrg(granterId);
+    }
+
+    public boolean checkIfDisbursementMovedThroughWFAtleastOnce(Long id) {
+        return disbursementRepository.findDisbursementsThatMovedAtleastOnce(id).size() > 0;
     }
 }
