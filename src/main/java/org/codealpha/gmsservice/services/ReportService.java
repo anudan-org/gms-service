@@ -776,4 +776,13 @@ public class ReportService {
     public boolean checkIfReportMovedThroughWFAtleastOnce(Long reportId) {
         return reportRepository.findReportsThatMovedAtleastOnce(reportId).size() > 0;
     }
+
+    public void deleteStringAttributes(List<ReportStringAttribute> strAttribs) {
+        reportStringAttributeRepository.deleteAll(strAttribs);
+    }
+
+    public void deleteReport(Report report) {
+
+        reportRepository.delete(report);
+    }
 }
