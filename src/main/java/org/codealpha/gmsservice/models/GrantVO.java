@@ -54,11 +54,11 @@ public class GrantVO {
   private String referenceNo;
   private Boolean deleted;
   private Date movedOn;
+  private Boolean hasOngoingDisbursement;
   @JsonIgnore
   private List<GrantStringAttribute> stringAttributes;
 
   private String securityCode;
-
 
   private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
@@ -220,8 +220,7 @@ public class GrantVO {
     return actionAuthorities;
   }
 
-  public void setActionAuthorities(
-      WorkflowActionPermission actionAuthorities) {
+  public void setActionAuthorities(WorkflowActionPermission actionAuthorities) {
     this.actionAuthorities = actionAuthorities;
   }
 
@@ -229,8 +228,7 @@ public class GrantVO {
     return flowAuthorities;
   }
 
-  public void setFlowAuthorities(
-      List<WorkFlowPermission> flowAuthorities) {
+  public void setFlowAuthorities(List<WorkFlowPermission> flowAuthorities) {
     this.flowAuthorities = flowAuthorities;
   }
 
@@ -254,8 +252,7 @@ public class GrantVO {
     return stringAttributes;
   }
 
-  public void setStringAttributes(
-      List<GrantStringAttribute> stringAttributes) {
+  public void setStringAttributes(List<GrantStringAttribute> stringAttributes) {
     this.stringAttributes = stringAttributes;
   }
 
@@ -267,37 +264,37 @@ public class GrantVO {
     this.templateId = templateId;
   }
 
-    public Long getGrantId() {
-        return grantId;
-    }
+  public Long getGrantId() {
+    return grantId;
+  }
 
-    public void setGrantId(Long grantId) {
-        this.grantId = grantId;
-    }
+  public void setGrantId(Long grantId) {
+    this.grantId = grantId;
+  }
 
-    public void setAmount(Double amount){
+  public void setAmount(Double amount) {
     this.amount = amount;
   }
 
-  public Double getAmount(){
+  public Double getAmount() {
     return this.amount;
   }
 
-  public void setRepresentative(String rep){
+  public void setRepresentative(String rep) {
     this.representative = rep;
   }
 
-  public String getRepresentative(){
+  public String getRepresentative() {
     return this.representative;
   }
 
-    public GranterGrantTemplate getGrantTemplate() {
-        return grantTemplate;
-    }
+  public GranterGrantTemplate getGrantTemplate() {
+    return grantTemplate;
+  }
 
-    public void setGrantTemplate(GranterGrantTemplate grantTemplate) {
-        this.grantTemplate = grantTemplate;
-    }
+  public void setGrantTemplate(GranterGrantTemplate grantTemplate) {
+    this.grantTemplate = grantTemplate;
+  }
 
   public List<GrantAssignments> getWorkflowAssignment() {
     return workflowAssignment;
@@ -324,8 +321,8 @@ public class GrantVO {
   }
 
   public GrantVO build(Grant grant, List<GrantSpecificSection> sections,
-                       WorkflowPermissionService workflowPermissionService,
-                       User user, AppConfig submissionWindow, UserService userService) {
+      WorkflowPermissionService workflowPermissionService, User user, AppConfig submissionWindow,
+      UserService userService) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
     GrantVO vo = new GrantVO();
     Submission submissionVOList = null;
@@ -333,19 +330,20 @@ public class GrantVO {
       if (!descriptor.getName().equalsIgnoreCase("class")) {
         try {
           Object value = descriptor.getReadMethod().invoke(grant);
-          PropertyDescriptor voPd = BeanUtils
-              .getPropertyDescriptor(vo.getClass(), descriptor.getName());
-           if (voPd.getName().equalsIgnoreCase("stringAttributes")) {
+          PropertyDescriptor voPd = BeanUtils.getPropertyDescriptor(vo.getClass(), descriptor.getName());
+          if (voPd.getName().equalsIgnoreCase("stringAttributes")) {
             GrantDetailVO grantDetailVO = null;
             grantDetailVO = vo.getGrantDetails();
-            if(grantDetailVO == null){
+            if (grantDetailVO == null) {
               grantDetailVO = new GrantDetailVO();
             }
             grantDetailVO = grantDetailVO.buildStringAttributes(sections, (List<GrantStringAttribute>) value);
             vo.setGrantDetails(grantDetailVO);
-          }else if (voPd.getName().equalsIgnoreCase("noteAddedBy") || voPd.getName().equalsIgnoreCase("noteAddedByUser")) {
-             vo.setNoteAddedBy(grant.getNoteAddedBy());
-             vo.setNoteAddedByUser(userService.getUserByEmailAndOrg(grant.getNoteAddedBy(),grant.getGrantorOrganization()));
+          } else if (voPd.getName().equalsIgnoreCase("noteAddedBy")
+              || voPd.getName().equalsIgnoreCase("noteAddedByUser")) {
+            vo.setNoteAddedBy(grant.getNoteAddedBy());
+            vo.setNoteAddedByUser(
+                userService.getUserByEmailAndOrg(grant.getNoteAddedBy(), grant.getGrantorOrganization()));
 
           } else {
             voPd.getWriteMethod().invoke(vo, value);
@@ -359,11 +357,10 @@ public class GrantVO {
     }
 
     Collections.sort(vo.getGrantDetails().getSections());
-    vo.setFlowAuthorities(workflowPermissionService
-        .getGrantFlowPermissions(vo.grantStatus.getId(),user.getId(),vo.getId()));
-    vo.setActionAuthorities(workflowPermissionService
-        .getGrantActionPermissions(vo.getGrantorOrganization().getId(),
-            user.getUserRoles(),vo.getGrantStatus().getId(),user.getId(),grant.getId()));
+    vo.setFlowAuthorities(
+        workflowPermissionService.getGrantFlowPermissions(vo.grantStatus.getId(), user.getId(), vo.getId()));
+    vo.setActionAuthorities(workflowPermissionService.getGrantActionPermissions(vo.getGrantorOrganization().getId(),
+        user.getUserRoles(), vo.getGrantStatus().getId(), user.getId(), grant.getId()));
 
     return vo;
   }
@@ -406,5 +403,13 @@ public class GrantVO {
 
   public void setApprovedReportsDisbursements(List<List<TableData>> approvedReportsDisbursements) {
     this.approvedReportsDisbursements = approvedReportsDisbursements;
+  }
+
+  public Boolean getHasOngoingDisbursement() {
+    return hasOngoingDisbursement;
+  }
+
+  public void setHasOngoingDisbursement(Boolean hasOngoingDisbursement) {
+    this.hasOngoingDisbursement = hasOngoingDisbursement;
   }
 }

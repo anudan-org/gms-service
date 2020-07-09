@@ -87,6 +87,13 @@ public class DisbursementsController {
                         List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
                                         .collect(Collectors.toList());
 
+                        List<WorkflowStatus> draftAndReviewStatuses = workflowStatuses.stream()
+                                        .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")
+                                                        || ws.getInternalStatus().equalsIgnoreCase("REVIEW"))
+                                        .collect(Collectors.toList());
+                        List<Long> draftAndReviewStatusIds = draftAndReviewStatuses.stream().mapToLong(s -> s.getId())
+                                        .boxed().collect(Collectors.toList());
+
                         for (Grant g : ownerGrants) {
                                 Double total = 0d;
                                 List<Disbursement> closedDisbursements = disbursementService
@@ -110,6 +117,20 @@ public class DisbursementsController {
 
                         for (Grant ownerGrant : grantsToReturn) {
                                 ownerGrant = grantService._grantToReturn(userId, ownerGrant);
+                        }
+
+                        for (Grant ownerGrant : grantsToReturn) {
+                                List<Disbursement> draftAndReviewDisbursements = disbursementService
+                                                .getDibursementsForGrantByStatuses(ownerGrant.getId(),
+                                                                draftAndReviewStatusIds);
+                                if (draftAndReviewDisbursements != null && draftAndReviewDisbursements.size() > 0) {
+                                        for (Disbursement d : draftAndReviewDisbursements) {
+                                                if (disbursementService.checkIfDisbursementMovedThroughWFAtleastOnce(
+                                                                d.getId())) {
+                                                        ownerGrant.setHasOngoingDisbursement(true);
+                                                }
+                                        }
+                                }
                         }
                 }
 
