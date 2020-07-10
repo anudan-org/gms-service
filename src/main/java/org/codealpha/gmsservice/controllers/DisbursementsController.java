@@ -124,12 +124,9 @@ public class DisbursementsController {
                                                 .getDibursementsForGrantByStatuses(ownerGrant.getId(),
                                                                 draftAndReviewStatusIds);
                                 if (draftAndReviewDisbursements != null && draftAndReviewDisbursements.size() > 0) {
-                                        for (Disbursement d : draftAndReviewDisbursements) {
-                                                if (disbursementService.checkIfDisbursementMovedThroughWFAtleastOnce(
-                                                                d.getId())) {
-                                                        ownerGrant.setHasOngoingDisbursement(true);
-                                                }
-                                        }
+
+                                        ownerGrant.setHasOngoingDisbursement(true);
+
                                 }
                         }
                 }
