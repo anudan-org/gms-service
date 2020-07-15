@@ -782,6 +782,6 @@ public class ReportService {
     }
 
     public List<Report> getUpcomingFutureReportsForGranterUserByDate(Long userId, Long id, Date end) {
-        return reportRepository.findUpcomingFutureReports(userId, id, end);
+        return reportRepository.findUpcomingFutureReports(userId, id);
     }
 }

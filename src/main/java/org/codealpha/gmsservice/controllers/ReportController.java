@@ -130,7 +130,9 @@ public class ReportController {
                 reports = reportService.getUpcomingFutureReportsForGranterUserByDate(userId, org.getId(), end);
                 Map<Long, Report> reportsHolder = new LinkedHashMap<Long, Report>();
                 for (Report report : reports) {
-                    reportsHolder.put(report.getGrant().getId(), report);
+                    if (!reportsHolder.keySet().contains(report.getGrant().getId())) {
+                        reportsHolder.put(report.getGrant().getId(), report);
+                    }
                 }
 
                 reports = new ArrayList<>();
@@ -142,6 +144,8 @@ public class ReportController {
                     r.setFutureReportsCount(otherReports.size());
                     reports.add(r);
                 }
+
+                reports.sort(Comparator.comparing(Report::getEndDate));
             } else if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-DUE")) {
                 reports = reportService.getReadyToSubmitReportsForGranterUserByDateRange(userId, org.getId(), start,
                         end);
