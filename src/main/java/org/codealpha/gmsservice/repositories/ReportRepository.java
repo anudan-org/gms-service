@@ -55,4 +55,7 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
     @Query(value = "select A.* from reports A inner join workflow_statuses B on B.id=A.status_id where ( (B.internal_status='DRAFT' and (select count(*) from report_history where id=A.id) >0   ) or B.internal_status!='DRAFT') and A.id=?1", nativeQuery = true)
     List<Report> findReportsThatMovedAtleastOnce(Long reportId);
 
+    @Query(value = "select  A.* from reports A inner join grants Z on Z.id=A.grant_id inner join report_assignments B on B.report_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.anchor=true and B.assignment = ?1) or (B.assignment=?1 and B.state_id=A.status_id) or (C.internal_status='DRAFT' and (select count(*) from report_history where id=A.id)>0 and ?1 = any (array(select assignment from report_assignments where report_id=A.id))) or (C.internal_status='REVIEW' and ?1 = any( array(select assignment from report_assignments where report_id=A.id))) or (C.internal_status='ACTIVE' or C.internal_status='CLOSED' ) ) and Z.grantor_org_id=?2 and Z.deleted=false and (A.end_date >?3) and (C.internal_status !='ACTIVE' and C.internal_status !='REVIEW' and C.internal_status !='CLOSED') order by A.grant_id,A.end_date asc", nativeQuery = true)
+    List<Report> findUpcomingFutureReports(Long userId, Long id, Date end);
+
 }

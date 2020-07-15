@@ -780,4 +780,8 @@ public class ReportService {
 
         reportRepository.delete(report);
     }
+
+    public List<Report> getUpcomingFutureReportsForGranterUserByDate(Long userId, Long id, Date end) {
+        return reportRepository.findUpcomingFutureReports(userId, id, end);
+    }
 }
