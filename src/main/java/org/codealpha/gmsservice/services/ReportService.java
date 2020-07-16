@@ -75,6 +75,8 @@ public class ReportService {
     private ServletContext servletContext;
     @Autowired
     private ReportAssignmentHistoryRepository assignmentHistoryRepository;
+    @Autowired
+    private UserService userService;
 
     public Report saveReport(Report report) {
         return reportRepository.save(report);
@@ -532,48 +534,41 @@ public class ReportService {
                 .replaceAll("%GRANTEE_REPORT_LINK%", granteeUrl).replaceAll("%GRANTER_REPORT_LINK%", granterUrl)
                 .replaceAll("%GRANTER%", finalReport.getGrant().getGrantorOrganization().getName())
                 .replaceAll("%ENTITY_TYPE%", "report")
-                .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover))
-                .replaceAll("%CURRENT_ASSIGNMENTS%", getAssignmentsTable(newApprover))
+                .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
                 .replaceAll("%ENTITY_NAME%", finalReport.getName() + " of grant " + finalReport.getGrant().getName());
         String subject = subConfigValue.replaceAll("%REPORT_NAME%", finalReport.getName());
 
         return new String[] { subject, message };
     }
 
-    private String getAssignmentsTable(Map<Long, Long> assignments) {
+    private String getAssignmentsTable(Map<Long, Long> assignments, List<ReportAssignment> newAssignments) {
         if (assignments == null) {
             return "";
         }
+        newAssignments.sort(Comparator.comparing(ReportAssignment::getId, (a, b) -> {
+            return a.compareTo(b);
+        }));
         String[] table = {
-                "<table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>State Owner</b></td></tr>" };
-        assignments.keySet().forEach(a -> {
+                "<table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>Current State Owners</b></td><td><b>Previous State Owners</b></td></tr>" };
+        newAssignments.forEach(a -> {
+            Long prevAss = assignments.keySet().stream().filter(b -> b == a.getStateId()).findFirst().get();
+
             table[0] = table[0].concat("<tr>").concat("<td width='30%'>")
-                    .concat(workflowStatusRepository.findById(a).get().getName()).concat("</td>").concat("<td>")
-                    .concat(userRepository.findById(assignments.get(a)).get().getFirstName().concat(" ")
-                            .concat(userRepository.findById(assignments.get(a)).get().getLastName()))
-                    .concat("</td>").concat("</tr>");
+                    .concat(workflowStatusRepository.findById(a.getStateId()).get().getName()).concat("</td>")
+                    .concat("<td>")
+                    .concat(userService.getUserById(a.getAssignment()).getFirstName().concat(" ")
+                            .concat(userService.getUserById(a.getAssignment()).getFirstName()))
+                    .concat("</td>")
+
+                    .concat("<td>")
+                    .concat(userService.getUserById(assignments.get(prevAss)).getFirstName().concat(" ")
+                            .concat(userService.getUserById(assignments.get(prevAss)).getLastName()).concat("</td>")
+                            .concat("</tr>"));
         });
 
         table[0] = table[0].concat("</table>");
         return table[0];
 
-    }
-
-    private String getAssignmentsTable(List<ReportAssignment> assignments) {
-        if (assignments == null) {
-            return "";
-        }
-        String table = "<Table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>State Owner</b></td></tr>";
-        for (ReportAssignment ass : assignments) {
-            table = table.concat("<tr>").concat("<td>")
-                    .concat(workflowStatusRepository.findById(ass.getStateId()).get().getName()).concat("</td>")
-                    .concat("<td>")
-                    .concat(userRepository.findById(ass.getAssignment()).get().getFirstName().concat(" ")
-                            .concat(userRepository.findById(ass.getAssignment()).get().getLastName()))
-                    .concat("</td>").concat("</tr>");
-        }
-        table = table.concat("</table>");
-        return table;
     }
 
     public List<ReportHistory> getReportHistory(Long reportId) {
@@ -784,5 +779,9 @@ public class ReportService {
     public void deleteReport(Report report) {
 
         reportRepository.delete(report);
+    }
+
+    public List<Report> getUpcomingFutureReportsForGranterUserByDate(Long userId, Long id, Date end) {
+        return reportRepository.findUpcomingFutureReports(userId, id);
     }
 }

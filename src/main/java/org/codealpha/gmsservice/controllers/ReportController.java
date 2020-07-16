@@ -126,6 +126,26 @@ public class ReportController {
                             org.getId(), end, report.getGrant().getId()).size();
                     report.setFutureReportsCount(futureReportsCount);
                 }
+            } else if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-FUTURE")) {
+                reports = reportService.getUpcomingFutureReportsForGranterUserByDate(userId, org.getId(), end);
+                Map<Long, Report> reportsHolder = new LinkedHashMap<Long, Report>();
+                for (Report report : reports) {
+                    if (!reportsHolder.keySet().contains(report.getGrant().getId())) {
+                        reportsHolder.put(report.getGrant().getId(), report);
+                    }
+                }
+
+                reports = new ArrayList<>();
+
+                for (Long key : reportsHolder.keySet()) {
+                    Report r = reportsHolder.get(key);
+                    List<Report> otherReports = reportService.getReportsForGrant(r.getGrant());
+                    otherReports.removeIf(a -> a.getId() == r.getId());
+                    r.setFutureReportsCount(otherReports.size());
+                    reports.add(r);
+                }
+
+                reports.sort(Comparator.comparing(Report::getEndDate));
             } else if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-DUE")) {
                 reports = reportService.getReadyToSubmitReportsForGranterUserByDateRange(userId, org.getId(), start,
                         end);
