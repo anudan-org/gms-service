@@ -46,6 +46,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -145,7 +146,12 @@ public class ReportController {
                     reports.add(r);
                 }
 
+                List<Report> reportWithNullEndDate = new ArrayList<>();
+                reportWithNullEndDate = reports.stream().filter(r -> r.getEndDate() == null)
+                        .collect(Collectors.toList());
+                reports.removeAll(reportWithNullEndDate);
                 reports.sort(Comparator.comparing(Report::getEndDate));
+                reports.addAll(reportWithNullEndDate);
             } else if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-DUE")) {
                 reports = reportService.getReadyToSubmitReportsForGranterUserByDateRange(userId, org.getId(), start,
                         end);
