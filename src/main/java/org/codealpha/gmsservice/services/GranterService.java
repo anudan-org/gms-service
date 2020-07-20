@@ -54,7 +54,7 @@ public class GranterService {
       if (!isAdmin) {
         allGrants.addAll(grantRepository.findAssignedGrantsOfGranter(granterOrgId, userId));
       } else {
-        allGrants.addAll(grantRepository.findGrantsForAdmin(granterOrgId));
+        allGrants.addAll(grantRepository.findGrantsForAdmin(granterOrgId, userId));
       }
     } else if ("PLATFORM".equalsIgnoreCase(tenantOrg.getType())) {
       allGrants.addAll(grantRepository.findGrantsOfGranter(granterOrgId));
