@@ -228,8 +228,8 @@ public class ScheduledJobs {
 
                                 reportAssignments.removeIf(u -> u.getAssignment().longValue() == reportAssignment
                                         .getAssignment().longValue());
-                                reportAssignments.removeIf(u -> userService.getUserById(u.getId()).getOrganization()
-                                        .getOrganizationType().equalsIgnoreCase("GRANTEE"));
+                                reportAssignments.removeIf(u -> userService.getUserById(u.getAssignment())
+                                        .getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"));
                                 String[] ccList = new String[reportAssignments.size()];
 
                                 if (reportAssignments != null && reportAssignments.size() > 0) {
@@ -370,7 +370,7 @@ public class ScheduledJobs {
                                 Grant grant = grantService.getById(grantAssignment.getGrantId());
 
                                 List<GrantAssignments> grantAssignments = grantService
-                                        .getGrantCurrentAssignments(grant);
+                                        .getGrantWorkflowAssignments(grant);
 
                                 grantAssignments.removeIf(u -> u.getAssignments().longValue() == grantAssignment
                                         .getAssignments().longValue());
@@ -507,7 +507,7 @@ public class ScheduledJobs {
                         if (usersToNotify != null && usersToNotify.size() > 0) {
                             for (DisbursementAssignment disbursementtAssignment : usersToNotify) {
                                 Disbursement disbursement = disbursementService
-                                        .getDisbursementById(disbursementtAssignment.getOwner());
+                                        .getDisbursementById(disbursementtAssignment.getDisbursementId());
 
                                 List<DisbursementAssignment> disbursementAssignments = disbursementService
                                         .getDisbursementAssignments(disbursement);

@@ -34,6 +34,8 @@ public class CommonEmailSevice {
   @Async("threadPoolTaskExecutor")
   public void sendMail(String[] to, String[] ccList, String subject, String messageText, String footer[]) {
     if (!sendMail) {
+      mailLogService.saveMailLog(new MailLog(DateTime.now().toDate(), StringUtils.arrayToCommaDelimitedString(ccList),
+          StringUtils.arrayToCommaDelimitedString(to), messageText, subject, true));
       return;
     }
 
