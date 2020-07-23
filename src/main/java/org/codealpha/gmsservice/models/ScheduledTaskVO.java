@@ -1,20 +1,20 @@
 package org.codealpha.gmsservice.models;
 
 public class ScheduledTaskVO {
-    
-   
-   private String messageReport;
-   private String messageGrant;
-   private String messageDescription;
-   private String subjectReport;
-   private String subjectGrant;
-   private String subjectDescription;
-   private String time;
-   private String timeDescription;
-   private ReportDueConfiguration configuration;
-   private String configurationDescription;
-   private String sql;
 
+    private String messageReport;
+    private String messageGrant;
+    private String messageDisbursement;
+    private String messageDescription;
+    private String subjectReport;
+    private String subjectGrant;
+    private String subjectDisbursement;
+    private String subjectDescription;
+    private String time;
+    private String timeDescription;
+    private ReportDueConfiguration configuration;
+    private String configurationDescription;
+    private String sql;
 
     public String getMessageReport() {
         return messageReport;
@@ -47,7 +47,6 @@ public class ScheduledTaskVO {
     public void setTimeDescription(String timeDescription) {
         this.timeDescription = timeDescription;
     }
-
 
     public String getConfigurationDescription() {
         return configurationDescription;
@@ -104,4 +103,21 @@ public class ScheduledTaskVO {
     public void setSubjectGrant(String subjectGrant) {
         this.subjectGrant = subjectGrant;
     }
+
+    public String getMessageDisbursement() {
+        return messageDisbursement;
+    }
+
+    public void setMessageDisbursement(String messageDisbursement) {
+        this.messageDisbursement = messageDisbursement;
+    }
+
+    public String getSubjectDisbursement() {
+        return subjectDisbursement;
+    }
+
+    public void setSubjectDisbursement(String subjectDisbursement) {
+        this.subjectDisbursement = subjectDisbursement;
+    }
+
 }

@@ -71,6 +71,8 @@ public class DisbursementsController {
         private ReportService reportService;
         @Autowired
         private WorkflowStatusRepository workflowStatusRepository;
+        @Autowired
+        private ReleaseService releaseService;
 
         @GetMapping("/active-grants")
         public List<Grant> getActiveGrantsOwnedByUser(@PathVariable("userId") Long userId,
@@ -312,7 +314,8 @@ public class DisbursementsController {
                                                                         disbursement.getGrant().getGrantorOrganization()
                                                                                         .getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                        .getConfigValue() });
+                                                        .getConfigValue().replaceAll("%RELEASE_VERSION%", releaseService
+                                                                        .getCurrentRelease().getVersion()) });
 
                         Map<Long, Long> cleanAsigneesList = new HashMap();
                         for (Long ass : currentAssignments.values()) {
@@ -452,11 +455,11 @@ public class DisbursementsController {
                                 new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
                                 appConfigService.getAppConfigForGranterOrg(
                                                 finalDisbursement.getGrant().getGrantorOrganization().getId(),
-                                                AppConfiguration.DISBURSEMENT_STATE_CHANGED_NOTIFICATION_SUBJECT)
+                                                AppConfiguration.DISBURSEMENT_STATE_CHANGED_MAIL_SUBJECT)
                                                 .getConfigValue(),
                                 appConfigService.getAppConfigForGranterOrg(
                                                 finalDisbursement.getGrant().getGrantorOrganization().getId(),
-                                                AppConfiguration.DISBURSEMENT_STATE_CHANGED_NOTIFICATION_MESSAGE)
+                                                AppConfiguration.DISBURSEMENT_STATE_CHANGED_MAIL_MESSAGE)
                                                 .getConfigValue(),
                                 workflowStatusService.findById(toStateId).getName(),
                                 currentOwner == null ? "-"
@@ -488,7 +491,8 @@ public class DisbursementsController {
                                                         .getAppConfigForGranterOrg(finalDisbursement.getGrant()
                                                                         .getGrantorOrganization().getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                        .getConfigValue() });
+                                                        .getConfigValue().replaceAll("%RELEASE_VERSION%", releaseService
+                                                                        .getCurrentRelease().getVersion()) });
                         usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent,
                                         u.getId(), finalDisbursement.getId(), "DISBURSEMENT"));
                         notificationsService.saveNotification(notificationContent, finalCurrentOwner.getId(),
@@ -515,7 +519,8 @@ public class DisbursementsController {
                                                         .getAppConfigForGranterOrg(finalDisbursement.getGrant()
                                                                         .getGrantorOrganization().getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                        .getConfigValue() });
+                                                        .getConfigValue().replaceAll("%RELEASE_VERSION%", releaseService
+                                                                        .getCurrentRelease().getVersion()) });
                         usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent,
                                         u.getId(), finalDisbursement.getId(), "DISBURSEMENT"));
                         notificationsService.saveNotification(notificationContent, activeStatusOwner.getId(),

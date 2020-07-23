@@ -65,6 +65,8 @@ public class AdiminstrativeController {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private DisbursementService disbursementService;
+    @Autowired
+    private ReleaseService releaseService;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -357,8 +359,11 @@ public class AdiminstrativeController {
                         .getConfigValue(),
                 url);
         commonEmailSevice.sendMail(new String[] { user.getEmailId() }, null, notifications[0], notifications[1],
-                new String[] { appConfigService.getAppConfigForGranterOrg(user.getOrganization().getId(),
-                        AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
+                new String[] { appConfigService
+                        .getAppConfigForGranterOrg(user.getOrganization().getId(),
+                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                        .getConfigValue()
+                        .replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()) });
         return user;
     }
 
@@ -587,5 +592,14 @@ public class AdiminstrativeController {
         }
 
         return HttpStatus.OK;
+    }
+
+    @GetMapping("/user/{userId}/validate/{emailId}")
+    public EmailValidationReponse validateEmail(@RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("userId") Long userId, @PathVariable("emailId") String emailIdToValidate) {
+        Organization userOrg = userService.getUserById(userId).getOrganization();
+
+        User existingUser = userService.getUserByEmailAndOrg(emailIdToValidate, userOrg);
+        return existingUser == null ? new EmailValidationReponse(false) : new EmailValidationReponse(true);
     }
 }

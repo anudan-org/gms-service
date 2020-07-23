@@ -78,6 +78,8 @@ public class UserController {
     private AppConfigService appConfigService;
     @Autowired
     private PasswordResetRequestService passwordResetRequestService;
+    @Autowired
+    private ReleaseService releaseService;
 
     @GetMapping(value = "/{userId}")
     public User get(@PathVariable(name = "userId") Long id, @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -484,7 +486,8 @@ public class UserController {
                 .getAppConfigForGranterOrg(tenantOrg.getId(), AppConfiguration.FORGOT_PASSWORD_MAIL_MESSAGE)
                 .getConfigValue();
         String mailFooter = appConfigService
-                .getAppConfigForGranterOrg(tenantOrg.getId(), AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue();
+                .getAppConfigForGranterOrg(tenantOrg.getId(), AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()
+                .replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion());
 
         return userService.sendPasswordResetMail(user, mailSubject, mailMessage, mailFooter);
     }
