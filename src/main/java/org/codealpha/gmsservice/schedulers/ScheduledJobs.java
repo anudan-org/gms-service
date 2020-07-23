@@ -421,7 +421,7 @@ public class ScheduledJobs {
                                 Grant grant = grantService.getById(grantAssignment.getGrantId());
 
                                 List<GrantAssignments> grantAssignments = grantService
-                                        .getGrantCurrentAssignments(grant);
+                                        .getGrantWorkflowAssignments(grant);
 
                                 grantAssignments.removeIf(u -> u.getAssignments().longValue() == grantAssignment
                                         .getAssignments().longValue());
