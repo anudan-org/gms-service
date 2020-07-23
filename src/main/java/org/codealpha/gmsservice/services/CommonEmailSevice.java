@@ -47,7 +47,7 @@ public class CommonEmailSevice {
       if (ccList != null) {
         mimeMessageHelper.setCc(ccList);
       }
-      mimeMessageHelper.setFrom("admin@anudan.org", "Anudan Admin");
+      mimeMessageHelper.setFrom("admin@anudan.org", "donotreply");
       mimeMessageHelper.setSubject(subject);
       for (String footerBlock : footer) {
         messageText = messageText.concat(footerBlock);

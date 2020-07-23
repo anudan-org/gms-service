@@ -2908,7 +2908,8 @@ public class GrantController {
     public Grant saveGrantInvites(@PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("grantId") Long grantId,
             @RequestBody GrantInvite grantInvite) {
-        grantValidator.validate(grantService, grantId, grantInvite.getGrant(), userId, tenantCode);
+        // grantValidator.validate(grantService, grantId, grantInvite.getGrant(),
+        // userId, tenantCode);
         Grant grant = saveGrant(grantId, grantInvite.getGrant(), userId, tenantCode);
         UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
         String host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
