@@ -54,11 +54,14 @@ public class User {
 	@Transient
 	private boolean admin = false;
 
-	@OneToMany(mappedBy = "user",fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
 	private List<UserRole> userRoles;
 
 	@Column
 	private boolean plain;
+
+	@Column
+	private boolean deleted = false;
 
 	public Long getId() {
 		return id;
@@ -180,4 +183,13 @@ public class User {
 	public void setPlain(boolean plain) {
 		this.plain = plain;
 	}
+
+	public boolean isDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(boolean deleted) {
+		this.deleted = deleted;
+	}
+
 }

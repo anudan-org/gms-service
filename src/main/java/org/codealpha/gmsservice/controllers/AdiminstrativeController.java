@@ -12,6 +12,7 @@ import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
+import org.codealpha.gmsservice.repositories.UserRoleRepository;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +26,13 @@ import springfox.documentation.annotations.ApiIgnore;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin")
@@ -245,6 +250,7 @@ public class AdiminstrativeController {
                 role.setLinkedUsers(userRoles.size());
             }
         }
+        roles.sort(Comparator.comparing(Role::getName));
         return roles;
     }
 
@@ -259,6 +265,10 @@ public class AdiminstrativeController {
             u.getUserRoles().removeIf(ur -> ur.getRole().isInternal());
 
         });
+        List<User> unRegisteredUsers = users.stream().filter(u -> (u.isActive() == false)).collect(Collectors.toList());
+        users.removeIf(u -> u.isActive() == false);
+        users.sort(Comparator.comparing(User::getFirstName));
+        users.addAll(unRegisteredUsers);
         return users;
     }
 
@@ -350,6 +360,72 @@ public class AdiminstrativeController {
                 new String[] { appConfigService.getAppConfigForGranterOrg(user.getOrganization().getId(),
                         AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
         return user;
+    }
+
+    @DeleteMapping("/user/{userId}/user/{userIdToDelete}")
+    public List<User> deleteyUser(@RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("userId") Long userId, @PathVariable("userIdToDelete") Long userIdToDelete) {
+
+        User userToDelete = userService.getUserById(userIdToDelete);
+        userToDelete.setDeleted(true);
+        userService.save(userToDelete);
+
+        return getUsersForOrg(tenantCode, userId);
+
+    }
+
+    @PutMapping("/user/{userId}/user")
+    public User modifyUser(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
+            @RequestBody User newUser) {
+
+        Organization org = userService.getUserById(userId).getOrganization();
+
+        User existingUser = userService.getUserById(newUser.getId());
+        existingUser.setFirstName(newUser.getFirstName());
+        existingUser.setLastName(newUser.getLastName());
+        existingUser.setAdmin(newUser.isAdmin());
+        existingUser.setEmailId(newUser.getEmailId());
+        existingUser.setUpdatedAt(DateTime.now().toDate());
+        existingUser.setUpdatedBy(userService.getUserById(userId).getEmailId());
+        Role adminRole = roleService.findByOrganizationAndName(org, "Admin");
+
+        if (newUser.isAdmin()) {
+            if (existingUser.getUserRoles().stream()
+                    .anyMatch(ur -> ur.getRole().getId().longValue() == adminRole.getId().longValue())) {
+
+            } else {
+                UserRole newAdminRole = new UserRole();
+                newAdminRole.setUser(existingUser);
+                newAdminRole.setRole(adminRole);
+                newAdminRole = userRoleService.saveUserRole(newAdminRole);
+                existingUser.getUserRoles().add(newAdminRole);
+            }
+        } else {
+            if (existingUser.getUserRoles().stream()
+                    .anyMatch(ur -> ur.getRole().getId().longValue() == adminRole.getId().longValue())) {
+                UserRole roleToDelete = existingUser.getUserRoles().stream()
+                        .filter(ur -> ur.getRole().getId().longValue() == adminRole.getId().longValue()).findAny()
+                        .get();
+                // userRoleService.saveUserRoles(existingUser.getUserRoles());
+                userRoleService.deleteUserRole(roleToDelete);
+                existingUser.getUserRoles()
+                        .removeIf(ur -> ur.getRole().getId().longValue() == roleToDelete.getRole().getId().longValue());
+
+            } else {
+            }
+        }
+
+        UserRole nonAdminRole = existingUser.getUserRoles().stream()
+                .filter(ur -> ur.getRole().getId().longValue() != adminRole.getId().longValue()).findAny().get();
+        UserRole newNonAdminRole = newUser.getUserRoles().stream()
+                .filter(ur -> ur.getRole().getId().longValue() != adminRole.getId().longValue()).findAny().get();
+        if (nonAdminRole.getRole().getId().longValue() != newNonAdminRole.getRole().getId()) {
+            nonAdminRole.setRole(newNonAdminRole.getRole());
+            userRoleService.saveUserRole(nonAdminRole);
+        }
+
+        existingUser = userService.save(existingUser);
+        return existingUser;
     }
 
     @GetMapping("/settings/{userId}/{orgId}")
