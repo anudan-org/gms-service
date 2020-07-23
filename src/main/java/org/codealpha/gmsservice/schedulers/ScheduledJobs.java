@@ -152,9 +152,11 @@ public class ScheduledJobs {
 
         emailSevice.sendMail(new String[] { granteeToNotify.getEmailId() }, otherUsersToNotify.toArray(new String[] {}),
                 messageMetadata[0], messageMetadata[1],
-                new String[] {
-                        appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                                AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
+                new String[] { appConfigService
+                        .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                        .getConfigValue()
+                        .replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()) });
     }
 
     private String buildLink(String environment, boolean forTenant, String tenant) {
@@ -262,7 +264,9 @@ public class ScheduledJobs {
                                                                         report.getGrant().getGrantorOrganization()
                                                                                 .getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                                .getConfigValue() });
+                                                                .getConfigValue()
+                                                                .replaceAll("%RELEASE_VERSION%", releaseService
+                                                                        .getCurrentRelease().getVersion()) });
                                     }
                                 }
 
@@ -317,7 +321,9 @@ public class ScheduledJobs {
                                                                         report.getGrant().getGrantorOrganization()
                                                                                 .getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                                .getConfigValue() });
+                                                                .getConfigValue()
+                                                                .replaceAll("%RELEASE_VERSION%", releaseService
+                                                                        .getCurrentRelease().getVersion()) });
                                     }
                                 }
 
@@ -404,7 +410,8 @@ public class ScheduledJobs {
                                                         .getAppConfigForGranterOrg(
                                                                 grant.getGrantorOrganization().getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                        .getConfigValue() });
+                                                        .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                                                releaseService.getCurrentRelease().getVersion()) });
                                     }
                                 }
 
@@ -455,7 +462,8 @@ public class ScheduledJobs {
                                                         .getAppConfigForGranterOrg(
                                                                 grant.getGrantorOrganization().getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                        .getConfigValue() });
+                                                        .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                                                releaseService.getCurrentRelease().getVersion()) });
                                     }
                                 }
 
@@ -533,8 +541,9 @@ public class ScheduledJobs {
                                         User user = userService.getUserById(disbursementtAssignment.getOwner());
                                         String[] messageMetadata = disbursementService.buildEmailNotificationContent(
                                                 disbursement, user, user.getFirstName() + " " + user.getLastName(), "",
-                                                null, taskConfiguration.getSubjectGrant(),
-                                                taskConfiguration.getMessageGrant(), "", "", "", "", "", "", "", "", "",
+                                                null, taskConfiguration.getSubjectDisbursement(),
+                                                taskConfiguration.getMessageDisbursement(), "", "", "", "", "", "", "",
+                                                "", "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
@@ -545,7 +554,8 @@ public class ScheduledJobs {
                                                                 disbursement.getGrant().getGrantorOrganization()
                                                                         .getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                        .getConfigValue() });
+                                                        .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                                                releaseService.getCurrentRelease().getVersion()) });
                                     }
                                 }
 
@@ -599,7 +609,8 @@ public class ScheduledJobs {
                                                                 disbursement.getGrant().getGrantorOrganization()
                                                                         .getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                        .getConfigValue() });
+                                                        .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                                                releaseService.getCurrentRelease().getVersion()) });
                                     }
                                 }
 

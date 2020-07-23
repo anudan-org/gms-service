@@ -125,6 +125,8 @@ public class GrantController {
     private RoleService roleService;
     @Autowired
     private UserRoleService userRoleService;
+    @Autowired
+    private ReleaseService releaseService;
 
     @Autowired
     private ReportService reportService;
@@ -1522,9 +1524,9 @@ public class GrantController {
                 user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(),
                 new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
                 appConfigService.getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                        AppConfiguration.GRANT_STATE_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
+                        AppConfiguration.GRANT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
                 appConfigService.getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                        AppConfiguration.GRANT_STATE_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                        AppConfiguration.GRANT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                 workflowStatusService.findById(toStateId).getName(),
                 currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), previousState.getName(),
                 previousOwner == null ? " -"
@@ -1547,13 +1549,16 @@ public class GrantController {
         if (!toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
             final User currentOwnerFinal = currentOwner;
             usersToNotify.removeIf(u -> u.getId().longValue() == currentOwnerFinal.getId());
-            commonEmailSevice.sendMail(new String[] { currentOwner.getEmailId() },
-                    usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
-                            .toArray(new String[usersToNotify.size()]),
-                    emailNotificationContent[0], emailNotificationContent[1],
-                    new String[] {
-                            appConfigService.getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                                    AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
+            commonEmailSevice
+                    .sendMail(new String[] { currentOwner.getEmailId() },
+                            usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                                    .toArray(new String[usersToNotify.size()]),
+                            emailNotificationContent[0], emailNotificationContent[1],
+                            new String[] { appConfigService
+                                    .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
+                                            AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                    .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                            releaseService.getCurrentRelease().getVersion()) });
 
             usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
                     finalGrant.getId(), "GRANT"));
@@ -1570,13 +1575,16 @@ public class GrantController {
             User activeStateOwner = userService.getUserById(activeStateAssignment.getAssignments());
             usersToNotify.removeIf(u -> u.getId().longValue() == activeStateOwner.getId().longValue());
 
-            commonEmailSevice.sendMail(new String[] { activeStateOwner.getEmailId() },
-                    usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
-                            .toArray(new String[usersToNotify.size()]),
-                    emailNotificationContent[0], emailNotificationContent[1],
-                    new String[] {
-                            appConfigService.getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                                    AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
+            commonEmailSevice
+                    .sendMail(new String[] { activeStateOwner.getEmailId() },
+                            usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                                    .toArray(new String[usersToNotify.size()]),
+                            emailNotificationContent[0], emailNotificationContent[1],
+                            new String[] { appConfigService
+                                    .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
+                                            AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                    .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                            releaseService.getCurrentRelease().getVersion()) });
 
             usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
                     finalGrant.getId(), "GRANT"));
@@ -2598,15 +2606,19 @@ public class GrantController {
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
                     null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
                     newAssignments);
-            commonEmailSevice.sendMail(
-                    newAssignments.stream().map(a -> a.getAssignments())
-                            .map(uid -> userService.getUserById(uid).getEmailId()).collect(Collectors.toList())
-                            .toArray(new String[newAssignments.size()]),
-                    currentAssignments.values().stream().map(uid -> userService.getUserById(uid).getEmailId())
-                            .collect(Collectors.toList()).toArray(new String[currentAssignments.size()]),
-                    notifications[0], notifications[1],
-                    new String[] { appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                            AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
+            commonEmailSevice
+                    .sendMail(
+                            newAssignments.stream().map(a -> a.getAssignments())
+                                    .map(uid -> userService.getUserById(uid).getEmailId()).collect(Collectors.toList())
+                                    .toArray(new String[newAssignments.size()]),
+                            currentAssignments.values().stream().map(uid -> userService.getUserById(uid).getEmailId())
+                                    .collect(Collectors.toList()).toArray(new String[currentAssignments.size()]),
+                            notifications[0], notifications[1],
+                            new String[] { appConfigService
+                                    .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                            AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                    .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                            releaseService.getCurrentRelease().getVersion()) });
 
             Map<Long, Long> cleanAsigneesList = new HashMap();
             for (Long ass : currentAssignments.values()) {
@@ -2970,9 +2982,11 @@ public class GrantController {
 
                 commonEmailSevice.sendMail(new String[] { granteeUser.getEmailId() }, null, notifications[0],
                         notifications[1],
-                        new String[] {
-                                appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                                        AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() });
+                        new String[] { appConfigService
+                                .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                        AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                .getConfigValue()
+                                .replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()) });
             } catch (UnsupportedEncodingException e) {
                 logger.error(e.getMessage(), e);
             }

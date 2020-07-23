@@ -98,6 +98,8 @@ public class ReportController {
     private WorkflowService workflowService;
     @Autowired
     private DisbursementService disbursementService;
+    @Autowired
+    private ReleaseService releaseService;
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId,
@@ -1185,7 +1187,8 @@ public class ReportController {
                         new String[] { appConfigService
                                 .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                .getConfigValue() });
+                                .getConfigValue()
+                                .replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()) });
 
                 assignment.setAssignment(granteeUser.getId());
 
@@ -1235,17 +1238,19 @@ public class ReportController {
                     null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
                     newAssignments);
 
-            commonEmailSevice.sendMail(
-                    newAssignments.stream().map(a -> a.getAssignment())
-                            .map(uid -> userService.getUserById(uid).getEmailId()).collect(Collectors.toList())
-                            .toArray(new String[newAssignments.size()]),
-                    currentAssignments.values().stream().map(uid -> userService.getUserById(uid).getEmailId())
-                            .collect(Collectors.toList()).toArray(new String[currentAssignments.size()]),
-                    notifications[0], notifications[1],
-                    new String[] { appConfigService
-                            .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                            .getConfigValue() });
+            commonEmailSevice
+                    .sendMail(
+                            newAssignments.stream().map(a -> a.getAssignment())
+                                    .map(uid -> userService.getUserById(uid).getEmailId()).collect(Collectors.toList())
+                                    .toArray(new String[newAssignments.size()]),
+                            currentAssignments.values().stream().map(uid -> userService.getUserById(uid).getEmailId())
+                                    .collect(Collectors.toList()).toArray(new String[currentAssignments.size()]),
+                            notifications[0], notifications[1],
+                            new String[] { appConfigService
+                                    .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                                            AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                    .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                            releaseService.getCurrentRelease().getVersion()) });
 
             Map<Long, Long> cleanAsigneesList = new HashMap();
             for (Long ass : currentAssignments.values()) {
@@ -1416,22 +1421,24 @@ public class ReportController {
                             ? "Please review."
                             : "",
                     null, null, null, null, null);
-            commonEmailSevice.sendMail(new String[] { currentOwner.getEmailId() },
-                    usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
-                            .toArray(new String[usersToNotify.size()]),
-                    emailNotificationContent[0], emailNotificationContent[1],
-                    new String[] { appConfigService
-                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                            .getConfigValue() });
+            commonEmailSevice
+                    .sendMail(new String[] { currentOwner.getEmailId() },
+                            usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
+                                    .toArray(new String[usersToNotify.size()]),
+                            emailNotificationContent[0], emailNotificationContent[1],
+                            new String[] { appConfigService
+                                    .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                            AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                    .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                            releaseService.getCurrentRelease().getVersion()) });
 
             String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, currentOwner,
                     currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), toStatus.getVerb(),
                     new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
                     appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
+                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
                     transition.getAction(), "Yes", "Please review.",
@@ -1451,11 +1458,11 @@ public class ReportController {
                         new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
                         appConfigService
                                 .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                        AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT)
+                                        AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT)
                                 .getConfigValue(),
                         appConfigService
                                 .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                        AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE)
+                                        AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE)
                                 .getConfigValue(),
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
@@ -1493,22 +1500,24 @@ public class ReportController {
                             ? "Please review."
                             : "",
                     null, null, null, null, null);
-            commonEmailSevice.sendMail(new String[] { currentOwner.getEmailId() },
-                    usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
-                            .toArray(new String[usersToNotify.size()]),
-                    emailNotificationContent[0], emailNotificationContent[1],
-                    new String[] { appConfigService
-                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                            .getConfigValue() });
+            commonEmailSevice
+                    .sendMail(new String[] { currentOwner.getEmailId() },
+                            usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
+                                    .toArray(new String[usersToNotify.size()]),
+                            emailNotificationContent[0], emailNotificationContent[1],
+                            new String[] { appConfigService
+                                    .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                            AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                    .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                            releaseService.getCurrentRelease().getVersion()) });
 
             String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, currentOwner,
                     currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), toStatus.getVerb(),
                     new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
                     appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
+                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
                     transition.getAction(), "Yes", "Please review.",
@@ -1528,11 +1537,11 @@ public class ReportController {
                         new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
                         appConfigService
                                 .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                        AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT)
+                                        AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT)
                                 .getConfigValue(),
                         appConfigService
                                 .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                        AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE)
+                                        AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE)
                                 .getConfigValue(),
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
@@ -1571,22 +1580,24 @@ public class ReportController {
                             ? "Please review."
                             : "",
                     null, null, null, null, null);
-            commonEmailSevice.sendMail(new String[] { granteeUser.getEmailId() },
-                    usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
-                            .toArray(new String[usersToNotify.size()]),
-                    emailNotificationContent[0], emailNotificationContent[1],
-                    new String[] { appConfigService
-                            .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                            .getConfigValue() });
+            commonEmailSevice
+                    .sendMail(new String[] { granteeUser.getEmailId() },
+                            usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
+                                    .toArray(new String[usersToNotify.size()]),
+                            emailNotificationContent[0], emailNotificationContent[1],
+                            new String[] { appConfigService
+                                    .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                            AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                    .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                            releaseService.getCurrentRelease().getVersion()) });
 
             String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, granteeUser,
                     granteeUser.getFirstName().concat(" ").concat(granteeUser.getLastName()), toStatus.getVerb(),
                     new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
                     appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
+                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
                     transition.getAction(), "Yes", "Please review.",
@@ -1606,11 +1617,11 @@ public class ReportController {
                         new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
                         appConfigService
                                 .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                        AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_SUBJECT)
+                                        AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT)
                                 .getConfigValue(),
                         appConfigService
                                 .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                        AppConfiguration.REPORT_STATE_CHANGED_NOTIFICATION_MESSAGE)
+                                        AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE)
                                 .getConfigValue(),
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),

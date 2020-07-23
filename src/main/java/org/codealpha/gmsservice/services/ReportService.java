@@ -557,7 +557,7 @@ public class ReportService {
                     .concat(workflowStatusRepository.findById(a.getStateId()).get().getName()).concat("</td>")
                     .concat("<td>")
                     .concat(userService.getUserById(a.getAssignment()).getFirstName().concat(" ")
-                            .concat(userService.getUserById(a.getAssignment()).getFirstName()))
+                            .concat(userService.getUserById(a.getAssignment()).getLastName()))
                     .concat("</td>")
 
                     .concat("<td>")
