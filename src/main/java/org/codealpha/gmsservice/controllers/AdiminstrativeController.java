@@ -336,6 +336,11 @@ public class AdiminstrativeController {
 
         user.setUserRoles(userRoles);
 
+        buildInviteUrlAndSendMail(adminUser, org, user, userRoles);
+        return user;
+    }
+
+    private void buildInviteUrlAndSendMail(User adminUser, Organization org, User user, List<UserRole> userRoles) {
         UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
         String host = null;
         if (org.getOrganizationType().equalsIgnoreCase("GRANTEE")) {
@@ -364,7 +369,6 @@ public class AdiminstrativeController {
                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                         .getConfigValue()
                         .replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()) });
-        return user;
     }
 
     @DeleteMapping("/user/{userId}/user/{userIdToDelete}")
@@ -601,5 +605,29 @@ public class AdiminstrativeController {
 
         User existingUser = userService.getUserByEmailAndOrg(emailIdToValidate, userOrg);
         return existingUser == null ? new EmailValidationReponse(false) : new EmailValidationReponse(true);
+    }
+
+    @PostMapping("/user/{userId}/role/validate")
+    public EmailValidationReponse validateRole(@RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("userId") Long userId, @RequestBody NewRoleModel roleToValidate) {
+        Organization userOrg = userService.getUserById(userId).getOrganization();
+
+        Role existingRole = roleService.findByNameAndOrganization(userOrg, roleToValidate.getRoleName());
+        if (existingRole == null) {
+            return new EmailValidationReponse(false);
+        } else {
+            return new EmailValidationReponse(true);
+        }
+    }
+
+    @GetMapping("/user/{userId}/reinvite/{newUserId}")
+    public User reSendInvite(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
+            @PathVariable("newUserId") Long newUserId) {
+        User adminUser = userService.getUserById(userId);
+        Organization org = adminUser.getOrganization();
+        User userToReinvite = userService.getUserById(newUserId);
+
+        buildInviteUrlAndSendMail(adminUser, org, userToReinvite, userToReinvite.getUserRoles());
+        return userToReinvite;
     }
 }

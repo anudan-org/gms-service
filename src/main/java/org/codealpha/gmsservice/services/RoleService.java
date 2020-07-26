@@ -15,14 +15,24 @@ public class RoleService {
   @Autowired
   private RoleRepository roleRepository;
 
-  public Role saveRole(Role role){
+  public Role saveRole(Role role) {
     return roleRepository.save(role);
   }
 
-  public Role findByOrganizationAndName(Organization org, String name){
+  public Role findByNameAndOrganization(Organization org, String name) {
+    List<Role> roles = roleRepository.findByOrganizationAndName(org, name);
+    if (roles.size() > 0) {
+      return roles.get(0);
+    } else {
+      return null;
+    }
+
+  }
+
+  public Role findByOrganizationAndName(Organization org, String name) {
     List<Role> roles = roleRepository.findByOrganizationAndName(org, name);
 
-    if(roles!=null && roles.size()==0){
+    if (roles != null && roles.size() == 0) {
       Role newRole = new Role();
       newRole.setCreatedAt(DateTime.now().toDate());
       newRole.setCreatedBy("System");
@@ -34,23 +44,23 @@ public class RoleService {
     return roles.get(0);
   }
 
-  public List<Role> getByOrganization(Organization organization){
+  public List<Role> getByOrganization(Organization organization) {
     return roleRepository.findByOrganization(organization);
   }
 
-  public Role getById(Long roleId){
+  public Role getById(Long roleId) {
     return roleRepository.findById(roleId).get();
   }
 
-  public void deleteRole(Role role){
+  public void deleteRole(Role role) {
     roleRepository.delete(role);
   }
 
-  public List<Role> getPublicRolesForOrganization(Organization org){
-    return roleRepository.findByOrganizationAndInternal(org,false);
+  public List<Role> getPublicRolesForOrganization(Organization org) {
+    return roleRepository.findByOrganizationAndInternal(org, false);
   }
 
-  public List<Role> getInternalRolesForOrganization(Organization org){
-    return roleRepository.findByOrganizationAndInternal(org,true);
+  public List<Role> getInternalRolesForOrganization(Organization org) {
+    return roleRepository.findByOrganizationAndInternal(org, true);
   }
 }
