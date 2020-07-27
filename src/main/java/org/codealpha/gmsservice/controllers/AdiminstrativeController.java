@@ -383,6 +383,18 @@ public class AdiminstrativeController {
 
     }
 
+    @GetMapping("/user/{userId}/user/{userIdToUndelete}/undelete")
+    public List<User> unDeleteUser(@RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("userId") Long userId, @PathVariable("userIdToUndelete") Long userIdToUndelete) {
+
+        User userToUndelete = userService.getUserById(userIdToUndelete);
+        userToUndelete.setDeleted(false);
+        userService.save(userToUndelete);
+
+        return getUsersForOrg(tenantCode, userId);
+
+    }
+
     @PutMapping("/user/{userId}/user")
     public User modifyUser(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
             @RequestBody User newUser) {
