@@ -228,8 +228,10 @@ public class ScheduledJobs {
                                 List<ReportAssignment> reportAssignments = reportService
                                         .getAssignmentsForReport(report);
 
-                                reportAssignments.removeIf(u -> u.getAssignment().longValue() == reportAssignment
-                                        .getAssignment().longValue());
+                                /*
+                                 * reportAssignments.removeIf(u -> u.getAssignment().longValue() ==
+                                 * reportAssignment .getAssignment().longValue());
+                                 */
                                 reportAssignments.removeIf(u -> userService.getUserById(u.getAssignment())
                                         .getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"));
                                 String[] ccList = new String[reportAssignments.size()];
@@ -285,8 +287,10 @@ public class ScheduledJobs {
                                 List<ReportAssignment> reportAssignments = reportService
                                         .getAssignmentsForReport(report);
 
-                                reportAssignments.removeIf(u -> u.getAssignment().longValue() == reportAssignment
-                                        .getAssignment().longValue());
+                                /*
+                                 * reportAssignments.removeIf(u -> u.getAssignment().longValue() ==
+                                 * reportAssignment .getAssignment().longValue());
+                                 */
                                 reportAssignments.removeIf(u -> userService.getUserById(u.getId()).getOrganization()
                                         .getOrganizationType().equalsIgnoreCase("GRANTEE"));
                                 String[] ccList = new String[reportAssignments.size()];
@@ -378,8 +382,10 @@ public class ScheduledJobs {
                                 List<GrantAssignments> grantAssignments = grantService
                                         .getGrantWorkflowAssignments(grant);
 
-                                grantAssignments.removeIf(u -> u.getAssignments().longValue() == grantAssignment
-                                        .getAssignments().longValue());
+                                /*
+                                 * grantAssignments.removeIf(u -> u.getAssignments().longValue() ==
+                                 * grantAssignment .getAssignments().longValue());
+                                 */
 
                                 String[] ccList = new String[grantAssignments.size()];
 
@@ -430,8 +436,10 @@ public class ScheduledJobs {
                                 List<GrantAssignments> grantAssignments = grantService
                                         .getGrantWorkflowAssignments(grant);
 
-                                grantAssignments.removeIf(u -> u.getAssignments().longValue() == grantAssignment
-                                        .getAssignments().longValue());
+                                /*
+                                 * grantAssignments.removeIf(u -> u.getAssignments().longValue() ==
+                                 * grantAssignment .getAssignments().longValue());
+                                 */
 
                                 String[] ccList = new String[grantAssignments.size()];
 
@@ -520,9 +528,10 @@ public class ScheduledJobs {
                                 List<DisbursementAssignment> disbursementAssignments = disbursementService
                                         .getDisbursementAssignments(disbursement);
 
-                                disbursementAssignments.removeIf(u -> u.getOwner()
-                                        .longValue() == disbursementtAssignment.getOwner().longValue());
-
+                                /*
+                                 * disbursementAssignments.removeIf(u -> u.getOwner() .longValue() ==
+                                 * disbursementtAssignment.getOwner().longValue());
+                                 */
                                 String[] ccList = new String[disbursementAssignments.size()];
 
                                 if (disbursementAssignments != null && disbursementAssignments.size() > 0) {
@@ -576,9 +585,10 @@ public class ScheduledJobs {
                                 List<DisbursementAssignment> disbursementAssignments = disbursementService
                                         .getDisbursementAssignments(disbursement);
 
-                                disbursementAssignments.removeIf(
-                                        u -> u.getOwner().longValue() == disbursementAssignment.getOwner().longValue());
-
+                                /*
+                                 * disbursementAssignments.removeIf( u -> u.getOwner().longValue() ==
+                                 * disbursementAssignment.getOwner().longValue());
+                                 */
                                 String[] ccList = new String[disbursementAssignments.size()];
 
                                 if (disbursementAssignments != null && disbursementAssignments.size() > 0) {
