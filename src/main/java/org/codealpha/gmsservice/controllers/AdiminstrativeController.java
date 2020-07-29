@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.lang3.StringEscapeUtils;
+
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
@@ -19,9 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.web.util.UriComponents;
-import org.springframework.web.util.UriComponentsBuilder;
+
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.io.IOException;
@@ -48,15 +46,15 @@ public class AdiminstrativeController {
     @Autowired
     private GranterReportTemplateService reportTemplateService;
     @Autowired
-    private UserService userService;
+    public UserService userService;
     @Autowired
     private RoleService roleService;
     @Autowired
     private UserRoleService userRoleService;
     @Autowired
-    private AppConfigService appConfigService;
+    public AppConfigService appConfigService;
     @Autowired
-    private CommonEmailSevice commonEmailSevice;
+    public CommonEmailSevice commonEmailSevice;
     @Autowired
     private ReportService reportService;
     @Autowired
@@ -66,7 +64,7 @@ public class AdiminstrativeController {
     @Autowired
     private DisbursementService disbursementService;
     @Autowired
-    private ReleaseService releaseService;
+    public ReleaseService releaseService;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -336,39 +334,9 @@ public class AdiminstrativeController {
 
         user.setUserRoles(userRoles);
 
-        buildInviteUrlAndSendMail(adminUser, org, user, userRoles);
+        organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailSevice, releaseService,
+                adminUser, org, user, userRoles);
         return user;
-    }
-
-    private void buildInviteUrlAndSendMail(User adminUser, Organization org, User user, List<UserRole> userRoles) {
-        UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
-        String host = null;
-        if (org.getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-            host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
-        } else if (org.getOrganizationType().equalsIgnoreCase("GRANTER")) {
-            host = uriComponents.getHost();
-        }
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
-                .host(host).port(uriComponents.getPort());
-        String url = uriBuilder.toUriString();
-        url = url + "/home/?action=registration&org="
-                + StringEscapeUtils.escapeHtml4(user.getOrganization().getName()).replaceAll(" ", "%20") + "&email="
-                + user.getEmailId() + "&type=join";
-        String[] notifications = userService.buildJoiningInvitationContent(user.getOrganization(),
-                userRoles.get(0).getRole(), adminUser,
-                appConfigService
-                        .getAppConfigForGranterOrg(user.getOrganization().getId(), AppConfiguration.INVITE_SUBJECT)
-                        .getConfigValue(),
-                appConfigService
-                        .getAppConfigForGranterOrg(user.getOrganization().getId(), AppConfiguration.INVITE_MESSAGE)
-                        .getConfigValue(),
-                url);
-        commonEmailSevice.sendMail(new String[] { user.getEmailId() }, null, notifications[0], notifications[1],
-                new String[] { appConfigService
-                        .getAppConfigForGranterOrg(user.getOrganization().getId(),
-                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                        .getConfigValue()
-                        .replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()) });
     }
 
     @DeleteMapping("/user/{userId}/user/{userIdToDelete}")
@@ -639,7 +607,8 @@ public class AdiminstrativeController {
         Organization org = adminUser.getOrganization();
         User userToReinvite = userService.getUserById(newUserId);
 
-        buildInviteUrlAndSendMail(adminUser, org, userToReinvite, userToReinvite.getUserRoles());
+        organizationService.buildInviteUrlAndSendMail(this, adminUser, org, userToReinvite,
+                userToReinvite.getUserRoles());
         return userToReinvite;
     }
 }
