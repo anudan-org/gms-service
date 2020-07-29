@@ -1262,9 +1262,9 @@ public class ReportController {
             notifications = reportService.buildEmailNotificationContent(report, userService.getUserById(userId), null,
                     null, null,
                     appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_SUBJECT).getConfigValue(),
+                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_MESSAGE).getConfigValue(),
+                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
                     null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
                     newAssignments);
 

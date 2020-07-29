@@ -328,11 +328,11 @@ public class DisbursementsController {
                                         disbursement, userService.getUserById(userId), null, null, null,
                                         appConfigService.getAppConfigForGranterOrg(
                                                         disbursement.getGrant().getGrantorOrganization().getId(),
-                                                        AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_SUBJECT)
+                                                        AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT)
                                                         .getConfigValue(),
                                         appConfigService.getAppConfigForGranterOrg(
                                                         disbursement.getGrant().getGrantorOrganization().getId(),
-                                                        AppConfiguration.OWNERSHIP_CHANGED_NOTIFICATION_MESSAGE)
+                                                        AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE)
                                                         .getConfigValue(),
                                         null, null, null, null, null, null, null, null, null, null, null, null,
                                         currentAssignments, newAssignments);
