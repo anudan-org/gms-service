@@ -607,8 +607,8 @@ public class AdiminstrativeController {
         Organization org = adminUser.getOrganization();
         User userToReinvite = userService.getUserById(newUserId);
 
-        organizationService.buildInviteUrlAndSendMail(this, adminUser, org, userToReinvite,
-                userToReinvite.getUserRoles());
+        organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailSevice, releaseService,
+                adminUser, org, userToReinvite, userToReinvite.getUserRoles());
         return userToReinvite;
     }
 }
