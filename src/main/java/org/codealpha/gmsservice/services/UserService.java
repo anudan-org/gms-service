@@ -67,7 +67,7 @@ public class UserService {
 
     public List<User> findByOrganization(Organization org) {
         List<User> users = userRepository.findByOrganization(org);
-        users.removeIf(u -> u.isDeleted());
+        // users.removeIf(u -> u.isDeleted());
         return users;
     }
 
