@@ -157,6 +157,7 @@ public class UserController {
 
         userOrg = organizationService.save(userOrg);
         savedUser.setOrganization(userOrg);
+        savedUser.setUserProfile(user.getUserProfile());
         savedUser = userService.save(savedUser);
         return savedUser;
     }

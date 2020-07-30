@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import io.swagger.annotations.Api;
@@ -83,6 +84,13 @@ public class GranterController {
 
 	@Autowired
 	private OrganizationService organizationService;
+
+	@Autowired
+	private AppConfigService appConfigService;
+	@Autowired
+	private CommonEmailSevice commonEmailSevice;
+	@Autowired
+	private ReleaseService releaseService;
 
 	@Value("${spring.upload-file-location}")
 	private String uploadLocation;
@@ -162,6 +170,7 @@ public class GranterController {
 		role.setCreatedBy(userService.getUserById(userId).getEmailId());
 		role.setName("Admin");
 		role.setOrganization(org);
+		role.setInternal(true);
 		role = roleService.saveRole(role);
 		List<RolesPermission> rolesPermissions = new ArrayList<>();
 		rolesPermissions.add(new RolesPermission(role, "Create Grant"));
@@ -173,6 +182,9 @@ public class GranterController {
 		userRole.setRole(role);
 		userRole.setUser(granterUser);
 		userRole = userRoleService.saveUserRole(userRole);
+
+		organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailSevice, releaseService,
+				userService.getUserById(userId), org, granterUser, Arrays.asList(new UserRole[] { userRole }));
 
 		GranterGrantTemplate defaulTemplate = new GranterGrantTemplate();
 		defaulTemplate.setPublished(true);

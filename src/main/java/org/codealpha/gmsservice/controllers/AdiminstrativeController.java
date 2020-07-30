@@ -404,16 +404,25 @@ public class AdiminstrativeController {
             }
         }
 
-        UserRole nonAdminRole = existingUser.getUserRoles().stream()
-                .filter(ur -> ur.getRole().getId().longValue() != adminRole.getId().longValue()).findAny().get();
-        UserRole newNonAdminRole = newUser.getUserRoles().stream()
-                .filter(ur -> ur.getRole().getId().longValue() != adminRole.getId().longValue()).findAny().get();
-        if (nonAdminRole.getRole().getId().longValue() != newNonAdminRole.getRole().getId()) {
+        Optional<UserRole> optionalNonAdminRole = existingUser.getUserRoles().stream()
+                .filter(ur -> ur.getRole().getId().longValue() != adminRole.getId().longValue()).findAny();
+        UserRole nonAdminRole = optionalNonAdminRole.isPresent() ? optionalNonAdminRole.get() : null;
+        Optional<UserRole> optionalNewNonAdminRole = newUser.getUserRoles().stream()
+                .filter(ur -> ur.getRole().getId().longValue() != adminRole.getId().longValue()).findAny();
+        UserRole newNonAdminRole = optionalNewNonAdminRole.isPresent() ? optionalNewNonAdminRole.get() : null;
+        if (nonAdminRole != null && newNonAdminRole != null
+                && nonAdminRole.getRole().getId().longValue() != newNonAdminRole.getRole().getId()) {
+            nonAdminRole.setRole(newNonAdminRole.getRole());
+            userRoleService.saveUserRole(nonAdminRole);
+        } else if (nonAdminRole == null && newNonAdminRole != null && newNonAdminRole.getRole() != null) {
+            nonAdminRole = new UserRole();
+            nonAdminRole.setUser(existingUser);
             nonAdminRole.setRole(newNonAdminRole.getRole());
             userRoleService.saveUserRole(nonAdminRole);
         }
 
         existingUser = userService.save(existingUser);
+        existingUser.getUserRoles().removeIf(ur -> ur.getRole().isInternal());
         return existingUser;
     }
 
