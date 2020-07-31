@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -95,6 +96,10 @@ public class GrantService {
     private GrantAssignmentHistoryRepository assignmentHistoryRepository;
     @Autowired
     private GrantDocumentRepository grantDocumentRepository;
+    @Autowired
+    private DisbursementRepository disbursementRepository;
+    @Autowired
+    private ActualDisbursementRepository actualDisbursementRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -706,6 +711,29 @@ public class GrantService {
         }
 
         grant.setSecurityCode(buildHashCode(grant));
+        List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses("DISBURSEMENT",
+                grant.getGrantorOrganization().getId());
+
+        List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE")
+                        || ws.getInternalStatus().equalsIgnoreCase("CLOSED"))
+                .collect(Collectors.toList());
+        List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                .collect(Collectors.toList());
+        List<Disbursement> approvedDisbursements = disbursementRepository
+                .getDisbursementByGrantAndStatuses(grant.getId(), statusIds);
+        List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
+        if (approvedDisbursements != null) {
+
+            for (Disbursement approved : approvedDisbursements) {
+                List<ActualDisbursement> approvedActuals = actualDisbursementRepository
+                        .findByDisbursementId(approved.getId());
+                approvedActualDisbursements.addAll(approvedActuals);
+            }
+        }
+        grant.setProjectDocumentsCount(getGrantsDocuments(grant.getId()).size());
+        grant.setApprovedDisbursementsTotal(
+                approvedActualDisbursements.stream().mapToDouble(ActualDisbursement::getActualAmount).sum());
         return grant;
     }
 

@@ -169,6 +169,10 @@ public class Grant {
   private Boolean deleted;
   @Transient
   private Boolean hasOngoingDisbursement = false;
+  @Transient
+  private int projectDocumentsCount = 0;
+  @Transient
+  private Double approvedDisbursementsTotal = 0d;
 
   public Long getId() {
     return id;
@@ -472,6 +476,22 @@ public class Grant {
 
   public void setHasOngoingDisbursement(Boolean hasOngoingDisbursement) {
     this.hasOngoingDisbursement = hasOngoingDisbursement;
+  }
+
+  public int getProjectDocumentsCount() {
+    return projectDocumentsCount;
+  }
+
+  public void setProjectDocumentsCount(int projectDocumentsCount) {
+    this.projectDocumentsCount = projectDocumentsCount;
+  }
+
+  public Double getApprovedDisbursementsTotal() {
+    return approvedDisbursementsTotal;
+  }
+
+  public void setApprovedDisbursementsTotal(Double approvedDisbursementsTotal) {
+    this.approvedDisbursementsTotal = approvedDisbursementsTotal;
   }
 
 }
