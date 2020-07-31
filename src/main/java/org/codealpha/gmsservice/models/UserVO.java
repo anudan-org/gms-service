@@ -17,6 +17,7 @@ public class UserVO {
   private Date updatedAt;
   private String updatedBy;
   private String organizationName;
+  private String userProfile;
 
   public Long getId() {
     return id;
@@ -105,4 +106,13 @@ public class UserVO {
   public void setOrganizationName(String organizationName) {
     this.organizationName = organizationName;
   }
+
+  public String getUserProfile() {
+    return userProfile;
+  }
+
+  public void setUserProfile(String userProfile) {
+    this.userProfile = userProfile;
+  }
+
 }

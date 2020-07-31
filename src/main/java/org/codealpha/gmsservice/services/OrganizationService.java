@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.controllers.AdiminstrativeController;
+import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.UserRole;
@@ -73,6 +74,9 @@ public class OrganizationService {
 			host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
 		} else if (org.getOrganizationType().equalsIgnoreCase("GRANTER")) {
 			host = uriComponents.getHost();
+			if (adminUser.getOrganization().getOrganizationType().equals("PLATFORM")) {
+				host = ((Granter) org).getHostUrl() + "." + host;
+			}
 		}
 		UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
 				.host(host).port(uriComponents.getPort());

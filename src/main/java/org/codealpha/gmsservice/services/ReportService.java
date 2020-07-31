@@ -556,14 +556,21 @@ public class ReportService {
             table[0] = table[0].concat("<tr>").concat("<td width='30%'>")
                     .concat(workflowStatusRepository.findById(a.getStateId()).get().getName()).concat("</td>")
                     .concat("<td>")
-                    .concat(userService.getUserById(a.getAssignment()).getFirstName().concat(" ")
-                            .concat(userService.getUserById(a.getAssignment()).getLastName()))
+                    .concat(a.getAssignment() != null ? userService.getUserById(a.getAssignment()).getFirstName()
+                            : "".concat("-")
+                                    .concat(a.getAssignment() != null
+                                            ? userService.getUserById(a.getAssignment()).getLastName()
+                                            : ""))
                     .concat("</td>")
 
                     .concat("<td>")
-                    .concat(userService.getUserById(assignments.get(prevAss)).getFirstName().concat(" ")
-                            .concat(userService.getUserById(assignments.get(prevAss)).getLastName()).concat("</td>")
-                            .concat("</tr>"));
+                    .concat(assignments.get(prevAss) != null
+                            ? userService.getUserById(assignments.get(prevAss)).getFirstName()
+                            : "".concat("-")
+                                    .concat(assignments.get(prevAss) != null
+                                            ? userService.getUserById(assignments.get(prevAss)).getLastName()
+                                            : "")
+                                    .concat("</td>").concat("</tr>"));
         });
 
         table[0] = table[0].concat("</table>");
