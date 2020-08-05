@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
@@ -16,12 +18,21 @@ import org.codealpha.gmsservice.repositories.UserRoleRepository;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import springfox.documentation.annotations.ApiIgnore;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -31,6 +42,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import javax.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/admin")
@@ -65,6 +80,12 @@ public class AdiminstrativeController {
     private DisbursementService disbursementService;
     @Autowired
     public ReleaseService releaseService;
+    @Autowired
+    public TemplateLibraryService templateLibraryService;
+    @Value("${spring.upload-file-location}")
+    private String uploadLocation;
+    @Autowired
+    private ResourceLoader resourceLoader;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -619,5 +640,100 @@ public class AdiminstrativeController {
         organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailSevice, releaseService,
                 adminUser, org, userToReinvite, userToReinvite.getUserRoles());
         return userToReinvite;
+    }
+
+    @GetMapping("/user/{userId}/document-library")
+    public List<TemplateLibrary> getLibraryDocuments(@RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("userId") Long userId) {
+        User user = userService.getUserById(userId);
+
+        return templateLibraryService.getTemplateLibraryForOrganization(user.getOrganization().getId());
+
+    }
+
+    @PostMapping(value = "/user/{userId}/document-library", consumes = { "multipart/form-data" })
+    public TemplateLibrary getLibraryDocuments(@RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("userId") Long userId, @RequestParam("file") MultipartFile[] files,
+            @RequestParam("docName") String docName, @RequestParam("docDescription") String docDescription) {
+        User user = userService.getUserById(userId);
+
+        String filePath = uploadLocation + tenantCode + "/template-library";
+
+        TemplateLibrary libraryDoc = new TemplateLibrary();
+        libraryDoc.setName(FilenameUtils.getBaseName(files[0].getOriginalFilename()));
+        libraryDoc.setDescription(FilenameUtils.getBaseName(files[0].getOriginalFilename()));
+        libraryDoc.setFileType(FilenameUtils.getExtension(files[0].getOriginalFilename()));
+        libraryDoc.setType(FilenameUtils.getExtension(files[0].getOriginalFilename()));
+        libraryDoc.setLocation(tenantCode + "/template-library");
+        libraryDoc.setGranterId(user.getOrganization().getId());
+        libraryDoc = templateLibraryService.saveLibraryDoc(libraryDoc);
+
+        File fileToCreate = new File(new File(filePath), files[0].getOriginalFilename());
+        try {
+            FileOutputStream fos = new FileOutputStream(fileToCreate);
+            fos.write(files[0].getBytes());
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return libraryDoc;
+    }
+
+    @PostMapping(value = "/user/{userId}/document-library/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public byte[] downloadSelectedAttachments(@PathVariable("userId") Long userId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest,
+            HttpServletResponse response) throws IOException {
+
+        ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
+        // setting headers
+        response.setContentType("application/zip");
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
+
+        // creating byteArray stream, make it bufforable and passing this buffor to
+        // ZipOutputStream
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+        ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+
+        // simple file list, just for tests
+
+        ArrayList<File> files = new ArrayList<>(2);
+
+        // packing files
+        for (Long attachmentId : downloadRequest.getAttachmentIds()) {
+            TemplateLibrary attachment = templateLibraryService.getTemplateLibraryDocumentById(attachmentId);
+
+            File file = resourceLoader.getResource("file:" + uploadLocation + attachment.getLocation() + "/"
+                    + attachment.getName() + "." + attachment.getFileType()).getFile();
+            // new zip entry and copying inputstream with file to zipOutputStream, after all
+            // closing streams
+            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+            FileInputStream fileInputStream = new FileInputStream(file);
+
+            IOUtils.copy(fileInputStream, zipOutputStream);
+
+            fileInputStream.close();
+            zipOutputStream.closeEntry();
+        }
+
+        if (zipOutputStream != null) {
+            zipOutputStream.finish();
+            zipOutputStream.flush();
+            IOUtils.closeQuietly(zipOutputStream);
+        }
+        IOUtils.closeQuietly(bufferedOutputStream);
+        IOUtils.closeQuietly(byteArrayOutputStream);
+        return byteArrayOutputStream.toByteArray();
+    }
+
+    @PostMapping(value = "/user/{userId}/document-library/delete")
+    public void downloadSelectedAttachments(@PathVariable("userId") Long userId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest) {
+
+        for (Long attachmentId : downloadRequest.getAttachmentIds()) {
+            TemplateLibrary attachment = templateLibraryService.getTemplateLibraryDocumentById(attachmentId);
+            templateLibraryService.deleteTemplateLibraryDoc(attachment);
+        }
     }
 }

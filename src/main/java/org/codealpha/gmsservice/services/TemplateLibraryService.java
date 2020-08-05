@@ -13,15 +13,23 @@ public class TemplateLibraryService {
     @Autowired
     private TemplateLibraryRepository templateLibraryRepository;
 
-    public List<TemplateLibrary> getTemplateLibraryForGranter(Granter granter){
+    public List<TemplateLibrary> getTemplateLibraryForGranter(Granter granter) {
         return templateLibraryRepository.findByGranterId(granter.getId());
     }
 
-    public TemplateLibrary getTemplateLibraryDocumentById(Long id){
+    public TemplateLibrary getTemplateLibraryDocumentById(Long id) {
         return templateLibraryRepository.findById(id).get();
     }
 
-    public List<TemplateLibrary> getTemplateLibraryForOrganization(Long orgId){
+    public List<TemplateLibrary> getTemplateLibraryForOrganization(Long orgId) {
         return templateLibraryRepository.findByGranterId(orgId);
+    }
+
+    public TemplateLibrary saveLibraryDoc(TemplateLibrary doc) {
+        return templateLibraryRepository.save(doc);
+    }
+
+    public void deleteTemplateLibraryDoc(TemplateLibrary doc) {
+        templateLibraryRepository.delete(doc);
     }
 }
