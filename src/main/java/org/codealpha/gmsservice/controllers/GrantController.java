@@ -1432,6 +1432,9 @@ public class GrantController {
                             }
                         }
 
+                        if (attribute.getFieldTableValue().size() == rowNames.size()) {
+                            rowNames.remove(rowNames.size() - 1);
+                        }
                         for (String rowName : rowNames) {
                             attribute.getFieldTableValue().removeIf(e -> e.getName().equalsIgnoreCase(rowName));
                         }
