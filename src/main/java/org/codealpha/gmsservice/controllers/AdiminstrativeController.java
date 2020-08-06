@@ -652,7 +652,7 @@ public class AdiminstrativeController {
     }
 
     @PostMapping(value = "/user/{userId}/document-library", consumes = { "multipart/form-data" })
-    public TemplateLibrary getLibraryDocuments(@RequestHeader("X-TENANT-CODE") String tenantCode,
+    public TemplateLibrary saveLibraryDocuments(@RequestHeader("X-TENANT-CODE") String tenantCode,
             @PathVariable("userId") Long userId, @RequestParam("file") MultipartFile[] files,
             @RequestParam("docName") String docName, @RequestParam("docDescription") String docDescription) {
         User user = userService.getUserById(userId);
@@ -664,7 +664,7 @@ public class AdiminstrativeController {
         libraryDoc.setDescription(FilenameUtils.getBaseName(files[0].getOriginalFilename()));
         libraryDoc.setFileType(FilenameUtils.getExtension(files[0].getOriginalFilename()));
         libraryDoc.setType(FilenameUtils.getExtension(files[0].getOriginalFilename()));
-        libraryDoc.setLocation(tenantCode + "/template-library");
+        libraryDoc.setLocation(tenantCode + "/template-library/" + files[0].getOriginalFilename());
         libraryDoc.setGranterId(user.getOrganization().getId());
         libraryDoc = templateLibraryService.saveLibraryDoc(libraryDoc);
 
