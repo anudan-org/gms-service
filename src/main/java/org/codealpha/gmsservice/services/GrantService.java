@@ -732,6 +732,7 @@ public class GrantService {
             }
         }
         grant.setProjectDocumentsCount(getGrantsDocuments(grant.getId()).size());
+        approvedActualDisbursements.removeIf(ad -> ad.getActualAmount() == null);
         grant.setApprovedDisbursementsTotal(
                 approvedActualDisbursements.stream().mapToDouble(ActualDisbursement::getActualAmount).sum());
         return grant;
