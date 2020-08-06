@@ -55,6 +55,8 @@ public class GrantVO {
   private Boolean deleted;
   private Date movedOn;
   private Boolean hasOngoingDisbursement;
+  private int projectDocumentsCount = 0;
+  private Double approvedDisbursementsTotal = 0d;
   @JsonIgnore
   private List<GrantStringAttribute> stringAttributes;
 
@@ -411,5 +413,21 @@ public class GrantVO {
 
   public void setHasOngoingDisbursement(Boolean hasOngoingDisbursement) {
     this.hasOngoingDisbursement = hasOngoingDisbursement;
+  }
+
+  public int getProjectDocumentsCount() {
+    return projectDocumentsCount;
+  }
+
+  public void setProjectDocumentsCount(int projectDocumentsCount) {
+    this.projectDocumentsCount = projectDocumentsCount;
+  }
+
+  public Double getApprovedDisbursementsTotal() {
+    return approvedDisbursementsTotal;
+  }
+
+  public void setApprovedDisbursementsTotal(Double approvedDisbursementsTotal) {
+    this.approvedDisbursementsTotal = approvedDisbursementsTotal;
   }
 }

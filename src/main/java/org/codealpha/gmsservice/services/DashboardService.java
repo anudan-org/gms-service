@@ -20,6 +20,7 @@ import org.codealpha.gmsservice.repositories.DisbursementRepository;
 import org.codealpha.gmsservice.repositories.GrantAssignmentHistoryRepository;
 import org.codealpha.gmsservice.repositories.GrantRepository;
 import org.codealpha.gmsservice.repositories.ReportsCountPerGrantRepository;
+import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
 import org.codealpha.gmsservice.repositories.dashboard.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +69,8 @@ public class DashboardService {
     private GrantRepository grantRepository;
     @Autowired
     private GrantAssignmentHistoryRepository assignmentHistoryRepository;
+    @Autowired
+    private WorkflowStatusRepository workflowStatusRepository;
 
     List<Tenant> tenants;
 
@@ -199,6 +202,39 @@ public class DashboardService {
                         }
                     }
                     grant.setSecurityCode(grantService.buildHashCode(grant));
+                    grant.setProjectDocumentsCount(grantService.getGrantsDocuments(grant.getId()).size());
+
+                    List<WorkflowStatus> workflowStatuses = workflowStatusRepository
+                            .getAllTenantStatuses("DISBURSEMENT", grant.getGrantorOrganization().getId());
+                    List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
+                            .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED"))
+                            .collect(Collectors.toList());
+                    List<Long> statusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                            .collect(Collectors.toList());
+                    List<Disbursement> approvedDisbursements = disbursementRepository
+                            .getDisbursementByGrantAndStatuses(grant.getId(), statusIds);
+                    List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
+                    if (approvedDisbursements != null) {
+
+                        for (Disbursement approved : approvedDisbursements) {
+                            List<ActualDisbursement> approvedActuals = actualDisbursementRepository
+                                    .findByDisbursementId(approved.getId());
+                            if (approvedActuals.size() > 0) {
+                                approvedActualDisbursements.addAll(approvedActuals);
+                            }
+                        }
+                    }
+                    if (approvedActualDisbursements.size() > 0) {
+                        Double total = 0d;
+                        for (ActualDisbursement ad : approvedActualDisbursements) {
+                            if (ad.getActualAmount() != null) {
+                                total += ad.getActualAmount();
+                            }
+                        }
+
+                        grant.setApprovedDisbursementsTotal(total);
+                    }
+
                     grantList.add(grant);
                     tenant.setGrants(grantList);
                 }

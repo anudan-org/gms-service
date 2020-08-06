@@ -155,6 +155,13 @@ public class DisbursementService {
         List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
                 .collect(Collectors.toList());
 
+        List<ActualDisbursement> approvedActualDisbursements = getApprovedActualDisbursements(disbursement, statusIds);
+        disbursement.setApprovedActualsDibursements(approvedActualDisbursements);
+
+        return disbursement;
+    }
+
+    private List<ActualDisbursement> getApprovedActualDisbursements(Disbursement disbursement, List<Long> statusIds) {
         List<Disbursement> approvedDisbursements = getDibursementsForGrantByStatuses(disbursement.getGrant().getId(),
                 statusIds);
         List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
@@ -168,9 +175,7 @@ public class DisbursementService {
             }
         }
         approvedActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
-        disbursement.setApprovedActualsDibursements(approvedActualDisbursements);
-
-        return disbursement;
+        return approvedActualDisbursements;
     }
 
     public List<Disbursement> getDibursementsForGrantByStatuses(Long grantId, List<Long> statuses) {
