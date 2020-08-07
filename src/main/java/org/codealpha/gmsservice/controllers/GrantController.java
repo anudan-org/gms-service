@@ -1682,17 +1682,17 @@ public class GrantController {
             throw new ApplicationException("Cannot generate reference code");
         }
 
-        SimpleDateFormat stFormat = new SimpleDateFormat("yyMMdd");
-        SimpleDateFormat enFormat = new SimpleDateFormat("yy");
+        SimpleDateFormat stFormat = new SimpleDateFormat("yyMM");
+        SimpleDateFormat enFormat = new SimpleDateFormat("yyMM");
         Date stDate = new DateTime(grant.getStartDate()).withTimeAtStartOfDay().toDate();
-        Long sNo = grantService.getCountOfOtherGrantsWithStartDateAndStatus(stDate, grant.getId(), toStatus.getId());
+        Integer sNo = grantService.getActiveGrantsForTenant(grant.getGrantorOrganization()).size();
+
         System.out.println(
                 "SNO: -----------   " + sNo + " | " + stDate + " | " + grant.getId() + " | " + toStatus.getId());
         String amountCode = grant.getAmount() > 9999999999L ? "A"
                 : (grant.getAmount() > 9999999L && grant.getAmount() <= 9999999999L) ? "C" : "L";
         String referenceCode = grant.getOrganization().getName().replaceAll(" ", "").substring(0, 4).toUpperCase() + "-"
-                + stFormat.format(grant.getStartDate()) + enFormat.format(grant.getEndDate()) + "-" + amountCode + "-"
-                + (sNo + 1);
+                + stFormat.format(grant.getStartDate()) + "-" + enFormat.format(grant.getEndDate()) + "-" + (sNo);
         grant.setReferenceNo(referenceCode);
         return grantService.saveGrant(grant);
 
