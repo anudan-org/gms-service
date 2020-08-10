@@ -35,7 +35,11 @@ public class GrantService {
     @Autowired
     private GranterGrantSectionRepository granterGrantSectionRepository;
     @Autowired
+    private GranterReportSectionRepository granterReportSectionRepository;
+    @Autowired
     private GranterGrantSectionAttributeRepository granterGrantSectionAttributeRepository;
+    @Autowired
+    private GranterReportSectionAttributeRepository granterReportSectionAttributeRepository;
     @Autowired
     private GrantStringAttributeRepository grantStringAttributeRepository;
     @Autowired
@@ -378,8 +382,16 @@ public class GrantService {
         return granterGrantSectionRepository.save(section);
     }
 
+    public GranterReportSection saveReportTemplateSection(GranterReportSection section) {
+        return granterReportSectionRepository.save(section);
+    }
+
     public GranterGrantSectionAttribute saveGrantTemaplteSectionAttribute(GranterGrantSectionAttribute attribute) {
         return granterGrantSectionAttributeRepository.save(attribute);
+    }
+
+    public GranterReportSectionAttribute saveReportTemplateSectionAttribute(GranterReportSectionAttribute attribute) {
+        return granterReportSectionAttributeRepository.save(attribute);
     }
 
     public void deleteGrantTemplateSections(List<GranterGrantSection> sections) {

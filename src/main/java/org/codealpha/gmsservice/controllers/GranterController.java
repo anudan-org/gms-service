@@ -83,6 +83,9 @@ public class GranterController {
 	private GranterGrantTemplateService granterGrantTemplateService;
 
 	@Autowired
+	private GranterReportTemplateService granterReportTemplateService;
+
+	@Autowired
 	private OrganizationService organizationService;
 
 	@Autowired
@@ -217,22 +220,276 @@ public class GranterController {
 			}
 		}
 
-		Workflow workflow = new Workflow();
-		workflow.setCreatedAt(DateTime.now().toDate());
-		workflow.setCreatedBy(userService.getUserById(userId).getEmailId());
-		workflow.setDescription("Default " + org.getName() + " Grant workflow");
-		workflow.setGranter(granterService.getGranterById(org.getId()));
-		workflow.setName("Default " + org.getName() + " Grant workflow");
-		workflow.setObject(WorkflowObject.GRANT);
-		workflow = workflowService.saveWorkflow(workflow);
-
 		/*
-		 * organizationService.buildInviteUrlAndSendMail(userService, ,
-		 * commonEmailSevice, releaseService, adminUser, org, user, userRoles); return
-		 * org;
+		 * Workflow workflow = new Workflow();
+		 * workflow.setCreatedAt(DateTime.now().toDate());
+		 * workflow.setCreatedBy(userService.getUserById(userId).getEmailId());
+		 * workflow.setDescription("Default " + org.getName() + " Grant workflow");
+		 * workflow.setGranter(granterService.getGranterById(org.getId()));
+		 * workflow.setName("Default " + org.getName() + " Grant workflow");
+		 * workflow.setObject(WorkflowObject.GRANT); workflow =
+		 * workflowService.saveWorkflow(workflow);
 		 */
 
+		buildWorkflowsBasedOnSustainPlus(org);
+		buildDefaultTemplates(org, organizationService.findOrganizationByTenantCode("SUSTAINPLUS"));
+
 		return org;
+	}
+
+	private void buildDefaultTemplates(Organization org, Organization referenceOrg) {
+
+		buildDefaultGrantTemplate(org, referenceOrg);
+		buildDefaultReportTemplate(org, referenceOrg);
+	}
+
+	private void buildDefaultGrantTemplate(Organization org, Organization referenceOrg) {
+		List<GranterGrantSection> defaultSections = granterGrantTemplateService
+				.findByGranterIdAndPublishedStatusAndPrivateStatus(referenceOrg.getId(), true, false).stream()
+				.filter(t -> t.isDefaultTemplate()).findFirst().get().getSections();
+		GranterGrantTemplate defaultTemplate = new GranterGrantTemplate();
+		defaultTemplate.setDefaultTemplate(true);
+		defaultTemplate.setDescription("Anudan Default Grant Template");
+		defaultTemplate.setGranterId(org.getId());
+		defaultTemplate.setName("Anudan Default Grant Template");
+		defaultTemplate.setPrivateToGrant(false);
+		defaultTemplate.setPublished(true);
+		defaultTemplate = granterGrantTemplateService.saveGrantTemplate(defaultTemplate);
+
+		int sectionOrder = 1;
+		for (GranterGrantSection section : defaultSections) {
+			GranterGrantSection templateSection = new GranterGrantSection();
+			templateSection.setDeletable(true);
+			templateSection.setGrantTemplate(defaultTemplate);
+			templateSection.setGranter((Granter) org);
+			templateSection.setSectionName(section.getSectionName());
+			templateSection.setSectionOrder(sectionOrder++);
+			templateSection = grantService.saveGrantTemaplteSection(templateSection);
+
+			if (section.getAttributes() != null && section.getAttributes().size() > 0) {
+				int attributeOrder = 1;
+				for (GranterGrantSectionAttribute attribute : section.getAttributes()) {
+					GranterGrantSectionAttribute templateSectionAttribute = new GranterGrantSectionAttribute();
+					templateSectionAttribute.setAttributeOrder(attributeOrder++);
+					templateSectionAttribute.setDeletable(true);
+					templateSectionAttribute.setFieldName(attribute.getFieldName());
+					templateSectionAttribute.setFieldType(attribute.getFieldType());
+					templateSectionAttribute.setGranter((Granter) org);
+					templateSectionAttribute.setRequired(false);
+					templateSectionAttribute.setSection(templateSection);
+					templateSectionAttribute = grantService.saveGrantTemaplteSectionAttribute(templateSectionAttribute);
+				}
+			}
+		}
+	}
+
+	private void buildDefaultReportTemplate(Organization org, Organization referenceOrg) {
+		List<GranterReportSection> defaultSections = granterReportTemplateService
+				.findByGranterIdAndPublishedStatusAndPrivateStatus(referenceOrg.getId(), true, false).stream()
+				.filter(t -> t.getDefaultTemplate()).findFirst().get().getSections();
+		GranterReportTemplate defaultTemplate = new GranterReportTemplate();
+		defaultTemplate.setDefaultTemplate(true);
+		defaultTemplate.setDescription("Anudan Default Report Template");
+		defaultTemplate.setGranterId(org.getId());
+		defaultTemplate.setName("Anudan Default Report Template");
+		defaultTemplate.setPrivateToReport(false);
+		defaultTemplate.setPublished(true);
+		defaultTemplate = granterReportTemplateService.saveReportTemplate(defaultTemplate);
+
+		int sectionOrder = 1;
+		for (GranterReportSection section : defaultSections) {
+			GranterReportSection templateSection = new GranterReportSection();
+			templateSection.setDeletable(true);
+			templateSection.setReportTemplate(defaultTemplate);
+
+			templateSection.setGranter((Granter) org);
+			templateSection.setSectionName(section.getSectionName());
+			templateSection.setSectionOrder(sectionOrder++);
+			templateSection = grantService.saveReportTemplateSection(templateSection);
+
+			if (section.getAttributes() != null && section.getAttributes().size() > 0) {
+				int attributeOrder = 1;
+				for (GranterReportSectionAttribute attribute : section.getAttributes()) {
+					GranterReportSectionAttribute templateSectionAttribute = new GranterReportSectionAttribute();
+					templateSectionAttribute.setAttributeOrder(attributeOrder++);
+					templateSectionAttribute.setDeletable(true);
+					templateSectionAttribute.setFieldName(attribute.getFieldName());
+					templateSectionAttribute.setFieldType(attribute.getFieldType());
+					templateSectionAttribute.setGranter((Granter) org);
+					templateSectionAttribute.setRequired(false);
+					templateSectionAttribute.setSection(templateSection);
+					templateSectionAttribute = grantService
+							.saveReportTemplateSectionAttribute(templateSectionAttribute);
+				}
+			}
+		}
+	}
+
+	private void buildWorkflowsBasedOnSustainPlus(Organization org) {
+
+		Organization susplusOrg = organizationService.findOrganizationByTenantCode("SUSTAINPLUS");
+		Workflow susplusGrantWorkflow = workflowService.findByGranterAndObject(susplusOrg, WorkflowObject.GRANT);
+		Workflow susplusReportWorkflow = workflowService.findByGranterAndObject(susplusOrg, WorkflowObject.REPORT);
+		Workflow susplusDisbursementWorkflow = workflowService.findByGranterAndObject(susplusOrg,
+				WorkflowObject.DISBURSEMENT);
+		List<WorkflowStatus> susplusGrantStatuses = workflowStatusService
+				.getTenantWorkflowStatuses(WorkflowObject.GRANT.name(), susplusOrg.getId());
+		List<WorkflowStatus> susplusReportStatuses = workflowStatusService
+				.getTenantWorkflowStatuses(WorkflowObject.REPORT.name(), susplusOrg.getId());
+		List<WorkflowStatus> susplusDisbursementStatuses = workflowStatusService
+				.getTenantWorkflowStatuses(WorkflowObject.DISBURSEMENT.name(), susplusOrg.getId());
+		List<WorkflowStatusTransition> susplusGrantTransitions = workflowStatusTransitionService
+				.getStatusTransitionsForWorkflow(susplusGrantWorkflow);
+		List<WorkflowStatusTransition> susplusReportTransitions = workflowStatusTransitionService
+				.getStatusTransitionsForWorkflow(susplusReportWorkflow);
+		List<WorkflowStatusTransition> susplusDisbursementTransitions = workflowStatusTransitionService
+				.getStatusTransitionsForWorkflow(susplusDisbursementWorkflow);
+
+		generateGrantWorkflow(org, susplusGrantStatuses, susplusGrantTransitions);
+		generateReportWorkflow(org, susplusReportStatuses, susplusReportTransitions);
+		generateDisbursementWorkflow(org, susplusDisbursementStatuses, susplusDisbursementTransitions);
+
+	}
+
+	private void generateGrantWorkflow(Organization org, List<WorkflowStatus> susplusGrantStatuses,
+			List<WorkflowStatusTransition> susplusGrantTransitions) {
+		Workflow grantWorkflow = new Workflow();
+		grantWorkflow.setCreatedAt(DateTime.now().toDate());
+		grantWorkflow.setCreatedBy("System");
+		grantWorkflow.setDescription("Default " + org.getName() + " Grant workflow");
+		grantWorkflow.setGranter(org);
+		grantWorkflow.setName("Default " + org.getName() + " Grant workflow");
+		grantWorkflow.setObject(WorkflowObject.GRANT);
+		grantWorkflow = workflowService.saveWorkflow(grantWorkflow);
+
+		List<WorkflowStatus> grantStatuses = new ArrayList<>();
+		for (WorkflowStatus susplusStatus : susplusGrantStatuses) {
+			WorkflowStatus status = new WorkflowStatus();
+			status.setCreatedAt(DateTime.now().toDate());
+			status.setCreatedBy("System");
+			status.setDisplayName(susplusStatus.getDisplayName());
+			status.setInitial(susplusStatus.isInitial());
+			status.setInternalStatus(susplusStatus.getInternalStatus());
+			status.setName(susplusStatus.getName());
+			status.setTerminal(susplusStatus.getTerminal());
+			status.setWorkflow(grantWorkflow);
+			status = workflowStatusService.saveWorkflowStatus(status);
+			grantStatuses.add(status);
+		}
+
+		for (WorkflowStatusTransition susplusTransition : susplusGrantTransitions) {
+
+			WorkflowStatusTransition transition = new WorkflowStatusTransition();
+			transition.setAction(susplusTransition.getAction());
+			transition.setCreatedAt(DateTime.now().toDate());
+			transition.setCreatedBy("System");
+			WorkflowStatus fromStatus = susplusGrantStatuses.stream()
+					.filter(st -> st.getId().longValue() == susplusTransition.getFromState().getId()).findFirst().get();
+			WorkflowStatus toStatus = susplusGrantStatuses.stream()
+					.filter(st -> st.getId().longValue() == susplusTransition.getToState().getId()).findFirst().get();
+			transition.setFromState(grantStatuses.stream()
+					.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().get());
+			transition.setToState(grantStatuses.stream().filter(s -> s.getName().equalsIgnoreCase(toStatus.getName()))
+					.findFirst().get());
+			transition.setNoteRequired(true);
+			transition.setSeqOrder(susplusTransition.getSeqOrder());
+			transition.setWorkflow(grantWorkflow);
+			transition = workflowStatusTransitionService.saveStatusTransition(transition);
+		}
+	}
+
+	private void generateReportWorkflow(Organization org, List<WorkflowStatus> susplusReportStatuses,
+			List<WorkflowStatusTransition> susplusReportTransitions) {
+		Workflow reportWorkflow = new Workflow();
+		reportWorkflow.setCreatedAt(DateTime.now().toDate());
+		reportWorkflow.setCreatedBy("System");
+		reportWorkflow.setDescription("Default " + org.getName() + " Report workflow");
+		reportWorkflow.setGranter(org);
+		reportWorkflow.setName("Default " + org.getName() + " Report workflow");
+		reportWorkflow.setObject(WorkflowObject.REPORT);
+		reportWorkflow = workflowService.saveWorkflow(reportWorkflow);
+
+		List<WorkflowStatus> reportStatuses = new ArrayList<>();
+		for (WorkflowStatus susplusStatus : susplusReportStatuses) {
+			WorkflowStatus status = new WorkflowStatus();
+			status.setCreatedAt(DateTime.now().toDate());
+			status.setCreatedBy("System");
+			status.setDisplayName(susplusStatus.getDisplayName());
+			status.setInitial(susplusStatus.isInitial());
+			status.setInternalStatus(susplusStatus.getInternalStatus());
+			status.setName(susplusStatus.getName());
+			status.setTerminal(susplusStatus.getTerminal());
+			status.setWorkflow(reportWorkflow);
+			status = workflowStatusService.saveWorkflowStatus(status);
+			reportStatuses.add(status);
+		}
+
+		for (WorkflowStatusTransition susplusTransition : susplusReportTransitions) {
+
+			WorkflowStatusTransition transition = new WorkflowStatusTransition();
+			transition.setAction(susplusTransition.getAction());
+			transition.setCreatedAt(DateTime.now().toDate());
+			transition.setCreatedBy("System");
+			WorkflowStatus fromStatus = susplusReportStatuses.stream()
+					.filter(st -> st.getId().longValue() == susplusTransition.getFromState().getId()).findFirst().get();
+			WorkflowStatus toStatus = susplusReportStatuses.stream()
+					.filter(st -> st.getId().longValue() == susplusTransition.getToState().getId()).findFirst().get();
+			transition.setFromState(reportStatuses.stream()
+					.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().get());
+			transition.setToState(reportStatuses.stream().filter(s -> s.getName().equalsIgnoreCase(toStatus.getName()))
+					.findFirst().get());
+			transition.setNoteRequired(true);
+			transition.setSeqOrder(susplusTransition.getSeqOrder());
+			transition.setWorkflow(reportWorkflow);
+			transition = workflowStatusTransitionService.saveStatusTransition(transition);
+		}
+	}
+
+	private void generateDisbursementWorkflow(Organization org, List<WorkflowStatus> susplusDisbursementStatuses,
+			List<WorkflowStatusTransition> susplusDisbursementTransitions) {
+		Workflow disbursementWorkflow = new Workflow();
+		disbursementWorkflow.setCreatedAt(DateTime.now().toDate());
+		disbursementWorkflow.setCreatedBy("System");
+		disbursementWorkflow.setDescription("Default " + org.getName() + " Disbursement workflow");
+		disbursementWorkflow.setGranter(org);
+		disbursementWorkflow.setName("Default " + org.getName() + " Disbursement workflow");
+		disbursementWorkflow.setObject(WorkflowObject.DISBURSEMENT);
+		disbursementWorkflow = workflowService.saveWorkflow(disbursementWorkflow);
+
+		List<WorkflowStatus> disbursementStatuses = new ArrayList<>();
+		for (WorkflowStatus susplusStatus : susplusDisbursementStatuses) {
+			WorkflowStatus status = new WorkflowStatus();
+			status.setCreatedAt(DateTime.now().toDate());
+			status.setCreatedBy("System");
+			status.setDisplayName(susplusStatus.getDisplayName());
+			status.setInitial(susplusStatus.isInitial());
+			status.setInternalStatus(susplusStatus.getInternalStatus());
+			status.setName(susplusStatus.getName());
+			status.setTerminal(susplusStatus.getTerminal());
+			status.setWorkflow(disbursementWorkflow);
+			status = workflowStatusService.saveWorkflowStatus(status);
+			disbursementStatuses.add(status);
+		}
+
+		for (WorkflowStatusTransition susplusTransition : susplusDisbursementTransitions) {
+
+			WorkflowStatusTransition transition = new WorkflowStatusTransition();
+			transition.setAction(susplusTransition.getAction());
+			transition.setCreatedAt(DateTime.now().toDate());
+			transition.setCreatedBy("System");
+			WorkflowStatus fromStatus = susplusDisbursementStatuses.stream()
+					.filter(st -> st.getId().longValue() == susplusTransition.getFromState().getId()).findFirst().get();
+			WorkflowStatus toStatus = susplusDisbursementStatuses.stream()
+					.filter(st -> st.getId().longValue() == susplusTransition.getToState().getId()).findFirst().get();
+			transition.setFromState(disbursementStatuses.stream()
+					.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().get());
+			transition.setToState(disbursementStatuses.stream()
+					.filter(s -> s.getName().equalsIgnoreCase(toStatus.getName())).findFirst().get());
+			transition.setNoteRequired(true);
+			transition.setSeqOrder(susplusTransition.getSeqOrder());
+			transition.setWorkflow(disbursementWorkflow);
+			transition = workflowStatusTransitionService.saveStatusTransition(transition);
+		}
 	}
 
 }

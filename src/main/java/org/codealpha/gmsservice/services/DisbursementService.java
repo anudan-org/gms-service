@@ -67,13 +67,13 @@ public class DisbursementService {
                 .findByWorkflow(currentWorkflow);
         for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
             if (!statuses.stream()
-                    .filter(s -> Long.valueOf(s.getId()) == Long.valueOf(supportedTransition.getFromState().getId()))
-                    .findAny().isPresent()) {
+                    .filter(s -> s.getId().longValue() == supportedTransition.getFromState().getId().longValue())
+                    .findFirst().isPresent()) {
                 statuses.add(supportedTransition.getFromState());
             }
             if (!statuses.stream()
-                    .filter(s -> Long.valueOf(s.getId()) == Long.valueOf(supportedTransition.getToState().getId()))
-                    .findAny().isPresent()) {
+                    .filter(s -> s.getId().longValue() == supportedTransition.getToState().getId().longValue())
+                    .findFirst().isPresent()) {
                 statuses.add(supportedTransition.getToState());
             }
         }
