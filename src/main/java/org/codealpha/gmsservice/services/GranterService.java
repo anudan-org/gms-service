@@ -71,7 +71,8 @@ public class GranterService {
     granterOrg.setImageName(image.getOriginalFilename());
     granterOrg.setNavbarColor("#232323");
     granterOrg.setNavbarTextColor("#fff");
-    return granterRepository.save(granterOrg);
+    granterOrg = granterRepository.save(granterOrg);
+    return (Organization) granterOrg;
   }
 
   public Granter getGranterById(Long grnaterId) {
