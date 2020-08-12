@@ -736,4 +736,19 @@ public class AdiminstrativeController {
             templateLibraryService.deleteTemplateLibraryDoc(attachment);
         }
     }
+
+    @GetMapping(value = "/user/{userId}/reference-orgs")
+    public List<Organization> getReferenceOrgs(@PathVariable("userId") Long userId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        AppConfig config = appConfigService.getSpecialAppConfigForGranterOrg(
+                userService.getUserById(userId).getOrganization().getId(), AppConfiguration.REFERENCE_ORG);
+
+        List<Organization> orgs = new ArrayList<>();
+        String[] orgCodes = config.getConfigValue().split(",");
+        for (String code : orgCodes) {
+            orgs.add(organizationService.findOrganizationByTenantCode(code));
+        }
+
+        return orgs;
+    }
 }
