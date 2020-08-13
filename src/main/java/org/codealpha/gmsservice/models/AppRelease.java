@@ -2,13 +2,32 @@ package org.codealpha.gmsservice.models;
 
 public class AppRelease {
 
-    private String version;
+    private String releaseCandidate;
+    private String productionRelease;
+    private String hotFixRelease;
 
-    public String getVersion() {
-        return version;
+    public String getReleaseCandidate() {
+        return releaseCandidate;
     }
 
-    public void setVersion(String version) {
-        this.version = version;
+    public void setReleaseCandidate(String releaseCandidate) {
+        this.releaseCandidate = releaseCandidate;
     }
+
+    public String getProductionRelease() {
+        return productionRelease;
+    }
+
+    public void setProductionRelease(String productionRelease) {
+        this.productionRelease = productionRelease;
+    }
+
+    public String getHotFixRelease() {
+        return hotFixRelease;
+    }
+
+    public void setHotFixRelease(String hotFixRelease) {
+        this.hotFixRelease = hotFixRelease;
+    }
+
 }
