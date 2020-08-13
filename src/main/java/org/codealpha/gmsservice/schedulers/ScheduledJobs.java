@@ -640,12 +640,32 @@ public class ScheduledJobs {
     public void readAndStoreReleaseVersion() {
 
         Path path = Paths.get("/opt/gms/release.json");
+        Path hotfixVersionPath = Paths.get("/opt/gms/hotfix-version.json");
         try {
             String entry = Files.readAllLines(path).get(0);
             ObjectMapper mapper = new ObjectMapper();
             AppRelease release = mapper.readValue(entry, AppRelease.class);
             Release version = new Release();
-            version.setVersion(release.getVersion());
+            switch (environment) {
+                case "local":
+                    version.setVersion(release.getReleaseCandidate());
+                    break;
+                case "dev":
+                    version.setVersion(release.getReleaseCandidate());
+                    break;
+                case "qa":
+                    version.setVersion(release.getReleaseCandidate());
+                    break;
+                case "uat":
+                    version.setVersion("UAT R-" + release.getReleaseCandidate());
+                    break;
+                case "prod":
+                    version.setVersion("v" + release.getProductionRelease()
+                            + (!release.getHotFixRelease().equalsIgnoreCase("0") ? " HF-" + release.getHotFixRelease()
+                                    : ""));
+                    break;
+            }
+
             releaseService.deleteAllEntries();
             releaseService.saveRelease(version);
 
