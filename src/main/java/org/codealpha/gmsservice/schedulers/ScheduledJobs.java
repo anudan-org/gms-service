@@ -648,13 +648,13 @@ public class ScheduledJobs {
             Release version = new Release();
             switch (environment) {
                 case "local":
-                    version.setVersion("Dev R-" + release.getReleaseCandidate());
+                    version.setVersion(release.getReleaseCandidate());
                     break;
                 case "dev":
-                    version.setVersion("Dev R-" + release.getReleaseCandidate());
+                    version.setVersion(release.getReleaseCandidate());
                     break;
                 case "qa":
-                    version.setVersion("QA R-" + release.getReleaseCandidate());
+                    version.setVersion(release.getReleaseCandidate());
                     break;
                 case "uat":
                     version.setVersion("UAT R-" + release.getReleaseCandidate());
