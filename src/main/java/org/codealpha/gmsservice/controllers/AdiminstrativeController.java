@@ -307,6 +307,8 @@ public class AdiminstrativeController {
             role.setCreatedBy(user.getEmailId());
         } else {
             role = roleService.getById(newRole.getId());
+            role.setDescription(newRole.getDescription());
+            role.setName(newRole.getName());
             role.setUpdatedAt(DateTime.now().toDate());
             role.setUpdatedBy(userService.getUserById(userId).getEmailId());
         }
