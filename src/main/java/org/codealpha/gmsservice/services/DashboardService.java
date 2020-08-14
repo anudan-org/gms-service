@@ -23,6 +23,8 @@ import org.codealpha.gmsservice.repositories.ReportsCountPerGrantRepository;
 import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
 import org.codealpha.gmsservice.repositories.dashboard.*;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +33,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class DashboardService {
 
+    private Logger logger = LoggerFactory.getLogger(DashboardService.class);
     private User user;
 
     @Autowired
@@ -240,6 +243,8 @@ public class DashboardService {
                 }
             }
         }
+
+        logger.info(">>>>>>>>>GRANT RETRIEVAL END TIME>>>>>>>>>>>>>>>" + DateTime.now().toDate());
         return this;
     }
 
