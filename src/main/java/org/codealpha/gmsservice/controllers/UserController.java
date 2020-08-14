@@ -54,7 +54,6 @@ import org.springframework.web.util.UriComponents;
 @RequestMapping("/users")
 public class UserController {
 
-    private Logger logger = LoggerFactory.getLogger(UserController.class);
     @Autowired
     private OrganizationService organizationService;
     @Autowired
@@ -185,7 +184,6 @@ public class UserController {
                 grants = granteeService.getGrantsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getUserRoles());
                 return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
             case "GRANTER":
-                logger.info(">>>>>>>>>GRANT RETRIEVAL START TIME>>>>>>>>>>>>>>>" + DateTime.now().toDate());
                 grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId());
                 return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
         }

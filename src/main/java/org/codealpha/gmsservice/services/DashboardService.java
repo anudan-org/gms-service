@@ -244,7 +244,6 @@ public class DashboardService {
             }
         }
 
-        logger.info(">>>>>>>>>GRANT RETRIEVAL END TIME>>>>>>>>>>>>>>>" + DateTime.now().toDate());
         return this;
     }
 
