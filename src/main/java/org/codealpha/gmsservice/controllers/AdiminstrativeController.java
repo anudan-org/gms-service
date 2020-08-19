@@ -706,8 +706,7 @@ public class AdiminstrativeController {
         for (Long attachmentId : downloadRequest.getAttachmentIds()) {
             TemplateLibrary attachment = templateLibraryService.getTemplateLibraryDocumentById(attachmentId);
 
-            File file = resourceLoader.getResource("file:" + uploadLocation + attachment.getLocation() + "/"
-                    + attachment.getName() + "." + attachment.getFileType()).getFile();
+            File file = resourceLoader.getResource("file:" + uploadLocation + attachment.getLocation()).getFile();
             // new zip entry and copying inputstream with file to zipOutputStream, after all
             // closing streams
             zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
