@@ -98,3 +98,4 @@ alter table grant_qualitative_kpi_data alter column actuals type text using actu
 -- Some changes
 
 
+-- Hotfix 1
