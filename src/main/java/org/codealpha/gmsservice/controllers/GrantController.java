@@ -1467,11 +1467,12 @@ public class GrantController {
             previousOwner = userService.getUserById(previousAssignments.get(0).getAssignments());
         }
         grant.setGrantStatus(workflowStatusService.findById(toStateId));
-        if (grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("")) {
-            grant.setNote(grantwithNote.getNote());
-            grant.setNoteAdded(new Date());
-            grant.setNoteAddedBy(userService.getUserById(userId).getEmailId());
-        }
+        grant.setNote((grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase(""))
+                ? grantwithNote.getNote()
+                : "No note added");
+        grant.setNoteAdded(new Date());
+        grant.setNoteAddedBy(userService.getUserById(userId).getEmailId());
+
         Date currentDateTime = DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate();
         grant.setUpdatedAt(currentDateTime);
         grant.setUpdatedBy(userService.getUserById(userId).getEmailId());
@@ -1657,7 +1658,7 @@ public class GrantController {
         }
 
         // Save Snapshot
-        _saveSnapShot(grant, currentDateTime,
+        _saveSnapShot(grant, fromStateId, currentDateTime,
                 assignmentForCurrentState.isPresent()
                         ? userService.getUserById(assignmentForCurrentState.get().getAssignments())
                         : null,
@@ -2229,7 +2230,7 @@ public class GrantController {
         }
     }
 
-    private void _saveSnapShot(Grant grant, Date movedOn, User currentUser, User previousUser) {
+    private void _saveSnapShot(Grant grant, Long fromStateId, Date movedOn, User currentUser, User previousUser) {
 
         try {
             GrantSnapshot snapshot = new GrantSnapshot();
@@ -2248,7 +2249,7 @@ public class GrantController {
             snapshot.setName(grant.getName());
             snapshot.setRepresentative(grant.getRepresentative());
             snapshot.setStartDate(grant.getStartDate());
-            snapshot.setGrantStatusId(grant.getGrantStatus().getId());
+            snapshot.setGrantStatusId(fromStateId);
             snapshot.setStringAttributes(new ObjectMapper().writeValueAsString(grant.getGrantDetails()));
             grantSnapshotService.saveGrantSnapshot(snapshot);
         } catch (JsonProcessingException e) {
@@ -2906,8 +2907,7 @@ public class GrantController {
     public GrantSnapshot getGrantHistory(@PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId) {
         Grant grant = grantService.getById(grantId);
 
-        return grantSnapshotService.getSnapshotByGrantIdAndAssignedToIdAndStatusId(grantId, userId,
-                grant.getGrantStatus().getId());
+        return grantSnapshotService.getMostRecentSnapshotByGrantId(grantId);
     }
 
     @GetMapping("/active")

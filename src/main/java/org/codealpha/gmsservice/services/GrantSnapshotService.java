@@ -11,11 +11,16 @@ public class GrantSnapshotService {
     @Autowired
     private GrantSnapshotRepository grantSnapshotRepository;
 
-    public GrantSnapshot getSnapshotByGrantIdAndAssignedToIdAndStatusId(Long grantId, Long assignedToId,Long statusId){
-        return grantSnapshotRepository.findByGrantIdAndAssignedToAndStatusId(grantId,assignedToId,statusId);
+    public GrantSnapshot getSnapshotByGrantIdAndAssignedToIdAndStatusId(Long grantId, Long assignedToId,
+            Long statusId) {
+        return grantSnapshotRepository.findByGrantIdAndAssignedToAndStatusId(grantId, assignedToId, statusId);
     }
 
-    public GrantSnapshot saveGrantSnapshot(GrantSnapshot snapshot){
+    public GrantSnapshot getMostRecentSnapshotByGrantId(Long grantId) {
+        return grantSnapshotRepository.findByMostRecentByGrantId(grantId);
+    }
+
+    public GrantSnapshot saveGrantSnapshot(GrantSnapshot snapshot) {
         return grantSnapshotRepository.save(snapshot);
     }
 }
