@@ -94,4 +94,4 @@ alter table grants
 -- 25 Jul 2019
 alter table grant_qualitative_kpi_data alter column actuals type text using actuals::text;
 
--- Hotfix 1,2, 3, 4
+-- Hotfix 1,2, 3, 4,5
