@@ -1285,10 +1285,8 @@ public class ReportController {
     @GetMapping("{reportId}/changeHistory")
     public ReportSnapshot getReportHistory(@PathVariable("reportId") Long reportId,
             @PathVariable("userId") Long userId) {
-        Report report = reportService.getReportById(reportId);
 
-        return reportSnapshotService.getSnapshotByReportIdAndAssignedToIdAndStatusId(reportId, userId,
-                report.getStatus().getId());
+        return reportSnapshotService.getMostRecentSnapshotByReportId(reportId);
     }
 
     @PostMapping("/{reportId}/flow/{fromState}/{toState}")
@@ -1357,11 +1355,13 @@ public class ReportController {
         User previousOwner = userService.getUserById(currentAssignment.getAssignment());
 
         report.setStatus(workflowStatusService.findById(toStateId));
-        if (reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")) {
-            report.setNote(reportWithNote.getNote());
-            report.setNoteAdded(new Date());
-            report.setNoteAddedBy(userId);
-        }
+
+        report.setNote((reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase(""))
+                ? reportWithNote.getNote()
+                : "No note added");
+        report.setNoteAdded(new Date());
+        report.setNoteAddedBy(userId);
+
         Date currentDateTime = DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate();
         report.setUpdatedAt(currentDateTime);
         report.setUpdatedBy(userId);
@@ -1641,7 +1641,7 @@ public class ReportController {
         }
 
         report = _ReportToReturn(report, userId);
-        _saveSnapShot(report);
+        _saveSnapShot(report, fromStateId);
 
         if (toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
             List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
@@ -1708,7 +1708,7 @@ public class ReportController {
 
     }
 
-    private void _saveSnapShot(Report report) {
+    private void _saveSnapShot(Report report, Long fromStatusId) {
 
         try {
             for (AssignedTo assignment : report.getCurrentAssignment()) {
@@ -1719,7 +1719,7 @@ public class ReportController {
                 snapshot.setReportId(report.getId());
                 snapshot.setName(report.getName());
                 snapshot.setStartDate(report.getStartDate());
-                snapshot.setStatusId(report.getStatus().getId());
+                snapshot.setStatusId(fromStatusId);
                 snapshot.setStringAttributes(new ObjectMapper().writeValueAsString(report.getReportDetails()));
                 reportSnapshotService.saveReportSnapshot(snapshot);
             }

@@ -353,10 +353,8 @@ public class DisbursementsController {
         @GetMapping("/{disbursementId}/changeHistory")
         public DisbursementSnapshot getReportHistory(@PathVariable("disbursementId") Long disbursementId,
                         @PathVariable("userId") Long userId) {
-                Disbursement disbursement = disbursementService.getDisbursementById(disbursementId);
 
-                return disbursementSnapshotService.getSnapshotByDisbursementIdAndStatusId(disbursementId,
-                                disbursement.getStatus().getId());
+                return disbursementSnapshotService.getMostRecentSnapshotByDisbursementId(disbursementId);
         }
 
         @PostMapping("/{disbursementId}/flow/{fromState}/{toState}")
@@ -383,12 +381,14 @@ public class DisbursementsController {
                 User previousOwner = userService.getUserById(currentAssignment.getOwner());
 
                 disbursement.setStatus(workflowStatusService.findById(toStateId));
-                if (disbursementWithNote.getNote() != null
-                                && !disbursementWithNote.getNote().trim().equalsIgnoreCase("")) {
-                        disbursement.setNote(disbursementWithNote.getNote());
-                        disbursement.setNoteAdded(new Date());
-                        disbursement.setNoteAddedBy(userService.getUserById(userId).getId());
-                }
+
+                disbursement.setNote((disbursementWithNote.getNote() != null
+                                && !disbursementWithNote.getNote().trim().equalsIgnoreCase(""))
+                                                ? disbursementWithNote.getNote()
+                                                : "No note added");
+                disbursement.setNoteAdded(new Date());
+                disbursement.setNoteAddedBy(userService.getUserById(userId).getId());
+
                 Date currentDateTime = DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate();
                 disbursement.setUpdatedAt(currentDateTime);
                 disbursement.setUpdatedBy(userService.getUserById(userId).getEmailId());
@@ -533,16 +533,16 @@ public class DisbursementsController {
                 }
 
                 disbursement = disbursementService.disbursementToReturn(disbursement, userId);
-                _saveSnapShot(disbursement);
+                _saveSnapShot(disbursement, fromStateId);
 
                 return disbursement;
 
         }
 
-        private void _saveSnapShot(Disbursement disbursement) {
+        private void _saveSnapShot(Disbursement disbursement, Long fromStateId) {
 
                 DisbursementSnapshot snapshot = new DisbursementSnapshot();
-                snapshot.setStatusId(disbursement.getStatus().getId());
+                snapshot.setStatusId(fromStateId);
                 snapshot.setDisbursementId(disbursement.getId());
                 snapshot.setReason(disbursement.getReason());
                 snapshot.setRequestedAmount(disbursement.getRequestedAmount());
@@ -563,6 +563,7 @@ public class DisbursementsController {
 
                 for (DisbursementHistory dh : history) {
                         dh.setNoteAddedByUser(userService.getUserById(dh.getNoteAddedBy()));
+                        dh.setStatus(workflowStatusService.findById(dh.getStatusId()));
                 }
 
                 return history;

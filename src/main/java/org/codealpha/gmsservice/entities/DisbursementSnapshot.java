@@ -29,7 +29,6 @@ public class DisbursementSnapshot {
   @Column
   private String reason;
 
-
   public Long getId() {
     return id;
   }
@@ -46,40 +45,36 @@ public class DisbursementSnapshot {
     this.assignedToId = assignedToId;
   }
 
-  
+  public Long getStatusId() {
+    return statusId;
+  }
 
-    public Long getStatusId() {
-        return statusId;
-    }
+  public void setStatusId(Long statusId) {
+    this.statusId = statusId;
+  }
 
-    public void setStatusId(Long statusId) {
-        this.statusId = statusId;
-    }
+  public Long getDisbursementId() {
+    return disbursementId;
+  }
 
-    public Long getDisbursementId() {
-      return disbursementId;
-    }
+  public void setDisbursementId(Long disbursementId) {
+    this.disbursementId = disbursementId;
+  }
 
-    public void setDisbursementId(Long disbursementId) {
-      this.disbursementId = disbursementId;
-    }
+  public Double getRequestedAmount() {
+    return requestedAmount;
+  }
 
-    public Double getRequestedAmount() {
-      return requestedAmount;
-    }
+  public void setRequestedAmount(Double requestedAmount) {
+    this.requestedAmount = requestedAmount;
+  }
 
-    public void setRequestedAmount(Double requestedAmount) {
-      this.requestedAmount = requestedAmount;
-    }
+  public String getReason() {
+    return reason;
+  }
 
-    public String getReason() {
-      return reason;
-    }
+  public void setReason(String reason) {
+    this.reason = reason;
+  }
 
-    public void setReason(String reason) {
-      this.reason = reason;
-    }
-
-  
-    
 }
