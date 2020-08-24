@@ -14,11 +14,16 @@ public class ReportSnapshotService {
     @Autowired
     private ReportSnapshotRepository reportSnapshotRepository;
 
-    public ReportSnapshot getSnapshotByReportIdAndAssignedToIdAndStatusId(Long reportId, Long assignedToId, Long statusId){
-        return reportSnapshotRepository.findByReportIdAndAssignedToAndStatusId(reportId,assignedToId,statusId);
+    public ReportSnapshot getSnapshotByReportIdAndAssignedToIdAndStatusId(Long reportId, Long assignedToId,
+            Long statusId) {
+        return reportSnapshotRepository.findByReportIdAndAssignedToAndStatusId(reportId, assignedToId, statusId);
     }
 
-    public ReportSnapshot saveReportSnapshot(ReportSnapshot snapshot){
+    public ReportSnapshot getMostRecentSnapshotByReportId(Long reportId) {
+        return reportSnapshotRepository.findByMostRecentByReportId(reportId);
+    }
+
+    public ReportSnapshot saveReportSnapshot(ReportSnapshot snapshot) {
         return reportSnapshotRepository.save(snapshot);
     }
 }

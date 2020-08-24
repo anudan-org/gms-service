@@ -2670,9 +2670,7 @@ public class GrantController {
         File file = null;
         String filePath = null;
         try {
-            file = resourceLoader
-                    .getResource("file:" + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8"))
-                    .getFile();
+            file = resourceLoader.getResource("file:" + uploadLocation + libraryDoc.getLocation()).getFile();
             filePath = uploadLocation + tenantCode + "/grant-documents/" + grantId + "/"
                     + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId() + "/";
 
