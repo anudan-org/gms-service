@@ -173,6 +173,8 @@ public class Grant {
   private int projectDocumentsCount = 0;
   @Transient
   private Double approvedDisbursementsTotal = 0d;
+  @Transient
+  private int approvedReportsForGrant;
 
   public Long getId() {
     return id;
@@ -492,6 +494,14 @@ public class Grant {
 
   public void setApprovedDisbursementsTotal(Double approvedDisbursementsTotal) {
     this.approvedDisbursementsTotal = approvedDisbursementsTotal;
+  }
+
+  public int getApprovedReportsForGrant() {
+    return approvedReportsForGrant;
+  }
+
+  public void setApprovedReportsForGrant(int approvedReportsForGrant) {
+    this.approvedReportsForGrant = approvedReportsForGrant;
   }
 
 }
