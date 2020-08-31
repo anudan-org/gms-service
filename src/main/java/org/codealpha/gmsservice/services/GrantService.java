@@ -104,6 +104,8 @@ public class GrantService {
     private DisbursementRepository disbursementRepository;
     @Autowired
     private ActualDisbursementRepository actualDisbursementRepository;
+    @Autowired
+    private ReportService reportService;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -747,6 +749,15 @@ public class GrantService {
         approvedActualDisbursements.removeIf(ad -> ad.getActualAmount() == null);
         grant.setApprovedDisbursementsTotal(
                 approvedActualDisbursements.stream().mapToDouble(ActualDisbursement::getActualAmount).sum());
+
+        Optional<WorkflowStatus> reportApprovedStatus = workflowStatusService
+                .getTenantWorkflowStatuses("REPORT", grant.getGrantorOrganization().getId()).stream()
+                .filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
+        List<Report> reports = new ArrayList<>();
+        if (reportApprovedStatus.isPresent()) {
+            reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(), grant);
+            grant.setApprovedReportsForGrant(reports.size());
+        }
         return grant;
     }
 

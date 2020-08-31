@@ -74,6 +74,8 @@ public class DashboardService {
     private GrantAssignmentHistoryRepository assignmentHistoryRepository;
     @Autowired
     private WorkflowStatusRepository workflowStatusRepository;
+    @Autowired
+    private ReportService reportService;
 
     List<Tenant> tenants;
 
@@ -234,8 +236,16 @@ public class DashboardService {
                                 total += ad.getActualAmount();
                             }
                         }
-
                         grant.setApprovedDisbursementsTotal(total);
+                    }
+
+                    Optional<WorkflowStatus> reportApprovedStatus = workflowStatusService
+                            .getTenantWorkflowStatuses("REPORT", tenantOrg.getId()).stream()
+                            .filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
+                    List<Report> reports = new ArrayList<>();
+                    if (reportApprovedStatus.isPresent()) {
+                        reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(), grant);
+                        grant.setApprovedReportsForGrant(reports.size());
                     }
 
                     grantList.add(grant);
