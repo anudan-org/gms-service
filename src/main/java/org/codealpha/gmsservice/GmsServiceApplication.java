@@ -33,12 +33,9 @@ import java.util.concurrent.Executor;
 @EnableSwagger2
 public class GmsServiceApplication {
 
-
     public static void main(String[] args) {
         SpringApplication.run(GmsServiceApplication.class, args);
     }
-
-
 
     @Bean
     public JavaMailSender getJavaMailSender() {
@@ -57,8 +54,6 @@ public class GmsServiceApplication {
 
         return mailSender;
     }
-
-
 
     @Configuration
     @EnableAsync
@@ -88,7 +83,7 @@ public class GmsServiceApplication {
     @Configuration
     public class ThreadPoolTaskSchedulerConfig {
         @Bean
-        public ThreadPoolTaskScheduler threadPoolTaskScheduler(){
+        public ThreadPoolTaskScheduler threadPoolTaskScheduler() {
             ThreadPoolTaskScheduler threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
             threadPoolTaskScheduler.setPoolSize(50);
             threadPoolTaskScheduler.setThreadNamePrefix("ThreadPoolTaskScheduler");
@@ -97,9 +92,9 @@ public class GmsServiceApplication {
     }
 
     @PostConstruct
-    public void init(){
+    public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kolkata"));
-        System.out.println("Running with: "+TimeZone.getDefault().getDisplayName());
+        System.out.println("Running with: " + TimeZone.getDefault().getDisplayName());
     }
 
     @Bean

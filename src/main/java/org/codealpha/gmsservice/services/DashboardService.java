@@ -23,9 +23,11 @@ import org.codealpha.gmsservice.repositories.ReportsCountPerGrantRepository;
 import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
 import org.codealpha.gmsservice.repositories.dashboard.*;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 //Edited comment for testing
@@ -76,6 +78,8 @@ public class DashboardService {
     private WorkflowStatusRepository workflowStatusRepository;
     @Autowired
     private ReportService reportService;
+    @Value("${spring.timezone}")
+    private String timezone;
 
     List<Tenant> tenants;
 
@@ -122,8 +126,9 @@ public class DashboardService {
                         AppConfig submissionWindow = appConfigService.getAppConfigForGranterOrg(
                                 submission.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS);
-                        Date submissionWindowStart = new DateTime(submission.getSubmitBy())
-                                .minusDays(Integer.valueOf(submissionWindow.getConfigValue()) + 1).toDate();
+                        Date submissionWindowStart = new DateTime(submission.getSubmitBy(),
+                                DateTimeZone.forID(timezone))
+                                        .minusDays(Integer.valueOf(submissionWindow.getConfigValue()) + 1).toDate();
 
                         List<WorkFlowPermission> flowPermissions = workflowPermissionService
                                 .getSubmissionFlowPermissions(grant.getGrantorOrganization().getId(),
@@ -360,8 +365,9 @@ public class DashboardService {
         Map<Integer, String> periods = new HashMap<>();
         if (disbursedList != null && disbursedList.size() > 0) {
             for (GranterGrantSummaryDisbursed granterGrantSummaryDisbursed : disbursedList) {
-                DateTime grantDate = new DateTime(granterGrantSummaryDisbursed.getStartDate());
-                DateTime calendarYearStart = new DateTime().withYear(grantDate.getYear())
+                DateTime grantDate = new DateTime(granterGrantSummaryDisbursed.getStartDate(),
+                        DateTimeZone.forID(timezone));
+                DateTime calendarYearStart = new DateTime(DateTimeZone.forID(timezone)).withYear(grantDate.getYear())
                         .withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
                 String period = null;
                 if (grantDate.isAfter(calendarYearStart)) {
@@ -409,10 +415,11 @@ public class DashboardService {
 
             for (ActualDisbursement ad : allActualDisbursements) {
                 SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy");
-                DateTime disbursementDate = new DateTime(ad.getDisbursementDate());
+                DateTime disbursementDate = new DateTime(ad.getDisbursementDate(), DateTimeZone.forID(timezone));
                 Double disbursementAmt = ad.getActualAmount();
-                DateTime calendarYearStart = new DateTime().withYear(disbursementDate.getYear())
-                        .withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
+                DateTime calendarYearStart = new DateTime(DateTimeZone.forID(timezone))
+                        .withYear(disbursementDate.getYear()).withMonthOfYear(Month.MARCH.getValue())
+                        .withDayOfMonth(31);
 
                 int disbursementYear = 0;
                 if (disbursementDate.isAfter(calendarYearStart)) {
@@ -445,10 +452,11 @@ public class DashboardService {
         if (disbursedList != null && disbursedList.size() > 0) {
             for (GranterGrantSummaryDisbursed granterGrantSummaryDisbursed : disbursedList) {
 
-                DateTime committedDate = new DateTime(granterGrantSummaryDisbursed.getStartDate());
+                DateTime committedDate = new DateTime(granterGrantSummaryDisbursed.getStartDate(),
+                        DateTimeZone.forID(timezone));
                 Long disbursementAmt = Long.valueOf(granterGrantSummaryDisbursed.getGrantAmount());
-                DateTime calendarYearStart = new DateTime().withYear(committedDate.getYear())
-                        .withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
+                DateTime calendarYearStart = new DateTime(DateTimeZone.forID(timezone))
+                        .withYear(committedDate.getYear()).withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
 
                 int disbursementYear = 0;
                 if (committedDate.isAfter(calendarYearStart)) {

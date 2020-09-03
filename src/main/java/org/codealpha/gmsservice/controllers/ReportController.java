@@ -18,6 +18,7 @@ import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,6 +101,8 @@ public class ReportController {
     private DisbursementService disbursementService;
     @Autowired
     private ReleaseService releaseService;
+    @Value("${spring.timezone}")
+    private String timezone;
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId,
@@ -121,7 +124,8 @@ public class ReportController {
         } else {
             org = organizationService.findOrganizationByTenantCode(tenantCode);
             Date start = DateTime.now().withTimeAtStartOfDay().toDate();
-            Date end = new DateTime(start).plusDays(30).withTime(23, 59, 59, 999).toDate();
+            Date end = new DateTime(start, DateTimeZone.forID(timezone)).plusDays(30).withTime(23, 59, 59, 999)
+                    .toDate();
             if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING")) {
                 reports = reportService.getUpcomingReportsForGranterUserByDateRange(userId, org.getId(), start, end);
                 for (Report report : reports) {
@@ -215,7 +219,8 @@ public class ReportController {
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
             Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
             Date start = DateTime.now().withTimeAtStartOfDay().toDate();
-            Date end = new DateTime(start).plusDays(30).withTime(23, 59, 59, 999).toDate();
+            Date end = new DateTime(start, DateTimeZone.forID(timezone)).plusDays(30).withTime(23, 59, 59, 999)
+                    .toDate();
             reports = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId, org.getId(), end, grantId);
         }
 
@@ -483,7 +488,8 @@ public class ReportController {
                             if (closedDisbursements != null) {
                                 AtomicInteger index = new AtomicInteger(1);
                                 closedDisbursements.removeIf(
-                                        cd -> new DateTime(cd.getMovedOn()).isAfter(new DateTime(report.getMovedOn())));
+                                        cd -> new DateTime(cd.getMovedOn(), DateTimeZone.forID(timezone)).isAfter(
+                                                new DateTime(report.getMovedOn(), DateTimeZone.forID(timezone))));
                                 if (closedDisbursements != null) {
                                     closedDisbursements.forEach(cd -> {
 
