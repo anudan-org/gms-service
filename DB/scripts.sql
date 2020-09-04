@@ -1,4 +1,5 @@
 -- 2-April-2019
+-- Tested comments log
 create sequence organizations_id_seq;
 
 alter table organizations alter column id set default nextval('public.organizations_id_seq');
