@@ -8,6 +8,7 @@ import org.codealpha.gmsservice.models.AppRelease;
 import org.codealpha.gmsservice.models.ScheduledTaskVO;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.Minutes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,6 +46,8 @@ public class ScheduledJobs {
     private GrantService grantService;
     @Autowired
     private DisbursementService disbursementService;
+    @Value("${spring.timezone}")
+    private String timezone;
 
     private boolean appLevelSettingsProcessed = false;
 
@@ -245,9 +248,11 @@ public class ScheduledJobs {
                                             .toArray(new String[reportAssignments.size()]);
                                 }
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minuetsLapsed = Minutes.minutesBetween(new DateTime(report.getMovedOn()), now)
+                                    int minuetsLapsed = Minutes.minutesBetween(
+                                            new DateTime(report.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes();
-                                    if (Minutes.minutesBetween(new DateTime(report.getMovedOn()), now)
+                                    if (Minutes.minutesBetween(
+                                            new DateTime(report.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes() > afterNoOfHour) {
                                         User user = userService.getUserById(reportAssignment.getAssignment());
                                         String[] messageMetadata = reportService.buildEmailNotificationContent(report,
@@ -304,9 +309,11 @@ public class ScheduledJobs {
                                             .toArray(new String[reportAssignments.size()]);
                                 }
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minuetsLapsed = Minutes.minutesBetween(new DateTime(report.getMovedOn()), now)
+                                    int minuetsLapsed = Minutes.minutesBetween(
+                                            new DateTime(report.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes();
-                                    if (Minutes.minutesBetween(new DateTime(report.getMovedOn()), now)
+                                    if (Minutes.minutesBetween(
+                                            new DateTime(report.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes() > afterNoOfHour) {
                                         User user = userService.getUserById(reportAssignment.getAssignment());
                                         String[] messageMetadata = reportService.buildEmailNotificationContent(report,
@@ -398,9 +405,13 @@ public class ScheduledJobs {
                                             .toArray(new String[grantAssignments.size()]);
                                 }
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minuetsLapsed = Minutes.minutesBetween(new DateTime(grant.getMovedOn()), now)
+                                    int minuetsLapsed = Minutes
+                                            .minutesBetween(
+                                                    new DateTime(grant.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes();
-                                    if (Minutes.minutesBetween(new DateTime(grant.getMovedOn()), now)
+                                    if (Minutes
+                                            .minutesBetween(
+                                                    new DateTime(grant.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes() > afterNoOfHour) {
                                         User user = userService.getUserById(grantAssignment.getAssignments());
                                         String[] messageMetadata = grantService.buildEmailNotificationContent(grant,
@@ -452,9 +463,13 @@ public class ScheduledJobs {
                                             .toArray(new String[grantAssignments.size()]);
                                 }
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minuetsLapsed = Minutes.minutesBetween(new DateTime(grant.getMovedOn()), now)
+                                    int minuetsLapsed = Minutes
+                                            .minutesBetween(
+                                                    new DateTime(grant.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes();
-                                    if (Minutes.minutesBetween(new DateTime(grant.getMovedOn()), now)
+                                    if (Minutes
+                                            .minutesBetween(
+                                                    new DateTime(grant.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes() > afterNoOfHour) {
                                         User user = userService.getUserById(grantAssignment.getAssignments());
                                         String[] messageMetadata = grantService.buildEmailNotificationContent(grant,
@@ -543,9 +558,11 @@ public class ScheduledJobs {
                                             .toArray(new String[disbursementAssignments.size()]);
                                 }
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minuetsLapsed = Minutes
-                                            .minutesBetween(new DateTime(disbursement.getMovedOn()), now).getMinutes();
-                                    if (Minutes.minutesBetween(new DateTime(disbursement.getMovedOn()), now)
+                                    int minuetsLapsed = Minutes.minutesBetween(
+                                            new DateTime(disbursement.getMovedOn(), DateTimeZone.forID(timezone)), now)
+                                            .getMinutes();
+                                    if (Minutes.minutesBetween(
+                                            new DateTime(disbursement.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes() > afterNoOfHour) {
                                         User user = userService.getUserById(disbursementtAssignment.getOwner());
                                         String[] messageMetadata = disbursementService.buildEmailNotificationContent(
@@ -600,9 +617,11 @@ public class ScheduledJobs {
                                             .toArray(new String[disbursementAssignments.size()]);
                                 }
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minuetsLapsed = Minutes
-                                            .minutesBetween(new DateTime(disbursement.getMovedOn()), now).getMinutes();
-                                    if (Minutes.minutesBetween(new DateTime(disbursement.getMovedOn()), now)
+                                    int minuetsLapsed = Minutes.minutesBetween(
+                                            new DateTime(disbursement.getMovedOn(), DateTimeZone.forID(timezone)), now)
+                                            .getMinutes();
+                                    if (Minutes.minutesBetween(
+                                            new DateTime(disbursement.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes() > afterNoOfHour) {
                                         User user = userService.getUserById(disbursementAssignment.getOwner());
                                         String[] messageMetadata = disbursementService.buildEmailNotificationContent(

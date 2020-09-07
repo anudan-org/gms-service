@@ -49,6 +49,7 @@ import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.GrantValidator;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,6 +136,8 @@ public class GrantController {
     private String uploadLocation;
     @Value("${spring.supported-file-types}")
     private String[] supportedFileTypes;
+    @Value("${spring.timezone}")
+    private String timezone;
 
     @Autowired
     private CommonEmailSevice commonEmailSevice;
@@ -1685,7 +1688,7 @@ public class GrantController {
 
         SimpleDateFormat stFormat = new SimpleDateFormat("yyMM");
         SimpleDateFormat enFormat = new SimpleDateFormat("yyMM");
-        Date stDate = new DateTime(grant.getStartDate()).withTimeAtStartOfDay().toDate();
+        Date stDate = new DateTime(grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay().toDate();
         Integer sNo = grantService.getActiveGrantsForTenant(grant.getGrantorOrganization()).size();
 
         System.out.println(
@@ -1718,8 +1721,10 @@ public class GrantController {
                         if (attr.getFieldType().equalsIgnoreCase("KPI")) {
 
                             if (attr.getFrequency().equalsIgnoreCase("YEARLY")) {
-                                DateTime st = new DateTime(grant.getStartDate()).withTimeAtStartOfDay();
-                                DateTime en = new DateTime(grant.getEnDate()).withTime(23, 59, 59, 999);
+                                DateTime st = new DateTime(grant.getStartDate(), DateTimeZone.forID(timezone))
+                                        .withTimeAtStartOfDay();
+                                DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23,
+                                        59, 59, 999);
                                 List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en,
                                         Frequency.YEARLY);
 
@@ -1739,8 +1744,10 @@ public class GrantController {
                             }
 
                             if (attr.getFrequency().equalsIgnoreCase("HALF-YEARLY")) {
-                                DateTime st = new DateTime(grant.getStartDate()).withTimeAtStartOfDay();
-                                DateTime en = new DateTime(grant.getEnDate()).withTime(23, 59, 59, 999);
+                                DateTime st = new DateTime(grant.getStartDate(), DateTimeZone.forID(timezone))
+                                        .withTimeAtStartOfDay();
+                                DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23,
+                                        59, 59, 999);
                                 List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en,
                                         Frequency.HALF_YEARLY);
 
@@ -1764,8 +1771,10 @@ public class GrantController {
 
                             if (attr.getFrequency().equalsIgnoreCase("QUARTERLY")) {
 
-                                DateTime st = new DateTime(grant.getStartDate()).withTimeAtStartOfDay();
-                                DateTime en = new DateTime(grant.getEnDate()).withTime(23, 59, 59, 999);
+                                DateTime st = new DateTime(grant.getStartDate(), DateTimeZone.forID(timezone))
+                                        .withTimeAtStartOfDay();
+                                DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23,
+                                        59, 59, 999);
                                 List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en,
                                         Frequency.QUARTERLY);
                                 reportingFrequencies.forEach(rf -> {
@@ -1791,8 +1800,10 @@ public class GrantController {
                         }
 
                         if (attr.getFrequency().equalsIgnoreCase("MONTHLY")) {
-                            DateTime st = new DateTime(grant.getStartDate()).withTimeAtStartOfDay();
-                            DateTime en = new DateTime(grant.getEnDate()).withTime(23, 59, 59, 999);
+                            DateTime st = new DateTime(grant.getStartDate(), DateTimeZone.forID(timezone))
+                                    .withTimeAtStartOfDay();
+                            DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23, 59,
+                                    59, 999);
                             List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en, Frequency.MONTHLY);
 
                             reportingFrequencies.forEach(rf -> {
@@ -1833,10 +1844,15 @@ public class GrantController {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry.getEnd()).plusDays(
-                    Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue()))
-                    .toDate());
+            report.setDueDate(
+                    new DateTime(entry.getEnd(),
+                            DateTimeZone.forID(timezone))
+                                    .plusDays(
+                                            Integer.valueOf(appConfigService
+                                                    .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                                            AppConfiguration.REPORT_DUE_DATE_INTERVAL)
+                                                    .getConfigValue()))
+                                    .toDate());
             report.setEndDate(entry.getEnd());
             report.setGrant(grant);
             report.setName(val.getPeriodLabel());
@@ -1860,10 +1876,15 @@ public class GrantController {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry.getEnd()).plusDays(
-                    Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue()))
-                    .toDate());
+            report.setDueDate(
+                    new DateTime(entry.getEnd(),
+                            DateTimeZone.forID(timezone))
+                                    .plusDays(
+                                            Integer.valueOf(appConfigService
+                                                    .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                                            AppConfiguration.REPORT_DUE_DATE_INTERVAL)
+                                                    .getConfigValue()))
+                                    .toDate());
             report.setEndDate(entry.getEnd());
             report.setGrant(grant);
             report.setName(val.getPeriodLabel());
@@ -1884,10 +1905,15 @@ public class GrantController {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry.getEnd()).plusDays(
-                    Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue()))
-                    .toDate());
+            report.setDueDate(
+                    new DateTime(entry.getEnd(),
+                            DateTimeZone.forID(timezone))
+                                    .plusDays(
+                                            Integer.valueOf(appConfigService
+                                                    .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                                            AppConfiguration.REPORT_DUE_DATE_INTERVAL)
+                                                    .getConfigValue()))
+                                    .toDate());
             report.setEndDate(entry.getEnd());
             report.setGrant(grant);
             report.setName(val.getPeriodLabel());
@@ -1908,10 +1934,15 @@ public class GrantController {
             Report report = new Report();
             report.setCreatedAt(now);
             report.setCreatedBy(user.getId());
-            report.setDueDate(new DateTime(entry.getEnd()).plusDays(
-                    Integer.valueOf(appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_DUE_DATE_INTERVAL).getConfigValue()))
-                    .toDate());
+            report.setDueDate(
+                    new DateTime(entry.getEnd(),
+                            DateTimeZone.forID(timezone))
+                                    .plusDays(
+                                            Integer.valueOf(appConfigService
+                                                    .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                                            AppConfiguration.REPORT_DUE_DATE_INTERVAL)
+                                                    .getConfigValue()))
+                                    .toDate());
             report.setEndDate(entry.getEnd());
             report.setGrant(grant);
             report.setName(val.getPeriodLabel());

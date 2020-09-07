@@ -12,7 +12,9 @@ import org.codealpha.gmsservice.repositories.WorkflowPermissionRepository;
 import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
 import org.codealpha.gmsservice.repositories.WorkflowStatusTransitionRepository;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
@@ -54,6 +56,8 @@ public class DisbursementService {
     private WorkflowStatusRepository workflowStatusRepository;
     @Autowired
     private DisbursementAssignmentHistoryRepository assignmentHistoryRepository;
+    @Value("${spring.timezone}")
+    private String timezone;
 
     public Disbursement saveDisbursement(Disbursement disbursement) {
         return disbursementRepository.save(disbursement);
@@ -167,8 +171,8 @@ public class DisbursementService {
         List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
         if (approvedDisbursements != null) {
             approvedDisbursements.removeIf(d -> d.getId().longValue() == disbursement.getId().longValue());
-            approvedDisbursements
-                    .removeIf(d -> new DateTime(d.getMovedOn()).isAfter(new DateTime(disbursement.getMovedOn())));
+            approvedDisbursements.removeIf(d -> new DateTime(d.getMovedOn(), DateTimeZone.forID(timezone))
+                    .isAfter(new DateTime(disbursement.getMovedOn(), DateTimeZone.forID(timezone))));
             for (Disbursement approved : approvedDisbursements) {
                 List<ActualDisbursement> approvedActuals = getActualDisbursementsForDisbursement(approved);
                 approvedActualDisbursements.addAll(approvedActuals);
