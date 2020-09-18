@@ -21,7 +21,6 @@ import java.util.List;
 @Table(name = "grantHistory")
 public class GrantHistory {
 
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @OrderBy("id ASC")
@@ -51,10 +50,10 @@ public class GrantHistory {
   @JsonProperty("docAttribute")
   private List<GrantDocumentAttributes> documentAttributes;
 
-  @Column(name = "name",columnDefinition = "text")
+  @Column(name = "name", columnDefinition = "text")
   private String name;
 
-  @Column(name = "description",columnDefinition = "text")
+  @Column(name = "description", columnDefinition = "text")
   private String description;
 
   @Column
@@ -133,6 +132,12 @@ public class GrantHistory {
   private List<AssignedTo> currentAssignment;
   @Transient
   private List<GrantAssignmentsVO> workflowAssignment;
+  @Column
+  private Long origGrantId;
+  @Column
+  private Long amendGrantId;
+  @Column
+  private boolean amended;
 
   public Long getId() {
     return id;
@@ -165,7 +170,6 @@ public class GrantHistory {
   public void setDescription(String description) {
     this.description = description;
   }
-
 
   public Organization getGrantorOrganization() {
     return grantorOrganization;
@@ -227,8 +231,7 @@ public class GrantHistory {
     return stringAttributes;
   }
 
-  public void setStringAttributes(
-      List<GrantStringAttribute> stringAttributes) {
+  public void setStringAttributes(List<GrantStringAttribute> stringAttributes) {
     this.stringAttributes = stringAttributes;
   }
 
@@ -236,8 +239,7 @@ public class GrantHistory {
     return documentAttributes;
   }
 
-  public void setDocumentAttributes(
-      List<GrantDocumentAttributes> documentAttributes) {
+  public void setDocumentAttributes(List<GrantDocumentAttributes> documentAttributes) {
     this.documentAttributes = documentAttributes;
   }
 
@@ -253,8 +255,7 @@ public class GrantHistory {
     return actionAuthorities;
   }
 
-  public void setActionAuthorities(
-      WorkflowActionPermission actionAuthorities) {
+  public void setActionAuthorities(WorkflowActionPermission actionAuthorities) {
     this.actionAuthorities = actionAuthorities;
   }
 
@@ -262,8 +263,7 @@ public class GrantHistory {
     return flowAuthorities;
   }
 
-  public void setFlowAuthorities(
-      List<WorkFlowPermission> flowAuthorities) {
+  public void setFlowAuthorities(List<WorkFlowPermission> flowAuthorities) {
     this.flowAuthorities = flowAuthorities;
   }
 
@@ -276,7 +276,7 @@ public class GrantHistory {
   }
 
   public String getStDate() {
-    if(startDate==null){
+    if (startDate == null) {
       return "";
     }
 
@@ -289,7 +289,7 @@ public class GrantHistory {
 
   public String getEnDate() {
 
-  if(endDate==null){
+    if (endDate == null) {
       return "";
     }
     return new SimpleDateFormat("yyyy-MM-dd").format(endDate);
@@ -299,19 +299,19 @@ public class GrantHistory {
     this.enDate = enDate;
   }
 
-  public void setAmount(Double amount){
+  public void setAmount(Double amount) {
     this.amount = amount;
   }
 
-  public Double getAmount(){
+  public Double getAmount() {
     return this.amount;
   }
 
-  public void setRepresentative(String rep){
+  public void setRepresentative(String rep) {
     this.representative = rep;
   }
 
-  public String getRepresentative(){
+  public String getRepresentative() {
     return this.representative;
   }
 
@@ -323,45 +323,45 @@ public class GrantHistory {
     this.templateId = templateId;
   }
 
-    public GranterGrantTemplate getGrantTemplate() {
-        return grantTemplate;
-    }
+  public GranterGrantTemplate getGrantTemplate() {
+    return grantTemplate;
+  }
 
-    public void setGrantTemplate(GranterGrantTemplate grantTemplate) {
-        this.grantTemplate = grantTemplate;
-    }
+  public void setGrantTemplate(GranterGrantTemplate grantTemplate) {
+    this.grantTemplate = grantTemplate;
+  }
 
-    public Date getCreatedAt() {
-        return createdAt;
-    }
+  public Date getCreatedAt() {
+    return createdAt;
+  }
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
+  public void setCreatedAt(Date createdAt) {
+    this.createdAt = createdAt;
+  }
 
-    public String getCreatedBy() {
-        return createdBy;
-    }
+  public String getCreatedBy() {
+    return createdBy;
+  }
 
-    public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
-    }
+  public void setCreatedBy(String createdBy) {
+    this.createdBy = createdBy;
+  }
 
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
+  public Date getUpdatedAt() {
+    return updatedAt;
+  }
 
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+  public void setUpdatedAt(Date updatedAt) {
+    this.updatedAt = updatedAt;
+  }
 
-    public String getUpdatedBy() {
-        return updatedBy;
-    }
+  public String getUpdatedBy() {
+    return updatedBy;
+  }
 
-    public void setUpdatedBy(String updatedBy) {
-        this.updatedBy = updatedBy;
-    }
+  public void setUpdatedBy(String updatedBy) {
+    this.updatedBy = updatedBy;
+  }
 
   public List<AssignedTo> getCurrentAssignment() {
     return currentAssignment;
@@ -404,7 +404,6 @@ public class GrantHistory {
     this.noteAddedBy = noteAddedBy;
   }
 
-
   public User getNoteAddedByUser() {
     return noteAddedByUser;
   }
@@ -420,4 +419,29 @@ public class GrantHistory {
   public void setMovedOn(Date movedOn) {
     this.movedOn = movedOn;
   }
+
+  public Long getOrigGrantId() {
+    return origGrantId;
+  }
+
+  public void setOrigGrantId(Long origGrantId) {
+    this.origGrantId = origGrantId;
+  }
+
+  public Long getAmendGrantId() {
+    return amendGrantId;
+  }
+
+  public void setAmendGrantId(Long amendGrantId) {
+    this.amendGrantId = amendGrantId;
+  }
+
+  public boolean isAmended() {
+    return amended;
+  }
+
+  public void setAmended(boolean amended) {
+    this.amended = amended;
+  }
+
 }

@@ -30,10 +30,10 @@ public class GrantSnapshot {
   @Column(columnDefinition = "text")
   private String stringAttributes;
 
-  @Column(name = "name",columnDefinition = "text")
+  @Column(name = "name", columnDefinition = "text")
   private String name;
 
-  @Column(name = "description",columnDefinition = "text")
+  @Column(name = "description", columnDefinition = "text")
   private String description;
 
   @Column
@@ -53,6 +53,13 @@ public class GrantSnapshot {
 
   @Column
   private Date movedOn;
+
+  @Column
+  private Long origGrantId;
+  @Column
+  private Long amendGrantId;
+  @Column
+  private boolean amended;
 
   public Long getId() {
     return id;
@@ -118,15 +125,15 @@ public class GrantSnapshot {
     this.amount = amount;
   }
 
-    public Long getGrantStatusId() {
-        return grantStatusId;
-    }
+  public Long getGrantStatusId() {
+    return grantStatusId;
+  }
 
-    public void setGrantStatusId(Long grantStatusId) {
-        this.grantStatusId = grantStatusId;
-    }
+  public void setGrantStatusId(Long grantStatusId) {
+    this.grantStatusId = grantStatusId;
+  }
 
-    public Date getStartDate() {
+  public Date getStartDate() {
     return startDate;
   }
 
@@ -165,4 +172,29 @@ public class GrantSnapshot {
   public void setAssignedBy(Long assignedBy) {
     this.assignedBy = assignedBy;
   }
+
+  public Long getOrigGrantId() {
+    return origGrantId;
+  }
+
+  public void setOrigGrantId(Long origGrantId) {
+    this.origGrantId = origGrantId;
+  }
+
+  public Long getAmendGrantId() {
+    return amendGrantId;
+  }
+
+  public void setAmendGrantId(Long amendGrantId) {
+    this.amendGrantId = amendGrantId;
+  }
+
+  public boolean isAmended() {
+    return amended;
+  }
+
+  public void setAmended(boolean amended) {
+    this.amended = amended;
+  }
+
 }

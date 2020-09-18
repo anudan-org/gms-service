@@ -253,6 +253,12 @@ public class DashboardService {
                         grant.setApprovedReportsForGrant(reports.size());
                     }
 
+                    if (grant.getOrigGrantId() != null
+                            && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE")
+                            && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
+                        grant.setOrigGrantRefNo(grantService.getById(grant.getOrigGrantId()).getReferenceNo());
+                    }
+
                     grantList.add(grant);
                     tenant.setGrants(grantList);
                 }

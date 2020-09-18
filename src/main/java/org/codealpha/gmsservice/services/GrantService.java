@@ -758,6 +758,11 @@ public class GrantService {
             reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(), grant);
             grant.setApprovedReportsForGrant(reports.size());
         }
+
+        if (grant.getOrigGrantId() != null && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE")
+                && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
+            grant.setOrigGrantRefNo(getById(grant.getOrigGrantId()).getReferenceNo());
+        }
         return grant;
     }
 

@@ -277,6 +277,32 @@ public class GrantController {
         return grant;
     }
 
+    private Grant copyGrantBasicDetails(Long templateId, Long userId, String tenantCode, Grant grant,
+            Grant originalGrant) {
+        grant.setName(originalGrant.getName());
+        grant.setStartDate(originalGrant.getStartDate());
+        grant.setStDate(originalGrant.getStDate());
+        grant.setAmount(originalGrant.getAmount());
+        grant.setDescription(originalGrant.getDescription());
+        grant.setGrantStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT",
+                organizationService.findOrganizationByTenantCode(tenantCode).getId()));
+        grant.setStatusName(GrantStatus.DRAFT);
+        grant.setEndDate(originalGrant.getEndDate());
+        grant.setEnDate(originalGrant.getEnDate());
+        grant.setOrganization((Grantee) originalGrant.getOrganization());
+        grant.setCreatedAt(new Date());
+        grant.setCreatedBy(userService.getUserById(userId).getEmailId());
+        grant.setGrantorOrganization((Granter) originalGrant.getGrantorOrganization());
+        grant.setRepresentative(originalGrant.getRepresentative());
+        grant.setTemplateId(templateId);
+        grant.setDeleted(false);
+        grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(templateId));
+        grant.setOrigGrantId(originalGrant.getId());
+
+        grant = grantService.saveGrant(grant);
+        return grant;
+    }
+
     @GetMapping("/{grantId}/copy")
     @ApiOperation("Create copy of an existing grant")
     public Grant copyGrant(
@@ -417,6 +443,120 @@ public class GrantController {
 
     }
 
+    @GetMapping("/{grantId}/amend")
+    @ApiOperation("Create amendment of an existing grant")
+    public Grant amendGrant(
+            @ApiParam(name = "grantId", value = "Unique identifier for the selected grant") @PathVariable("grantId") Long grantId,
+            @PathVariable("userId") Long userId,
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+
+        Grant existingGrant = grantService.getById(grantId);
+        Grant grant = new Grant();
+
+        grant = copyGrantBasicDetails(existingGrant.getTemplateId(), userId, tenantCode, grant, existingGrant);
+
+        Organization granterOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        createInitialAssignmentsPlaceholders(userId, grant, granterOrg);
+
+        for (GrantSpecificSection sec : grantService.getGrantSections(existingGrant)) {
+            GrantSpecificSection section = new GrantSpecificSection();
+            section.setSectionOrder(sec.getSectionOrder());
+            section.setGrantTemplateId(existingGrant.getTemplateId());
+            section.setGrantId(grant.getId());
+            section.setDeletable(sec.getDeletable());
+            section.setSectionName(sec.getSectionName());
+            section.setGranter(sec.getGranter());
+
+            section = grantService.saveSection(section);
+
+            List<GrantSpecificSectionAttribute> attrs = grantService.getAttributesBySection(sec);
+            if (attrs != null) {
+                for (GrantSpecificSectionAttribute attr : attrs) {
+                    GrantSpecificSectionAttribute attribute = new GrantSpecificSectionAttribute();
+                    attribute.setAttributeOrder(attr.getAttributeOrder());
+                    attribute.setExtras(attr.getExtras());
+                    attribute.setFieldType(attr.getFieldType());
+                    attribute.setFieldName(attr.getFieldName());
+                    attribute.setGranter((Granter) attr.getGranter());
+                    attribute.setDeletable(attr.getDeletable());
+                    attribute.setRequired(attr.getRequired());
+                    attribute.setSection(section);
+                    attribute = grantService.saveSectionAttribute(attribute);
+
+                    List<GrantStringAttribute> stringAttrs = grantService.getStringAttributesByAttribute(attr);
+                    if (stringAttrs != null) {
+                        for (GrantStringAttribute stringAttr : stringAttrs) {
+                            GrantStringAttribute stringAttrubute = new GrantStringAttribute();
+                            stringAttrubute.setTarget(stringAttr.getTarget());
+                            // stringAttrubute.setValue(stringAttr.getValue());
+                            stringAttrubute.setFrequency(stringAttr.getFrequency());
+                            stringAttrubute.setSection(section);
+                            stringAttrubute.setGrant(grant);
+                            stringAttrubute.setSectionAttribute(attribute);
+                            stringAttrubute = grantService.saveStringAttribute(stringAttrubute);
+
+                            List<GrantStringAttributeAttachments> attmnts = stringAttr.getAttachments();
+                            List<GrantStringAttributeAttachments> allAttachments = new ArrayList<>();
+
+                            if (attmnts != null) {
+                                for (GrantStringAttributeAttachments attmnt : attmnts) {
+                                    GrantStringAttributeAttachments attachment = new GrantStringAttributeAttachments();
+                                    attachment.setName(attmnt.getName());
+                                    attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
+                                    attachment.setCreatedOn(DateTime.now().toDate());
+                                    attachment.setDescription(attmnt.getDescription());
+                                    attachment.setGrantStringAttribute(stringAttrubute);
+                                    String filePath = uploadLocation + tenantCode + "/grant-documents/" + grant.getId()
+                                            + "/" + stringAttrubute.getSection().getId() + "/"
+                                            + stringAttrubute.getSectionAttribute().getId() + "/";
+                                    attachment.setLocation(filePath);
+                                    attachment.setTitle(attmnt.getTitle());
+                                    attachment.setType(attmnt.getType());
+                                    attachment.setVersion(attmnt.getVersion());
+                                    attachment = grantService.saveGrantStringAttributeAttachment(attachment);
+                                    allAttachments.add(attachment);
+
+                                    try {
+                                        File fileExisting = resourceLoader.getResource("file:" + attmnt.getLocation()
+                                                + attachment.getName() + "." + attachment.getType()).getFile();
+                                        File dir = new File(filePath);
+                                        dir.mkdirs();
+                                        File fileToCreate = new File(dir,
+                                                attachment.getName() + "." + attachment.getType());
+                                        FileCopyUtils.copy(fileExisting, fileToCreate);
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+
+                                }
+                            }
+
+                            try {
+                                if (stringAttrubute.getSectionAttribute().getFieldType().equalsIgnoreCase("document")) {
+                                    stringAttrubute.setValue(new ObjectMapper().writeValueAsString(allAttachments));
+                                } else {
+                                    stringAttrubute.setValue(stringAttr.getValue());
+                                }
+                                stringAttrubute = grantService.saveStringAttribute(stringAttrubute);
+
+                            } catch (JsonProcessingException e) {
+                                logger.error(e.getMessage(), e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        existingGrant.setAmendGrantId(grant.getId());
+        existingGrant.setAmended(true);
+        grantService.saveGrant(existingGrant);
+
+        grant = grantService._grantToReturn(userId, grant);
+        return grant;
+
+    }
+
     @DeleteMapping("/{grantId}")
     @ApiOperation("Delete grant")
     public void deleteGrant(
@@ -432,6 +572,12 @@ public class GrantController {
             }
             grantService.deleteSectionAttributes(attribs);
             grantService.deleteSection(section);
+        }
+        if (grant.getOrigGrantId() != null) {
+            Grant origGrant = grantService.getById(grant.getOrigGrantId());
+            origGrant.setAmendGrantId(null);
+            origGrant.setAmended(false);
+            grantService.saveGrant(origGrant);
         }
         grantService.deleteGrant(grant);
 
@@ -1416,8 +1562,10 @@ public class GrantController {
             @ApiParam(name = "toStateId", value = "Unique identifier of the ending state of the grant in the workflow") @PathVariable("toState") Long toStateId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        grantValidator.validate(grantService, grantId, grantwithNote.getGrant(), userId, tenantCode);
-        grantValidator.validateFlow(grantService, grantwithNote.getGrant(), grantId, userId, fromStateId, toStateId);
+        // grantValidator.validate(grantService, grantId, grantwithNote.getGrant(),
+        // userId, tenantCode);
+        // grantValidator.validateFlow(grantService, grantwithNote.getGrant(), grantId,
+        // userId, fromStateId, toStateId);
         for (SectionVO section : grantwithNote.getGrant().getGrantDetails().getSections()) {
             if (section.getAttributes() != null) {
                 for (SectionAttributesVO attribute : section.getAttributes()) {
@@ -1667,11 +1815,38 @@ public class GrantController {
                         : null,
                 previousOwner);
         if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
+
             if (Boolean.valueOf(appConfigService
                     .getAppConfigForGranterOrg(organizationService.findOrganizationByTenantCode(tenantCode).getId(),
                             AppConfiguration.GENERATE_GRANT_REFERENCE)
                     .getConfigValue())) {
                 grant = _generateGrantReferenceNo(grant, toStatus);
+                if (grant.getOrigGrantId() != null) {
+                    Grant origGrant = grantService.getById(grant.getOrigGrantId());
+
+                    grant.setAmendmentNo(origGrant.getAmendmentNo() + 1);
+                    grant = grantService.saveGrant(grant);
+
+                    WorkflowStatus statusClosed = workflowStatusService
+                            .getTenantWorkflowStatuses("GRANT", grant.getGrantorOrganization().getId()).stream()
+                            .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get();
+                    WorkflowStatus statusActive = workflowStatusService
+                            .getTenantWorkflowStatuses("GRANT", grant.getGrantorOrganization().getId()).stream()
+                            .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE")).findFirst().get();
+
+                    Long activeStateOwnerId = grantService.getGrantWorkflowAssignments(origGrant).stream()
+                            .filter(wa -> wa.getStateId().longValue() == statusActive.getId().longValue()).findFirst()
+                            .get().getAssignments();
+                    origGrant = grantService._grantToReturn(activeStateOwnerId, origGrant);
+
+                    GrantWithNote gn = new GrantWithNote();
+                    gn.setGrant(origGrant);
+                    gn.setNote(
+                            "Closed because of an amendment. Amended grant reference no. is " + grant.getReferenceNo());
+                    MoveGrantState(gn, activeStateOwnerId, origGrant.getId(), origGrant.getGrantStatus().getId(),
+                            statusClosed.getId(), tenantCode);
+                }
+
             }
 
             _createReportingPeriods(grant, user, tenantCode);
@@ -1697,6 +1872,9 @@ public class GrantController {
                 : (grant.getAmount() > 9999999L && grant.getAmount() <= 9999999999L) ? "C" : "L";
         String referenceCode = grant.getOrganization().getName().replaceAll(" ", "").substring(0, 4).toUpperCase() + "-"
                 + stFormat.format(grant.getStartDate()) + "-" + enFormat.format(grant.getEndDate()) + "-" + (sNo);
+        if (grant.getOrigGrantId() != null) {
+            referenceCode = "A" + grant.getAmendmentNo() + "-" + referenceCode;
+        }
         grant.setReferenceNo(referenceCode);
         return grantService.saveGrant(grant);
 
