@@ -1820,7 +1820,7 @@ public class GrantController {
                     .getAppConfigForGranterOrg(organizationService.findOrganizationByTenantCode(tenantCode).getId(),
                             AppConfiguration.GENERATE_GRANT_REFERENCE)
                     .getConfigValue())) {
-                grant = _generateGrantReferenceNo(grant, toStatus);
+
                 if (grant.getOrigGrantId() != null) {
                     Grant origGrant = grantService.getById(grant.getOrigGrantId());
 
@@ -1846,6 +1846,8 @@ public class GrantController {
                     MoveGrantState(gn, activeStateOwnerId, origGrant.getId(), origGrant.getGrantStatus().getId(),
                             statusClosed.getId(), tenantCode);
                 }
+
+                grant = _generateGrantReferenceNo(grant, toStatus);
 
             }
 
