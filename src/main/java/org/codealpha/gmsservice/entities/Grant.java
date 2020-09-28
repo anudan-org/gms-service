@@ -185,6 +185,8 @@ public class Grant {
   private boolean amended;
   @Column
   private int amendmentNo = 0;
+  @Transient
+  private Date minEndEndate;
 
   public Long getId() {
     return id;
@@ -552,6 +554,14 @@ public class Grant {
 
   public void setAmendmentNo(int amendmentNo) {
     this.amendmentNo = amendmentNo;
+  }
+
+  public Date getMinEndEndate() {
+    return minEndEndate;
+  }
+
+  public void setMinEndEndate(Date minEndEndate) {
+    this.minEndEndate = minEndEndate;
   }
 
 }

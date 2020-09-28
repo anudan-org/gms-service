@@ -68,6 +68,7 @@ public class GrantVO {
   private boolean amended;
   private String origGrantRefNo;
   private int amendmentNo;
+  private Date minEndEndate;
 
   private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
@@ -484,6 +485,14 @@ public class GrantVO {
 
   public void setAmendmentNo(int amendmentNo) {
     this.amendmentNo = amendmentNo;
+  }
+
+  public Date getMinEndEndate() {
+    return minEndEndate;
+  }
+
+  public void setMinEndEndate(Date minEndEndate) {
+    this.minEndEndate = minEndEndate;
   }
 
 }

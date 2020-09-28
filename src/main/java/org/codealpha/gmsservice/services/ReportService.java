@@ -784,8 +784,22 @@ public class ReportService {
     }
 
     public void deleteReport(Report report) {
+        for (ReportSpecificSection section : getReportSections(report)) {
+            List<ReportSpecificSectionAttribute> attribs = getSpecificSectionAttributesBySection(section);
+            for (ReportSpecificSectionAttribute attribute : attribs) {
+                List<ReportStringAttribute> strAttribs = getReportStringAttributesByAttribute(attribute);
+                deleteStringAttributes(strAttribs);
+            }
+            deleteSectionAttributes(attribs);
+            deleteSection(section);
+        }
 
         reportRepository.delete(report);
+
+        GranterReportTemplate template = granterReportTemplateRepository.findById(report.getTemplate().getId()).get();
+        if (!template.isPublished()) {
+            deleteReportTemplate(template);
+        }
     }
 
     public List<Report> getUpcomingFutureReportsForGranterUserByDate(Long userId, Long id, Date end) {

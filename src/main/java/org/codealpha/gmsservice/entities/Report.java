@@ -16,33 +16,52 @@ import java.util.List;
 @Entity(name = "reports")
 public class Report {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(columnDefinition = "text") private String name;
-    @Column private Date startDate;
-    @Transient private String stDate;
-    @Column private Date endDate;
-    @Transient private String enDate;
-    @Column private Date dueDate;
-    @Transient private String dDate;
-    @OneToOne @JoinColumn(referencedColumnName = "id") private WorkflowStatus status;
-    @Column private Date createdAt;
-    @Column private Long createdBy;
-    @Column private Date updatedAt;
-    @Column private Long updatedBy;
-    @Column private String type;
-    @OneToOne @JoinColumn(referencedColumnName = "id") private GranterReportTemplate template;
-    @Transient ReportDetailVO reportDetails;
-    @Transient private List<ReportAssignmentsVO> workflowAssignments;
-    @OneToMany(mappedBy = "report",fetch = FetchType.EAGER)
+    @Column(columnDefinition = "text")
+    private String name;
+    @Column
+    private Date startDate;
+    @Transient
+    private String stDate;
+    @Column
+    private Date endDate;
+    @Transient
+    private String enDate;
+    @Column
+    private Date dueDate;
+    @Transient
+    private String dDate;
+    @OneToOne
+    @JoinColumn(referencedColumnName = "id")
+    private WorkflowStatus status;
+    @Column
+    private Date createdAt;
+    @Column
+    private Long createdBy;
+    @Column
+    private Date updatedAt;
+    @Column
+    private Long updatedBy;
+    @Column
+    private String type;
+    @OneToOne
+    @JoinColumn(referencedColumnName = "id")
+    private GranterReportTemplate template;
+    @Transient
+    ReportDetailVO reportDetails;
+    @Transient
+    private List<ReportAssignmentsVO> workflowAssignments;
+    @OneToMany(mappedBy = "report", fetch = FetchType.EAGER)
     @JsonProperty("stringAttribute")
-    @ApiModelProperty(name = "stringAttributes",value = "Report template structure with values",dataType = "List<ReportStringAttributes>")
+    @ApiModelProperty(name = "stringAttributes", value = "Report template structure with values", dataType = "List<ReportStringAttributes>")
     private List<ReportStringAttribute> stringAttributes;
     @ManyToOne
     @JoinColumn(referencedColumnName = "id")
     private Grant grant;
     @Transient
-    @ApiModelProperty(name = "securityCode",value = "Secure code for report")
+    @ApiModelProperty(name = "securityCode", value = "Secure code for report")
     private String securityCode;
     @Transient
     private List<User> granteeUsers;
@@ -50,24 +69,24 @@ public class Report {
     private String linkedApprovedReports;
 
     @Column(columnDefinition = "text")
-    @ApiModelProperty(name = "note",value = "Current note associated with the grant",dataType = "String")
+    @ApiModelProperty(name = "note", value = "Current note associated with the grant", dataType = "String")
     private String note;
 
     @Column
-    @ApiModelProperty(name = "noteAdded",value = "Date when current note was associated with the grant",dataType = "Date")
+    @ApiModelProperty(name = "noteAdded", value = "Date when current note was associated with the grant", dataType = "Date")
     private Date noteAdded;
 
     @Column
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @ApiModelProperty(name = "noteAddedBy",value = "Email id of the user who added the current note",dataType = "String")
+    @ApiModelProperty(name = "noteAddedBy", value = "Email id of the user who added the current note", dataType = "String")
     private Long noteAddedBy;
 
     @Transient
-    @ApiModelProperty(name = "noteAddedByUser",value = "User who added the current note",dataType = "User")
+    @ApiModelProperty(name = "noteAddedByUser", value = "User who added the current note", dataType = "User")
     private User noteAddedByUser;
 
     @Transient
-    @ApiModelProperty(name = "currentAssignment",value = "Current owner of grant based on grant status",dataType = "List<AssignedTo>")
+    @ApiModelProperty(name = "currentAssignment", value = "Current owner of grant based on grant status", dataType = "List<AssignedTo>")
     private List<AssignedTo> currentAssignment;
     @Transient
     private boolean canManage;
@@ -79,6 +98,8 @@ public class Report {
     private int futureReportsCount = 0;
     @Column
     private Date movedOn;
+    @Column
+    private boolean disabledByAmendment;
 
     @Column
     @JsonIgnore
@@ -260,7 +281,6 @@ public class Report {
         this.currentAssignment = currentAssignment;
     }
 
-
     public void setCanManage(boolean canManage) {
         this.canManage = canManage;
     }
@@ -270,7 +290,7 @@ public class Report {
     }
 
     public String getStDate() {
-        if(startDate==null){
+        if (startDate == null) {
             return "";
         }
         return new SimpleDateFormat("yyyy-MM-dd").format(startDate);
@@ -281,7 +301,7 @@ public class Report {
     }
 
     public String getEnDate() {
-        if(endDate==null){
+        if (endDate == null) {
             return "";
         }
         return new SimpleDateFormat("yyyy-MM-dd").format(endDate);
@@ -292,7 +312,7 @@ public class Report {
     }
 
     public String getdDate() {
-        if(dueDate==null){
+        if (dueDate == null) {
             return "";
         }
         return new SimpleDateFormat("yyyy-MM-dd").format(dueDate);
@@ -357,4 +377,13 @@ public class Report {
     public void setReportDetail(String reportDetail) {
         this.reportDetail = reportDetail;
     }
+
+    public boolean isDisabledByAmendment() {
+        return disabledByAmendment;
+    }
+
+    public void setDisabledByAmendment(boolean disabledByAmendment) {
+        this.disabledByAmendment = disabledByAmendment;
+    }
+
 }

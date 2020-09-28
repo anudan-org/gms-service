@@ -759,9 +759,25 @@ public class GrantService {
             grant.setApprovedReportsForGrant(reports.size());
         }
 
+        // Set old grant ref no if current amendment grant is still in porogress
         if (grant.getOrigGrantId() != null && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE")
                 && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
             grant.setOrigGrantRefNo(getById(grant.getOrigGrantId()).getReferenceNo());
+        }
+
+        // Set Minimum End Date for Amendment grant
+        if (grant.getOrigGrantId() != null) {
+            List<Report> existingReports = reportService.getReportsForGrant(getById(grant.getOrigGrantId()));
+            if (existingReports != null && existingReports.size() > 0) {
+                existingReports.removeIf(r -> !r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+                if (existingReports != null && existingReports.size() > 0) {
+
+                    Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());
+                    existingReports.sort(endDateComparator);
+                    Report lastReport = existingReports.get(existingReports.size() - 1);
+                    grant.setMinEndEndate(lastReport.getEndDate());
+                }
+            }
         }
         return grant;
     }

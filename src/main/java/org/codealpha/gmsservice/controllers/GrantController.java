@@ -553,6 +553,7 @@ public class GrantController {
         grantService.saveGrant(existingGrant);
 
         grant = grantService._grantToReturn(userId, grant);
+
         return grant;
 
     }
@@ -1160,6 +1161,26 @@ public class GrantController {
         }
 
         grant.setSecurityCode(grantService.buildHashCode(grant));
+
+        if (grant.getOrigGrantId() != null && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE")
+                && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
+            grant.setOrigGrantRefNo(grantService.getById(grant.getOrigGrantId()).getReferenceNo());
+        }
+
+        if (grant.getOrigGrantId() != null) {
+            List<Report> existingReports = reportService
+                    .getReportsForGrant(grantService.getById(grant.getOrigGrantId()));
+            if (existingReports != null && existingReports.size() > 0) {
+                existingReports.removeIf(r -> !r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+                if (existingReports != null && existingReports.size() > 0) {
+
+                    Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());
+                    existingReports.sort(endDateComparator);
+                    Report lastReport = existingReports.get(existingReports.size() - 1);
+                    grant.setMinEndEndate(lastReport.getEndDate());
+                }
+            }
+        }
         return grant;
     }
 
@@ -1365,193 +1386,11 @@ public class GrantController {
                     grant.getStringAttributes().add(grantStringAttribute);
                 }
             }
-            grant = grantService.saveGrant(grant);
+
         }
+        grant = grantService.saveGrant(grant);
 
     }
-
-    /*
-     * private List<GrantKpi> _processGrantKpis(Grant grant, Grant grantToSave,
-     * Organization tenant, User user) { GrantKpi grantKpi = null; List<GrantKpi>
-     * kpisList = new ArrayList<>(); for (GrantKpi kpi : grantToSave.getKpis()) {
-     * 
-     * if (kpi.getId() < 0) { grantKpi = new GrantKpi(); } else { grantKpi =
-     * grantService.getGrantKpiById(kpi.getId()); }
-     * grantKpi.setTitle(kpi.getTitle()); grantKpi.setScheduled(kpi.isScheduled());
-     * grantKpi.setPeriodicity(kpi.getPeriodicity());
-     * grantKpi.setKpiType(kpi.getKpiType());
-     * grantKpi.setDescription(kpi.getDescription());
-     * grantKpi.setFrequency(kpi.getFrequency());
-     * grantKpi.setUpdatedAt(DateTime.now().toDate());
-     * grantKpi.setUpdatedBy(user.getEmailId());
-     * grantKpi.setKpiReportingType(kpi.getKpiReportingType());
-     * grantKpi.setGrant(grant);
-     * 
-     * grantKpi = grantService.saveGrantKpi(grantKpi);
-     * 
-     * grantKpi.setTemplates(_processKpiTemplates(grantKpi, kpi, tenant));
-     * 
-     * kpisList.add(grantKpi); } return kpisList; }
-     */
-
-    /*
-     * private List<Template> _processKpiTemplates(GrantKpi kpi, GrantKpi kpitoSave,
-     * Organization tenant) { List<Template> kpiTemplates = new ArrayList<>(); try {
-     * 
-     * Template kpiTemplate = null; for (Template template :
-     * kpitoSave.getTemplates()) { if (template.getId() < 0) { kpiTemplate = new
-     * Template(); } else { kpiTemplate =
-     * grantService.getKpiTemplateById(template.getId()); }
-     * kpiTemplate.setDescription(template.getDescription());
-     * kpiTemplate.setFileType(template.getFileType()); kpiTemplate.setKpi(kpi);
-     * kpiTemplate.setLocation(template.getLocation());
-     * kpiTemplate.setName(template.getName());
-     * kpiTemplate.setType(template.getType());
-     * kpiTemplate.setVersion(template.getVersion()); kpiTemplate =
-     * grantService.saveKpiTemplate(kpiTemplate); kpiTemplates.add(kpiTemplate);
-     * 
-     * if (template.getData() != null) { String uploadFolder = uploadLocation +
-     * tenant.getCode() + "/grants/" + kpi.getGrant().getId() + "/kpi-templates";
-     * 
-     * 
-     * Files.createDirectories(Paths.get(uploadFolder));
-     * 
-     * FileOutputStream fileOutputStream = new FileOutputStream(uploadFolder + "/" +
-     * template.getName()); byte[] dataBytes =
-     * Base64.getDecoder().decode(template.getData().substring(template.getData().
-     * indexOf(",") + 1)); fileOutputStream.write(dataBytes);
-     * fileOutputStream.close();
-     * 
-     * 
-     * } } } catch (IOException e) {
-     * logger.error("Could not process the uploaded File. Please try again."); }
-     * return kpiTemplates; }
-     */
-
-    /*
-     * private List<Submission> _processGrantSubmissions(Grant grant, Grant
-     * grantToSave, Organization tenant, User user) { Submission grantSubmission =
-     * null; List<Submission> grantSubmissions = new ArrayList<>();
-     * 
-     * for (Submission submission : grantToSave.getSubmissions()) { if
-     * (submission.getId() < 0) { grantSubmission = new Submission();
-     * grantSubmission.setSubmissionStatus(workflowStatusService.
-     * findInitialStatusByObjectAndGranterOrgId("SUBMISSION", tenant.getId())); }
-     * else { grantSubmission = submissionService.getById(submission.getId()); }
-     * 
-     * grantSubmission.setGrant(grant);
-     * 
-     * grantSubmission.setSubmissionStatus(workflowStatusService.findById(submission
-     * .getSubmissionStatus().getId())); if (submission.getFlowAuthorities() !=
-     * null) { grant.setSubstatus(workflowStatusService.findById(submission.
-     * getSubmissionStatus().getId())); grant = grantService.saveGrant(grant); }
-     * grantSubmission.setSubmitBy(DateTime.parse(submission.getSubmitDateStr()).
-     * toDate()); grantSubmission.setSubmitDateStr(submission.getSubmitDateStr());
-     * grantSubmission.setSubmittedOn(submission.getSubmittedOn());
-     * grantSubmission.setTitle(submission.getTitle()); grantSubmission =
-     * submissionService.saveSubmission(grantSubmission);
-     * 
-     * //grantSubmission.setDocumentKpiSubmissions(_processDocumentKpis(
-     * grantSubmission, submission, tenant, user));
-     * //grantSubmission.setQualitativeKpiSubmissions(_processQualitativeKpis(
-     * grantSubmission, submission, tenant, user));
-     * grantSubmission.setQuantitiaveKpisubmissions(_processQuantitativeKpis(
-     * grantSubmission, submission, tenant, user));
-     * //grantSubmission.setSubmissionNotes(_processSubmissionNote(grantSubmission,
-     * submission, tenant, user));
-     * 
-     * grantSubmission = submissionService.saveSubmission(grantSubmission);
-     * grantSubmissions.add(grantSubmission); } return grantSubmissions; }
-     */
-
-    /*
-     * private List<GrantQuantitativeKpiData> _processQuantitativeKpis(Submission
-     * submission, Submission submission2Save, Organization tenant, User user) {
-     * GrantQuantitativeKpiData quantKpiData = null; List<GrantQuantitativeKpiData>
-     * quantKpiDataList = new ArrayList<>(); for (GrantQuantitativeKpiData docKpi :
-     * submission2Save.getQuantitiaveKpisubmissions()) { for (GrantKpi kpi :
-     * submission.getGrant().getKpis()) { if (kpi.getKpiType() ==
-     * KpiType.QUANTITATIVE && (kpi.getId() == docKpi.getGrantKpi().getId() ||
-     * kpi.getTitle().equalsIgnoreCase(docKpi.getGrantKpi().getTitle()))) { if
-     * (docKpi.getId() < 0) { quantKpiData = new GrantQuantitativeKpiData(); } else
-     * { quantKpiData =
-     * grantService.getGrantQuantitativeKpiDataById(docKpi.getId()); }
-     * quantKpiData.setActuals(docKpi.getActuals());
-     * quantKpiData.setGoal(docKpi.getGoal()); // TODO
-     * documentKpiData.setGrantKpi();
-     * 
-     * quantKpiData.setGrantKpi(kpi); quantKpiData.setSubmission(submission);
-     * quantKpiData.setToReport(docKpi.getToReport());
-     * 
-     * 
-     * quantKpiData = grantService.saveGrantQunatitativeKpiData(quantKpiData);
-     * 
-     * quantKpiData.setNotesHistory(_processQuantNotesHistory(quantKpiData, docKpi,
-     * tenant, user));
-     * quantKpiData.setSubmissionDocs(_processQuantSubmissionDocs(quantKpiData,
-     * docKpi, tenant, user));
-     * 
-     * quantKpiData = grantService.saveGrantQunatitativeKpiData(quantKpiData);
-     * quantKpiDataList.add(quantKpiData); } } } return quantKpiDataList; }
-     */
-
-    /*
-     * private List<GrantQualitativeKpiData> _processQualitativeKpis(Submission
-     * submission, Submission submission2Save, Organization tenant, User user) {
-     * GrantQualitativeKpiData qualKpiData = null; List<GrantQualitativeKpiData>
-     * qualKpiDataList = new ArrayList<>(); for (GrantQualitativeKpiData docKpi :
-     * submission2Save.getQualitativeKpiSubmissions()) { for (GrantKpi kpi :
-     * submission.getGrant().getKpis()) { if (kpi.getKpiType() ==
-     * KpiType.QUALITATIVE && (kpi.getId() == docKpi.getGrantKpi().getId() ||
-     * kpi.getTitle().equalsIgnoreCase(docKpi.getGrantKpi().getTitle()))) { if
-     * (docKpi.getId() < 0) { qualKpiData = new GrantQualitativeKpiData(); } else {
-     * qualKpiData = grantService.getGrantQualitativeKpiDataById(docKpi.getId()); }
-     * qualKpiData.setActuals(docKpi.getActuals());
-     * qualKpiData.setGoal(docKpi.getGoal()); // TODO documentKpiData.setGrantKpi();
-     * qualKpiData.setGrantKpi(kpi); qualKpiData.setSubmission(submission);
-     * qualKpiData.setToReport(docKpi.getToReport());
-     * 
-     * 
-     * qualKpiData = grantService.saveGrantQualitativeKpiData(qualKpiData);
-     * 
-     * qualKpiData.setNotesHistory(_processQualNotesHistory(qualKpiData, docKpi,
-     * tenant, user));
-     * qualKpiData.setSubmissionDocs(_processQualSubmissionDocs(qualKpiData, docKpi,
-     * tenant, user));
-     * 
-     * qualKpiData = grantService.saveGrantQualitativeKpiData(qualKpiData);
-     * qualKpiDataList.add(qualKpiData); } } } return qualKpiDataList; }
-     */
-
-    /*
-     * private List<GrantDocumentKpiData> _processDocumentKpis(Submission
-     * submission, Submission submission2Save, Organization tenant, User user) {
-     * GrantDocumentKpiData documentKpiData = null; List<GrantDocumentKpiData>
-     * documentKpiDataList = new ArrayList<>(); for (GrantDocumentKpiData docKpi :
-     * submission2Save.getDocumentKpiSubmissions()) { for (GrantKpi kpi :
-     * submission.getGrant().getKpis()) { if (kpi.getKpiType() == KpiType.DOCUMENT
-     * && (kpi.getId() == docKpi.getGrantKpi().getId() ||
-     * kpi.getTitle().equalsIgnoreCase(docKpi.getGrantKpi().getTitle()))) { if
-     * (docKpi.getId() < 0) { documentKpiData = new GrantDocumentKpiData(); } else {
-     * documentKpiData = grantService.getGrantDocumentKpiDataById(docKpi.getId()); }
-     * documentKpiData.setActuals(docKpi.getActuals());
-     * documentKpiData.setGoal(docKpi.getGoal()); // TODO
-     * documentKpiData.setGrantKpi();
-     * 
-     * documentKpiData.setSubmission(submission); documentKpiData.setGrantKpi(kpi);
-     * documentKpiData.setToReport(docKpi.getToReport());
-     * documentKpiData.setType(docKpi.getType());
-     * 
-     * documentKpiData = grantService.saveGrantDocumentKpiData(documentKpiData);
-     * 
-     * documentKpiData.setNotesHistory(_processDocNotesHistory(documentKpiData,
-     * docKpi, tenant, user));
-     * documentKpiData.setSubmissionDocs(_processDocSubmissionDocs(documentKpiData,
-     * docKpi, tenant, user));
-     * 
-     * documentKpiData = grantService.saveGrantDocumentKpiData(documentKpiData);
-     * documentKpiDataList.add(documentKpiData); } } } return documentKpiDataList; }
-     */
 
     @PostMapping("/{grantId}/flow/{fromState}/{toState}")
     @ApiOperation("Move grant through workflow")
@@ -1566,6 +1405,52 @@ public class GrantController {
         // userId, tenantCode);
         // grantValidator.validateFlow(grantService, grantwithNote.getGrant(), grantId,
         // userId, fromStateId, toStateId);
+        Grant grant = moveToNewState(grantwithNote, userId, grantId, fromStateId, toStateId, tenantCode);
+        if (grant.getOrigGrantId() != null
+                && workflowStatusService.findById(toStateId).getInternalStatus().equalsIgnoreCase("ACTIVE")) {
+            Grant origGrant = grantService.getById(grant.getOrigGrantId());
+
+            grant.setAmendmentNo(origGrant.getAmendmentNo() + 1);
+            grant = grantService.saveGrant(grant);
+
+            WorkflowStatus statusClosed = workflowStatusService
+                    .getTenantWorkflowStatuses("GRANT", grant.getGrantorOrganization().getId()).stream()
+                    .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get();
+            WorkflowStatus statusActive = workflowStatusService
+                    .getTenantWorkflowStatuses("GRANT", grant.getGrantorOrganization().getId()).stream()
+                    .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE")).findFirst().get();
+
+            Long activeStateOwnerId = grantService.getGrantWorkflowAssignments(origGrant).stream()
+                    .filter(wa -> wa.getStateId().longValue() == statusActive.getId().longValue()).findFirst().get()
+                    .getAssignments();
+            origGrant = grantService._grantToReturn(activeStateOwnerId, origGrant);
+
+            GrantWithNote gn = new GrantWithNote();
+            gn.setGrant(origGrant);
+            gn.setNote("Closed because of an amendment. Amended grant reference no. is " + grant.getReferenceNo());
+            moveToNewState(gn, activeStateOwnerId, origGrant.getId(), origGrant.getGrantStatus().getId(),
+                    statusClosed.getId(), tenantCode);
+
+            List<Report> existingReports = reportService
+                    .getReportsForGrant(grantService.getById(grant.getOrigGrantId()));
+            if (existingReports != null && existingReports.size() > 0) {
+
+                existingReports.stream().forEach(r -> {
+                    if (r.getUpdatedAt() == null) {
+                        reportService.deleteReport(r);
+                    } else {
+                        r.setDisabledByAmendment(true);
+                        reportService.saveReport(r);
+                    }
+                });
+            }
+        }
+        return grant;
+
+    }
+
+    private Grant moveToNewState(GrantWithNote grantwithNote, Long userId, Long grantId, Long fromStateId,
+            Long toStateId, String tenantCode) {
         for (SectionVO section : grantwithNote.getGrant().getGrantDetails().getSections()) {
             if (section.getAttributes() != null) {
                 for (SectionAttributesVO attribute : section.getAttributes()) {
@@ -1628,11 +1513,14 @@ public class GrantController {
         grant.setUpdatedAt(currentDateTime);
         grant.setUpdatedBy(userService.getUserById(userId).getEmailId());
         grant.setMovedOn(currentDateTime);
-        grant = grantService.saveGrant(grant);
 
         User user = userService.getUserById(userId);
         WorkflowStatus toStatus = workflowStatusService.findById(toStateId);
 
+        if (grant.getOrigGrantId() != null && toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
+            grant.setAmendmentNo(grantService.getById(grant.getOrigGrantId()).getAmendmentNo() + 1);
+        }
+        grant = grantService.saveGrant(grant);
         List<User> usersToNotify = new ArrayList<>();// userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
 
         final List<GrantAssignments> assigments = grantService.getGrantWorkflowAssignments(grant);
@@ -1692,14 +1580,6 @@ public class GrantController {
                         ? "Please review."
                         : "",
                 "", null, null, null, null);
-        /*
-         * usersToNotify.stream().forEach(u -> {
-         * 
-         * commonEmailSevice.sendMail(u.getEmailId(), null, emailNotificationContent[0],
-         * emailNotificationContent[1], new String[] {
-         * appConfigService.getAppConfigForGranterOrg(finalGrant.getGrantorOrganization(
-         * ).getId(), AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue() }); });
-         */
 
         if (!toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
             final User currentOwnerFinal = currentOwner;
@@ -1747,8 +1627,6 @@ public class GrantController {
                     "GRANT");
 
         }
-
-        // }
 
         grant.setActionAuthorities(
                 workflowPermissionService.getGrantActionPermissions(grant.getGrantorOrganization().getId(),
@@ -1821,32 +1699,6 @@ public class GrantController {
                             AppConfiguration.GENERATE_GRANT_REFERENCE)
                     .getConfigValue())) {
 
-                if (grant.getOrigGrantId() != null) {
-                    Grant origGrant = grantService.getById(grant.getOrigGrantId());
-
-                    grant.setAmendmentNo(origGrant.getAmendmentNo() + 1);
-                    grant = grantService.saveGrant(grant);
-
-                    WorkflowStatus statusClosed = workflowStatusService
-                            .getTenantWorkflowStatuses("GRANT", grant.getGrantorOrganization().getId()).stream()
-                            .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get();
-                    WorkflowStatus statusActive = workflowStatusService
-                            .getTenantWorkflowStatuses("GRANT", grant.getGrantorOrganization().getId()).stream()
-                            .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE")).findFirst().get();
-
-                    Long activeStateOwnerId = grantService.getGrantWorkflowAssignments(origGrant).stream()
-                            .filter(wa -> wa.getStateId().longValue() == statusActive.getId().longValue()).findFirst()
-                            .get().getAssignments();
-                    origGrant = grantService._grantToReturn(activeStateOwnerId, origGrant);
-
-                    GrantWithNote gn = new GrantWithNote();
-                    gn.setGrant(origGrant);
-                    gn.setNote(
-                            "Closed because of an amendment. Amended grant reference no. is " + grant.getReferenceNo());
-                    MoveGrantState(gn, activeStateOwnerId, origGrant.getId(), origGrant.getGrantStatus().getId(),
-                            statusClosed.getId(), tenantCode);
-                }
-
                 grant = _generateGrantReferenceNo(grant, toStatus);
 
             }
@@ -1854,7 +1706,6 @@ public class GrantController {
             _createReportingPeriods(grant, user, tenantCode);
         }
         return grant;
-
     }
 
     private Grant _generateGrantReferenceNo(Grant grant, WorkflowStatus toStatus) {
@@ -1901,8 +1752,9 @@ public class GrantController {
                         if (attr.getFieldType().equalsIgnoreCase("KPI")) {
 
                             if (attr.getFrequency().equalsIgnoreCase("YEARLY")) {
-                                DateTime st = new DateTime(grant.getStartDate(), DateTimeZone.forID(timezone))
-                                        .withTimeAtStartOfDay();
+                                DateTime st = new DateTime(grant.getMinEndEndate() != null
+                                        ? new DateTime(grant.getMinEndEndate()).plusDays(1).toDate()
+                                        : grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay();
                                 DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23,
                                         59, 59, 999);
                                 List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en,
@@ -1924,8 +1776,9 @@ public class GrantController {
                             }
 
                             if (attr.getFrequency().equalsIgnoreCase("HALF-YEARLY")) {
-                                DateTime st = new DateTime(grant.getStartDate(), DateTimeZone.forID(timezone))
-                                        .withTimeAtStartOfDay();
+                                DateTime st = new DateTime(grant.getMinEndEndate() != null
+                                        ? new DateTime(grant.getMinEndEndate()).plusDays(1).toDate()
+                                        : grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay();
                                 DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23,
                                         59, 59, 999);
                                 List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en,
@@ -1951,8 +1804,9 @@ public class GrantController {
 
                             if (attr.getFrequency().equalsIgnoreCase("QUARTERLY")) {
 
-                                DateTime st = new DateTime(grant.getStartDate(), DateTimeZone.forID(timezone))
-                                        .withTimeAtStartOfDay();
+                                DateTime st = new DateTime(grant.getMinEndEndate() != null
+                                        ? new DateTime(grant.getMinEndEndate()).plusDays(1).toDate()
+                                        : grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay();
                                 DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23,
                                         59, 59, 999);
                                 List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en,
@@ -1980,8 +1834,9 @@ public class GrantController {
                         }
 
                         if (attr.getFrequency().equalsIgnoreCase("MONTHLY")) {
-                            DateTime st = new DateTime(grant.getStartDate(), DateTimeZone.forID(timezone))
-                                    .withTimeAtStartOfDay();
+                            DateTime st = new DateTime(grant.getMinEndEndate() != null
+                                    ? new DateTime(grant.getMinEndEndate()).plusDays(1).toDate()
+                                    : grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay();
                             DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23, 59,
                                     59, 999);
                             List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en, Frequency.MONTHLY);

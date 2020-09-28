@@ -573,6 +573,9 @@ public class ReportController {
         } else {
             report.setCanManage(false);
         }
+        if (report.isDisabledByAmendment()) {
+            report.setCanManage(false);
+        }
         return reportAssignments;
     }
 
@@ -2113,20 +2116,8 @@ public class ReportController {
             @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code ") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Report report = reportService.getReportById(reportId);
-        for (ReportSpecificSection section : reportService.getReportSections(report)) {
-            List<ReportSpecificSectionAttribute> attribs = reportService.getSpecificSectionAttributesBySection(section);
-            for (ReportSpecificSectionAttribute attribute : attribs) {
-                List<ReportStringAttribute> strAttribs = reportService.getReportStringAttributesByAttribute(attribute);
-                reportService.deleteStringAttributes(strAttribs);
-            }
-            reportService.deleteSectionAttributes(attribs);
-            reportService.deleteSection(section);
-        }
+
         reportService.deleteReport(report);
 
-        GranterReportTemplate template = granterReportTemplateService.findByTemplateId(report.getTemplate().getId());
-        if (!template.isPublished()) {
-            reportService.deleteReportTemplate(template);
-        }
     }
 }

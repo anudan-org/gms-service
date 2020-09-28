@@ -259,6 +259,22 @@ public class DashboardService {
                         grant.setOrigGrantRefNo(grantService.getById(grant.getOrigGrantId()).getReferenceNo());
                     }
 
+                    if (grant.getOrigGrantId() != null) {
+                        List<Report> existingReports = reportService
+                                .getReportsForGrant(grantService.getById(grant.getOrigGrantId()));
+                        if (existingReports != null && existingReports.size() > 0) {
+                            existingReports
+                                    .removeIf(r -> !r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+                            if (existingReports != null && existingReports.size() > 0) {
+
+                                Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());
+                                existingReports.sort(endDateComparator);
+                                Report lastReport = existingReports.get(existingReports.size() - 1);
+                                grant.setMinEndEndate(lastReport.getEndDate());
+                            }
+                        }
+                    }
+
                     grantList.add(grant);
                     tenant.setGrants(grantList);
                 }
