@@ -1427,7 +1427,9 @@ public class GrantController {
 
             GrantWithNote gn = new GrantWithNote();
             gn.setGrant(origGrant);
-            gn.setNote("Closed because of an amendment. Amended grant reference no. is " + grant.getReferenceNo());
+            gn.setNote(
+                    "No note added.<br><i><b>System Note</b>: </i>Closed because of an amendment. Amended grant reference no. is "
+                            + grant.getReferenceNo());
             moveToNewState(gn, activeStateOwnerId, origGrant.getId(), origGrant.getGrantStatus().getId(),
                     statusClosed.getId(), tenantCode);
 
@@ -1723,10 +1725,14 @@ public class GrantController {
                 "SNO: -----------   " + sNo + " | " + stDate + " | " + grant.getId() + " | " + toStatus.getId());
         String amountCode = grant.getAmount() > 9999999999L ? "A"
                 : (grant.getAmount() > 9999999L && grant.getAmount() <= 9999999999L) ? "C" : "L";
-        String referenceCode = grant.getOrganization().getName().replaceAll(" ", "").substring(0, 4).toUpperCase() + "-"
-                + stFormat.format(grant.getStartDate()) + "-" + enFormat.format(grant.getEndDate()) + "-" + (sNo);
+        String referenceCode = "";
         if (grant.getOrigGrantId() != null) {
-            referenceCode = "A" + grant.getAmendmentNo() + "-" + referenceCode;
+
+            referenceCode = "A" + grant.getAmendmentNo() + "-"
+                    + grantService.getById(grant.getOrigGrantId()).getReferenceNo();
+        } else {
+            referenceCode = grant.getOrganization().getName().replaceAll(" ", "").substring(0, 4).toUpperCase() + "-"
+                    + stFormat.format(grant.getStartDate()) + "-" + enFormat.format(grant.getEndDate()) + "-" + (sNo);
         }
         grant.setReferenceNo(referenceCode);
         return grantService.saveGrant(grant);
