@@ -355,4 +355,8 @@ public class DisbursementService {
     public boolean checkIfDisbursementMovedThroughWFAtleastOnce(Long id) {
         return disbursementRepository.findDisbursementsThatMovedAtleastOnce(id).size() > 0;
     }
+
+    public List<Disbursement> getAllDisbursementsForGrant(Long grantId) {
+        return disbursementRepository.getAllDisbursementsForGrant(grantId);
+    }
 }

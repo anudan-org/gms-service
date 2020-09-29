@@ -143,6 +143,8 @@ public class GrantController {
     private CommonEmailSevice commonEmailSevice;
     @Autowired
     private WorkflowService workflowService;
+    @Autowired
+    private DisbursementService disbursementService;
 
     @GetMapping("/create/{templateId}")
     @ApiOperation("Create new grant with a template")
@@ -1444,6 +1446,17 @@ public class GrantController {
                         r.setDisabledByAmendment(true);
                         reportService.saveReport(r);
                     }
+                });
+            }
+
+            List<Disbursement> existingDisbursements = disbursementService
+                    .getAllDisbursementsForGrant(grant.getOrigGrantId());
+
+            if (existingDisbursements != null && existingDisbursements.size() > 0) {
+
+                existingDisbursements.stream().forEach(r -> {
+                    r.setDisabledByAmendment(true);
+                    disbursementService.saveDisbursement(r);
                 });
             }
         }

@@ -78,6 +78,10 @@ public class DashboardService {
     private WorkflowStatusRepository workflowStatusRepository;
     @Autowired
     private ReportService reportService;
+
+    @Autowired
+    private DisbursementService disbursementService;
+
     @Value("${spring.timezone}")
     private String timezone;
 
@@ -271,6 +275,25 @@ public class DashboardService {
                                 existingReports.sort(endDateComparator);
                                 Report lastReport = existingReports.get(existingReports.size() - 1);
                                 grant.setMinEndEndate(lastReport.getEndDate());
+                            }
+                        }
+
+                        List<Disbursement> existingDisbursements = disbursementService
+                                .getAllDisbursementsForGrant(grant.getOrigGrantId());
+                        if (existingDisbursements != null && existingDisbursements.size() > 0) {
+                            existingDisbursements
+                                    .removeIf(d -> !d.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"));
+                            if (existingDisbursements != null && existingDisbursements.size() > 0) {
+
+                                Comparator<Disbursement> endDateComparator = Comparator.comparing(d -> d.getMovedOn());
+                                existingDisbursements.sort(endDateComparator);
+                                Disbursement lastDisbursement = existingDisbursements
+                                        .get(existingDisbursements.size() - 1);
+                                if (grant.getMinEndEndate() != null && new DateTime(lastDisbursement.getMovedOn())
+                                        .isAfter(new DateTime(grant.getMinEndEndate()))) {
+                                    grant.setMinEndEndate(lastDisbursement.getMovedOn());
+                                }
+
                             }
                         }
                     }

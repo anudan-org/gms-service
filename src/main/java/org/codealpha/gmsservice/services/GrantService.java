@@ -19,6 +19,7 @@ import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -106,6 +107,8 @@ public class GrantService {
     private ActualDisbursementRepository actualDisbursementRepository;
     @Autowired
     private ReportService reportService;
+    @Autowired
+    private DisbursementService disbursementService;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -776,6 +779,23 @@ public class GrantService {
                     existingReports.sort(endDateComparator);
                     Report lastReport = existingReports.get(existingReports.size() - 1);
                     grant.setMinEndEndate(lastReport.getEndDate());
+                }
+            }
+
+            List<Disbursement> existingDisbursements = disbursementService
+                    .getAllDisbursementsForGrant(grant.getOrigGrantId());
+            if (existingDisbursements != null && existingDisbursements.size() > 0) {
+                existingDisbursements.removeIf(d -> !d.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"));
+                if (existingDisbursements != null && existingDisbursements.size() > 0) {
+
+                    Comparator<Disbursement> endDateComparator = Comparator.comparing(d -> d.getMovedOn());
+                    existingDisbursements.sort(endDateComparator);
+                    Disbursement lastDisbursement = existingDisbursements.get(existingDisbursements.size() - 1);
+                    if (grant.getMinEndEndate() != null && new DateTime(lastDisbursement.getMovedOn())
+                            .isAfter(new DateTime(grant.getMinEndEndate()))) {
+                        grant.setMinEndEndate(lastDisbursement.getMovedOn());
+                    }
+
                 }
             }
         }
