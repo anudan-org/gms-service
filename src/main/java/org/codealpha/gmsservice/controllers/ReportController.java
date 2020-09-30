@@ -243,8 +243,14 @@ public class ReportController {
                 .stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
         List<Report> reports = new ArrayList<>();
         if (reportApprovedStatus.isPresent()) {
-            reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(),
-                    grantService.getById(grantId));
+            Grant grant = grantService.getById(grantId);
+            reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(), grant);
+            // Include approved reports of orgiginal grant if exist
+            if (grant.getOrigGrantId() != null) {
+                reports.addAll(reportService.findReportsByStatusForGrant(reportApprovedStatus.get(),
+                        grantService.getById(grant.getOrigGrantId())));
+            }
+            // End
         }
 
         for (Report report : reports) {

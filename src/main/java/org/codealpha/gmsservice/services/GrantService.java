@@ -757,9 +757,18 @@ public class GrantService {
                 .getTenantWorkflowStatuses("REPORT", grant.getGrantorOrganization().getId()).stream()
                 .filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
         List<Report> reports = new ArrayList<>();
+        int noOfReports = 0;
         if (reportApprovedStatus.isPresent()) {
             reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(), grant);
-            grant.setApprovedReportsForGrant(reports.size());
+            noOfReports = reports.size();
+            // Include approved reports of orgiginal grant if exist
+            if (grant.getOrigGrantId() != null) {
+                reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(),
+                        getById(grant.getOrigGrantId()));
+                noOfReports += reports.size();
+            }
+            // End
+            grant.setApprovedReportsForGrant(noOfReports);
         }
 
         // Set old grant ref no if current amendment grant is still in porogress
