@@ -1661,7 +1661,8 @@ public class GrantController {
         }
 
         // Save Snapshot
-        _saveSnapShot(grant, fromStateId, currentDateTime,
+
+        _saveSnapShot(grant, fromStateId, toStateId, grant.getNote(), currentDateTime,
                 assignmentForCurrentState.isPresent()
                         ? userService.getUserById(assignmentForCurrentState.get().getAssignments())
                         : null,
@@ -2261,7 +2262,8 @@ public class GrantController {
         }
     }
 
-    private void _saveSnapShot(Grant grant, Long fromStateId, Date movedOn, User currentUser, User previousUser) {
+    private void _saveSnapShot(Grant grant, Long fromStateId, Long toStatusId, String fromNote, Date movedOn,
+            User currentUser, User previousUser) {
 
         try {
             GrantSnapshot snapshot = new GrantSnapshot();
@@ -2280,7 +2282,10 @@ public class GrantController {
             snapshot.setName(grant.getName());
             snapshot.setRepresentative(grant.getRepresentative());
             snapshot.setStartDate(grant.getStartDate());
-            snapshot.setGrantStatusId(fromStateId);
+            snapshot.setGrantStatusId(fromStateId); // Legacy for backward compatibility
+            snapshot.setToStateId(toStatusId);
+            snapshot.setFromStateId(fromStateId);
+            snapshot.setFromNote(fromNote);
             snapshot.setStringAttributes(new ObjectMapper().writeValueAsString(grant.getGrantDetails()));
             grantSnapshotService.saveGrantSnapshot(snapshot);
         } catch (JsonProcessingException e) {
@@ -2924,11 +2929,30 @@ public class GrantController {
     public List<GrantHistory> getGrantHistory(@PathVariable("grantId") Long grantId,
             @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        List<GrantHistory> history = grantService.getGrantHistory(grantId);
-        for (GrantHistory historyEntry : history) {
-            historyEntry.setNoteAddedByUser(userService.getUserByEmailAndOrg(historyEntry.getNoteAddedBy(),
-                    historyEntry.getGrantorOrganization()));
+        List<GrantHistory> history = new ArrayList();
+        List<GrantSnapshot> grantSnapshotHistory = grantSnapshotService.getGrantSnapshotForGrant(grantId);
+        if (grantSnapshotHistory == null
+                || (grantSnapshotHistory != null && grantSnapshotHistory.get(0).getFromStateId() == null)) {
+            history = grantService.getGrantHistory(grantId);
+            for (GrantHistory historyEntry : history) {
+                historyEntry.setNoteAddedByUser(userService.getUserByEmailAndOrg(historyEntry.getNoteAddedBy(),
+                        historyEntry.getGrantorOrganization()));
+            }
+        } else {
+            for (GrantSnapshot snapShot : grantSnapshotHistory) {
+                GrantHistory hist = new GrantHistory();
+                hist.setName(snapShot.getName());
+                hist.setId(snapShot.getGrantId());
+                hist.setNote(snapShot.getFromNote());
+                hist.setNoteAdded(snapShot.getMovedOn());
+                User assignedBy = userService.getUserById(snapShot.getAssignedBy());
+                hist.setNoteAddedBy(assignedBy.getFirstName().concat(" ").concat(assignedBy.getLastName()));
+                hist.setNoteAddedByUser(assignedBy);
+                hist.setGrantStatus(workflowStatusService.findById(snapShot.getFromStateId()));
+                history.add(hist);
+            }
         }
+
         return history;
     }
 

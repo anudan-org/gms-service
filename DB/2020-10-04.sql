@@ -1,0 +1,2 @@
+alter table grant_snapshot add column from_state_id bigint, add column from_note text,add column moved_by bigint,add column from_string_attributes text;
+alter table grant_snapshot add column to_state_id bigint;
