@@ -3,17 +3,21 @@ package org.codealpha.gmsservice.controllers;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
+import org.codealpha.gmsservice.repositories.GrantSnapshotRepository;
+import org.codealpha.gmsservice.repositories.GrantToFixRepository;
 import org.codealpha.gmsservice.repositories.UserRoleRepository;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
@@ -29,11 +33,15 @@ import org.springframework.web.multipart.MultipartFile;
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -86,6 +94,10 @@ public class AdiminstrativeController {
     private String uploadLocation;
     @Autowired
     private ResourceLoader resourceLoader;
+    @Autowired
+    private GrantToFixRepository grantToFixRepository;
+    @Autowired
+    private GrantSnapshotRepository grantSnapshotRepository;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -751,5 +763,56 @@ public class AdiminstrativeController {
         }
 
         return orgs;
+    }
+
+    @PostMapping("/fixgrants")
+    public HttpStatus fixSustainPlusGrants()
+            throws JsonParseException, JsonMappingException, IOException, URISyntaxException {
+        List<GrantToFix> grants2Fix = grantToFixRepository.getGrantsToFix();
+        String scripts = "";
+        FileWriter fw = new FileWriter("c:\\sustainplus\\snapshot_fix.sql", true);
+        BufferedWriter bw = new BufferedWriter(fw);
+
+        for (GrantToFix toFix : grants2Fix) {
+            ObjectMapper mapper = new ObjectMapper();
+            List<TableData> disbsToSet = mapper.readValue(toFix.getValue(), new TypeReference<List<TableData>>() {
+            });
+
+            GrantDetailVO detail = mapper.readValue(toFix.getStringAttributes(), GrantDetailVO.class);
+            for (SectionVO section : detail.getSections()) {
+                section.getAttributes().removeIf(at -> at.getId().longValue() == 8665);
+                List<SectionAttributesVO> attributes = section.getAttributes();
+                if (attributes != null && attributes.size() > 0) {
+                    for (SectionAttributesVO attribute : attributes) {
+                        if (attribute.getId() == 8655) {
+                            attribute.setFieldValue(
+                                    "PRADAN, 3 Community Shopping Centre, Niti Bagh, New Delhi - 110049");//
+                        }
+                        if (attribute.getFieldType().equalsIgnoreCase("DISBURSEMENT")) {
+                            attribute.setFieldTableValue(disbsToSet);
+                            attribute.setFieldValue(mapper.writeValueAsString(disbsToSet));
+                        }
+
+                    }
+                }
+
+                // GrantSnapshot snapshot =
+                // grantSnapshotRepository.findById(toFix.getId()).get();
+                // snapshot.setStringAttributes(mapper.writeValueAsString(detail));
+
+                String updateString = mapper.writeValueAsString(detail);
+                updateString = updateString.replaceAll("'", "''");
+                bw.write("update grant_snapshot set string_attributes='" + updateString + "' where id=" + toFix.getId()
+                        + ";");
+                bw.newLine();
+                // grantSnapshotRepository.save(snapshot);
+
+            }
+        }
+        // bw.write("update grant_stri")
+        bw.close();
+        // FileUtils.writeStringToFile(new File(new
+        // URI("c:\\sustainplus\\snapshot_fix.sql")), scripts);
+        return HttpStatus.OK;
     }
 }

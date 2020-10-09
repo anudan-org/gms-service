@@ -424,20 +424,25 @@ public class GrantController {
             @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code ") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Grant grant = grantService.getById(grantId);
-        for (GrantSpecificSection section : grantService.getGrantSections(grant)) {
-            List<GrantSpecificSectionAttribute> attribs = grantService.getAttributesBySection(section);
-            for (GrantSpecificSectionAttribute attribute : attribs) {
-                List<GrantStringAttribute> strAttribs = grantService.getStringAttributesByAttribute(attribute);
-                grantService.deleteStringAttributes(strAttribs);
+        if (grantService.checkIfGrantMovedThroughWFAtleastOnce(grantId)) {
+            grant.setDeleted(true);
+            grantService.saveGrant(grant);
+        } else {
+            for (GrantSpecificSection section : grantService.getGrantSections(grant)) {
+                List<GrantSpecificSectionAttribute> attribs = grantService.getAttributesBySection(section);
+                for (GrantSpecificSectionAttribute attribute : attribs) {
+                    List<GrantStringAttribute> strAttribs = grantService.getStringAttributesByAttribute(attribute);
+                    grantService.deleteStringAttributes(strAttribs);
+                }
+                grantService.deleteSectionAttributes(attribs);
+                grantService.deleteSection(section);
             }
-            grantService.deleteSectionAttributes(attribs);
-            grantService.deleteSection(section);
-        }
-        grantService.deleteGrant(grant);
+            grantService.deleteGrant(grant);
 
-        GranterGrantTemplate template = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
-        if (!template.isPublished()) {
-            grantService.deleteGrantTemplate(template);
+            GranterGrantTemplate template = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
+            if (!template.isPublished()) {
+                grantService.deleteGrantTemplate(template);
+            }
         }
     }
 
