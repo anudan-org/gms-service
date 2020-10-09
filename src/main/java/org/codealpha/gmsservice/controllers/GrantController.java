@@ -569,6 +569,9 @@ public class GrantController {
         Grant grant = grantService.getById(grantId);
         if (grantService.checkIfGrantMovedThroughWFAtleastOnce(grantId)) {
             grant.setDeleted(true);
+            grant.setNote("No note added.<br><i><b>System Note</b>: </i>Grant deleted after reviews.");
+            grant.setNoteAdded(DateTime.now().toDate());
+            grant.setNoteAddedBy(userService.getUserById(userId).getEmailId());
             grantService.saveGrant(grant);
         } else {
             for (GrantSpecificSection section : grantService.getGrantSections(grant)) {
