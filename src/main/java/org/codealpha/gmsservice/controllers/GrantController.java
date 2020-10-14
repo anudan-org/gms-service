@@ -1769,8 +1769,11 @@ public class GrantController {
         String referenceCode = "";
         if (grant.getOrigGrantId() != null) {
 
-            referenceCode = "A" + grant.getAmendmentNo() + "-"
-                    + grantService.getById(grant.getOrigGrantId()).getReferenceNo();
+            String prevRefNo = grantService.getById(grant.getOrigGrantId()).getReferenceNo();
+            if (prevRefNo.startsWith("A" + (grant.getAmendmentNo() - 1) + "-")) {
+                prevRefNo = prevRefNo.substring(prevRefNo.indexOf("-") + 1);
+            }
+            referenceCode = "A" + grant.getAmendmentNo() + "-" + prevRefNo;
         } else {
             referenceCode = grant.getOrganization().getName().replaceAll(" ", "").substring(0, 4).toUpperCase() + "-"
                     + stFormat.format(grant.getStartDate()) + "-" + enFormat.format(grant.getEndDate()) + "-" + (sNo);
