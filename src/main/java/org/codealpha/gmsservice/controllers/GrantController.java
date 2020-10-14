@@ -1472,8 +1472,27 @@ public class GrantController {
 
     }
 
+    private String _getCurrentGrantDetails(Long grantId, User user) throws JsonProcessingException {
+        Grant g = grantService.getById(grantId);
+        GrantVO vo = new GrantVO().build(g, grantService.getGrantSections(g), workflowPermissionService, user,
+                appConfigService.getAppConfigForGranterOrg(g.getGrantorOrganization().getId(),
+                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
+                userService);
+
+        return new ObjectMapper().writeValueAsString(vo.getGrantDetails());
+
+    }
+
     private Grant moveToNewState(GrantWithNote grantwithNote, Long userId, Long grantId, Long fromStateId,
             Long toStateId, String tenantCode) {
+
+        String fromStringAttributes = null;
+        try {
+            fromStringAttributes = _getCurrentGrantDetails(grantId, userService.getUserById(userId));
+        } catch (JsonProcessingException e) {
+
+            logger.error(e.getMessage(), e);
+        }
         for (SectionVO section : grantwithNote.getGrant().getGrantDetails().getSections()) {
             if (section.getAttributes() != null) {
                 for (SectionAttributesVO attribute : section.getAttributes()) {
@@ -1711,7 +1730,7 @@ public class GrantController {
 
         // Save Snapshot
 
-        _saveSnapShot(grant, fromStateId, toStateId, grant.getNote(), currentDateTime,
+        _saveSnapShot(grant, fromStateId, fromStringAttributes, toStateId, grant.getNote(), currentDateTime,
                 assignmentForCurrentState.isPresent()
                         ? userService.getUserById(assignmentForCurrentState.get().getAssignments())
                         : null,
@@ -2324,8 +2343,8 @@ public class GrantController {
         }
     }
 
-    private void _saveSnapShot(Grant grant, Long fromStateId, Long toStatusId, String fromNote, Date movedOn,
-            User currentUser, User previousUser) {
+    private void _saveSnapShot(Grant grant, Long fromStateId, String fromStringAttributes, Long toStatusId,
+            String fromNote, Date movedOn, User currentUser, User previousUser) {
 
         try {
             GrantSnapshot snapshot = new GrantSnapshot();
@@ -2347,6 +2366,7 @@ public class GrantController {
             snapshot.setGrantStatusId(fromStateId); // Legacy for backward compatibility
             snapshot.setToStateId(toStatusId);
             snapshot.setFromStateId(fromStateId);
+            snapshot.setFromStringAttributes(fromStringAttributes);
             snapshot.setFromNote(fromNote);
             snapshot.setStringAttributes(new ObjectMapper().writeValueAsString(grant.getGrantDetails()));
             grantSnapshotService.saveGrantSnapshot(snapshot);

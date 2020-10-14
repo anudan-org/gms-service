@@ -8,8 +8,13 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
+
+import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.exceptions.TokenExpiredException;
+import org.codealpha.gmsservice.repositories.OrganizationRepository;
+import org.codealpha.gmsservice.repositories.UserRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,26 +23,39 @@ import org.springframework.web.util.UrlPathHelper;
 
 public class JWTAuthenticationFilter extends GenericFilterBean {
 
+  private UserRepository userRepository;
+  private OrganizationRepository organizationRepository;
+
+  public JWTAuthenticationFilter(UserRepository userRepo, OrganizationRepository organizationRepo) {
+    this.userRepository = userRepo;
+    this.organizationRepository = organizationRepo;
+  }
+
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
       throws IOException, ServletException, RuntimeException {
     String pathWithinApplication = new UrlPathHelper().getPathWithinApplication((HttpServletRequest) request);
-    if(pathWithinApplication.equalsIgnoreCase("/favicon.ico")){
+    if (pathWithinApplication.equalsIgnoreCase("/favicon.ico")) {
       filterChain.doFilter(request, response);
-    }else if(pathWithinApplication.contains("/public/images/")){
+    } else if (pathWithinApplication.contains("/public/images/")) {
       filterChain.doFilter(request, response);
-    }else {
+    } else {
       Authentication authentication = null;
 
-        authentication =
-            TokenAuthenticationService
-                .getAuthentication((HttpServletRequest) request, (HttpServletResponse) response);
+      authentication = TokenAuthenticationService.getAuthentication((HttpServletRequest) request,
+          (HttpServletResponse) response);
 
-
-        if(authentication!=null) {
-          SecurityContextHolder.getContext().setAuthentication(authentication);
+      if (authentication != null) {
+        String[] principalTokens = authentication.getPrincipal().toString().split("\\^");
+        User user = userRepository.findByEmailIdAndOrganization(principalTokens[0],
+            organizationRepository.findByCode(principalTokens[1]));
+        if (!user.isActive() || user.isDeleted()) {
+          throw new BadCredentialsException("Inactive user");
         }
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+      }
       filterChain.doFilter(request, response);
     }
   }
+
 }

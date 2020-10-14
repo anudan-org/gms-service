@@ -34,29 +34,28 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
   @Override
   protected void configure(HttpSecurity http) throws Exception {
     http.csrf().disable().authorizeRequests().antMatchers("/public/images/**/logo").permitAll()
-            .antMatchers("/public/tenant/**").permitAll().antMatchers("/users/").permitAll()
+        .antMatchers("/public/tenant/**").permitAll().antMatchers("/users/").permitAll()
 
-        .and()
-            .authorizeRequests().anyRequest().authenticated().and()
+        .and().authorizeRequests().anyRequest().authenticated().and()
         .addFilterBefore(
             new JWTLoginFilter("/authenticate", authenticationManager(), userRepository, organizationRepository),
             UsernamePasswordAuthenticationFilter.class)
-        .addFilterBefore(new ExceptionHandlingFilter(),JWTLoginFilter.class)
-        .addFilterAfter(new JWTAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-        ;
+        .addFilterBefore(new ExceptionHandlingFilter(), JWTLoginFilter.class)
+        .addFilterAfter(new JWTAuthenticationFilter(userRepository, organizationRepository),
+            UsernamePasswordAuthenticationFilter.class);
 
   }
 
   @Override
   public void configure(WebSecurity web) throws Exception {
-    web.ignoring().antMatchers("/public/release","/users/check","/users/forgot/**","/users/set-password","/user/**/grant/resolve","/users/","/public/**","/v2/api-docs","/public/grants/**/file/**", "/configuration/ui", "/swagger-resources/**", "/configuration/**", "/swagger-ui.html", "/webjars/**");
+    web.ignoring().antMatchers("/public/release", "/users/check", "/users/forgot/**", "/users/set-password",
+        "/user/**/grant/resolve", "/users/", "/public/**", "/v2/api-docs", "/public/grants/**/file/**",
+        "/configuration/ui", "/swagger-resources/**", "/configuration/**", "/swagger-ui.html", "/webjars/**");
   }
 
   @Override
   protected void configure(AuthenticationManagerBuilder auth) throws Exception {
     auth.authenticationProvider(authProvider);
   }
-
-
 
 }

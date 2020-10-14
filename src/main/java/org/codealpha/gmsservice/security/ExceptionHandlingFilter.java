@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.codealpha.gmsservice.exceptions.TokenExpiredException;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -29,15 +30,16 @@ public class ExceptionHandlingFilter extends GenericFilterBean {
       Error error = null;
       switch (e.getClass().getSimpleName()) {
         case "TokenExpiredException":
-          error = new Error(HttpStatus.FORBIDDEN, "Token Expired.",
-              e.getMessage());
+          error = new Error(HttpStatus.FORBIDDEN, "Token Expired.", e.getMessage());
           break;
         case "InvalidCredentialsException":
-          error = new Error(HttpStatus.FORBIDDEN, "Invalid Credentials",
-              e.getMessage());
+          error = new Error(HttpStatus.FORBIDDEN, "Invalid Credentials", e.getMessage());
           break;
         case "InvalidTenantException":
           error = new Error(HttpStatus.FORBIDDEN, "Invalid Tenant", e.getMessage());
+          break;
+        case "BadCredentialsException":
+          error = new Error(HttpStatus.FORBIDDEN, "Invalid Credentials", e.getMessage());
           break;
         default:
           error = new Error(HttpStatus.INTERNAL_SERVER_ERROR, "Server Error",
