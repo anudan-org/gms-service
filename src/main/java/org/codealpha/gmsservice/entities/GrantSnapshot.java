@@ -60,6 +60,7 @@ public class GrantSnapshot {
   private Long amendGrantId;
   @Column
   private boolean amended;
+  @Column
   private Long fromStateId;
   @Column
   private Long toStateId;

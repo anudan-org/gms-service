@@ -533,19 +533,26 @@ public class DisbursementsController {
                 }
 
                 disbursement = disbursementService.disbursementToReturn(disbursement, userId);
-                _saveSnapShot(disbursement, fromStateId);
+                _saveSnapShot(disbursement, fromStateId, toStateId, currentOwner, previousOwner);
 
                 return disbursement;
 
         }
 
-        private void _saveSnapShot(Disbursement disbursement, Long fromStateId) {
+        private void _saveSnapShot(Disbursement disbursement, Long fromStateId, Long toStateId, User currentUser,
+                        User previousUser) {
 
                 DisbursementSnapshot snapshot = new DisbursementSnapshot();
                 snapshot.setStatusId(fromStateId);
                 snapshot.setDisbursementId(disbursement.getId());
                 snapshot.setReason(disbursement.getReason());
                 snapshot.setRequestedAmount(disbursement.getRequestedAmount());
+                snapshot.setFromNote(disbursement.getNote());
+                snapshot.setFromStateId(fromStateId);
+                snapshot.setToStateId(toStateId);
+                snapshot.setAssignedToId(currentUser.getId());
+                snapshot.setMovedBy(previousUser.getId());
+                snapshot.setMovedOn(disbursement.getMovedOn());
 
                 disbursementSnapshotService.saveSnapShot(snapshot);
 

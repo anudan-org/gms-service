@@ -1656,7 +1656,7 @@ public class ReportController {
         }
 
         report = _ReportToReturn(report, userId);
-        _saveSnapShot(report, fromStateId);
+        _saveSnapShot(report, fromStateId, toStateId, currentOwner, previousOwner);
 
         if (toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
             List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
@@ -1723,21 +1723,29 @@ public class ReportController {
 
     }
 
-    private void _saveSnapShot(Report report, Long fromStatusId) {
+    private void _saveSnapShot(Report report, Long fromStatusId, Long toStatusId, User currentUser, User previousUser) {
 
         try {
-            for (AssignedTo assignment : report.getCurrentAssignment()) {
-                ReportSnapshot snapshot = new ReportSnapshot();
-                snapshot.setAssignedToId(assignment.getUser().getId());
-                snapshot.setEndDate(report.getEndDate());
-                snapshot.setDueDate(report.getDueDate());
-                snapshot.setReportId(report.getId());
-                snapshot.setName(report.getName());
-                snapshot.setStartDate(report.getStartDate());
-                snapshot.setStatusId(fromStatusId);
-                snapshot.setStringAttributes(new ObjectMapper().writeValueAsString(report.getReportDetails()));
-                reportSnapshotService.saveReportSnapshot(snapshot);
-            }
+            // for (AssignedTo assignment : report.getCurrentAssignment()) {
+            ReportSnapshot snapshot = new ReportSnapshot();
+            snapshot.setAssignedToId(currentUser.getId());
+            snapshot.setEndDate(report.getEndDate());
+            snapshot.setDueDate(report.getDueDate());
+            snapshot.setReportId(report.getId());
+            snapshot.setName(report.getName());
+            snapshot.setStartDate(report.getStartDate());
+            snapshot.setStatusId(fromStatusId);
+            String stringAttribs = new ObjectMapper().writeValueAsString(report.getReportDetails());
+            snapshot.setStringAttributes(stringAttribs);
+            snapshot.setFromStringAttributes(stringAttribs);
+            snapshot.setAssignedToId(currentUser.getId());
+            snapshot.setMovedBy(previousUser.getId());
+            snapshot.setFromNote(report.getNote());
+            snapshot.setFromStateId(fromStatusId);
+            snapshot.setToStateId(toStatusId);
+            snapshot.setMovedOn(report.getMovedOn());
+            reportSnapshotService.saveReportSnapshot(snapshot);
+            // }
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
         }
