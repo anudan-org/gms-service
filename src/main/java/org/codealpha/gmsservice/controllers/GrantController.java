@@ -880,182 +880,6 @@ public class GrantController {
         return grant;
     }
 
-    @PutMapping(value = "/kpi")
-    @Transactional
-    @ApiIgnore
-    public GrantVO saveKpiSubmissions(@RequestBody SubmissionData submissionData, @PathVariable("userId") Long userId) {
-
-        User user = userService.getUserById(userId);
-        for (KpiSubmissionData data : submissionData.getKpiSubmissionData()) {
-            switch (data.getType()) {
-                case "QUANTITATIVE":
-                    GrantQuantitativeKpiData quantitativeKpiData = quantitativeDataService
-                            .findById(data.getKpiDataId());
-                    quantitativeKpiData.setActuals(Integer.valueOf(data.getValue()));
-                    quantitativeKpiData.setUpdatedAt(DateTime.now().toDate());
-                    quantitativeKpiData.setUpdatedBy(user.getEmailId());
-
-                    if (data.getNotes() != null) {
-                        for (String note : data.getNotes()) {
-                            QuantitativeKpiNotes kpiNote = new QuantitativeKpiNotes();
-                            kpiNote.setMessage(note);
-                            kpiNote.setPostedBy(user);
-                            kpiNote.setPostedOn(DateTime.now().toDate());
-                            kpiNote.setKpiData(quantitativeKpiData);
-                            kpiNote = quantitativeKpiNotesService.saveQuantitativeKpiNotes(kpiNote);
-                            quantitativeKpiData.getNotesHistory().add(kpiNote);
-                        }
-                    }
-
-                    List<QuantKpiDataDocument> kpiDocs = new ArrayList<>();
-                    if ((data.getFiles() != null && !data.getFiles().isEmpty())) {
-                        for (UploadFile uploadedFile : data.getFiles()) {
-                            String fileName = uploadLocation + uploadedFile.getFileName();
-                            QuantKpiDataDocument quantKpiDataDocument = new QuantKpiDataDocument();
-                            quantKpiDataDocument.setFileName(uploadedFile.getFileName());
-                            if (quantitativeKpiData.getSubmissionDocs().contains(quantKpiDataDocument)) {
-                                quantKpiDataDocument = quantitativeKpiData.getSubmissionDocs()
-                                        .get(quantitativeKpiData.getSubmissionDocs().indexOf(quantKpiDataDocument));
-                                quantKpiDataDocument.setVersion(quantKpiDataDocument.getVersion() + 1);
-                            } else {
-                                quantKpiDataDocument.setFileType(uploadedFile.getFileType());
-                                quantKpiDataDocument.setQuantKpiData(quantitativeKpiData);
-                            }
-
-                            try (FileOutputStream fileOutputStream = new FileOutputStream(fileName)) {
-
-                                byte[] dataBytes = Base64.getDecoder().decode(uploadedFile.getValue());
-                                fileOutputStream.write(dataBytes);
-                            } catch (IOException e) {
-                                logger.error(e.getMessage(), e);
-                            }
-
-                            quantKpiDataDocument = quantKpiDocumentService.saveFile(quantKpiDataDocument);
-                            kpiDocs.add(quantKpiDataDocument);
-                        }
-
-                        quantitativeKpiData.setSubmissionDocs(kpiDocs);
-                        quantitativeKpiData = quantitativeDataService.saveData(quantitativeKpiData);
-
-                    }
-                    break;
-                case "QUALITATIVE":
-                    GrantQualitativeKpiData qualitativeKpiData = qualitativeDataService.findById(data.getKpiDataId());
-                    qualitativeKpiData.setActuals(data.getValue());
-                    qualitativeKpiData.setCreatedAt(DateTime.now().toDate());
-                    qualitativeKpiData.setUpdatedBy(user.getEmailId());
-
-                    qualitativeDataService.saveData(qualitativeKpiData);
-                    if (data.getNotes() != null) {
-                        for (String note : data.getNotes()) {
-                            QualitativeKpiNotes kpiNote = new QualitativeKpiNotes();
-                            kpiNote.setMessage(note);
-                            kpiNote.setPostedBy(user);
-                            kpiNote.setPostedOn(DateTime.now().toDate());
-                            kpiNote.setKpiData(qualitativeKpiData);
-                            kpiNote = qualitativeKpiNotesService.saveQualitativeKpiNotes(kpiNote);
-                            qualitativeKpiData.getNotesHistory().add(kpiNote);
-                        }
-                    }
-                    break;
-                case "DOCUMENT":
-                    GrantDocumentKpiData documentKpiData = grantDocumentDataService.findById(data.getKpiDataId());
-
-                    List<DocKpiDataDocument> docKpiDataDocuments = documentKpiData.getSubmissionDocs();
-                    List<DocKpiDataDocument> submissionDocs = new ArrayList<>();
-
-                    if (documentKpiData.getActuals() != null
-                            && (data.getFiles() == null || data.getFiles().isEmpty())) {
-                    } else {
-                        for (UploadFile uploadedFile : data.getFiles()) {
-                            String fileName = uploadLocation + uploadedFile.getFileName();
-                            DocKpiDataDocument docKpiDataDocument = new DocKpiDataDocument();
-                            docKpiDataDocument.setFileName(uploadedFile.getFileName());
-                            if (docKpiDataDocuments.contains(docKpiDataDocument)) {
-                                docKpiDataDocument = docKpiDataDocuments
-                                        .get(docKpiDataDocuments.indexOf(docKpiDataDocument));
-                                docKpiDataDocument.setVersion(docKpiDataDocument.getVersion() + 1);
-                            } else {
-                                docKpiDataDocument.setFileType(uploadedFile.getFileType());
-                                docKpiDataDocument.setDocKpiData(documentKpiData);
-                            }
-
-                            try (FileOutputStream fileOutputStream = new FileOutputStream(fileName)) {
-
-                                byte[] dataBytes = Base64.getDecoder().decode(uploadedFile.getValue());
-                                fileOutputStream.write(dataBytes);
-                            } catch (IOException e) {
-                                logger.error(e.getMessage(), e);
-                            }
-
-                            docKpiDataDocument = docKpiDataDocumentService.saveKpiDoc(docKpiDataDocument);
-                            submissionDocs.add(docKpiDataDocument);
-                        }
-
-                    }
-                    if (data.getNotes() != null) {
-                        for (String note : data.getNotes()) {
-                            DocumentKpiNotes kpiNote = new DocumentKpiNotes();
-                            kpiNote.setMessage(note);
-                            kpiNote.setPostedBy(user);
-                            kpiNote.setPostedOn(DateTime.now().toDate());
-                            kpiNote.setKpiData(documentKpiData);
-                            kpiNote = documentKpiNotesService.saveDocumentKpiNotes(kpiNote);
-                            documentKpiData.getNotesHistory().add(kpiNote);
-                        }
-                    }
-                    documentKpiData.setSubmissionDocs(submissionDocs);
-                    grantDocumentDataService.saveDocumentKpi(documentKpiData);
-                    break;
-
-                default:
-                    logger.info("Nothing to do");
-            }
-        }
-
-        Submission submission = submissionService.getById(submissionData.getId());
-
-        for (String msg : submissionData.getNotes()) {
-            SubmissionNote note = new SubmissionNote();
-            note.setMessage(msg);
-            note.setSubmission(submission);
-            note.setPostedBy(user);
-            note.setPostedOn(DateTime.now().toDate());
-            submissionNoteService.saveSubmissionNote(note);
-        }
-        submission.setSubmittedOn(DateTime.now().toDate());
-        submission.setSubmissionStatus(
-                workflowStatusService.findById(submissionData.getKpiSubmissionData().get(0).getToStatusId()));
-
-        submission = submissionService.saveSubmission(submission);
-
-        List<User> usersToNotify = userService
-                .usersToNotifyOnWorkflowSateChangeTo(submission.getSubmissionStatus().getId());
-
-        for (User userToNotify : usersToNotify) {
-            commonEmailSevice.sendMail(new String[] { userToNotify.getEmailId() }, null,
-                    appConfigService
-                            .getAppConfigForGranterOrg(submission.getGrant().getGrantorOrganization().getId(),
-                                    AppConfiguration.SUBMISSION_ALTER_MAIL_SUBJECT)
-                            .getConfigValue(),
-                    submissionService.buildMailContent(submission,
-                            appConfigService
-                                    .getAppConfigForGranterOrg(submission.getGrant().getGrantorOrganization().getId(),
-                                            AppConfiguration.SUBMISSION_ALTER_MAIL_CONTENT)
-                                    .getConfigValue()),
-                    null);
-        }
-
-        Grant grant = submission.getGrant();
-        grant.setSubstatus(submission.getSubmissionStatus());
-        grant = grantService.saveGrant(grant);
-        grant = grantService.getById(grant.getId());
-        return new GrantVO().build(grant, grantService.getGrantSections(grant), workflowPermissionService, user,
-                appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService);
-    }
-
     @PutMapping("/{grantId}")
     @ApiOperation("Save grant")
     public Grant saveGrant(
@@ -1625,9 +1449,9 @@ public class GrantController {
 
         if (!toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
             final User currentOwnerFinal = currentOwner;
-            usersToNotify.removeIf(u -> u.getId().longValue() == currentOwnerFinal.getId());
+            usersToNotify.removeIf(u -> u.getId().longValue() == currentOwnerFinal.getId() || u.isDeleted());
             commonEmailSevice
-                    .sendMail(new String[] { currentOwner.getEmailId() },
+                    .sendMail(!currentOwner.isDeleted() ? new String[] { currentOwner.getEmailId() } : null,
                             usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
                             emailNotificationContent[0], emailNotificationContent[1],
@@ -1650,10 +1474,10 @@ public class GrantController {
                     .filter(ass -> ass.getStateId().longValue() == activeStatus.getId().longValue()).findFirst().get();
 
             User activeStateOwner = userService.getUserById(activeStateAssignment.getAssignments());
-            usersToNotify.removeIf(u -> u.getId().longValue() == activeStateOwner.getId().longValue());
+            usersToNotify.removeIf(u -> u.getId().longValue() == activeStateOwner.getId().longValue() || u.isDeleted());
 
             commonEmailSevice
-                    .sendMail(new String[] { activeStateOwner.getEmailId() },
+                    .sendMail(!activeStateOwner.isDeleted() ? new String[] { activeStateOwner.getEmailId() } : null,
                             usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
                             emailNotificationContent[0], emailNotificationContent[1],
@@ -2731,13 +2555,20 @@ public class GrantController {
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
                     null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
                     newAssignments);
+            List<User> toUsers = newAssignments.stream().map(a -> a.getAssignments())
+                    .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
+            toUsers.removeIf(u -> u.isDeleted());
+            toUsers.removeIf(u -> u == null);
+            List<User> ccUsers = currentAssignments.values().stream().map(uid -> userService.getUserById(uid))
+                    .collect(Collectors.toList());
+            ccUsers.removeIf(u -> u.isDeleted());
+            ccUsers.removeIf(u -> u == null);
             commonEmailSevice
                     .sendMail(
-                            newAssignments.stream().map(a -> a.getAssignments())
-                                    .map(uid -> userService.getUserById(uid).getEmailId()).collect(Collectors.toList())
+                            toUsers.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                     .toArray(new String[newAssignments.size()]),
-                            currentAssignments.values().stream().map(uid -> userService.getUserById(uid).getEmailId())
-                                    .collect(Collectors.toList()).toArray(new String[currentAssignments.size()]),
+                            ccUsers.stream().map(u -> u.getEmailId()).collect(
+                                    Collectors.toList()).toArray(new String[currentAssignments.size()]),
                             notifications[0], notifications[1],
                             new String[] { appConfigService
                                     .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
@@ -3121,8 +2952,8 @@ public class GrantController {
                                 AppConfiguration.GRANT_INVITE_MESSAGE).getConfigValue(),
                         url);
 
-                commonEmailSevice.sendMail(new String[] { granteeUser.getEmailId() }, null, notifications[0],
-                        notifications[1],
+                commonEmailSevice.sendMail(!granteeUser.isDeleted() ? new String[] { granteeUser.getEmailId() } : null,
+                        null, notifications[0], notifications[1],
                         new String[] { appConfigService
                                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)

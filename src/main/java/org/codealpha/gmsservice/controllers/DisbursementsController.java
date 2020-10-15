@@ -301,13 +301,18 @@ public class DisbursementsController {
                                                         .getConfigValue(),
                                         null, null, null, null, null, null, null, null, null, null, null, null,
                                         currentAssignments, newAssignments);
-                        commonEmailSevice.sendMail(newAssignments.stream().map(a -> a.getOwner())
-                                        .map(uid -> userService.getUserById(uid).getEmailId())
-                                        .collect(Collectors.toList()).toArray(new String[newAssignments.size()]),
-                                        currentAssignments.values().stream()
-                                                        .map(uid -> userService.getUserById(uid).getEmailId())
-                                                        .collect(Collectors.toList())
-                                                        .toArray(new String[currentAssignments.size()]),
+                        List<User> toUsers = newAssignments.stream().map(a -> a.getOwner())
+                                        .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
+                        toUsers.removeIf(u -> u.isDeleted());
+
+                        List<User> ccUsers = currentAssignments.values().stream()
+                                        .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
+                        ccUsers.removeIf(u -> u.isDeleted());
+                        commonEmailSevice.sendMail(
+                                        toUsers.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                                                        .toArray(new String[toUsers.size()]),
+                                        ccUsers.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                                                        .toArray(new String[ccUsers.size()]),
                                         notifications[0], notifications[1],
                                         new String[] { appConfigService
                                                         .getAppConfigForGranterOrg(
@@ -480,9 +485,12 @@ public class DisbursementsController {
                                 "", null, null, null, null);
                 final User finalCurrentOwner = currentOwner;
                 if (!toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
-                        usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue());
+                        usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue()
+                                        || u.isDeleted());
 
-                        commonEmailSevice.sendMail(new String[] { finalCurrentOwner.getEmailId() },
+                        commonEmailSevice.sendMail(
+                                        new String[] { !finalCurrentOwner.isDeleted() ? finalCurrentOwner.getEmailId()
+                                                        : null },
                                         usersToNotify.stream().map(mapper -> mapper.getEmailId())
                                                         .collect(Collectors.toList())
                                                         .toArray(new String[usersToNotify.size()]),
@@ -509,9 +517,12 @@ public class DisbursementsController {
                                         .getDisbursementAssignments(disbursement).stream()
                                         .filter(ass -> ass.getStateId().longValue() == activeStatus.getId().longValue())
                                         .findFirst().get().getOwner());
-                        usersToNotify.removeIf(u -> u.getId().longValue() == activeStatusOwner.getId().longValue());
+                        usersToNotify.removeIf(u -> u.getId().longValue() == activeStatusOwner.getId().longValue()
+                                        || u.isDeleted());
 
-                        commonEmailSevice.sendMail(new String[] { activeStatusOwner.getEmailId() },
+                        commonEmailSevice.sendMail(
+                                        new String[] { !activeStatusOwner.isDeleted() ? activeStatusOwner.getEmailId()
+                                                        : null },
                                         usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                                         .toArray(new String[usersToNotify.size()]),
                                         emailNotificationContent[0], emailNotificationContent[1],

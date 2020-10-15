@@ -1197,8 +1197,8 @@ public class ReportController {
                         appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.REPORT_INVITE_MESSAGE).getConfigValue(),
                         url);
-                commonEmailSevice.sendMail(new String[] { granteeUser.getEmailId() }, null, notifications[0],
-                        notifications[1],
+                commonEmailSevice.sendMail(new String[] { !granteeUser.isDeleted() ? granteeUser.getEmailId() : null },
+                        null, notifications[0], notifications[1],
                         new String[] { appConfigService
                                 .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
@@ -1252,14 +1252,19 @@ public class ReportController {
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
                     null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
                     newAssignments);
+            List<User> toUsers = newAssignments.stream().map(a -> a.getAssignment())
+                    .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
+            toUsers.removeIf(u -> u.isDeleted());
+            List<User> ccUsers = currentAssignments.values().stream().map(uid -> userService.getUserById(uid))
+                    .collect(Collectors.toList());
+            ccUsers.removeIf(u -> u.isDeleted());
 
             commonEmailSevice
                     .sendMail(
-                            newAssignments.stream().map(a -> a.getAssignment())
-                                    .map(uid -> userService.getUserById(uid).getEmailId()).collect(Collectors.toList())
-                                    .toArray(new String[newAssignments.size()]),
-                            currentAssignments.values().stream().map(uid -> userService.getUserById(uid).getEmailId())
-                                    .collect(Collectors.toList()).toArray(new String[currentAssignments.size()]),
+                            toUsers.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                                    .toArray(new String[toUsers.size()]),
+                            ccUsers.stream().map(u -> u.getEmailId()).collect(
+                                    Collectors.toList()).toArray(new String[ccUsers.size()]),
                             notifications[0], notifications[1],
                             new String[] { appConfigService
                                     .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
@@ -1419,7 +1424,8 @@ public class ReportController {
         String finalCurrentOwnerName = currentOwnerName;
         User finalCurrentOwner = currentOwner;
         if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
-            usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue());
+            usersToNotify
+                    .removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue() || u.isDeleted());
             String emailNotificationContent[] = reportService.buildEmailNotificationContent(finalReport,
                     finalCurrentOwner, currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), null,
                     new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
@@ -1437,7 +1443,7 @@ public class ReportController {
                             : "",
                     null, null, null, null, null);
             commonEmailSevice
-                    .sendMail(new String[] { currentOwner.getEmailId() },
+                    .sendMail(new String[] { !currentOwner.isDeleted() ? currentOwner.getEmailId() : null },
                             usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
                             emailNotificationContent[0], emailNotificationContent[1],
@@ -1494,7 +1500,8 @@ public class ReportController {
                 notificationsService.saveNotification(nc, u.getId(), finalReport.getId(), "REPORT");
             });
         } else if (!toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
-            usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue());
+            usersToNotify
+                    .removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue() || u.isDeleted());
             if (!workflowStatusService.findById(fromStateId).getInternalStatus().equalsIgnoreCase("ACTIVE")) {
                 usersToNotify.removeIf(u -> u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"));
             }
@@ -1516,7 +1523,7 @@ public class ReportController {
                             : "",
                     null, null, null, null, null);
             commonEmailSevice
-                    .sendMail(new String[] { currentOwner.getEmailId() },
+                    .sendMail(new String[] { !currentOwner.isDeleted() ? currentOwner.getEmailId() : null },
                             usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
                             emailNotificationContent[0], emailNotificationContent[1],
@@ -1577,7 +1584,7 @@ public class ReportController {
             User granteeUser = usersToNotify.stream()
                     .filter(u -> u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")).findFirst()
                     .get();
-            usersToNotify.removeIf(u -> u.getId().longValue() == granteeUser.getId().longValue());
+            usersToNotify.removeIf(u -> u.getId().longValue() == granteeUser.getId().longValue() || u.isDeleted());
 
             String emailNotificationContent[] = reportService.buildEmailNotificationContent(finalReport, granteeUser,
                     granteeUser.getFirstName().concat(" ").concat(granteeUser.getLastName()), null,
@@ -1596,7 +1603,7 @@ public class ReportController {
                             : "",
                     null, null, null, null, null);
             commonEmailSevice
-                    .sendMail(new String[] { granteeUser.getEmailId() },
+                    .sendMail(new String[] { !granteeUser.isDeleted() ? granteeUser.getEmailId() : null },
                             usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
                             emailNotificationContent[0], emailNotificationContent[1],

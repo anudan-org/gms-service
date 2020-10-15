@@ -137,7 +137,11 @@ public class ScheduledJobs {
                 .collect(Collectors.toList());
         List<String> otherUsersToNotify = new ArrayList<>();
         for (ReportAssignment ccAssignment : ccAssignments) {
-            otherUsersToNotify.add(userService.getUserById(ccAssignment.getAssignment()).getEmailId());
+            User u = userService.getUserById(ccAssignment.getAssignment());
+            if (u.isDeleted()) {
+                continue;
+            }
+            otherUsersToNotify.add(u.getEmailId());
         }
 
         String link = buildLink(environment, false, "");
@@ -153,8 +157,8 @@ public class ScheduledJobs {
                 taskConfiguration.getSubjectReport(), taskConfiguration.getMessageReport(), "", "", "", "", "", "", "",
                 "", "", link, owner, null, null, null);
 
-        emailSevice.sendMail(new String[] { granteeToNotify.getEmailId() }, otherUsersToNotify.toArray(new String[] {}),
-                messageMetadata[0], messageMetadata[1],
+        emailSevice.sendMail(new String[] { !granteeToNotify.isDeleted() ? granteeToNotify.getEmailId() : null },
+                otherUsersToNotify.toArray(new String[] {}), messageMetadata[0], messageMetadata[1],
                 new String[] { appConfigService
                         .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
@@ -244,6 +248,7 @@ public class ScheduledJobs {
                                     for (ReportAssignment ass : reportAssignments) {
                                         uList.add(userService.getUserById(ass.getAssignment()));
                                     }
+                                    uList.removeIf(u -> u.isDeleted());
                                     ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                             .toArray(new String[reportAssignments.size()]);
                                 }
@@ -264,8 +269,8 @@ public class ScheduledJobs {
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
                                         emailSevice
-                                                .sendMail(new String[] { user.getEmailId() }, ccList,
-                                                        messageMetadata[0], messageMetadata[1],
+                                                .sendMail(new String[] { !user.isDeleted() ? user.getEmailId() : null },
+                                                        ccList, messageMetadata[0], messageMetadata[1],
                                                         new String[] { appConfigService
                                                                 .getAppConfigForGranterOrg(
                                                                         report.getGrant().getGrantorOrganization()
@@ -305,6 +310,7 @@ public class ScheduledJobs {
                                     for (ReportAssignment ass : reportAssignments) {
                                         uList.add(userService.getUserById(ass.getAssignment()));
                                     }
+                                    uList.removeIf(u -> u.isDeleted());
                                     ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                             .toArray(new String[reportAssignments.size()]);
                                 }
@@ -325,8 +331,8 @@ public class ScheduledJobs {
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
                                         emailSevice
-                                                .sendMail(new String[] { user.getEmailId() }, ccList,
-                                                        messageMetadata[0], messageMetadata[1],
+                                                .sendMail(new String[] { !user.isDeleted() ? user.getEmailId() : null },
+                                                        ccList, messageMetadata[0], messageMetadata[1],
                                                         new String[] { appConfigService
                                                                 .getAppConfigForGranterOrg(
                                                                         report.getGrant().getGrantorOrganization()
@@ -401,6 +407,8 @@ public class ScheduledJobs {
                                     for (GrantAssignments ass : grantAssignments) {
                                         uList.add(userService.getUserById(ass.getAssignments()));
                                     }
+                                    uList.removeIf(u -> u.isDeleted());
+
                                     ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                             .toArray(new String[grantAssignments.size()]);
                                 }
@@ -421,7 +429,8 @@ public class ScheduledJobs {
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice.sendMail(new String[] { user.getEmailId() }, ccList,
+                                        emailSevice.sendMail(
+                                                new String[] { !user.isDeleted() ? user.getEmailId() : null }, ccList,
                                                 messageMetadata[0], messageMetadata[1],
                                                 new String[] { appConfigService
                                                         .getAppConfigForGranterOrg(
@@ -459,6 +468,7 @@ public class ScheduledJobs {
                                     for (GrantAssignments ass : grantAssignments) {
                                         uList.add(userService.getUserById(ass.getAssignments()));
                                     }
+                                    uList.removeIf(u -> u.isDeleted());
                                     ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                             .toArray(new String[grantAssignments.size()]);
                                 }
@@ -479,7 +489,8 @@ public class ScheduledJobs {
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice.sendMail(new String[] { user.getEmailId() }, ccList,
+                                        emailSevice.sendMail(
+                                                new String[] { !user.isDeleted() ? user.getEmailId() : null }, ccList,
                                                 messageMetadata[0], messageMetadata[1],
                                                 new String[] { appConfigService
                                                         .getAppConfigForGranterOrg(
@@ -554,6 +565,7 @@ public class ScheduledJobs {
                                     for (DisbursementAssignment ass : disbursementAssignments) {
                                         uList.add(userService.getUserById(ass.getOwner()));
                                     }
+                                    uList.removeIf(u -> u.isDeleted());
                                     ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                             .toArray(new String[disbursementAssignments.size()]);
                                 }
@@ -573,7 +585,8 @@ public class ScheduledJobs {
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice.sendMail(new String[] { user.getEmailId() }, ccList,
+                                        emailSevice.sendMail(
+                                                new String[] { !user.isDeleted() ? user.getEmailId() : null }, ccList,
                                                 messageMetadata[0], messageMetadata[1],
                                                 new String[] { appConfigService
                                                         .getAppConfigForGranterOrg(
@@ -613,6 +626,7 @@ public class ScheduledJobs {
                                     for (DisbursementAssignment ass : disbursementAssignments) {
                                         uList.add(userService.getUserById(ass.getOwner()));
                                     }
+                                    uList.removeIf(u -> u.isDeleted());
                                     ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                             .toArray(new String[disbursementAssignments.size()]);
                                 }
@@ -631,7 +645,8 @@ public class ScheduledJobs {
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice.sendMail(new String[] { user.getEmailId() }, ccList,
+                                        emailSevice.sendMail(
+                                                new String[] { !user.isDeleted() ? user.getEmailId() : null }, ccList,
                                                 messageMetadata[0], messageMetadata[1],
                                                 new String[] { appConfigService
                                                         .getAppConfigForGranterOrg(

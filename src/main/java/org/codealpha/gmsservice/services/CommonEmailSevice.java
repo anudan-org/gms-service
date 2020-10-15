@@ -43,7 +43,9 @@ public class CommonEmailSevice {
       MimeMessage message = mailSender.createMimeMessage();
       MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message);
       // SimpleMailMessage message = new SimpleMailMessage();
-      mimeMessageHelper.setTo(to);
+      if (to != null) {
+        mimeMessageHelper.setTo(to);
+      }
       if (ccList != null) {
         mimeMessageHelper.setCc(ccList);
       }
