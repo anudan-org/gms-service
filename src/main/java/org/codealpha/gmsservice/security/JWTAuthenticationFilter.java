@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.security;
 
 import java.io.IOException;
+import java.util.List;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -47,8 +48,20 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
 
       if (authentication != null) {
         String[] principalTokens = authentication.getPrincipal().toString().split("\\^");
-        User user = userRepository.findByEmailIdAndOrganization(principalTokens[0],
-            organizationRepository.findByCode(principalTokens[1]));
+        User user = null;
+        if(!"ANUDAN".equalsIgnoreCase(principalTokens[1])){
+          user = userRepository.findByEmailIdAndOrganization(principalTokens[0],
+                  organizationRepository.findByCode(principalTokens[1]));
+        }else if("ANUDAN".equalsIgnoreCase(principalTokens[1])){
+          List<User> users = userRepository.findByEmailId(principalTokens[0]);
+          for (User user1 : users) {
+            if(user1.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") || user1.getOrganization().getOrganizationType().equalsIgnoreCase("PLATFORM")){
+              user = user1;
+              break;
+            }
+          }
+        }
+
         if (!user.isActive() || user.isDeleted()) {
           throw new BadCredentialsException("Inactive user");
         }
