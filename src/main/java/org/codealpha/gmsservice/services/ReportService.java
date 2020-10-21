@@ -77,6 +77,8 @@ public class ReportService {
     private ReportAssignmentHistoryRepository assignmentHistoryRepository;
     @Autowired
     private UserService userService;
+    @Autowired
+    private DisabledUsersEntityRepository disabledUsersEntityRepository;
 
     public Report saveReport(Report report) {
         return reportRepository.save(report);
@@ -804,5 +806,9 @@ public class ReportService {
 
     public List<Report> getUpcomingFutureReportsForGranterUserByDate(Long userId, Long id, Date end) {
         return reportRepository.findUpcomingFutureReports(userId, id);
+    }
+
+    public List<DisabledUsersEntity> getReportsWithDisabledUsers(){
+        return disabledUsersEntityRepository.getReports();
     }
 }

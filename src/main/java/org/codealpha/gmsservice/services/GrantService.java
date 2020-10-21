@@ -109,6 +109,8 @@ public class GrantService {
     private ReportService reportService;
     @Autowired
     private DisbursementService disbursementService;
+    @Autowired
+    private DisabledUsersEntityRepository disabledUsersEntityRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -845,5 +847,9 @@ public class GrantService {
 
     public void deleteGrantDocument(GrantDocument doc) {
         grantDocumentRepository.delete(doc);
+    }
+
+    public List<DisabledUsersEntity> getGrantsWithDisabledUsers(){
+        return disabledUsersEntityRepository.getGrants();
     }
 }
