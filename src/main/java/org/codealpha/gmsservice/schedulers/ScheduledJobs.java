@@ -708,7 +708,7 @@ public class ScheduledJobs {
         }
     }
 
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 5 * * *")
     public void remindAdminsAboutDisabledUsers() {
 
         List<DisabledUsersEntity> grantsWithDisabledUsers = grantService.getGrantsWithDisabledUsers();
@@ -724,16 +724,26 @@ public class ScheduledJobs {
                     }
                     return false;
                 }).collect(Collectors.toList());
+                List<User> nonAdminUsers = tenantUsers.stream().filter(u -> {
+                    Boolean isNotAdmin = u.getUserRoles().stream().filter(r -> !r.getRole().getName().equalsIgnoreCase("ADMIN")).findAny().isPresent();
+                    if(isNotAdmin){
+                        return true;
+                    }
+                    return false;
+                }).collect(Collectors.toList());
                 admins.removeIf(u -> u.isDeleted());
+                nonAdminUsers.removeIf(u -> u.isDeleted());
                 String[] toList = admins.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                         .toArray(new String[admins.size()]);
+                String[] ccList = nonAdminUsers.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                        .toArray(new String[nonAdminUsers.size()]);
 
                 String mailSubject = "Workflow Alert: Disabled Users for " + entity.getEntityName();
                 String mailMessage = appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.DISABLED_USERS_IN_WORKFLOW_EMAIL_TEMPLATE).getConfigValue();
                 mailMessage = mailMessage.replaceAll("%ENTITY_TYPE%", entity.getEntityType()).replaceAll("%ENTITY_NAME%", entity.getEntityName());
 
-                emailSevice.sendMail(toList, null, mailSubject, mailMessage, new String[]{appConfigService
+                emailSevice.sendMail(toList, ccList, mailSubject, mailMessage, new String[]{appConfigService
                         .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                         .getConfigValue().replaceAll("%RELEASE_VERSION%",
@@ -756,16 +766,27 @@ public class ScheduledJobs {
                         }
                         return false;
                     }).collect(Collectors.toList());
+
+                    List<User> nonAdminUsers = tenantUsers.stream().filter(u -> {
+                        Boolean isNotAdmin = u.getUserRoles().stream().filter(r -> !r.getRole().getName().equalsIgnoreCase("ADMIN")).findAny().isPresent();
+                        if(isNotAdmin){
+                            return true;
+                        }
+                        return false;
+                    }).collect(Collectors.toList());
                     admins.removeIf(u -> u.isDeleted());
+                    nonAdminUsers.removeIf(u -> u.isDeleted());
                     String[] toList = admins.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                             .toArray(new String[admins.size()]);
+                    String[] ccList = nonAdminUsers.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                            .toArray(new String[nonAdminUsers.size()]);
 
                     String mailSubject = "Workflow Alert: Disabled Users for " + entity.getEntityName();
                     String mailMessage = appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                             AppConfiguration.DISABLED_USERS_IN_WORKFLOW_EMAIL_TEMPLATE).getConfigValue();
                     mailMessage = mailMessage.replaceAll("%ENTITY_TYPE%", entity.getEntityType()).replaceAll("%ENTITY_NAME%", entity.getEntityName());
 
-                    emailSevice.sendMail(toList, null, mailSubject, mailMessage, new String[]{appConfigService
+                    emailSevice.sendMail(toList, ccList, mailSubject, mailMessage, new String[]{appConfigService
                             .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                     AppConfiguration.PLATFORM_EMAIL_FOOTER)
                             .getConfigValue().replaceAll("%RELEASE_VERSION%",
@@ -788,16 +809,26 @@ public class ScheduledJobs {
                     }
                     return false;
                 }).collect(Collectors.toList());
+                List<User> nonAdminUsers = tenantUsers.stream().filter(u -> {
+                    Boolean isNotAdmin = u.getUserRoles().stream().filter(r -> !r.getRole().getName().equalsIgnoreCase("ADMIN")).findAny().isPresent();
+                    if(isNotAdmin){
+                        return true;
+                    }
+                    return false;
+                }).collect(Collectors.toList());
                 admins.removeIf(u -> u.isDeleted());
+                nonAdminUsers.removeIf(u -> u.isDeleted());
                 String[] toList = admins.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                         .toArray(new String[admins.size()]);
+                String[] ccList = nonAdminUsers.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                        .toArray(new String[nonAdminUsers.size()]);
 
                 String mailSubject = "Workflow Alert: Disabled Users for " + entity.getEntityName();
                 String mailMessage = appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.DISABLED_USERS_IN_WORKFLOW_EMAIL_TEMPLATE).getConfigValue();
                 mailMessage = mailMessage.replaceAll("%ENTITY_TYPE%", entity.getEntityType()).replaceAll("%ENTITY_NAME%", entity.getEntityName());
 
-                emailSevice.sendMail(toList, null, mailSubject, mailMessage, new String[]{appConfigService
+                emailSevice.sendMail(toList, ccList, mailSubject, mailMessage, new String[]{appConfigService
                         .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                         .getConfigValue().replaceAll("%RELEASE_VERSION%",
