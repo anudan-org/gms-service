@@ -19,6 +19,7 @@ import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -106,6 +107,10 @@ public class GrantService {
     private ActualDisbursementRepository actualDisbursementRepository;
     @Autowired
     private ReportService reportService;
+    @Autowired
+    private DisbursementService disbursementService;
+    @Autowired
+    private DisabledUsersEntityRepository disabledUsersEntityRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -754,9 +759,56 @@ public class GrantService {
                 .getTenantWorkflowStatuses("REPORT", grant.getGrantorOrganization().getId()).stream()
                 .filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
         List<Report> reports = new ArrayList<>();
+        int noOfReports = 0;
         if (reportApprovedStatus.isPresent()) {
             reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(), grant);
-            grant.setApprovedReportsForGrant(reports.size());
+            noOfReports = reports.size();
+            // Include approved reports of orgiginal grant if exist
+            if (grant.getOrigGrantId() != null) {
+                reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(),
+                        getById(grant.getOrigGrantId()));
+                noOfReports += reports.size();
+            }
+            // End
+            grant.setApprovedReportsForGrant(noOfReports);
+        }
+
+        // Set old grant ref no if current amendment grant is still in porogress
+        if (grant.getOrigGrantId() != null && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE")
+                && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
+            grant.setOrigGrantRefNo(getById(grant.getOrigGrantId()).getReferenceNo());
+        }
+
+        // Set Minimum End Date for Amendment grant
+        if (grant.getOrigGrantId() != null) {
+            List<Report> existingReports = reportService.getReportsForGrant(getById(grant.getOrigGrantId()));
+            if (existingReports != null && existingReports.size() > 0) {
+                existingReports.removeIf(r -> !r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+                if (existingReports != null && existingReports.size() > 0) {
+
+                    Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());
+                    existingReports.sort(endDateComparator);
+                    Report lastReport = existingReports.get(existingReports.size() - 1);
+                    grant.setMinEndEndate(lastReport.getEndDate());
+                }
+            }
+
+            List<Disbursement> existingDisbursements = disbursementService
+                    .getAllDisbursementsForGrant(grant.getOrigGrantId());
+            if (existingDisbursements != null && existingDisbursements.size() > 0) {
+                existingDisbursements.removeIf(d -> !d.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"));
+                if (existingDisbursements != null && existingDisbursements.size() > 0) {
+
+                    Comparator<Disbursement> endDateComparator = Comparator.comparing(d -> d.getMovedOn());
+                    existingDisbursements.sort(endDateComparator);
+                    Disbursement lastDisbursement = existingDisbursements.get(existingDisbursements.size() - 1);
+                    if (grant.getMinEndEndate() != null && new DateTime(lastDisbursement.getMovedOn())
+                            .isAfter(new DateTime(grant.getMinEndEndate()))) {
+                        grant.setMinEndEndate(lastDisbursement.getMovedOn());
+                    }
+
+                }
+            }
         }
         return grant;
     }
@@ -795,5 +847,9 @@ public class GrantService {
 
     public void deleteGrantDocument(GrantDocument doc) {
         grantDocumentRepository.delete(doc);
+    }
+
+    public List<DisabledUsersEntity> getGrantsWithDisabledUsers(){
+        return disabledUsersEntityRepository.getGrants();
     }
 }

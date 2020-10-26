@@ -55,6 +55,12 @@ public class GrantSnapshot {
   private Date movedOn;
 
   @Column
+  private Long origGrantId;
+  @Column
+  private Long amendGrantId;
+  @Column
+  private boolean amended;
+  @Column
   private Long fromStateId;
   @Column
   private Long toStateId;
@@ -175,6 +181,30 @@ public class GrantSnapshot {
 
   public void setAssignedBy(Long assignedBy) {
     this.assignedBy = assignedBy;
+  }
+
+  public Long getOrigGrantId() {
+    return origGrantId;
+  }
+
+  public void setOrigGrantId(Long origGrantId) {
+    this.origGrantId = origGrantId;
+  }
+
+  public Long getAmendGrantId() {
+    return amendGrantId;
+  }
+
+  public void setAmendGrantId(Long amendGrantId) {
+    this.amendGrantId = amendGrantId;
+  }
+
+  public boolean isAmended() {
+    return amended;
+  }
+
+  public void setAmended(boolean amended) {
+    this.amended = amended;
   }
 
   public Long getFromStateId() {

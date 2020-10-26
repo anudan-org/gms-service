@@ -93,7 +93,8 @@ public class OrganizationService {
 						.getAppConfigForGranterOrg(user.getOrganization().getId(), AppConfiguration.INVITE_MESSAGE)
 						.getConfigValue(),
 				url);
-		commonEmailSevice.sendMail(new String[] { user.getEmailId() }, null, notifications[0], notifications[1],
+		commonEmailSevice.sendMail(new String[] { !user.isDeleted() ? user.getEmailId() : null }, null,
+				notifications[0], notifications[1],
 				new String[] { appConfigService
 						.getAppConfigForGranterOrg(user.getOrganization().getId(),
 								AppConfiguration.PLATFORM_EMAIL_FOOTER)

@@ -458,7 +458,7 @@ public class UserController {
             user = userService.getUserByEmailAndOrg(emailId, tenantOrg);
         }
 
-        if (user != null && user.isActive()) {
+        if (user != null && user.isActive() && !user.isDeleted()) {
             response = sendPasswordResetLink(user);
             response.setMessage("Password reset email sent to " + user.getEmailId());
             response.setStatus("registered");
@@ -466,6 +466,10 @@ public class UserController {
         } else if (user != null && !user.isActive()) {
             response.setOrg(user.getOrganization().getName());
             response.setStatus("unregistered");
+            return new ResponseEntity(response, HttpStatus.OK);
+        } else if (user != null && user.isActive() && user.isDeleted()) {
+            response.setOrg(user.getOrganization().getName());
+            response.setStatus("inactive");
             return new ResponseEntity(response, HttpStatus.OK);
         } else {
             response.setMessage("Invalid email address.");

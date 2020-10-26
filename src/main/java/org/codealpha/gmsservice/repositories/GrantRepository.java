@@ -58,4 +58,7 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
 
     @Query(value = "select A.* from grants A inner join workflow_statuses B on B.id=A.grant_status_id where ( (B.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id) >0   ) or B.internal_status!='DRAFT') and A.id=?1", nativeQuery = true)
     List<Grant> findGrantsThatMovedAtleastOnce(Long grantId);
+
+    @Query(value = "select distinct C.* from grant_assignments A inner join users B on B.id=A.assignments inner join grants C on C.id=A.grant_id inner join workflow_statuses D on D.id=C.grant_status_id inner join organizations E on E.id=B.organization_id where B.deleted=true and D.internal_status!='CLOSED' and E.organization_type!='GRANTEE'",nativeQuery = true)
+    List<Grant> getGrantsWithDisabledUsers();
 }

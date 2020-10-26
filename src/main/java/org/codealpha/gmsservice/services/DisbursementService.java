@@ -3,14 +3,7 @@ package org.codealpha.gmsservice.services;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.GrantVO;
-import org.codealpha.gmsservice.repositories.ActualDisbursementRepository;
-import org.codealpha.gmsservice.repositories.DisbursementAssignmentHistoryRepository;
-import org.codealpha.gmsservice.repositories.DisbursementAssignmentRepository;
-import org.codealpha.gmsservice.repositories.DisbursementHistoryRepository;
-import org.codealpha.gmsservice.repositories.DisbursementRepository;
-import org.codealpha.gmsservice.repositories.WorkflowPermissionRepository;
-import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
-import org.codealpha.gmsservice.repositories.WorkflowStatusTransitionRepository;
+import org.codealpha.gmsservice.repositories.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +49,8 @@ public class DisbursementService {
     private WorkflowStatusRepository workflowStatusRepository;
     @Autowired
     private DisbursementAssignmentHistoryRepository assignmentHistoryRepository;
+    @Autowired
+    private DisabledUsersEntityRepository disabledUsersEntityRepository;
     @Value("${spring.timezone}")
     private String timezone;
 
@@ -114,6 +109,9 @@ public class DisbursementService {
                 .findByDisbursementId(disbursement.getId());
 
         for (DisbursementAssignment ass : disbursementAssignments) {
+            if(ass.getOwner()!=null) {
+                ass.setAssignmentUser(userService.getUserById(ass.getOwner()));
+            }
             if (disbursementRepository.findDisbursementsThatMovedAtleastOnce(ass.getDisbursementId()).size() > 0) {
                 List<DisbursementAssignmentHistory> assignmentHistories = assignmentHistoryRepository
                         .findByDisbursementIdAndStateIdOrderByUpdatedOnDesc(ass.getDisbursementId(), ass.getStateId());
@@ -354,5 +352,13 @@ public class DisbursementService {
 
     public boolean checkIfDisbursementMovedThroughWFAtleastOnce(Long id) {
         return disbursementRepository.findDisbursementsThatMovedAtleastOnce(id).size() > 0;
+    }
+
+    public List<Disbursement> getAllDisbursementsForGrant(Long grantId) {
+        return disbursementRepository.getAllDisbursementsForGrant(grantId);
+    }
+
+    public List<DisabledUsersEntity> getDisbursementsWithDisabledUsers(){
+        return disabledUsersEntityRepository.getDisbursements();
     }
 }

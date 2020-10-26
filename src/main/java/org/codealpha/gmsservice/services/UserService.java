@@ -125,8 +125,8 @@ public class UserService {
             mailMessage = mailMessage.replaceAll("%RESET_LINK%", url);
             mailMessage = mailMessage.replaceAll("%USER_NAME%", user.getFirstName());
             mailMessage = mailMessage.replaceAll("%ORGANIZATION%", user.getOrganization().getName());
-            commonEmailSevice.sendMail(new String[] { user.getEmailId() }, null, mailSubject, mailMessage,
-                    new String[] { mailFooter });
+            commonEmailSevice.sendMail(new String[] { !user.isDeleted() ? user.getEmailId() : null }, null, mailSubject,
+                    mailMessage, new String[] { mailFooter });
 
         } catch (Exception e) {
             e.printStackTrace();

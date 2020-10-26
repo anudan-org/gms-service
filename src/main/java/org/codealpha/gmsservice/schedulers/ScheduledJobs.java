@@ -137,7 +137,11 @@ public class ScheduledJobs {
                 .collect(Collectors.toList());
         List<String> otherUsersToNotify = new ArrayList<>();
         for (ReportAssignment ccAssignment : ccAssignments) {
-            otherUsersToNotify.add(userService.getUserById(ccAssignment.getAssignment()).getEmailId());
+            User u = userService.getUserById(ccAssignment.getAssignment());
+            if (u.isDeleted()) {
+                continue;
+            }
+            otherUsersToNotify.add(u.getEmailId());
         }
 
         String link = buildLink(environment, false, "");
@@ -153,8 +157,8 @@ public class ScheduledJobs {
                 taskConfiguration.getSubjectReport(), taskConfiguration.getMessageReport(), "", "", "", "", "", "", "",
                 "", "", link, owner, null, null, null);
 
-        emailSevice.sendMail(new String[] { granteeToNotify.getEmailId() }, otherUsersToNotify.toArray(new String[] {}),
-                messageMetadata[0], messageMetadata[1],
+        emailSevice.sendMail(new String[] { !granteeToNotify.isDeleted() ? granteeToNotify.getEmailId() : null },
+                otherUsersToNotify.toArray(new String[] {}), messageMetadata[0], messageMetadata[1],
                 new String[] { appConfigService
                         .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
@@ -244,6 +248,7 @@ public class ScheduledJobs {
                                     for (ReportAssignment ass : reportAssignments) {
                                         uList.add(userService.getUserById(ass.getAssignment()));
                                     }
+                                    uList.removeIf(u -> u.isDeleted());
                                     ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                             .toArray(new String[reportAssignments.size()]);
                                 }
@@ -264,8 +269,8 @@ public class ScheduledJobs {
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
                                         emailSevice
-                                                .sendMail(new String[] { user.getEmailId() }, ccList,
-                                                        messageMetadata[0], messageMetadata[1],
+                                                .sendMail(new String[] { !user.isDeleted() ? user.getEmailId() : null },
+                                                        ccList, messageMetadata[0], messageMetadata[1],
                                                         new String[] { appConfigService
                                                                 .getAppConfigForGranterOrg(
                                                                         report.getGrant().getGrantorOrganization()
@@ -305,6 +310,7 @@ public class ScheduledJobs {
                                     for (ReportAssignment ass : reportAssignments) {
                                         uList.add(userService.getUserById(ass.getAssignment()));
                                     }
+                                    uList.removeIf(u -> u.isDeleted());
                                     ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                             .toArray(new String[reportAssignments.size()]);
                                 }
@@ -325,8 +331,8 @@ public class ScheduledJobs {
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
                                         emailSevice
-                                                .sendMail(new String[] { user.getEmailId() }, ccList,
-                                                        messageMetadata[0], messageMetadata[1],
+                                                .sendMail(new String[] { !user.isDeleted() ? user.getEmailId() : null },
+                                                        ccList, messageMetadata[0], messageMetadata[1],
                                                         new String[] { appConfigService
                                                                 .getAppConfigForGranterOrg(
                                                                         report.getGrant().getGrantorOrganization()
@@ -401,6 +407,8 @@ public class ScheduledJobs {
                                     for (GrantAssignments ass : grantAssignments) {
                                         uList.add(userService.getUserById(ass.getAssignments()));
                                     }
+                                    uList.removeIf(u -> u.isDeleted());
+
                                     ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                             .toArray(new String[grantAssignments.size()]);
                                 }
@@ -421,7 +429,8 @@ public class ScheduledJobs {
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice.sendMail(new String[] { user.getEmailId() }, ccList,
+                                        emailSevice.sendMail(
+                                                new String[] { !user.isDeleted() ? user.getEmailId() : null }, ccList,
                                                 messageMetadata[0], messageMetadata[1],
                                                 new String[] { appConfigService
                                                         .getAppConfigForGranterOrg(
@@ -459,6 +468,7 @@ public class ScheduledJobs {
                                     for (GrantAssignments ass : grantAssignments) {
                                         uList.add(userService.getUserById(ass.getAssignments()));
                                     }
+                                    uList.removeIf(u -> u.isDeleted());
                                     ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                             .toArray(new String[grantAssignments.size()]);
                                 }
@@ -479,7 +489,8 @@ public class ScheduledJobs {
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice.sendMail(new String[] { user.getEmailId() }, ccList,
+                                        emailSevice.sendMail(
+                                                new String[] { !user.isDeleted() ? user.getEmailId() : null }, ccList,
                                                 messageMetadata[0], messageMetadata[1],
                                                 new String[] { appConfigService
                                                         .getAppConfigForGranterOrg(
@@ -554,6 +565,7 @@ public class ScheduledJobs {
                                     for (DisbursementAssignment ass : disbursementAssignments) {
                                         uList.add(userService.getUserById(ass.getOwner()));
                                     }
+                                    uList.removeIf(u -> u.isDeleted());
                                     ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                             .toArray(new String[disbursementAssignments.size()]);
                                 }
@@ -573,7 +585,8 @@ public class ScheduledJobs {
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice.sendMail(new String[] { user.getEmailId() }, ccList,
+                                        emailSevice.sendMail(
+                                                new String[] { !user.isDeleted() ? user.getEmailId() : null }, ccList,
                                                 messageMetadata[0], messageMetadata[1],
                                                 new String[] { appConfigService
                                                         .getAppConfigForGranterOrg(
@@ -613,6 +626,7 @@ public class ScheduledJobs {
                                     for (DisbursementAssignment ass : disbursementAssignments) {
                                         uList.add(userService.getUserById(ass.getOwner()));
                                     }
+                                    uList.removeIf(u -> u.isDeleted());
                                     ccList = uList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
                                             .toArray(new String[disbursementAssignments.size()]);
                                 }
@@ -631,7 +645,8 @@ public class ScheduledJobs {
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice.sendMail(new String[] { user.getEmailId() }, ccList,
+                                        emailSevice.sendMail(
+                                                new String[] { !user.isDeleted() ? user.getEmailId() : null }, ccList,
                                                 messageMetadata[0], messageMetadata[1],
                                                 new String[] { appConfigService
                                                         .getAppConfigForGranterOrg(
@@ -692,4 +707,133 @@ public class ScheduledJobs {
             e.printStackTrace();
         }
     }
-}
+
+    @Scheduled(cron = "0 0 5 * * *")
+    public void remindAdminsAboutDisabledUsers() {
+
+        List<DisabledUsersEntity> grantsWithDisabledUsers = grantService.getGrantsWithDisabledUsers();
+        if (grantsWithDisabledUsers != null && grantsWithDisabledUsers.size() > 0) {
+            for (DisabledUsersEntity entity : grantsWithDisabledUsers) {
+                Grant grant = grantService.getById(entity.getId());
+                Organization tenantOrg = grant.getGrantorOrganization();
+                List<User> tenantUsers = userService.getAllTenantUsers(tenantOrg);
+                List<User> admins = tenantUsers.stream().filter(u -> {
+                    Boolean isAdmin = u.getUserRoles().stream().filter(r -> r.getRole().getName().equalsIgnoreCase("ADMIN")).findFirst().isPresent();
+                    if(isAdmin){
+                        return true;
+                    }
+                    return false;
+                }).collect(Collectors.toList());
+                List<User> nonAdminUsers = tenantUsers.stream().filter(u -> {
+                    Boolean isNotAdmin = u.getUserRoles().stream().filter(r -> !r.getRole().getName().equalsIgnoreCase("ADMIN")).findAny().isPresent();
+                    if(isNotAdmin){
+                        return true;
+                    }
+                    return false;
+                }).collect(Collectors.toList());
+                admins.removeIf(u -> u.isDeleted());
+                nonAdminUsers.removeIf(u -> u.isDeleted());
+                String[] toList = admins.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                        .toArray(new String[admins.size()]);
+                String[] ccList = nonAdminUsers.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                        .toArray(new String[nonAdminUsers.size()]);
+
+                String mailSubject = "Workflow Alert: Disabled Users for " + entity.getEntityName();
+                String mailMessage = appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                        AppConfiguration.DISABLED_USERS_IN_WORKFLOW_EMAIL_TEMPLATE).getConfigValue();
+                mailMessage = mailMessage.replaceAll("%ENTITY_TYPE%", entity.getEntityType()).replaceAll("%ENTITY_NAME%", entity.getEntityName());
+
+                emailSevice.sendMail(toList, ccList, mailSubject, mailMessage, new String[]{appConfigService
+                        .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                        .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                        releaseService.getCurrentRelease().getVersion())});
+            }
+        }
+
+            List<DisabledUsersEntity> reportsWithDisabledUsers = reportService.getReportsWithDisabledUsers();
+            if (reportsWithDisabledUsers != null && reportsWithDisabledUsers.size() > 0) {
+                for (DisabledUsersEntity entity : reportsWithDisabledUsers) {
+                    Report report = reportService.getReportById(entity.getId());
+
+                    Grant grant = report.getGrant();
+                    Organization tenantOrg = grant.getGrantorOrganization();
+                    List<User> tenantUsers = userService.getAllTenantUsers(tenantOrg);
+                    List<User> admins = tenantUsers.stream().filter(u -> {
+                        Boolean isAdmin = u.getUserRoles().stream().filter(r -> r.getRole().getName().equalsIgnoreCase("ADMIN")).findFirst().isPresent();
+                        if(isAdmin){
+                            return true;
+                        }
+                        return false;
+                    }).collect(Collectors.toList());
+
+                    List<User> nonAdminUsers = tenantUsers.stream().filter(u -> {
+                        Boolean isNotAdmin = u.getUserRoles().stream().filter(r -> !r.getRole().getName().equalsIgnoreCase("ADMIN")).findAny().isPresent();
+                        if(isNotAdmin){
+                            return true;
+                        }
+                        return false;
+                    }).collect(Collectors.toList());
+                    admins.removeIf(u -> u.isDeleted());
+                    nonAdminUsers.removeIf(u -> u.isDeleted());
+                    String[] toList = admins.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                            .toArray(new String[admins.size()]);
+                    String[] ccList = nonAdminUsers.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                            .toArray(new String[nonAdminUsers.size()]);
+
+                    String mailSubject = "Workflow Alert: Disabled Users for " + entity.getEntityName();
+                    String mailMessage = appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                            AppConfiguration.DISABLED_USERS_IN_WORKFLOW_EMAIL_TEMPLATE).getConfigValue();
+                    mailMessage = mailMessage.replaceAll("%ENTITY_TYPE%", entity.getEntityType()).replaceAll("%ENTITY_NAME%", entity.getEntityName());
+
+                    emailSevice.sendMail(toList, ccList, mailSubject, mailMessage, new String[]{appConfigService
+                            .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                            .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                            releaseService.getCurrentRelease().getVersion())});
+                }
+            }
+
+        List<DisabledUsersEntity> disbursementsWithDisabledUsers = disbursementService.getDisbursementsWithDisabledUsers();
+        if (disbursementsWithDisabledUsers != null && disbursementsWithDisabledUsers.size() > 0) {
+            for (DisabledUsersEntity entity : disbursementsWithDisabledUsers) {
+                Disbursement disbursement = disbursementService.getDisbursementById(entity.getId());
+
+                Grant grant = disbursement.getGrant();
+                Organization tenantOrg = grant.getGrantorOrganization();
+                List<User> tenantUsers = userService.getAllTenantUsers(tenantOrg);
+                List<User> admins = tenantUsers.stream().filter(u -> {
+                    Boolean isAdmin = u.getUserRoles().stream().filter(r -> r.getRole().getName().equalsIgnoreCase("ADMIN")).findFirst().isPresent();
+                    if(isAdmin){
+                        return true;
+                    }
+                    return false;
+                }).collect(Collectors.toList());
+                List<User> nonAdminUsers = tenantUsers.stream().filter(u -> {
+                    Boolean isNotAdmin = u.getUserRoles().stream().filter(r -> !r.getRole().getName().equalsIgnoreCase("ADMIN")).findAny().isPresent();
+                    if(isNotAdmin){
+                        return true;
+                    }
+                    return false;
+                }).collect(Collectors.toList());
+                admins.removeIf(u -> u.isDeleted());
+                nonAdminUsers.removeIf(u -> u.isDeleted());
+                String[] toList = admins.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                        .toArray(new String[admins.size()]);
+                String[] ccList = nonAdminUsers.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                        .toArray(new String[nonAdminUsers.size()]);
+
+                String mailSubject = "Workflow Alert: Disabled Users for " + entity.getEntityName();
+                String mailMessage = appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                        AppConfiguration.DISABLED_USERS_IN_WORKFLOW_EMAIL_TEMPLATE).getConfigValue();
+                mailMessage = mailMessage.replaceAll("%ENTITY_TYPE%", entity.getEntityType()).replaceAll("%ENTITY_NAME%", entity.getEntityName());
+
+                emailSevice.sendMail(toList, ccList, mailSubject, mailMessage, new String[]{appConfigService
+                        .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                        .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                        releaseService.getCurrentRelease().getVersion())});
+            }
+        }
+        }
+    }

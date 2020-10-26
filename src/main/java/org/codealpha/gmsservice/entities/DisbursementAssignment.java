@@ -19,6 +19,8 @@ public class DisbursementAssignment {
     private Boolean anchor;
     @Column
     private Long stateId;
+    @Transient
+    private User assignmentUser;
 
     @Column
     private Date assignedOn;
@@ -93,4 +95,11 @@ public class DisbursementAssignment {
         this.updatedBy = updatedBy;
     }
 
+    public User getAssignmentUser() {
+        return assignmentUser;
+    }
+
+    public void setAssignmentUser(User assignmentUser) {
+        this.assignmentUser = assignmentUser;
+    }
 }

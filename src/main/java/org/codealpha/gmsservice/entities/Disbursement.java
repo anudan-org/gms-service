@@ -38,7 +38,7 @@ public class Disbursement {
     private String createdBy;
     @Column
     private Date createdAt;
-    @Column 
+    @Column
     private String updatedBy;
     @Column
     private Date updatedAt;
@@ -56,6 +56,8 @@ public class Disbursement {
     private Double otherSources;
     @Column
     private Long reportId;
+    @Column
+    private boolean disabledByAmendment;
 
     public Long getId() {
         return id;
@@ -153,8 +155,6 @@ public class Disbursement {
         this.createdAt = createdAt;
     }
 
-    
-
     public String getCreatedBy() {
         return createdBy;
     }
@@ -243,6 +243,12 @@ public class Disbursement {
         this.reportId = reportId;
     }
 
-    
+    public boolean isDisabledByAmendment() {
+        return disabledByAmendment;
+    }
+
+    public void setDisabledByAmendment(boolean disabledByAmendment) {
+        this.disabledByAmendment = disabledByAmendment;
+    }
 
 }

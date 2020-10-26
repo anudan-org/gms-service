@@ -243,8 +243,14 @@ public class ReportController {
                 .stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
         List<Report> reports = new ArrayList<>();
         if (reportApprovedStatus.isPresent()) {
-            reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(),
-                    grantService.getById(grantId));
+            Grant grant = grantService.getById(grantId);
+            reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(), grant);
+            // Include approved reports of orgiginal grant if exist
+            if (grant.getOrigGrantId() != null) {
+                reports.addAll(reportService.findReportsByStatusForGrant(reportApprovedStatus.get(),
+                        grantService.getById(grant.getOrigGrantId())));
+            }
+            // End
         }
 
         for (Report report : reports) {
@@ -571,6 +577,9 @@ public class ReportController {
                         .getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"))) {
             report.setCanManage(true);
         } else {
+            report.setCanManage(false);
+        }
+        if (report.isDisabledByAmendment()) {
             report.setCanManage(false);
         }
         return reportAssignments;
@@ -1188,8 +1197,8 @@ public class ReportController {
                         appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.REPORT_INVITE_MESSAGE).getConfigValue(),
                         url);
-                commonEmailSevice.sendMail(new String[] { granteeUser.getEmailId() }, null, notifications[0],
-                        notifications[1],
+                commonEmailSevice.sendMail(new String[] { !granteeUser.isDeleted() ? granteeUser.getEmailId() : null },
+                        null, notifications[0], notifications[1],
                         new String[] { appConfigService
                                 .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
@@ -1243,14 +1252,19 @@ public class ReportController {
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
                     null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
                     newAssignments);
+            List<User> toUsers = newAssignments.stream().map(a -> a.getAssignment())
+                    .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
+            toUsers.removeIf(u -> u.isDeleted());
+            List<User> ccUsers = currentAssignments.values().stream().map(uid -> userService.getUserById(uid))
+                    .collect(Collectors.toList());
+            ccUsers.removeIf(u -> u.isDeleted());
 
             commonEmailSevice
                     .sendMail(
-                            newAssignments.stream().map(a -> a.getAssignment())
-                                    .map(uid -> userService.getUserById(uid).getEmailId()).collect(Collectors.toList())
-                                    .toArray(new String[newAssignments.size()]),
-                            currentAssignments.values().stream().map(uid -> userService.getUserById(uid).getEmailId())
-                                    .collect(Collectors.toList()).toArray(new String[currentAssignments.size()]),
+                            toUsers.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                                    .toArray(new String[toUsers.size()]),
+                            ccUsers.stream().map(u -> u.getEmailId()).collect(
+                                    Collectors.toList()).toArray(new String[ccUsers.size()]),
                             notifications[0], notifications[1],
                             new String[] { appConfigService
                                     .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
@@ -1410,7 +1424,8 @@ public class ReportController {
         String finalCurrentOwnerName = currentOwnerName;
         User finalCurrentOwner = currentOwner;
         if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
-            usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue());
+            usersToNotify
+                    .removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue() || u.isDeleted());
             String emailNotificationContent[] = reportService.buildEmailNotificationContent(finalReport,
                     finalCurrentOwner, currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), null,
                     new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
@@ -1428,7 +1443,7 @@ public class ReportController {
                             : "",
                     null, null, null, null, null);
             commonEmailSevice
-                    .sendMail(new String[] { currentOwner.getEmailId() },
+                    .sendMail(new String[] { !currentOwner.isDeleted() ? currentOwner.getEmailId() : null },
                             usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
                             emailNotificationContent[0], emailNotificationContent[1],
@@ -1485,7 +1500,8 @@ public class ReportController {
                 notificationsService.saveNotification(nc, u.getId(), finalReport.getId(), "REPORT");
             });
         } else if (!toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
-            usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue());
+            usersToNotify
+                    .removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue() || u.isDeleted());
             if (!workflowStatusService.findById(fromStateId).getInternalStatus().equalsIgnoreCase("ACTIVE")) {
                 usersToNotify.removeIf(u -> u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"));
             }
@@ -1507,7 +1523,7 @@ public class ReportController {
                             : "",
                     null, null, null, null, null);
             commonEmailSevice
-                    .sendMail(new String[] { currentOwner.getEmailId() },
+                    .sendMail(new String[] { !currentOwner.isDeleted() ? currentOwner.getEmailId() : null },
                             usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
                             emailNotificationContent[0], emailNotificationContent[1],
@@ -1568,7 +1584,7 @@ public class ReportController {
             User granteeUser = usersToNotify.stream()
                     .filter(u -> u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")).findFirst()
                     .get();
-            usersToNotify.removeIf(u -> u.getId().longValue() == granteeUser.getId().longValue());
+            usersToNotify.removeIf(u -> u.getId().longValue() == granteeUser.getId().longValue() || u.isDeleted());
 
             String emailNotificationContent[] = reportService.buildEmailNotificationContent(finalReport, granteeUser,
                     granteeUser.getFirstName().concat(" ").concat(granteeUser.getLastName()), null,
@@ -1587,7 +1603,7 @@ public class ReportController {
                             : "",
                     null, null, null, null, null);
             commonEmailSevice
-                    .sendMail(new String[] { granteeUser.getEmailId() },
+                    .sendMail(new String[] { !granteeUser.isDeleted() ? granteeUser.getEmailId() : null },
                             usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
                             emailNotificationContent[0], emailNotificationContent[1],
@@ -1647,7 +1663,7 @@ public class ReportController {
         }
 
         report = _ReportToReturn(report, userId);
-        _saveSnapShot(report, fromStateId);
+        _saveSnapShot(report, fromStateId, toStateId, currentOwner, previousOwner);
 
         if (toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
             List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
@@ -1714,21 +1730,29 @@ public class ReportController {
 
     }
 
-    private void _saveSnapShot(Report report, Long fromStatusId) {
+    private void _saveSnapShot(Report report, Long fromStatusId, Long toStatusId, User currentUser, User previousUser) {
 
         try {
-            for (AssignedTo assignment : report.getCurrentAssignment()) {
-                ReportSnapshot snapshot = new ReportSnapshot();
-                snapshot.setAssignedToId(assignment.getUser().getId());
-                snapshot.setEndDate(report.getEndDate());
-                snapshot.setDueDate(report.getDueDate());
-                snapshot.setReportId(report.getId());
-                snapshot.setName(report.getName());
-                snapshot.setStartDate(report.getStartDate());
-                snapshot.setStatusId(fromStatusId);
-                snapshot.setStringAttributes(new ObjectMapper().writeValueAsString(report.getReportDetails()));
-                reportSnapshotService.saveReportSnapshot(snapshot);
-            }
+            // for (AssignedTo assignment : report.getCurrentAssignment()) {
+            ReportSnapshot snapshot = new ReportSnapshot();
+            snapshot.setAssignedToId(currentUser.getId());
+            snapshot.setEndDate(report.getEndDate());
+            snapshot.setDueDate(report.getDueDate());
+            snapshot.setReportId(report.getId());
+            snapshot.setName(report.getName());
+            snapshot.setStartDate(report.getStartDate());
+            snapshot.setStatusId(fromStatusId);
+            String stringAttribs = new ObjectMapper().writeValueAsString(report.getReportDetails());
+            snapshot.setStringAttributes(stringAttribs);
+            snapshot.setFromStringAttributes(stringAttribs);
+            snapshot.setAssignedToId(currentUser.getId());
+            snapshot.setMovedBy(previousUser.getId());
+            snapshot.setFromNote(report.getNote());
+            snapshot.setFromStateId(fromStatusId);
+            snapshot.setToStateId(toStatusId);
+            snapshot.setMovedOn(report.getMovedOn());
+            reportSnapshotService.saveReportSnapshot(snapshot);
+            // }
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
         }
@@ -2113,20 +2137,8 @@ public class ReportController {
             @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code ") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Report report = reportService.getReportById(reportId);
-        for (ReportSpecificSection section : reportService.getReportSections(report)) {
-            List<ReportSpecificSectionAttribute> attribs = reportService.getSpecificSectionAttributesBySection(section);
-            for (ReportSpecificSectionAttribute attribute : attribs) {
-                List<ReportStringAttribute> strAttribs = reportService.getReportStringAttributesByAttribute(attribute);
-                reportService.deleteStringAttributes(strAttribs);
-            }
-            reportService.deleteSectionAttributes(attribs);
-            reportService.deleteSection(section);
-        }
+
         reportService.deleteReport(report);
 
-        GranterReportTemplate template = granterReportTemplateService.findByTemplateId(report.getTemplate().getId());
-        if (!template.isPublished()) {
-            reportService.deleteReportTemplate(template);
-        }
     }
 }

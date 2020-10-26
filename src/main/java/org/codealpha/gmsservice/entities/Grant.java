@@ -175,6 +175,18 @@ public class Grant {
   private Double approvedDisbursementsTotal = 0d;
   @Transient
   private int approvedReportsForGrant;
+  @Column
+  private Long origGrantId;
+  @Transient
+  private String origGrantRefNo;
+  @Column
+  private Long amendGrantId;
+  @Column
+  private boolean amended;
+  @Column
+  private int amendmentNo = 0;
+  @Transient
+  private Date minEndEndate;
 
   public Long getId() {
     return id;
@@ -502,6 +514,54 @@ public class Grant {
 
   public void setApprovedReportsForGrant(int approvedReportsForGrant) {
     this.approvedReportsForGrant = approvedReportsForGrant;
+  }
+
+  public Long getOrigGrantId() {
+    return origGrantId;
+  }
+
+  public void setOrigGrantId(Long origGrantId) {
+    this.origGrantId = origGrantId;
+  }
+
+  public Long getAmendGrantId() {
+    return amendGrantId;
+  }
+
+  public void setAmendGrantId(Long amendGrantId) {
+    this.amendGrantId = amendGrantId;
+  }
+
+  public boolean isAmended() {
+    return amended;
+  }
+
+  public void setAmended(boolean amended) {
+    this.amended = amended;
+  }
+
+  public String getOrigGrantRefNo() {
+    return origGrantRefNo;
+  }
+
+  public void setOrigGrantRefNo(String origGrantRefNo) {
+    this.origGrantRefNo = origGrantRefNo;
+  }
+
+  public int getAmendmentNo() {
+    return amendmentNo;
+  }
+
+  public void setAmendmentNo(int amendmentNo) {
+    this.amendmentNo = amendmentNo;
+  }
+
+  public Date getMinEndEndate() {
+    return minEndEndate;
+  }
+
+  public void setMinEndEndate(Date minEndEndate) {
+    this.minEndEndate = minEndEndate;
   }
 
 }

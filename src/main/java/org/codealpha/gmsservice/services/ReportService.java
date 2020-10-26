@@ -77,6 +77,8 @@ public class ReportService {
     private ReportAssignmentHistoryRepository assignmentHistoryRepository;
     @Autowired
     private UserService userService;
+    @Autowired
+    private DisabledUsersEntityRepository disabledUsersEntityRepository;
 
     public Report saveReport(Report report) {
         return reportRepository.save(report);
@@ -784,11 +786,29 @@ public class ReportService {
     }
 
     public void deleteReport(Report report) {
+        for (ReportSpecificSection section : getReportSections(report)) {
+            List<ReportSpecificSectionAttribute> attribs = getSpecificSectionAttributesBySection(section);
+            for (ReportSpecificSectionAttribute attribute : attribs) {
+                List<ReportStringAttribute> strAttribs = getReportStringAttributesByAttribute(attribute);
+                deleteStringAttributes(strAttribs);
+            }
+            deleteSectionAttributes(attribs);
+            deleteSection(section);
+        }
 
         reportRepository.delete(report);
+
+        GranterReportTemplate template = granterReportTemplateRepository.findById(report.getTemplate().getId()).get();
+        if (!template.isPublished()) {
+            deleteReportTemplate(template);
+        }
     }
 
     public List<Report> getUpcomingFutureReportsForGranterUserByDate(Long userId, Long id, Date end) {
         return reportRepository.findUpcomingFutureReports(userId, id);
+    }
+
+    public List<DisabledUsersEntity> getReportsWithDisabledUsers(){
+        return disabledUsersEntityRepository.getReports();
     }
 }
