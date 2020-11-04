@@ -253,7 +253,14 @@ public class DisbursementService {
             url = url + "/home/?action=login&d=" + code + "&email=&type=disbursement";
         }
 
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalDisbursement.getGrant().getName())
+        String grantName = "";
+        if(finalDisbursement.getGrant().getReferenceNo()!=null){
+            grantName = "[".concat(finalDisbursement.getGrant().getReferenceNo()).concat("] ").concat(finalDisbursement.getGrant().getName());
+        }else{
+            grantName = finalDisbursement.getGrant().getName();
+        }
+
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", grantName)
                 .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
                 .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
                 .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
@@ -267,8 +274,8 @@ public class DisbursementService {
                 .replaceAll("%GRANTEE%", finalDisbursement.getGrant().getOrganization().getName())
                 .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
                 .replaceAll("%ENTITY_TYPE%", "Approval Request Note of ")
-                .replaceAll("%ENTITY_NAME%", finalDisbursement.getGrant().getName());
-        String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalDisbursement.getGrant().getName());
+                .replaceAll("%ENTITY_NAME%", grantName);
+        String subject = subConfigValue.replaceAll("%GRANT_NAME%", grantName);
 
         return new String[] { subject, message };
     }

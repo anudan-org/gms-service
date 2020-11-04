@@ -520,7 +520,13 @@ public class ReportService {
             }
         }
 
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalReport.getGrant().getName())
+        String grantName = "";
+        if(finalReport.getGrant().getReferenceNo()!=null){
+            grantName = "[".concat(finalReport.getGrant().getReferenceNo()).concat("] ").concat(finalReport.getGrant().getName());
+        }else{
+            grantName = finalReport.getGrant().getName();
+        }
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", grantName)
                 .replaceAll("%REPORT_NAME%", finalReport.getName()).replaceAll("%REPORT_LINK%", granteeUrl)
                 .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
                 .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
@@ -537,7 +543,7 @@ public class ReportService {
                 .replaceAll("%GRANTER%", finalReport.getGrant().getGrantorOrganization().getName())
                 .replaceAll("%ENTITY_TYPE%", "report")
                 .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
-                .replaceAll("%ENTITY_NAME%", finalReport.getName() + " of grant " + finalReport.getGrant().getName());
+                .replaceAll("%ENTITY_NAME%", finalReport.getName() + " of grant " + grantName);
         String subject = subConfigValue.replaceAll("%REPORT_NAME%", finalReport.getName());
 
         return new String[] { subject, message };

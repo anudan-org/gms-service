@@ -500,7 +500,13 @@ public class GrantService {
             url = url + "/home/?action=login&g=" + code + "&email=&type=grant";
         }
 
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName())
+        String grantName = "";
+        if((finalGrant.getGrantStatus().getInternalStatus().equalsIgnoreCase("DRAFT") || finalGrant.getGrantStatus().getInternalStatus().equalsIgnoreCase("REVIEW")) && finalGrant.getOrigGrantId()!=null){
+            grantName = "Amendment in-progress ["+getById(finalGrant.getOrigGrantId()).getReferenceNo()+"] "+ finalGrant.getName();
+        }else{
+            grantName = finalGrant.getReferenceNo()!=null?"[".concat(finalGrant.getReferenceNo()).concat("] ").concat(finalGrant.getName()):finalGrant.getName();
+        }
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", grantName)
                 .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
                 .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
                 .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
@@ -515,7 +521,7 @@ public class GrantService {
                 .replaceAll("%APPROVER_TYPE%", "Approver").replaceAll("%ENTITY_TYPE%", "grant")
                 .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
                 .replaceAll("%ENTITY_NAME%", finalGrant.getName());
-        String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName());
+        String subject = subConfigValue.replaceAll("%GRANT_NAME%", grantName);
 
         return new String[] { subject, message };
     }

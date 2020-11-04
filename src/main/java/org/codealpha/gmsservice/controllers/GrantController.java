@@ -1359,6 +1359,23 @@ public class GrantController {
         saveGrant(grantId, grantwithNote.getGrant(), userId, tenantCode);
         Grant grant = grantService.getById(grantId);
         Grant finalGrant = grant;
+        WorkflowStatus toStatus = workflowStatusService.findById(toStateId);
+        User user = userService.getUserById(userId);
+
+        if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
+
+            if (Boolean.valueOf(appConfigService
+                    .getAppConfigForGranterOrg(organizationService.findOrganizationByTenantCode(tenantCode).getId(),
+                            AppConfiguration.GENERATE_GRANT_REFERENCE)
+                    .getConfigValue())) {
+
+                grant = _generateGrantReferenceNo(grant, toStatus);
+
+            }
+
+            _createReportingPeriods(grant, user, tenantCode);
+        }
+
         WorkflowStatus previousState = grant.getGrantStatus();
         List<GrantAssignments> previousAssignments = grantService.getGrantWorkflowAssignments(grant).stream()
                 .filter(ass -> ass.getGrantId().longValue() == grantId.longValue()
@@ -1380,8 +1397,8 @@ public class GrantController {
         grant.setUpdatedBy(userService.getUserById(userId).getEmailId());
         grant.setMovedOn(currentDateTime);
 
-        User user = userService.getUserById(userId);
-        WorkflowStatus toStatus = workflowStatusService.findById(toStateId);
+
+
 
         if (grant.getOrigGrantId() != null && toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
             grant.setAmendmentNo(grantService.getById(grant.getOrigGrantId()).getAmendmentNo() + 1);
@@ -1559,19 +1576,7 @@ public class GrantController {
                         ? userService.getUserById(assignmentForCurrentState.get().getAssignments())
                         : null,
                 previousOwner);
-        if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
 
-            if (Boolean.valueOf(appConfigService
-                    .getAppConfigForGranterOrg(organizationService.findOrganizationByTenantCode(tenantCode).getId(),
-                            AppConfiguration.GENERATE_GRANT_REFERENCE)
-                    .getConfigValue())) {
-
-                grant = _generateGrantReferenceNo(grant, toStatus);
-
-            }
-
-            _createReportingPeriods(grant, user, tenantCode);
-        }
         return grant;
     }
 
