@@ -761,7 +761,7 @@ public class ReportService {
     }
 
     public List<Report> getReportsForGrant(Grant grant) {
-        return reportRepository.getReportsByGrant(grant);
+        return reportRepository.getReportsByGrant(grant.getId());
     }
 
     public void setAssignmentHistory(ReportAssignmentsVO assignmentsVO) {
@@ -792,21 +792,26 @@ public class ReportService {
     }
 
     public void deleteReport(Report report) {
-        for (ReportSpecificSection section : getReportSections(report)) {
-            List<ReportSpecificSectionAttribute> attribs = getSpecificSectionAttributesBySection(section);
-            for (ReportSpecificSectionAttribute attribute : attribs) {
-                List<ReportStringAttribute> strAttribs = getReportStringAttributesByAttribute(attribute);
-                deleteStringAttributes(strAttribs);
+
+        if(checkIfReportMovedThroughWFAtleastOnce(report.getId())){
+            report.setDeleted(true);
+        }else {
+            for (ReportSpecificSection section : getReportSections(report)) {
+                List<ReportSpecificSectionAttribute> attribs = getSpecificSectionAttributesBySection(section);
+                for (ReportSpecificSectionAttribute attribute : attribs) {
+                    List<ReportStringAttribute> strAttribs = getReportStringAttributesByAttribute(attribute);
+                    deleteStringAttributes(strAttribs);
+                }
+                deleteSectionAttributes(attribs);
+                deleteSection(section);
             }
-            deleteSectionAttributes(attribs);
-            deleteSection(section);
-        }
 
-        reportRepository.delete(report);
+            reportRepository.delete(report);
 
-        GranterReportTemplate template = granterReportTemplateRepository.findById(report.getTemplate().getId()).get();
-        if (!template.isPublished()) {
-            deleteReportTemplate(template);
+            GranterReportTemplate template = granterReportTemplateRepository.findById(report.getTemplate().getId()).get();
+            if (!template.isPublished()) {
+                deleteReportTemplate(template);
+            }
         }
     }
 
