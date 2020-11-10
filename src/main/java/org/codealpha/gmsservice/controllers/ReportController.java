@@ -4,8 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.FileWriteMode;
-import com.google.common.io.Files;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -37,7 +35,6 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.Size;
 
 import java.io.*;
 import java.net.URLDecoder;
@@ -47,7 +44,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -399,10 +395,9 @@ public class ReportController {
             if (s.getAttributes() != null && s.getAttributes().size() > 0) {
                 s.getAttributes().forEach(a -> {
                     if (a.getFieldType().equalsIgnoreCase("disbursement")) {
-                        List<Disbursement> closedDisbursements = disbursementService
-                                .getDibursementsForGrantByStatuses(report.getGrant().getId(), closedStatusIds);
-                        List<Disbursement> draftDisbursements = disbursementService
-                                .getDibursementsForGrantByStatuses(report.getGrant().getId(), draftStatusIds);
+                        List<Disbursement> closedDisbursements = getDisbursementsByStatusIds(report.getGrant(),closedStatusIds); //disbursementService
+                                //getDibursementsForGrantByStatuses(report.getGrant().getId(), closedStatusIds);
+                        List<Disbursement> draftDisbursements = getDisbursementsByStatusIds(report.getGrant(), draftStatusIds);
                         if (!report.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
                             List<TableData> tableDataList = new ArrayList<>();
                             if (closedDisbursements != null) {
@@ -565,6 +560,16 @@ public class ReportController {
             }
         });
 
+    }
+
+    private List<Disbursement> getDisbursementsByStatusIds(Grant grant, List<Long> statusIds) {
+        List<Disbursement> closedDisbursements = new ArrayList<>();
+
+        closedDisbursements = disbursementService.getDibursementsForGrantByStatuses(grant.getId(), statusIds);
+        if(grant.getOrigGrantId()!=null){
+            closedDisbursements.addAll(getDisbursementsByStatusIds(grantService.getById(grant.getOrigGrantId()),statusIds));
+        }
+        return closedDisbursements;
     }
 
     private List<ReportAssignment> determineCanManage(Report report, Long userId) {
