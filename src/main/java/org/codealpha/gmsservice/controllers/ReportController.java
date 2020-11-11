@@ -1750,7 +1750,7 @@ public class ReportController {
             String stringAttribs = new ObjectMapper().writeValueAsString(report.getReportDetails());
             snapshot.setStringAttributes(stringAttribs);
             snapshot.setFromStringAttributes(stringAttribs);
-            snapshot.setAssignedToId(currentUser.getId());
+            snapshot.setAssignedToId(currentUser!=null?currentUser.getId():null);
             snapshot.setMovedBy(previousUser.getId());
             snapshot.setFromNote(report.getNote());
             snapshot.setFromStateId(fromStatusId);
