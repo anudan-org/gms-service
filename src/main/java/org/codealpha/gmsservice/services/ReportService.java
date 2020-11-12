@@ -795,6 +795,7 @@ public class ReportService {
 
         if(checkIfReportMovedThroughWFAtleastOnce(report.getId())){
             report.setDeleted(true);
+            saveReport(report);
         }else {
             for (ReportSpecificSection section : getReportSections(report)) {
                 List<ReportSpecificSectionAttribute> attribs = getSpecificSectionAttributesBySection(section);

@@ -1740,7 +1740,7 @@ public class ReportController {
         try {
             // for (AssignedTo assignment : report.getCurrentAssignment()) {
             ReportSnapshot snapshot = new ReportSnapshot();
-            snapshot.setAssignedToId(currentUser.getId());
+            snapshot.setAssignedToId(currentUser!=null?currentUser.getId():null);
             snapshot.setEndDate(report.getEndDate());
             snapshot.setDueDate(report.getDueDate());
             snapshot.setReportId(report.getId());
@@ -2141,7 +2141,7 @@ public class ReportController {
             @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
             @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code ") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        Report report = reportService.getReportById(reportId);
+            Report report = reportService.getReportById(reportId);
 
         reportService.deleteReport(report);
 
