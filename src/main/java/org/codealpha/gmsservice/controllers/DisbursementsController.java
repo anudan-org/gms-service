@@ -664,6 +664,7 @@ public class DisbursementsController {
                 td.setName(String.valueOf(index));
                 td.setHeader("#");
                 td.setStatus(ad.getStatus());
+                td.setReportId(reportId);
                 td.setSaved(ad.getSaved());
                 td.setActualDisbursementId(ad.getId());
                 td.setDisbursementId(ad.getDisbursementId());
