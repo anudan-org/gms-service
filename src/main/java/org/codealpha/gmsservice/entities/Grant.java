@@ -184,7 +184,7 @@ public class Grant {
   @Column
   private boolean amended;
   @Column
-  private int amendmentNo = 0;
+  private int amendmentNo = 1;
   @Transient
   private Date minEndEndate;
 

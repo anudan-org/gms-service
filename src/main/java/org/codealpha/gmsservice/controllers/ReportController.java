@@ -416,8 +416,9 @@ public class ReportController {
 
                                 if (draftDisbursements != null && draftDisbursements.size() > 0) {
                                     if (!currentUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-                                        draftDisbursements.removeIf(dd -> (dd.getReportId() != null
-                                                && dd.getReportId().longValue() != report.getId().longValue() ));
+                                        draftDisbursements.removeIf(dd -> ((dd.getReportId() != null
+                                                && dd.getReportId().longValue() != report.getId().longValue()  && dd.isGranteeEntry()) || (dd.getReportId() != null
+                                                && dd.getReportId().longValue() == report.getId().longValue()  && dd.isGranteeEntry() && report.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"))));
                                     }
                                     if (draftDisbursements != null) {
                                         draftDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
@@ -1695,7 +1696,7 @@ public class ReportController {
 
             if (draftDisbursements != null && draftDisbursements.size() > 0) {
                 draftDisbursements
-                        .removeIf(dd -> (dd.getReportId().longValue() != fReport.getId() && !dd.isGranteeEntry()));
+                        .removeIf(dd -> (dd.getReportId().longValue() != fReport.getId().longValue() && dd.isGranteeEntry()));
                 if (draftDisbursements != null && draftDisbursements.size() > 0) {
                     for (Disbursement d : draftDisbursements) {
                         d.setStatus(closedtatus);
