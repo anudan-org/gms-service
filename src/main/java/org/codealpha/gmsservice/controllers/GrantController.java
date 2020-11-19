@@ -1005,7 +1005,7 @@ public class GrantController {
             List<Report> existingReports = reportService
                     .getReportsForGrant(grantService.getById(grant.getOrigGrantId()));
             if (existingReports != null && existingReports.size() > 0) {
-                existingReports.removeIf(r -> !r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+                existingReports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
                 if (existingReports != null && existingReports.size() > 0) {
 
                     Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());
@@ -1266,16 +1266,23 @@ public class GrantController {
                             + grant.getReferenceNo());
             moveToNewState(gn, activeStateOwnerId, origGrant.getId(), origGrant.getGrantStatus().getId(),
                     statusClosed.getId(), tenantCode);
-
+            Grant finalGrant = grant;
             List<Report> existingReports = reportService
                     .getReportsForGrant(grantService.getById(grant.getOrigGrantId()));
             if (existingReports != null && existingReports.size() > 0) {
 
+
                 existingReports.stream().forEach(r -> {
-                    if (r.getUpdatedAt() == null) {
+                    /*if (r.getUpdatedAt() == null) {
                         reportService.deleteReport(r);
                     } else {
                         r.setDisabledByAmendment(true);
+                        reportService.saveReport(r);
+                    }*/
+
+                    if(!r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")){
+                        r.setDisabledByAmendment(true);
+                        r.setGrant(finalGrant);
                         reportService.saveReport(r);
                     }
                 });
@@ -1287,8 +1294,11 @@ public class GrantController {
             if (existingDisbursements != null && existingDisbursements.size() > 0) {
 
                 existingDisbursements.stream().forEach(r -> {
-                    r.setDisabledByAmendment(true);
-                    disbursementService.saveDisbursement(r);
+                    if(!r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
+                        r.setGrant(finalGrant);
+                        r.setDisabledByAmendment(true);
+                        disbursementService.saveDisbursement(r);
+                    }
                 });
             }
         }

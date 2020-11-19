@@ -592,9 +592,9 @@ public class ReportController {
         } else {
             report.setCanManage(false);
         }
-        if (report.isDisabledByAmendment()) {
+        /*if (report.isDisabledByAmendment()) {
             report.setCanManage(false);
-        }
+        }*/
         return reportAssignments;
     }
 
