@@ -125,8 +125,8 @@ public class DisbursementsController {
                                 List<Disbursement> draftAndReviewDisbursements = disbursementService
                                                 .getDibursementsForGrantByStatuses(ownerGrant.getId(),
                                                                 draftAndReviewStatusIds);
+                                draftAndReviewDisbursements.removeIf(d -> d.isGranteeEntry());
                                 if (draftAndReviewDisbursements != null && draftAndReviewDisbursements.size() > 0) {
-
                                         ownerGrant.setHasOngoingDisbursement(true);
 
                                 }
