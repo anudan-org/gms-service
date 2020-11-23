@@ -4,8 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.FileWriteMode;
-import com.google.common.io.Files;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -37,7 +35,6 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.Size;
 
 import java.io.*;
 import java.net.URLDecoder;
@@ -47,7 +44,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -307,7 +303,7 @@ public class ReportController {
                 reportService);
         report.setReportDetails(reportVO.getReportDetails());
 
-        showDisbursementsForReport(report);
+        showDisbursementsForReport(report,userService.getUserById(userId));
 
         report.setNoteAddedBy(reportVO.getNoteAddedBy());
         report.setNoteAddedByUser(reportVO.getNoteAddedByUser());
@@ -380,7 +376,7 @@ public class ReportController {
         return report;
     }
 
-    private void showDisbursementsForReport(Report report) {
+    private void showDisbursementsForReport(Report report, User currentUser) {
         List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
                 report.getGrant().getGrantorOrganization().getId());
 
@@ -399,10 +395,9 @@ public class ReportController {
             if (s.getAttributes() != null && s.getAttributes().size() > 0) {
                 s.getAttributes().forEach(a -> {
                     if (a.getFieldType().equalsIgnoreCase("disbursement")) {
-                        List<Disbursement> closedDisbursements = disbursementService
-                                .getDibursementsForGrantByStatuses(report.getGrant().getId(), closedStatusIds);
-                        List<Disbursement> draftDisbursements = disbursementService
-                                .getDibursementsForGrantByStatuses(report.getGrant().getId(), draftStatusIds);
+                        List<Disbursement> closedDisbursements = getDisbursementsByStatusIds(report.getGrant(),closedStatusIds); //disbursementService
+                                //getDibursementsForGrantByStatuses(report.getGrant().getId(), closedStatusIds);
+                        List<Disbursement> draftDisbursements = getDisbursementsByStatusIds(report.getGrant(), draftStatusIds);
                         if (!report.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
                             List<TableData> tableDataList = new ArrayList<>();
                             if (closedDisbursements != null) {
@@ -418,22 +413,28 @@ public class ReportController {
                                 });
                             }
 
-                            if (draftDisbursements != null && draftDisbursements.size() > 0) {
-                                draftDisbursements.removeIf(dd -> (dd.getReportId() != null
-                                        && dd.getReportId().longValue() != report.getId() && !dd.isGranteeEntry()));
-                                if (draftDisbursements != null) {
-                                    draftDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
-                                    AtomicInteger index = new AtomicInteger(1);
-                                    draftDisbursements.forEach(cd -> {
-                                        List<ActualDisbursement> ads = disbursementService
-                                                .getActualDisbursementsForDisbursement(cd);
-                                        if (ads != null && ads.size() > 0) {
-                                            finalActualDisbursements.addAll(ads);
-                                        }
 
-                                    });
+                                if (draftDisbursements != null && draftDisbursements.size() > 0) {
+                                    if (!currentUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                                        draftDisbursements.removeIf(dd -> ((dd.getReportId() != null
+                                                && dd.getReportId().longValue() != report.getId().longValue()  && dd.isGranteeEntry()) || (dd.getReportId() != null
+                                                && dd.getReportId().longValue() == report.getId().longValue()  && dd.isGranteeEntry() && report.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"))));
+                                    }
+                                    if (draftDisbursements != null) {
+                                        draftDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
+                                        AtomicInteger index = new AtomicInteger(1);
+                                        draftDisbursements.forEach(cd -> {
+                                            List<ActualDisbursement> ads = disbursementService
+                                                    .getActualDisbursementsForDisbursement(cd);
+                                            if (ads != null && ads.size() > 0) {
+                                                finalActualDisbursements.addAll(ads);
+                                            }
+
+                                        });
+                                    }
                                 }
-                            }
+
+
 
                             finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
                             if (finalActualDisbursements.size() > 0) {
@@ -447,6 +448,7 @@ public class ReportController {
                                     td.setSaved(ad.getSaved());
                                     td.setActualDisbursementId(ad.getId());
                                     td.setDisbursementId(ad.getDisbursementId());
+                                    td.setReportId(disbursementService.getDisbursementById(ad.getDisbursementId()).getReportId());
                                     if (disbursementService.getDisbursementById(ad.getDisbursementId())
                                             .isGranteeEntry()) {
                                         td.setEnteredByGrantee(true);
@@ -520,6 +522,7 @@ public class ReportController {
                                     td.setSaved(ad.getStatus());
                                     td.setActualDisbursementId(ad.getId());
                                     td.setDisbursementId(ad.getDisbursementId());
+                                    td.setReportId(disbursementService.getDisbursementById(ad.getDisbursementId()).getReportId());
                                     if (disbursementService.getDisbursementById(ad.getDisbursementId())
                                             .isGranteeEntry()) {
                                         td.setEnteredByGrantee(true);
@@ -567,6 +570,16 @@ public class ReportController {
 
     }
 
+    private List<Disbursement> getDisbursementsByStatusIds(Grant grant, List<Long> statusIds) {
+        List<Disbursement> closedDisbursements = new ArrayList<>();
+
+        closedDisbursements = disbursementService.getDibursementsForGrantByStatuses(grant.getId(), statusIds);
+        if(grant.getOrigGrantId()!=null){
+            closedDisbursements.addAll(getDisbursementsByStatusIds(grantService.getById(grant.getOrigGrantId()),statusIds));
+        }
+        return closedDisbursements;
+    }
+
     private List<ReportAssignment> determineCanManage(Report report, Long userId) {
         List<ReportAssignment> reportAssignments = reportService.getAssignmentsForReport(report);
         if ((reportAssignments.stream()
@@ -579,9 +592,9 @@ public class ReportController {
         } else {
             report.setCanManage(false);
         }
-        if (report.isDisabledByAmendment()) {
+        /*if (report.isDisabledByAmendment()) {
             report.setCanManage(false);
-        }
+        }*/
         return reportAssignments;
     }
 
@@ -1676,13 +1689,14 @@ public class ReportController {
             List<Disbursement> draftDisbursements = disbursementService
                     .getDibursementsForGrantByStatuses(report.getGrant().getId(), draftStatusIds);
 
+
             WorkflowStatus closedtatus = workflowStatuses.stream()
                     .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList())
                     .get(0);
 
             if (draftDisbursements != null && draftDisbursements.size() > 0) {
                 draftDisbursements
-                        .removeIf(dd -> (dd.getReportId().longValue() != fReport.getId() && !dd.isGranteeEntry()));
+                        .removeIf(dd -> (dd.getReportId().longValue() != fReport.getId().longValue() && dd.isGranteeEntry()));
                 if (draftDisbursements != null && draftDisbursements.size() > 0) {
                     for (Disbursement d : draftDisbursements) {
                         d.setStatus(closedtatus);
@@ -1735,7 +1749,7 @@ public class ReportController {
         try {
             // for (AssignedTo assignment : report.getCurrentAssignment()) {
             ReportSnapshot snapshot = new ReportSnapshot();
-            snapshot.setAssignedToId(currentUser.getId());
+            snapshot.setAssignedToId(currentUser!=null?currentUser.getId():null);
             snapshot.setEndDate(report.getEndDate());
             snapshot.setDueDate(report.getDueDate());
             snapshot.setReportId(report.getId());
@@ -1745,7 +1759,7 @@ public class ReportController {
             String stringAttribs = new ObjectMapper().writeValueAsString(report.getReportDetails());
             snapshot.setStringAttributes(stringAttribs);
             snapshot.setFromStringAttributes(stringAttribs);
-            snapshot.setAssignedToId(currentUser.getId());
+            snapshot.setAssignedToId(currentUser!=null?currentUser.getId():null);
             snapshot.setMovedBy(previousUser.getId());
             snapshot.setFromNote(report.getNote());
             snapshot.setFromStateId(fromStatusId);
@@ -2136,7 +2150,7 @@ public class ReportController {
             @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
             @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code ") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        Report report = reportService.getReportById(reportId);
+            Report report = reportService.getReportById(reportId);
 
         reportService.deleteReport(report);
 

@@ -54,6 +54,7 @@ public class ReportVO {
     private String linkedApprovedReports;
     private String reportDetail;
     private boolean disabledByAmendment;
+    private boolean deleted;
 
     public Long getId() {
         return id;
@@ -379,4 +380,11 @@ public class ReportVO {
         this.disabledByAmendment = disabledByAmendment;
     }
 
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
 }

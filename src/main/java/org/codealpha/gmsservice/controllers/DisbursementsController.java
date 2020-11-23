@@ -125,8 +125,8 @@ public class DisbursementsController {
                                 List<Disbursement> draftAndReviewDisbursements = disbursementService
                                                 .getDibursementsForGrantByStatuses(ownerGrant.getId(),
                                                                 draftAndReviewStatusIds);
+                                draftAndReviewDisbursements.removeIf(d -> d.isGranteeEntry());
                                 if (draftAndReviewDisbursements != null && draftAndReviewDisbursements.size() > 0) {
-
                                         ownerGrant.setHasOngoingDisbursement(true);
 
                                 }
@@ -561,7 +561,7 @@ public class DisbursementsController {
                 snapshot.setFromNote(disbursement.getNote());
                 snapshot.setFromStateId(fromStateId);
                 snapshot.setToStateId(toStateId);
-                snapshot.setAssignedToId(currentUser.getId());
+                snapshot.setAssignedToId(currentUser!=null?currentUser.getId():null);
                 snapshot.setMovedBy(previousUser.getId());
                 snapshot.setMovedOn(disbursement.getMovedOn());
 
@@ -664,6 +664,7 @@ public class DisbursementsController {
                 td.setName(String.valueOf(index));
                 td.setHeader("#");
                 td.setStatus(ad.getStatus());
+                td.setReportId(reportId);
                 td.setSaved(ad.getSaved());
                 td.setActualDisbursementId(ad.getId());
                 td.setDisbursementId(ad.getDisbursementId());
