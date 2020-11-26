@@ -530,8 +530,9 @@ public class ReportController {
                                     ColumnData cdDate = new ColumnData();
                                     cdDate.setDataType("date");
                                     cdDate.setName("Disbursement Date");
-                                    cdDate.setValue(
-                                            new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate()));
+                                    cdDate.setValue(ad.getDisbursementDate() != null
+                                            ? new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate())
+                                            : null);
 
                                     ColumnData cdDA = new ColumnData();
                                     cdDA.setDataType("currency");
