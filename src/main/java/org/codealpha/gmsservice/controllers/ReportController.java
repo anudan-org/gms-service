@@ -130,7 +130,7 @@ public class ReportController {
                     report.setFutureReportsCount(futureReportsCount);
                 }
             } else if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-FUTURE")) {
-                reports = reportService.getUpcomingFutureReportsForGranterUserByDate(userId, org.getId(), end);
+                 reports = reportService.getUpcomingFutureReportsForGranterUserByDate(userId, org.getId(), end);
                 Map<Long, Report> reportsHolder = new LinkedHashMap<Long, Report>();
                 for (Report report : reports) {
                     if (!reportsHolder.keySet().contains(report.getGrant().getId())) {
@@ -208,7 +208,7 @@ public class ReportController {
     @GetMapping("/{reportId}/{grantId}")
     public List<Report> getFutureReports(@PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("reportId") Long reportId,
-            @PathVariable("grantId") Long grantId) {
+            @PathVariable("grantId") Long grantId,@RequestParam(value = "type",required = false)String forType) {
         User user = userService.getUserById(userId);
 
         List<Report> reports = null;
@@ -217,10 +217,14 @@ public class ReportController {
             Date start = DateTime.now().withTimeAtStartOfDay().toDate();
             Date end = new DateTime(start, DateTimeZone.forID(timezone)).plusDays(30).withTime(23, 59, 59, 999)
                     .toDate();
-            reports = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId, org.getId(), end, grantId);
+            if(forType.equalsIgnoreCase("upcoming")) {
+                reports = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId, org.getId(), end, grantId);
+            }else if(forType.equalsIgnoreCase("all")) {
+                reports = reportService.getReportsForGrant(grantService.getById(grantId));
+            }
         }
 
-        reports.removeIf(r -> r.getId() == reportId);
+        reports.removeIf(r -> r.getId().longValue() == reportId.longValue());
 
         for (Report report : reports) {
 
