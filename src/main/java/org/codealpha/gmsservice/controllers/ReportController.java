@@ -399,7 +399,7 @@ public class ReportController {
             if (s.getAttributes() != null && s.getAttributes().size() > 0) {
                 s.getAttributes().forEach(a -> {
                     if (a.getFieldType().equalsIgnoreCase("disbursement")) {
-                        List<Disbursement> closedDisbursements = getDisbursementsByStatusIds(report.getGrant(),closedStatusIds); //disbursementService
+                            List<Disbursement> closedDisbursements = getDisbursementsByStatusIds(report.getGrant(),closedStatusIds); //disbursementService
                                 //getDibursementsForGrantByStatuses(report.getGrant().getId(), closedStatusIds);
                         List<Disbursement> draftDisbursements = getDisbursementsByStatusIds(report.getGrant(), draftStatusIds);
                         if (!report.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
@@ -440,7 +440,7 @@ public class ReportController {
 
 
 
-                            finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
+                            finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getId));
                             if (finalActualDisbursements.size() > 0) {
                                 AtomicInteger index = new AtomicInteger(1);
                                 finalActualDisbursements.forEach(ad -> {
@@ -452,11 +452,17 @@ public class ReportController {
                                     td.setSaved(ad.getSaved());
                                     td.setActualDisbursementId(ad.getId());
                                     td.setDisbursementId(ad.getDisbursementId());
-                                    td.setReportId(disbursementService.getDisbursementById(ad.getDisbursementId()).getReportId());
+                                    Long repId = disbursementService.getDisbursementById(ad.getDisbursementId()).getReportId();
+                                    td.setReportId(repId);
                                     if (disbursementService.getDisbursementById(ad.getDisbursementId())
                                             .isGranteeEntry()) {
                                         td.setEnteredByGrantee(true);
                                     }
+                                    if(!currentUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && td.isEnteredByGrantee() && report.getId().longValue()!=repId.longValue() && !disbursementService.getDisbursementById(ad.getDisbursementId()).getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")){
+                                        td.setShowForGrantee(false);
+                                    }
+
+
                                     ColumnData cdDate = new ColumnData();
                                     cdDate.setDataType("date");
                                     cdDate.setName("Disbursement Date");
@@ -1705,10 +1711,11 @@ public class ReportController {
                 if (draftDisbursements != null && draftDisbursements.size() > 0) {
                     for (Disbursement d : draftDisbursements) {
                         d.setStatus(closedtatus);
+                        d.setMovedOn(fReport.getMovedOn());
                         List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(d);
                         if (ads != null && ads.size() > 0) {
                             for (ActualDisbursement ad : ads) {
-                                ad.setStatus(false);
+                                 ad.setStatus(false);
                                 ad.setSaved(true);
                             }
                         }

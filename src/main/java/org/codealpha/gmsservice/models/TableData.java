@@ -14,6 +14,7 @@ public class TableData {
     private Long actualDisbursementId;
     private Long disbursementId;
     private Long reportId;
+    private boolean showForGrantee = true;
 
     public String getName() {
         return name;
@@ -85,5 +86,13 @@ public class TableData {
 
     public void setReportId(Long reportId) {
         this.reportId = reportId;
+    }
+
+    public boolean isShowForGrantee() {
+        return showForGrantee;
+    }
+
+    public void setShowForGrantee(boolean showForGrantee) {
+        this.showForGrantee = showForGrantee;
     }
 }
