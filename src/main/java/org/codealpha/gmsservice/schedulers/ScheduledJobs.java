@@ -708,7 +708,8 @@ public class ScheduledJobs {
         }
     }
 
-    @Scheduled(cron = "0 0 5 * * *")
+    //@Scheduled(cron = "0 0 5 * * *")
+    @Scheduled(cron = "0 * * * * *")
     public void remindAdminsAboutDisabledUsers() {
 
         List<DisabledUsersEntity> grantsWithDisabledUsers = grantService.getGrantsWithDisabledUsers();
@@ -726,7 +727,7 @@ public class ScheduledJobs {
             }
         }
 
-            List<DisabledUsersEntity> reportsWithDisabledUsers = reportService.getReportsWithDisabledUsers();
+            /*List<DisabledUsersEntity> reportsWithDisabledUsers = reportService.getReportsWithDisabledUsers();
             if (reportsWithDisabledUsers != null && reportsWithDisabledUsers.size() > 0) {
                 for (DisabledUsersEntity entity : reportsWithDisabledUsers) {
                     Report report = reportService.getReportById(entity.getId());
@@ -809,7 +810,7 @@ public class ScheduledJobs {
                         .getConfigValue().replaceAll("%RELEASE_VERSION%",
                         releaseService.getCurrentRelease().getVersion())});
             }
-        }
+        }*/
         }
 
     private void processDisabledUserNotification(DisabledUsersEntity entity, Grant byId) {
@@ -823,7 +824,8 @@ public class ScheduledJobs {
             }
             return false;
         }).collect(Collectors.toList());
-        List<User> nonAdminUsers = tenantUsers.stream().filter(u -> {
+        List<User> grantUsers = grantService.getGrantWorkflowAssignments(grant).stream().map(u -> userService.getUserById(u.getAssignments())).collect(Collectors.toList());
+        List<User> nonAdminUsers = grantUsers.stream().filter(u -> {
             Boolean isNotAdmin = u.getUserRoles().stream().filter(r -> !r.getRole().getName().equalsIgnoreCase("ADMIN")).findAny().isPresent();
             if (isNotAdmin) {
                 return true;
