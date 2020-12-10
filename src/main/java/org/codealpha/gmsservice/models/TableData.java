@@ -13,6 +13,7 @@ public class TableData {
     private boolean saved;
     private Long actualDisbursementId;
     private Long disbursementId;
+    private Long reportId;
 
     public String getName() {
         return name;
@@ -78,4 +79,11 @@ public class TableData {
         this.disbursementId = disbursementId;
     }
 
+    public Long getReportId() {
+        return reportId;
+    }
+
+    public void setReportId(Long reportId) {
+        this.reportId = reportId;
+    }
 }
