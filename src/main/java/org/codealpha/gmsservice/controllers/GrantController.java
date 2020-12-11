@@ -2527,7 +2527,7 @@ public class GrantController {
         Grant grant = saveGrant(assignmentModel.getGrant().getId(), assignmentModel.getGrant(), userId, tenantCode);
 
         for (GrantAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
-            if(currentAssignments.get(assignmentsVO.getStateId()).longValue()==assignmentsVO.getAssignments().longValue()){
+            if(currentAssignments!=null && currentAssignments.size()>0 && currentAssignments.get(assignmentsVO.getStateId()).longValue()==assignmentsVO.getAssignments().longValue()){
                 continue;
             }
             GrantAssignments assignment = null;
