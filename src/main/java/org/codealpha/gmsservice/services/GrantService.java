@@ -500,7 +500,13 @@ public class GrantService {
             url = url + "/home/?action=login&g=" + code + "&email=&type=grant";
         }
 
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName())
+        String grantName = "";
+        if((finalGrant.getGrantStatus().getInternalStatus().equalsIgnoreCase("DRAFT") || finalGrant.getGrantStatus().getInternalStatus().equalsIgnoreCase("REVIEW")) && finalGrant.getOrigGrantId()!=null){
+            grantName = "Amendment in-progress ["+getById(finalGrant.getOrigGrantId()).getReferenceNo()+"] "+ finalGrant.getName();
+        }else{
+            grantName = finalGrant.getReferenceNo()!=null?"[".concat(finalGrant.getReferenceNo()).concat("] ").concat(finalGrant.getName()):finalGrant.getName();
+        }
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", grantName)
                 .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
                 .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
                 .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
@@ -515,7 +521,7 @@ public class GrantService {
                 .replaceAll("%APPROVER_TYPE%", "Approver").replaceAll("%ENTITY_TYPE%", "grant")
                 .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
                 .replaceAll("%ENTITY_NAME%", finalGrant.getName());
-        String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName());
+        String subject = subConfigValue.replaceAll("%GRANT_NAME%", grantName);
 
         return new String[] { subject, message };
     }
@@ -783,7 +789,7 @@ public class GrantService {
         if (grant.getOrigGrantId() != null) {
             List<Report> existingReports = reportService.getReportsForGrant(getById(grant.getOrigGrantId()));
             if (existingReports != null && existingReports.size() > 0) {
-                existingReports.removeIf(r -> !r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+                existingReports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
                 if (existingReports != null && existingReports.size() > 0) {
 
                     Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());
@@ -793,10 +799,10 @@ public class GrantService {
                 }
             }
 
-            List<Disbursement> existingDisbursements = disbursementService
+            /*List<Disbursement> existingDisbursements = disbursementService
                     .getAllDisbursementsForGrant(grant.getOrigGrantId());
             if (existingDisbursements != null && existingDisbursements.size() > 0) {
-                existingDisbursements.removeIf(d -> !d.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"));
+                existingDisbursements.removeIf(d -> !d.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
                 if (existingDisbursements != null && existingDisbursements.size() > 0) {
 
                     Comparator<Disbursement> endDateComparator = Comparator.comparing(d -> d.getMovedOn());
@@ -808,7 +814,7 @@ public class GrantService {
                     }
 
                 }
-            }
+            }*/
         }
         return grant;
     }
