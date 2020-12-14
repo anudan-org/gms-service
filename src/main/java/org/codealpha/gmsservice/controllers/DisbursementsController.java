@@ -561,7 +561,7 @@ public class DisbursementsController {
                 snapshot.setFromNote(disbursement.getNote());
                 snapshot.setFromStateId(fromStateId);
                 snapshot.setToStateId(toStateId);
-                snapshot.setAssignedToId(currentUser.getId());
+                snapshot.setAssignedToId(currentUser==null?null:currentUser.getId());
                 snapshot.setMovedBy(previousUser.getId());
                 snapshot.setMovedOn(disbursement.getMovedOn());
 
