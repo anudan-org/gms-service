@@ -1005,7 +1005,7 @@ public class GrantController {
             List<Report> existingReports = reportService
                     .getReportsForGrant(grantService.getById(grant.getOrigGrantId()));
             if (existingReports != null && existingReports.size() > 0) {
-                existingReports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
+                //existingReports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
                 if (existingReports != null && existingReports.size() > 0) {
 
                     Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());
@@ -1282,7 +1282,7 @@ public class GrantController {
 
                     if(!r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")){
                         r.setDisabledByAmendment(true);
-                        r.setGrant(finalGrant);
+                        r.setGrant(finalGrant); //Switch over to new grant happening here
                         reportService.saveReport(r);
                     }
                 });
@@ -1295,7 +1295,7 @@ public class GrantController {
 
                 existingDisbursements.stream().forEach(r -> {
                     if(!r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
-                        r.setGrant(finalGrant);
+                        r.setGrant(finalGrant); //Switch over to new grant happening here
                         r.setDisabledByAmendment(true);
                         disbursementService.saveDisbursement(r);
                     }

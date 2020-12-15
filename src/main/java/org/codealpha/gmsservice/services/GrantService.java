@@ -789,7 +789,7 @@ public class GrantService {
         if (grant.getOrigGrantId() != null) {
             List<Report> existingReports = reportService.getReportsForGrant(getById(grant.getOrigGrantId()));
             if (existingReports != null && existingReports.size() > 0) {
-                existingReports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
+                //existingReports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
                 if (existingReports != null && existingReports.size() > 0) {
 
                     Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());

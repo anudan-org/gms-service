@@ -667,6 +667,7 @@ public class DisbursementsController {
                 td.setSaved(ad.getSaved());
                 td.setActualDisbursementId(ad.getId());
                 td.setDisbursementId(ad.getDisbursementId());
+                td.setReportId(reportId);
                 if (disbursementToSave.isGranteeEntry()) {
                         td.setEnteredByGrantee(true);
                 }
