@@ -1301,6 +1301,29 @@ public class GrantController {
                     }
                 });
             }
+
+
+            List<GrantDocument> projectDocuments = grantService.getGrantsDocuments(grant.getOrigGrantId());
+            if(projectDocuments!=null && projectDocuments.size()>0){
+                for(GrantDocument doc: projectDocuments){
+                    GrantDocument newDoc = new GrantDocument();
+                    newDoc.setGrantId(grant.getId());
+                    newDoc.setExtension(doc.getExtension());
+                    newDoc.setLocation(doc.getLocation().replaceFirst(grant.getOrigGrantId().toString(),grant.getId().toString()));
+                    newDoc.setName(doc.getName());
+                    newDoc.setUploadedBy(doc.getUploadedBy());
+                    newDoc.setUploadedOn(doc.getUploadedOn());
+
+                    grantService.saveGrantDocument(newDoc);
+
+                    try {
+                        FileCopyUtils.copy(new File(doc.getLocation()),new File(newDoc.getLocation()));
+                    } catch (IOException e) {
+                        logger.error(e.getMessage(),e);
+                    }
+
+                }
+            }
         }
         return grant;
 
