@@ -458,7 +458,11 @@ public class ReportController {
                                             .isGranteeEntry()) {
                                         td.setEnteredByGrantee(true);
                                     }
-                                    if(!currentUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && td.isEnteredByGrantee() && report.getId().longValue()!=repId.longValue() && !disbursementService.getDisbursementById(ad.getDisbursementId()).getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")){
+                                    /*if(!currentUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && td.isEnteredByGrantee() && report.getId().longValue()!=repId.longValue() && !disbursementService.getDisbursementById(ad.getDisbursementId()).getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")){
+                                        td.setShowForGrantee(false);
+                                    }*/
+
+                                    if(currentUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && td.isEnteredByGrantee() && report.getId().longValue()!=repId.longValue() && !disbursementService.getDisbursementById(ad.getDisbursementId()).getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")){
                                         td.setShowForGrantee(false);
                                     }
 
