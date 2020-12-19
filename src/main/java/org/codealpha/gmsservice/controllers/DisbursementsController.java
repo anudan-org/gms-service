@@ -561,7 +561,7 @@ public class DisbursementsController {
                 snapshot.setFromNote(disbursement.getNote());
                 snapshot.setFromStateId(fromStateId);
                 snapshot.setToStateId(toStateId);
-                snapshot.setAssignedToId(currentUser.getId());
+                snapshot.setAssignedToId(currentUser==null?null:currentUser.getId());
                 snapshot.setMovedBy(previousUser.getId());
                 snapshot.setMovedOn(disbursement.getMovedOn());
 
@@ -667,6 +667,7 @@ public class DisbursementsController {
                 td.setSaved(ad.getSaved());
                 td.setActualDisbursementId(ad.getId());
                 td.setDisbursementId(ad.getDisbursementId());
+                td.setReportId(reportId);
                 if (disbursementToSave.isGranteeEntry()) {
                         td.setEnteredByGrantee(true);
                 }

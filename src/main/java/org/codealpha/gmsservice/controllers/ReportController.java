@@ -130,7 +130,7 @@ public class ReportController {
                     report.setFutureReportsCount(futureReportsCount);
                 }
             } else if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-FUTURE")) {
-                reports = reportService.getUpcomingFutureReportsForGranterUserByDate(userId, org.getId(), end);
+                 reports = reportService.getUpcomingFutureReportsForGranterUserByDate(userId, org.getId(), end);
                 Map<Long, Report> reportsHolder = new LinkedHashMap<Long, Report>();
                 for (Report report : reports) {
                     if (!reportsHolder.keySet().contains(report.getGrant().getId())) {
@@ -208,7 +208,7 @@ public class ReportController {
     @GetMapping("/{reportId}/{grantId}")
     public List<Report> getFutureReports(@PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("reportId") Long reportId,
-            @PathVariable("grantId") Long grantId) {
+            @PathVariable("grantId") Long grantId,@RequestParam(value = "type",required = false)String forType) {
         User user = userService.getUserById(userId);
 
         List<Report> reports = null;
@@ -217,10 +217,14 @@ public class ReportController {
             Date start = DateTime.now().withTimeAtStartOfDay().toDate();
             Date end = new DateTime(start, DateTimeZone.forID(timezone)).plusDays(30).withTime(23, 59, 59, 999)
                     .toDate();
-            reports = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId, org.getId(), end, grantId);
+            if(forType.equalsIgnoreCase("upcoming")) {
+                reports = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId, org.getId(), end, grantId);
+            }else if(forType.equalsIgnoreCase("all")) {
+                reports = reportService.getReportsForGrant(grantService.getById(grantId));
+            }
         }
 
-        reports.removeIf(r -> r.getId() == reportId);
+        reports.removeIf(r -> r.getId().longValue() == reportId.longValue());
 
         for (Report report : reports) {
 
@@ -395,7 +399,7 @@ public class ReportController {
             if (s.getAttributes() != null && s.getAttributes().size() > 0) {
                 s.getAttributes().forEach(a -> {
                     if (a.getFieldType().equalsIgnoreCase("disbursement")) {
-                        List<Disbursement> closedDisbursements = getDisbursementsByStatusIds(report.getGrant(),closedStatusIds); //disbursementService
+                            List<Disbursement> closedDisbursements = getDisbursementsByStatusIds(report.getGrant(),closedStatusIds); //disbursementService
                                 //getDibursementsForGrantByStatuses(report.getGrant().getId(), closedStatusIds);
                         List<Disbursement> draftDisbursements = getDisbursementsByStatusIds(report.getGrant(), draftStatusIds);
                         if (!report.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
@@ -436,7 +440,7 @@ public class ReportController {
 
 
 
-                            finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
+                            finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getId));
                             if (finalActualDisbursements.size() > 0) {
                                 AtomicInteger index = new AtomicInteger(1);
                                 finalActualDisbursements.forEach(ad -> {
@@ -448,11 +452,21 @@ public class ReportController {
                                     td.setSaved(ad.getSaved());
                                     td.setActualDisbursementId(ad.getId());
                                     td.setDisbursementId(ad.getDisbursementId());
-                                    td.setReportId(disbursementService.getDisbursementById(ad.getDisbursementId()).getReportId());
+                                    Long repId = disbursementService.getDisbursementById(ad.getDisbursementId()).getReportId();
+                                    td.setReportId(repId);
                                     if (disbursementService.getDisbursementById(ad.getDisbursementId())
                                             .isGranteeEntry()) {
                                         td.setEnteredByGrantee(true);
                                     }
+                                    /*if(!currentUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && td.isEnteredByGrantee() && report.getId().longValue()!=repId.longValue() && !disbursementService.getDisbursementById(ad.getDisbursementId()).getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")){
+                                        td.setShowForGrantee(false);
+                                    }*/
+
+                                    if(currentUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && td.isEnteredByGrantee() && report.getId().longValue()!=repId.longValue() && !disbursementService.getDisbursementById(ad.getDisbursementId()).getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")){
+                                        td.setShowForGrantee(false);
+                                    }
+
+
                                     ColumnData cdDate = new ColumnData();
                                     cdDate.setDataType("date");
                                     cdDate.setName("Disbursement Date");
@@ -530,8 +544,9 @@ public class ReportController {
                                     ColumnData cdDate = new ColumnData();
                                     cdDate.setDataType("date");
                                     cdDate.setName("Disbursement Date");
-                                    cdDate.setValue(
-                                            new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate()));
+                                    cdDate.setValue(ad.getDisbursementDate() != null
+                                            ? new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate())
+                                            : null);
 
                                     ColumnData cdDA = new ColumnData();
                                     cdDA.setDataType("currency");
@@ -1700,10 +1715,11 @@ public class ReportController {
                 if (draftDisbursements != null && draftDisbursements.size() > 0) {
                     for (Disbursement d : draftDisbursements) {
                         d.setStatus(closedtatus);
+                        d.setMovedOn(fReport.getMovedOn());
                         List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(d);
                         if (ads != null && ads.size() > 0) {
                             for (ActualDisbursement ad : ads) {
-                                ad.setStatus(false);
+                                 ad.setStatus(false);
                                 ad.setSaved(true);
                             }
                         }

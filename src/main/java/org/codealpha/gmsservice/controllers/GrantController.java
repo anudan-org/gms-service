@@ -1005,7 +1005,7 @@ public class GrantController {
             List<Report> existingReports = reportService
                     .getReportsForGrant(grantService.getById(grant.getOrigGrantId()));
             if (existingReports != null && existingReports.size() > 0) {
-                existingReports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
+                //existingReports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
                 if (existingReports != null && existingReports.size() > 0) {
 
                     Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());
@@ -1282,7 +1282,7 @@ public class GrantController {
 
                     if(!r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")){
                         r.setDisabledByAmendment(true);
-                        r.setGrant(finalGrant);
+                        r.setGrant(finalGrant); //Switch over to new grant happening here
                         reportService.saveReport(r);
                     }
                 });
@@ -1295,11 +1295,34 @@ public class GrantController {
 
                 existingDisbursements.stream().forEach(r -> {
                     if(!r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
-                        r.setGrant(finalGrant);
+                        r.setGrant(finalGrant); //Switch over to new grant happening here
                         r.setDisabledByAmendment(true);
                         disbursementService.saveDisbursement(r);
                     }
                 });
+            }
+
+
+            List<GrantDocument> projectDocuments = grantService.getGrantsDocuments(grant.getOrigGrantId());
+            if(projectDocuments!=null && projectDocuments.size()>0){
+                for(GrantDocument doc: projectDocuments){
+                    GrantDocument newDoc = new GrantDocument();
+                    newDoc.setGrantId(grant.getId());
+                    newDoc.setExtension(doc.getExtension());
+                    newDoc.setLocation(doc.getLocation().replaceFirst(grant.getOrigGrantId().toString(),grant.getId().toString()));
+                    newDoc.setName(doc.getName());
+                    newDoc.setUploadedBy(doc.getUploadedBy());
+                    newDoc.setUploadedOn(doc.getUploadedOn());
+
+                    grantService.saveGrantDocument(newDoc);
+
+                    try {
+                        FileCopyUtils.copy(new File(doc.getLocation()),new File(newDoc.getLocation()));
+                    } catch (IOException e) {
+                        logger.error(e.getMessage(),e);
+                    }
+
+                }
             }
         }
         return grant;

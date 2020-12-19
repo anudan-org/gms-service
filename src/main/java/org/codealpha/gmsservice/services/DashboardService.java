@@ -225,7 +225,7 @@ public class DashboardService {
                             .collect(Collectors.toList());
                     List<Long> statusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
                             .collect(Collectors.toList());
-                    List<Disbursement> approvedDisbursements = disbursementRepository
+                    /*List<Disbursement> approvedDisbursements = disbursementRepository
                             .getDisbursementByGrantAndStatuses(grant.getId(), statusIds);
                     List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
                     if (approvedDisbursements != null) {
@@ -237,16 +237,21 @@ public class DashboardService {
                                 approvedActualDisbursements.addAll(approvedActuals);
                             }
                         }
-                    }
-                    if (approvedActualDisbursements.size() > 0) {
-                        Double total = 0d;
+                    }*/
+                    Double total = 0d;
+                    /*if (approvedActualDisbursements.size() > 0) {
+
                         for (ActualDisbursement ad : approvedActualDisbursements) {
                             if (ad.getActualAmount() != null) {
                                 total += ad.getActualAmount();
                             }
                         }
-                        grant.setApprovedDisbursementsTotal(total);
-                    }
+
+                    }*/
+                        //if(grant.getOrigGrantId()!=null){
+                            total +=getAllLinkedGrantsDisbursementsTotal(grant,statusIds);
+                        //}
+                    grant.setApprovedDisbursementsTotal(total);
 
                     Optional<WorkflowStatus> reportApprovedStatus = workflowStatusService
                             .getTenantWorkflowStatuses("REPORT", tenantOrg.getId()).stream()
@@ -276,8 +281,8 @@ public class DashboardService {
                         List<Report> existingReports = reportService
                                 .getReportsForGrant(grantService.getById(grant.getOrigGrantId()));
                         if (existingReports != null && existingReports.size() > 0) {
-                            existingReports
-                                    .removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
+                            /*existingReports
+                                    .removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));*/
                             if (existingReports != null && existingReports.size() > 0) {
 
                                 Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());
@@ -314,6 +319,38 @@ public class DashboardService {
         }
 
         return this;
+    }
+
+    private Double getAllLinkedGrantsDisbursementsTotal(Grant byId, List<Long> statusIds) {
+        List<Disbursement> approvedDisbursements = disbursementRepository
+                .getDisbursementByGrantAndStatuses(byId.getId(), statusIds);
+
+        List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
+        if (approvedDisbursements != null) {
+
+            for (Disbursement approved : approvedDisbursements) {
+                List<ActualDisbursement> approvedActuals = actualDisbursementRepository
+                        .findByDisbursementId(approved.getId());
+                if (approvedActuals.size() > 0) {
+                    approvedActualDisbursements.addAll(approvedActuals);
+                }
+            }
+        }
+        Double total = 0d;
+        if (approvedActualDisbursements.size() > 0) {
+
+            for (ActualDisbursement ad : approvedActualDisbursements) {
+                if (ad.getActualAmount() != null) {
+                    total += ad.getActualAmount();
+                }
+            }
+
+        }
+        if (byId.getOrigGrantId() != null) {
+            total += getAllLinkedGrantsDisbursementsTotal(grantService.getById(byId.getOrigGrantId()), statusIds);
+        }
+
+        return total;
     }
 
     public List<Tenant> getTenants() {
@@ -353,7 +390,10 @@ public class DashboardService {
 
         List<Grant> activeGrants = grantRepository.findActiveGrants(granterId);
         if (activeGrants != null && !activeGrants.isEmpty()) {
-            List<Disbursement> allClosedDisbursements = new ArrayList<>();
+            for (Grant ag : activeGrants) {
+                disbursedAmount+= getAllLinkedGrantsDisbursementsTotal(ag,closedStatusIds);
+            }
+            /*List<Disbursement> allClosedDisbursements = new ArrayList<>();
 
             for (Grant ag : activeGrants) {
                 List<Disbursement> closedDisbursements = disbursementRepository
@@ -372,7 +412,7 @@ public class DashboardService {
 
             for (ActualDisbursement ad : allActualDisbursements) {
                 disbursedAmount += ad.getActualAmount() == null ? 0 : ad.getActualAmount();
-            }
+            }*/
 
         }
 
