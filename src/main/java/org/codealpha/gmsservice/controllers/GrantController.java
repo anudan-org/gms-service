@@ -1006,8 +1006,8 @@ public class GrantController {
                     .getReportsForGrant(grantService.getById(grant.getOrigGrantId()));
             if (existingReports != null && existingReports.size() > 0) {
                 //existingReports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
+                existingReports.removeIf(r -> r.getEndDate()==null);
                 if (existingReports != null && existingReports.size() > 0) {
-
                     Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());
                     existingReports.sort(endDateComparator);
                     Report lastReport = existingReports.get(existingReports.size() - 1);
