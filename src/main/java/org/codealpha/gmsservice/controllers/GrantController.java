@@ -1006,8 +1006,8 @@ public class GrantController {
                     .getReportsForGrant(grantService.getById(grant.getOrigGrantId()));
             if (existingReports != null && existingReports.size() > 0) {
                 //existingReports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
+                existingReports.removeIf(r -> r.getEndDate()==null);
                 if (existingReports != null && existingReports.size() > 0) {
-
                     Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());
                     existingReports.sort(endDateComparator);
                     Report lastReport = existingReports.get(existingReports.size() - 1);
@@ -1239,12 +1239,13 @@ public class GrantController {
         // userId, tenantCode);
         // grantValidator.validateFlow(grantService, grantwithNote.getGrant(), grantId,
         // userId, fromStateId, toStateId);
+
         Grant grant = moveToNewState(grantwithNote, userId, grantId, fromStateId, toStateId, tenantCode);
         if (grant.getOrigGrantId() != null
                 && workflowStatusService.findById(toStateId).getInternalStatus().equalsIgnoreCase("ACTIVE")) {
             Grant origGrant = grantService.getById(grant.getOrigGrantId());
 
-            grant.setAmendmentNo(origGrant.getAmendmentNo() + 1);
+
             grant = grantService.saveGrant(grant);
 
             WorkflowStatus statusClosed = workflowStatusService
@@ -1395,6 +1396,10 @@ public class GrantController {
         WorkflowStatus toStatus = workflowStatusService.findById(toStateId);
         User user = userService.getUserById(userId);
 
+        if (grant.getOrigGrantId() != null ) {
+            grant.setAmendmentNo(grantService.getById(grant.getOrigGrantId()).getAmendmentNo() + 1);
+        }
+
         if (toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
 
             if (Boolean.valueOf(appConfigService
@@ -1433,9 +1438,7 @@ public class GrantController {
 
 
 
-        if (grant.getOrigGrantId() != null && toStatus.getInternalStatus().equalsIgnoreCase("ACTIVE")) {
-            grant.setAmendmentNo(grantService.getById(grant.getOrigGrantId()).getAmendmentNo() + 1);
-        }
+
         grant = grantService.saveGrant(grant);
         List<User> usersToNotify = new ArrayList<>();// userService.usersToNotifyOnWorkflowSateChangeTo(toStateId);
 
@@ -1632,7 +1635,7 @@ public class GrantController {
         if (grant.getOrigGrantId() != null) {
 
             String prevRefNo = grantService.getById(grant.getOrigGrantId()).getReferenceNo();
-            if (prevRefNo.startsWith("A" + (grant.getAmendmentNo() - 1) + "-")) {
+            if (prevRefNo.startsWith("A" + (grant.getAmendmentNo()-1) + "-")) {
                 prevRefNo = prevRefNo.substring(prevRefNo.indexOf("-") + 1);
             }
             referenceCode = "A" + grant.getAmendmentNo() + "-" + prevRefNo;

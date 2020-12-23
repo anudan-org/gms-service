@@ -708,8 +708,8 @@ public class ScheduledJobs {
         }
     }
 
-    //@Scheduled(cron = "0 0 5 * * *")
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 0 5 * * *")
+    //@Scheduled(cron = "0 * * * * *")
     public void remindAdminsAboutDisabledUsers() {
 
         List<DisabledUsersEntity> grantsWithDisabledUsers = grantService.getGrantsWithDisabledUsers();
