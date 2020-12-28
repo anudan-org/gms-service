@@ -3157,4 +3157,9 @@ public class GrantController {
         file.delete();
 
     }
+
+    @GetMapping("/granteeOrgs")
+    public List<Organization> getAssociatedGranteesForTenant(@RequestHeader("X-TENANT-CODE") String tenantCode){
+        return organizationService.getAssociatedGranteesForTenant(organizationService.findOrganizationByTenantCode(tenantCode));
+    }
 }
