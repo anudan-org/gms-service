@@ -26,7 +26,7 @@ public interface OrganizationRepository extends CrudRepository<Organization, Lon
 
   public Organization findByNameAndOrganizationType(String name, String type);
 
-  @Query(value = "select B.* from grants A inner join organizations B on B.id=A.organization_id where A.grantor_org_id=?1 order by B.name",nativeQuery = true)
+  @Query(value = "select distinct B.* from grants A inner join organizations B on B.id=A.organization_id where A.grantor_org_id=?1 order by B.name",nativeQuery = true)
   public List<Organization> getAssociatedGranteesForTenant(Long granterId);
 
 
