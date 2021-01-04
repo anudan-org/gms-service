@@ -1297,7 +1297,7 @@ public class GrantController {
                 existingDisbursements.stream().forEach(r -> {
                     if(!r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
                         r.setGrant(finalGrant); //Switch over to new grant happening here
-                        r.setDisabledByAmendment(true);
+                        //r.setDisabledByAmendment(true);
                         disbursementService.saveDisbursement(r);
                     }
                 });
