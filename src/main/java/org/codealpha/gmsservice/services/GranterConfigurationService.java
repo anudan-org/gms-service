@@ -5,7 +5,7 @@ import org.codealpha.gmsservice.models.UIConfig;
 import org.springframework.stereotype.Service;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 public interface GranterConfigurationService {
 

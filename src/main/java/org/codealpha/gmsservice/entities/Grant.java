@@ -16,7 +16,7 @@ import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.models.*;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 @Entity
 @Table(name = "grants")

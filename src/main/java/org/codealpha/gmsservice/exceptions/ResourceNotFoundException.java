@@ -1,7 +1,7 @@
 package org.codealpha.gmsservice.exceptions;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 public class ResourceNotFoundException extends RuntimeException {
 

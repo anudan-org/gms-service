@@ -5,7 +5,7 @@ import java.util.Date;
 import javax.persistence.*;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 @Entity
 @Table(name = "disbursement_snapshot")

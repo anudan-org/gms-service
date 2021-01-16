@@ -64,6 +64,11 @@ jacoco {
     reportsDir = file("$buildDir/JacocoReport")
 }
 
+javadoc {
+    source = sourceSets.main.allJava
+    classpath = configurations.compile
+}
+
 jacocoTestReport {
     reports {
         xml {

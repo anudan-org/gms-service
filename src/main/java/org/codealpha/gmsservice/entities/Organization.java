@@ -10,7 +10,7 @@ import javax.persistence.*;
 
 
 /**
- * @author Developer <developer@enstratify.io>
+ * @author Developer code-alpha.org
  **/
 @Entity
 @Table(name = "organizations")
