@@ -65,6 +65,8 @@ public class DashboardService {
     @Autowired
     private GranterReportStatusRepository granterReportStatusRepository;
     @Autowired
+    private GranterReportSummaryStatusRepository granterReportSummaryStatusRepository;
+    @Autowired
     private ReportsCountPerGrantRepository reportsCountPerGrantRepository;
     @Autowired
     private DisbursementRepository disbursementRepository;
@@ -78,6 +80,8 @@ public class DashboardService {
     private WorkflowStatusRepository workflowStatusRepository;
     @Autowired
     private ReportService reportService;
+    @Autowired
+    private TransitionStatusOrderRepository transitionStatusOrderRepository;
 
     @Autowired
     private DisbursementService disbursementService;
@@ -424,6 +428,14 @@ public class DashboardService {
 
     public List<GranterReportStatus> getReportStatusSummaryForGranterAndStatus(Long granterId, String status) {
         return granterReportStatusRepository.getReportStatusesForGranter(granterId, status);
+    }
+
+    public List<GranterReportSummaryStatus> getReportByStatusForGranter(Long granterId) {
+        return granterReportSummaryStatusRepository.getReportsByStatusForGranter(granterId);
+    }
+
+    public List<TransitionStatusOrder> getStatusTransitionOrder(Long workflowId){
+        return transitionStatusOrderRepository.getTransitionOrder(workflowId);
     }
 
     public List<GranterReportStatus> findGrantCountsByReportNumbersAndStatusForGranter(Long granterId, String status) {

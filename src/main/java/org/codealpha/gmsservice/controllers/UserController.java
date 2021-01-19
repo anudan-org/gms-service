@@ -9,27 +9,24 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
+import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.PasswordResetRequest;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.dashboard.*;
-import org.codealpha.gmsservice.exceptions.ApplicationException;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
-import org.codealpha.gmsservice.models.ErrorMessage;
-import org.codealpha.gmsservice.models.ResetPwdData;
-import org.codealpha.gmsservice.models.UserCheck;
-import org.codealpha.gmsservice.models.UserVO;
+import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.models.dashboard.*;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.DashboardValidator;
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -82,6 +79,8 @@ public class UserController {
     private PasswordResetRequestService passwordResetRequestService;
     @Autowired
     private ReleaseService releaseService;
+    @Autowired
+    private WorkflowService workflowService;
 
     @GetMapping(value = "/{userId}")
     public User get(@PathVariable(name = "userId") Long id, @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -371,7 +370,9 @@ public class UserController {
         categoryFilter.setCommittedAmount(Long.valueOf(activeGrantSummaryCommitted.getCommittedAmount()));
         categoryFilter.setDisbursedAmount(disbursedAmount.longValue());
         List<GranterReportStatus> reportStatuses = null;
+        List<GranterReportSummaryStatus> reportsByStatuses = null;
         List<DetailedSummary> reportSummaryList = new ArrayList<>();
+        List<DetailedSummary> reportStatusSummaryList = new ArrayList<>();
         if (status.equalsIgnoreCase("ACTIVE")) {
             reportStatuses = dashboardService.getReportStatusSummaryForGranterAndStatus(tenantOrg.getId(), status);
             if (reportStatuses != null && reportStatuses.size() > 0) {
@@ -384,17 +385,34 @@ public class UserController {
                         .isPresent()) {
                     reportSummaryList.add(new ReportSummary("Due", Long.valueOf(0)));
                 }
-                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("unapproved")).findAny()
+                /*if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("unapproved")).findAny()
                         .isPresent()) {
                     reportSummaryList.add(new ReportSummary("Unapproved", Long.valueOf(0)));
-                }
-                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("approved")).findAny()
+                }*/
+                /*if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("approved")).findAny()
                         .isPresent()) {
                     reportSummaryList.add(new ReportSummary("Approved", Long.valueOf(0)));
-                }
+                }*/
                 if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny()
                         .isPresent()) {
                     reportSummaryList.add(new ReportSummary("Overdue", Long.valueOf(0)));
+                }
+            }
+
+            reportsByStatuses = dashboardService.getReportByStatusForGranter(tenantOrg.getId());
+            List<String> statusOrder = dashboardService.getStatusTransitionOrder(workflowService.findDefaultByGranterAndObject(tenantOrg, WorkflowObject.REPORT).getId()).stream().map(a -> a.getState()).collect(Collectors.toList());
+            List order = ImmutableList.of(statusOrder);
+            //final Ordering<String> colorOrdering = Ordering.explicit(order);
+            Comparator<GranterReportSummaryStatus> comparator = Comparator
+                    .comparing(c -> {
+                        return statusOrder.indexOf(c.getStatus());
+                    }
+                    );
+            reportsByStatuses.sort(comparator);
+            if (reportsByStatuses != null && reportsByStatuses.size() > 0) {
+                for (GranterReportSummaryStatus reportStatus : reportsByStatuses) {
+                    reportStatusSummaryList
+                            .add(new ReportStatusSummary(reportStatus.getStatus(),reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount())));
                 }
             }
         } else if (status.equalsIgnoreCase("CLOSED")) {
@@ -433,8 +451,13 @@ public class UserController {
         }
 
         List<Detail> filterDetails = new ArrayList<>();
-        filterDetails.add(new Detail("Reports", reportSummaryList));
-        filterDetails.add(new Detail("Disbursements", disbursalSummaryList));
+        Map<String,List<DetailedSummary>> reportSummaryMap = new HashMap<>();
+        Map<String,List<DetailedSummary>> disbursementSummaryMap = new HashMap<>();
+        reportSummaryMap.put("summary",reportSummaryList);
+        reportSummaryMap.put("statusSummary",reportStatusSummaryList);
+        filterDetails.add(new Detail("Reports", reportSummaryMap));
+        disbursementSummaryMap.put("disbursement",disbursalSummaryList);
+        filterDetails.add(new Detail("Disbursements", disbursementSummaryMap));
         categoryFilter.setDetails(filterDetails);
         return categoryFilter;
     }

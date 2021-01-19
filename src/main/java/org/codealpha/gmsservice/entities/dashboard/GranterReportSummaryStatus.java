@@ -4,7 +4,7 @@ import javax.persistence.*;
 
 @Entity(name = "granter_report_statuses")
 @Cacheable(value = false)
-public class GranterReportStatus {
+public class GranterReportSummaryStatus {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -17,7 +17,7 @@ public class WorkflowService {
         return workflowRepository.save(flow);
     }
 
-    public Workflow findByGranterAndObject(Organization granter, WorkflowObject object){
+    public Workflow findDefaultByGranterAndObject(Organization granter, WorkflowObject object){
         return workflowRepository.findByGranterAndObject(granter,object).get(0);
     }
 }

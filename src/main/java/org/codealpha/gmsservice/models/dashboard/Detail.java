@@ -21,11 +21,11 @@ public class Detail {
     @JsonProperty("name")
     private String name;
     @JsonProperty("summary")
-    private List<DetailedSummary> summary = null;
+    private Map<String,List<DetailedSummary>> summary = null;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    public Detail(String name, List<DetailedSummary> summary) {
+    public Detail(String name, Map<String,List<DetailedSummary>> summary) {
         this.name = name;
         this.summary = summary;
     }
@@ -41,12 +41,12 @@ public class Detail {
     }
 
     @JsonProperty("summary")
-    public List<DetailedSummary> getSummary() {
+    public Map<String,List<DetailedSummary>> getSummary() {
         return summary;
     }
 
     @JsonProperty("summary")
-    public void setSummary(List<DetailedSummary> summary) {
+    public void setSummary(Map<String,List<DetailedSummary>> summary) {
         this.summary = summary;
     }
 
