@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.controllers;
 
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
@@ -399,6 +400,11 @@ public class UserController {
                 }
             }
 
+            List<String> dueOverdueOrder = Arrays.asList(new String[]{"Due","Overdue"});
+            reportSummaryList.sort(Comparator.comparing(c -> {
+                return dueOverdueOrder.indexOf(c.getName());
+            }));
+
             reportsByStatuses = dashboardService.getReportByStatusForGranter(tenantOrg.getId());
 
             if (reportsByStatuses != null && reportsByStatuses.size() > 0) {
@@ -471,6 +477,11 @@ public class UserController {
         disbursementSummaryMap.put("disbursement", disbursalSummaryList);
         filterDetails.add(new Detail("Disbursements", disbursementSummaryMap));
         categoryFilter.setDetails(filterDetails);
+
+        List<String> detailsOrder = Arrays.asList(new String[]{"Disbursements","Reports"});
+        categoryFilter.getDetails().sort(Comparator.comparing(c->{
+            return detailsOrder.indexOf(c.getName());
+        }));
         return categoryFilter;
     }
 
