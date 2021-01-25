@@ -16,10 +16,10 @@ public interface GrantAssignmentRepository extends CrudRepository<GrantAssignmen
 
     public GrantAssignments findByGrantIdAndAnchor(Long grantId, boolean anchor);
 
-    @Query(value = "select distinct B.* from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where ( (B.state_id=A.grant_status_id) and ( (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 ) or (C.internal_status='REVIEW' ) ) ) and now()>A.moved_on and A.grantor_org_id not in(?1)", nativeQuery = true)
+    @Query(value = "select distinct B.* from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where ( (B.state_id=A.grant_status_id) and ( (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 ) or (C.internal_status='REVIEW' ) ) ) and now()>A.moved_on and A.grantor_org_id not in(?1) and A.deleted=false", nativeQuery = true)
     public List<GrantAssignments> getActionDueGrantsForPlatform(List<Long> granterIds);
 
-    @Query(value = "select distinct B.* from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where ( (B.state_id=A.grant_status_id) and ( (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 ) or (C.internal_status='REVIEW' )) ) and  now()>A.moved_on and A.grantor_org_id =?1", nativeQuery = true)
+    @Query(value = "select distinct B.* from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where ( (B.state_id=A.grant_status_id) and ( (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 ) or (C.internal_status='REVIEW' )) ) and  now()>A.moved_on and A.grantor_org_id =?1 and A.deleted=false", nativeQuery = true)
     public List<GrantAssignments> getActionDueGrantsForGranterOrg(Long granterId);
 
 }

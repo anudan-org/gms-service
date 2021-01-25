@@ -3,9 +3,6 @@ package org.codealpha.gmsservice.controllers;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,8 +11,6 @@ import java.util.List;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.repositories.GranterRepository;
@@ -328,9 +323,9 @@ public class GranterController {
 	private void buildWorkflowsBasedOnTempOrg(Organization org) {
 
 		Organization tempOrg = organizationService.findOrganizationByTenantCode("TEMPORG");
-		Workflow tempGrantWorkflow = workflowService.findByGranterAndObject(tempOrg, WorkflowObject.GRANT);
-		Workflow tempReportWorkflow = workflowService.findByGranterAndObject(tempOrg, WorkflowObject.REPORT);
-		Workflow tempDisbursementWorkflow = workflowService.findByGranterAndObject(tempOrg,
+		Workflow tempGrantWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg, WorkflowObject.GRANT);
+		Workflow tempReportWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg, WorkflowObject.REPORT);
+		Workflow tempDisbursementWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg,
 				WorkflowObject.DISBURSEMENT);
 		List<WorkflowStatus> tempGrantStatuses = workflowStatusService
 				.getTenantWorkflowStatuses(WorkflowObject.GRANT.name(), tempOrg.getId());

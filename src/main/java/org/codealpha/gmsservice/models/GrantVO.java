@@ -69,6 +69,7 @@ public class GrantVO {
   private String origGrantRefNo;
   private int amendmentNo;
   private Date minEndEndate;
+  private Boolean internal;
 
   private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
@@ -158,6 +159,14 @@ public class GrantVO {
 
   public void setUpdatedBy(String updatedBy) {
     this.updatedBy = updatedBy;
+  }
+
+  public Boolean getInternal() {
+    return internal;
+  }
+
+  public void setInternal(Boolean internal) {
+    this.internal = internal;
   }
 
   public WorkflowStatus getGrantStatus() {

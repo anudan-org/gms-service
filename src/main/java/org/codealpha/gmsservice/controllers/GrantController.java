@@ -2,10 +2,8 @@ package org.codealpha.gmsservice.controllers;
 
 import java.awt.*;
 import java.io.*;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.Month;
 import java.util.*;
@@ -13,13 +11,11 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.transaction.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -27,15 +23,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
-import com.google.common.io.FileWriteMode;
-import com.google.common.io.Files;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -222,7 +215,7 @@ public class GrantController {
         List<WorkflowStatus> statuses = new ArrayList<>();
         List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionService
                 .getStatusTransitionsForWorkflow(
-                        workflowService.findByGranterAndObject(granterOrg, WorkflowObject.GRANT));
+                        workflowService.findDefaultByGranterAndObject(granterOrg, WorkflowObject.GRANT));
         for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
             if (!statuses.stream()
                     .filter(s -> s.getId().longValue() == supportedTransition.getFromState().getId().longValue())

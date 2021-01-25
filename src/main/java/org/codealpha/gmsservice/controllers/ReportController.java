@@ -1909,7 +1909,7 @@ public class ReportController {
         List<WorkflowStatus> statuses = new ArrayList<>();
         List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionService
                 .getStatusTransitionsForWorkflow(
-                        workflowService.findByGranterAndObject(granterOrg, WorkflowObject.REPORT));
+                        workflowService.findDefaultByGranterAndObject(granterOrg, WorkflowObject.REPORT));
         for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
             if (!statuses.stream()
                     .filter(s -> s.getId().longValue() == supportedTransition.getFromState().getId().longValue())
