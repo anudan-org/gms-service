@@ -111,6 +111,8 @@ public class GrantService {
     private DisbursementService disbursementService;
     @Autowired
     private DisabledUsersEntityRepository disabledUsersEntityRepository;
+    @Autowired
+    private GrantTypeRepository grantTypeRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -859,4 +861,13 @@ public class GrantService {
     public List<DisabledUsersEntity> getGrantsWithDisabledUsers(){
         return disabledUsersEntityRepository.getGrants();
     }
+
+    public List<GrantType> getGrantTypesForTenantOrg(Long orgId){
+        return grantTypeRepository.findGrantTypesForTenant(orgId);
+    }
+
+    public GrantType getGrantypeById(Long grantTypeId){
+        return grantTypeRepository.findById(grantTypeId).get();
+    }
+
 }

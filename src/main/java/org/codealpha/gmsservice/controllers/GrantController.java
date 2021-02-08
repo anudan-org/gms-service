@@ -139,15 +139,15 @@ public class GrantController {
     @Autowired
     private DisbursementService disbursementService;
 
-    @GetMapping("/create/{templateId}")
+    @GetMapping("/create/{templateId}/{grantTypeId}")
     @ApiOperation("Create new grant with a template")
     public Grant createGrant(
-            @ApiParam(name = "templateId", value = "Unique identifier for the selected template") @PathVariable("templateId") Long templateId,
+            @ApiParam(name = "templateId", value = "Unique identifier for the selected template") @PathVariable("templateId") Long templateId,@PathVariable("grantTypeId") Long grantTypeId,
             @PathVariable("userId") Long userId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Grant grant = new Grant();
 
-        grant = createGrantBasicDetails(templateId, userId, tenantCode, grant, "");
+        grant = createGrantBasicDetails(templateId, userId, tenantCode, grant, "",grantTypeId);
 
         GrantAssignments assignment = null;
 
@@ -215,7 +215,7 @@ public class GrantController {
         List<WorkflowStatus> statuses = new ArrayList<>();
         List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionService
                 .getStatusTransitionsForWorkflow(
-                        workflowService.findDefaultByGranterAndObject(granterOrg, WorkflowObject.GRANT));
+                        workflowService.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(), WorkflowObject.GRANT.name()));
         for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
             if (!statuses.stream()
                     .filter(s -> s.getId().longValue() == supportedTransition.getFromState().getId().longValue())
@@ -248,7 +248,7 @@ public class GrantController {
     }
 
     private Grant createGrantBasicDetails(Long templateId, Long userId, String tenantCode, Grant grant,
-            String grantName) {
+            String grantName, Long grantTypeId) {
         grant.setName(grantName);
         grant.setStartDate(null);
         grant.setStDate("");
@@ -265,6 +265,7 @@ public class GrantController {
         grant.setGrantorOrganization((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
         grant.setRepresentative("");
         grant.setTemplateId(templateId);
+        grant.setGrantTypeId(grantTypeId);
         grant.setDeleted(false);
         grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(templateId));
 
@@ -298,18 +299,19 @@ public class GrantController {
         return grant;
     }
 
-    @GetMapping("/{grantId}/copy")
+    @GetMapping("/{grantId}/copy/{grantTypeId}")
     @ApiOperation("Create copy of an existing grant")
     public Grant copyGrant(
             @ApiParam(name = "grantId", value = "Unique identifier for the selected grant") @PathVariable("grantId") Long grantId,
             @PathVariable("userId") Long userId,
-            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("grantTypeId")Long grantTypeId) {
 
         Grant existingGrant = grantService.getById(grantId);
         Grant grant = new Grant();
 
         grant = createGrantBasicDetails(existingGrant.getTemplateId(), userId, tenantCode, grant,
-                "< New Draft Grant based on " + existingGrant.getName() + " >");
+                "< New Draft Grant based on " + existingGrant.getName() + " >",grantTypeId);
 
         Organization granterOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         createInitialAssignmentsPlaceholders(userId, grant, granterOrg);
@@ -3154,5 +3156,11 @@ public class GrantController {
     @GetMapping("/granteeOrgs")
     public List<Organization> getAssociatedGranteesForTenant(@RequestHeader("X-TENANT-CODE") String tenantCode){
         return organizationService.getAssociatedGranteesForTenant(organizationService.findOrganizationByTenantCode(tenantCode));
+    }
+
+
+    @GetMapping("/grantTypes")
+    public List<GrantType> getGrantTypes(@RequestHeader("X-TENANT-CODE") String tenantCode){
+        return grantService.getGrantTypesForTenantOrg(organizationService.findOrganizationByTenantCode(tenantCode).getId());
     }
 }

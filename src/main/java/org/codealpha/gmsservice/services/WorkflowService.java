@@ -20,4 +20,8 @@ public class WorkflowService {
     public Workflow findDefaultByGranterAndObject(Organization granter, WorkflowObject object){
         return workflowRepository.findByGranterAndObject(granter,object).get(0);
     }
+
+    public Workflow findWorkflowByGrantTypeAndObject(Long grantTypeId,String object){
+        return workflowRepository.findWorkflowByGrantTypeAndObject(grantTypeId,object);
+    }
 }
