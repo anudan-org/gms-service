@@ -2579,6 +2579,33 @@ public class GrantController {
             assignment.setUpdatedBy(userId);
             assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
 
+            //Change the reports anchor to the new Grant Active State Owner
+            if(grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE") && assignmentsVO.getStateId()==grant.getGrantStatus().getId()){
+                List<Report> reports = reportService.getReportsForGrant(grant);
+                reports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+                for(Report report : reports){
+                    List<ReportAssignment> reportAssignments = reportService.getAssignmentsForReport(report);
+                    reportAssignments.removeIf(ass -> !ass.isAnchor());
+                    for(ReportAssignment rAssignment: reportAssignments){
+                        rAssignment.setAssignment(assignmentsVO.getAssignments());
+                        reportService.saveAssignmentForReport(rAssignment);
+                    }
+                }
+            }
+
+            //Change the disbursements anchor to the new Grant Active State Owner
+            if(grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE") && assignmentsVO.getStateId()==grant.getGrantStatus().getId()){
+                List<Disbursement> disbursements = disbursementService.getAllDisbursementsForGrant(grant.getId());
+                disbursements.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+                for(Disbursement disbursement : disbursements){
+                    List<DisbursementAssignment> disbursementAssignments = disbursementService.getDisbursementAssignments(disbursement);
+                    disbursementAssignments.removeIf(ass -> !ass.getAnchor());
+                    for(DisbursementAssignment dAssignment: disbursementAssignments){
+                        dAssignment.setOwner(assignmentsVO.getAssignments());
+                        disbursementService.saveAssignmentForDisbursement(dAssignment);
+                    }
+                }
+            }
             grantService.saveAssignmentForGrant(assignment);
         }
 
