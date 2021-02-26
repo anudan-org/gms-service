@@ -17,10 +17,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.WorkflowObject;
-import org.codealpha.gmsservice.entities.Grant;
-import org.codealpha.gmsservice.entities.Organization;
-import org.codealpha.gmsservice.entities.PasswordResetRequest;
-import org.codealpha.gmsservice.entities.User;
+import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.entities.dashboard.*;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.models.*;
@@ -408,29 +405,35 @@ public class UserController {
             reportsByStatuses = dashboardService.getReportByStatusForGranter(tenantOrg.getId());
 
             if (reportsByStatuses != null && reportsByStatuses.size() > 0) {
-                List<TransitionStatusOrder> orderedTransitions = dashboardService.getStatusTransitionOrder(workflowService.findDefaultByGranterAndObject(tenantOrg, WorkflowObject.REPORT).getId());
-                List<String> statusOrder = orderedTransitions.stream().map(a -> a.getState()).collect(Collectors.toList());
-                Comparator<GranterReportSummaryStatus> comparator = Comparator
-                        .comparing(c -> {
-                                    return statusOrder.indexOf(c.getStatus());
-                                }
-                        );
-                for(TransitionStatusOrder sto: orderedTransitions){
-                    if(!reportsByStatuses.stream().filter(a -> a.getStatus().equalsIgnoreCase(sto.getState())).findFirst().isPresent()){
-                        GranterReportSummaryStatus summaryStatus = new GranterReportSummaryStatus();
-                        summaryStatus.setCount(0);
-                        summaryStatus.setGranterId(tenantOrg.getId());
-                        summaryStatus.setId(1L);
-                        summaryStatus.setInternalStatus(sto.getInternalStatus());
-                        summaryStatus.setStatus(sto.getState());
-                        reportsByStatuses.add(summaryStatus);
+
+                List<Workflow> granterReportWorkflows = workflowService.getAllWorkflowsForGranterByType(tenantOrg.getId(),"REPORT");
+
+                for(Workflow reportWf: granterReportWorkflows){
+                    List<TransitionStatusOrder> orderedTransitions = dashboardService.getStatusTransitionOrder(reportWf.getId());
+                    List<String> statusOrder = orderedTransitions.stream().map(a -> a.getState()).collect(Collectors.toList());
+                    Comparator<GranterReportSummaryStatus> comparator = Comparator
+                            .comparing(c -> {
+                                        return statusOrder.indexOf(c.getStatus());
+                                    }
+                            );
+                    for(TransitionStatusOrder sto: orderedTransitions){
+                        if(!reportsByStatuses.stream().filter(a -> a.getStatus().equalsIgnoreCase(sto.getState())).findFirst().isPresent()){
+                            GranterReportSummaryStatus summaryStatus = new GranterReportSummaryStatus();
+                            summaryStatus.setCount(0);
+                            summaryStatus.setGranterId(tenantOrg.getId());
+                            summaryStatus.setId(1L);
+                            summaryStatus.setInternalStatus(sto.getInternalStatus());
+                            summaryStatus.setStatus(sto.getState());
+                            reportsByStatuses.add(summaryStatus);
+                        }
+                    }
+                    reportsByStatuses.sort(comparator);
+                    for (GranterReportSummaryStatus reportStatus : reportsByStatuses) {
+                        reportStatusSummaryList
+                                .add(new ReportStatusSummary(reportStatus.getStatus(), reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount())));
                     }
                 }
-                reportsByStatuses.sort(comparator);
-                for (GranterReportSummaryStatus reportStatus : reportsByStatuses) {
-                    reportStatusSummaryList
-                            .add(new ReportStatusSummary(reportStatus.getStatus(), reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount())));
-                }
+
 
             }
         } else if (status.equalsIgnoreCase("CLOSED")) {

@@ -143,12 +143,13 @@ public class DisbursementsController {
 
                 Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
                 disbursementToSave = new Disbursement();
-                disbursementToSave.setGrant(grantService._grantToReturn(userId, grantService.getById(grantId)));
+                Grant grant = grantService._grantToReturn(userId, grantService.getById(grantId));
+                disbursementToSave.setGrant(grant);
                 disbursementToSave.setReason(null);
                 disbursementToSave.setRequestedAmount(null);
                 disbursementToSave.setGranteeEntry(false);
                 disbursementToSave.setStatus(workflowStatusService
-                                .findInitialStatusByObjectAndGranterOrgId("DISBURSEMENT", tenantOrg.getId()));
+                                .findInitialStatusByObjectAndGranterOrgId("DISBURSEMENT", tenantOrg.getId(),grant.getGrantTypeId()));
                 disbursementToSave.setCreatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
                 disbursementToSave.setCreatedBy(userService.getUserById(userId).getEmailId());
 
@@ -644,7 +645,7 @@ public class DisbursementsController {
                 disbursementToSave.setReportId(reportId);
                 disbursementToSave.setMovedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
                 disbursementToSave.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId(
-                                "DISBURSEMENT", grant.getGrantorOrganization().getId()));
+                                "DISBURSEMENT", grant.getGrantorOrganization().getId(),grant.getGrantTypeId()));
                 disbursementToSave.setCreatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
                 disbursementToSave.setCreatedBy(userService.getUserById(userId).getEmailId());
 

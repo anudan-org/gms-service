@@ -112,7 +112,7 @@ public class AdiminstrativeController {
             org = organizationService.findOrganizationByTenantCode(tenantCode);
         }
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "GRANT");
+        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "GRANT",grantService.getById(grantId).getGrantTypeId());
     }
 
     @GetMapping("/workflow/report/{reportId}/user/{userId}")
@@ -129,7 +129,7 @@ public class AdiminstrativeController {
         }
         organizationService.findOrganizationByTenantCode(tenantCode);
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "REPORT");
+        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "REPORT",reportService.getReportById(reportId).getGrant().getGrantTypeId());
     }
 
     @GetMapping("/workflow/disbursement/{disbursementId}/user/{userId}")
@@ -146,7 +146,7 @@ public class AdiminstrativeController {
         }
         organizationService.findOrganizationByTenantCode(tenantCode);
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "DISBURSEMENT");
+        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "DISBURSEMENT",disbursementService.getDisbursementById(disbursementId).getGrant().getGrantTypeId());
     }
 
     @PostMapping("/workflow")

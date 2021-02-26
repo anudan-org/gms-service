@@ -9,8 +9,8 @@ import java.util.List;
 
 public interface WorkflowStatusRepository extends CrudRepository<WorkflowStatus,Long> {
 
-  @Query(value = "select ws.* from workflows w inner join workflow_statuses ws on w.id = ws.workflow_id where ws.initial=true and w.object=?1 and w.granter_id=?2", nativeQuery = true)
-  public WorkflowStatus getInitialStatusByObjectAndGranterOrg(String object, Long granterOrgId);
+  @Query(value = "select ws.* from workflows w inner join workflow_statuses ws on w.id = ws.workflow_id inner join grant_type_workflow_mapping m on m.workflow_id=w.id where ws.initial=true and w.object=?1 and m.grant_type_id=?3 and w.granter_id=?2", nativeQuery = true)
+  public WorkflowStatus getInitialStatusByObjectAndGranterOrg(String object, Long granterOrgId, Long grantType);
 
   @Query(value = "select ws.* from workflows w inner join workflow_statuses ws on w.id = ws.workflow_id where w.object=?1 and w.granter_id=?2",nativeQuery = true)
   public List<WorkflowStatus> getAllTenantStatuses(String object, Long granterOrgId);

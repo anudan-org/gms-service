@@ -11,7 +11,6 @@ import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
-import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
@@ -1892,7 +1891,7 @@ public class ReportController {
         report.setStartDate(null);
         report.setStDate("");
         report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",
-                organizationService.findOrganizationByTenantCode(tenantCode).getId()));
+                organizationService.findOrganizationByTenantCode(tenantCode).getId(),reportForGrant.getGrantTypeId()));
         report.setEndDate(null);
         report.setEnDate("");
         report.setGrant(reportForGrant);
@@ -1909,7 +1908,7 @@ public class ReportController {
         List<WorkflowStatus> statuses = new ArrayList<>();
         List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionService
                 .getStatusTransitionsForWorkflow(
-                        workflowService.findDefaultByGranterAndObject(granterOrg, WorkflowObject.REPORT));
+                        workflowService.findDefaultByGranterAndObjectAndType(granterOrg, "REPORT",reportForGrant.getGrantTypeId()));
         for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
             if (!statuses.stream()
                     .filter(s -> s.getId().longValue() == supportedTransition.getFromState().getId().longValue())

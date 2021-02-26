@@ -1,9 +1,6 @@
 package org.codealpha.gmsservice.services;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -15,11 +12,9 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.KpiType;
-import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -594,7 +589,7 @@ public class GrantService {
         List<Long> grantWorkflowIds = new ArrayList<>();
         Map<Long, List<Long>> grantWorkflowStatusIds = new HashMap<>();
         Map<Long, Long[][]> grantWorkflowTransitionIds = new HashMap<>();
-        workflowRepository.findByGranterAndObject(grant.getGrantorOrganization(), WorkflowObject.GRANT).forEach(w -> {
+        workflowRepository.findByGranterAndObjectAndType(grant.getGrantorOrganization().getId(), "GRANT",grant.getGrantTypeId()).forEach(w -> {
             grantWorkflowIds.add(w.getId());
             List<Long> wfStatusIds = new ArrayList<>();
             workflowStatusRepository.findByWorkflow(w).forEach(ws -> {

@@ -271,7 +271,7 @@ public class DisbursementService {
                 .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
                 .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
                 .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replaceAll("%GRANTEE%", finalDisbursement.getGrant().getOrganization().getName())
+                .replaceAll("%GRANTEE%", finalDisbursement.getGrant().getOrganization()!=null?finalDisbursement.getGrant().getOrganization().getName():finalDisbursement.getGrant().getGrantorOrganization().getName())
                 .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
                 .replaceAll("%ENTITY_TYPE%", "Approval Request Note of ")
                 .replaceAll("%ENTITY_NAME%", grantName);

@@ -255,7 +255,7 @@ public class GrantController {
         // grant.setAmount(0D);
         grant.setDescription("");
         grant.setGrantStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT",
-                organizationService.findOrganizationByTenantCode(tenantCode).getId()));
+                organizationService.findOrganizationByTenantCode(tenantCode).getId(),grantTypeId));
         grant.setStatusName(GrantStatus.DRAFT);
         grant.setEndDate(null);
         grant.setEnDate("");
@@ -281,7 +281,7 @@ public class GrantController {
         grant.setAmount(originalGrant.getAmount());
         grant.setDescription(originalGrant.getDescription());
         grant.setGrantStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT",
-                organizationService.findOrganizationByTenantCode(tenantCode).getId()));
+                organizationService.findOrganizationByTenantCode(tenantCode).getId(),originalGrant.getGrantTypeId()));
         grant.setStatusName(GrantStatus.DRAFT);
         grant.setEndDate(originalGrant.getEndDate());
         grant.setEnDate(originalGrant.getEnDate());
@@ -1037,23 +1037,8 @@ public class GrantController {
     }
 
     private Grant _processGrant(Grant grantToSave, Organization tenant, User user) {
-        Grant grant = null;
-        // grant =
-        // grantService.findGrantByNameAndGranter(grantToSave.getName(),(Granter)tenant);
-        if (grantToSave.getId() < 0) {
-            grant = new Grant();
-            grant.setGrantStatus(
-                    workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", tenant.getId()));
-            grant.setSubstatus(
-                    workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", tenant.getId()));
-            grant.setOrganization((Grantee) grantToSave.getOrganization());
-            List<GrantStringAttribute> stringAttributes = new ArrayList<>();
-            List<GrantDocumentAttributes> docAttributes = new ArrayList<>();
-            grant.setStringAttributes(stringAttributes);
-            // grant.setDocumentAttributes(docAttributes);
-        } else {
-            grant = grantService.getById(grantToSave.getId());
-        }
+        Grant grant = grantService.getById(grantToSave.getId());
+
         grant.setAmount(grantToSave.getAmount());
         grant.setDescription(grantToSave.getDescription());
         grant.setRepresentative(grantToSave.getRepresentative());
@@ -1805,7 +1790,7 @@ public class GrantController {
             report.setTemplate(reportTemplate);
             report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",
-                    grant.getGrantorOrganization().getId()));
+                    grant.getGrantorOrganization().getId(),grant.getGrantTypeId()));
             report.setType("Yearly");
 
             report = reportService.saveReport(report);
@@ -1837,7 +1822,7 @@ public class GrantController {
             report.setTemplate(reportTemplate);
             report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",
-                    grant.getGrantorOrganization().getId()));
+                    grant.getGrantorOrganization().getId(),grant.getGrantTypeId()));
             report.setType("Half-Yearly");
             report = reportService.saveReport(report);
             _createSectionsForReports(reportTemplate, val.getAttributes(), report);
@@ -1866,7 +1851,7 @@ public class GrantController {
             report.setTemplate(reportTemplate);
             report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",
-                    grant.getGrantorOrganization().getId()));
+                    grant.getGrantorOrganization().getId(),grant.getGrantTypeId()));
             report.setType("Quarterly");
             report = reportService.saveReport(report);
             _createSectionsForReports(reportTemplate, val.getAttributes(), report);
@@ -1895,7 +1880,7 @@ public class GrantController {
             report.setTemplate(reportTemplate);
             report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",
-                    grant.getGrantorOrganization().getId()));
+                    grant.getGrantorOrganization().getId(),grant.getGrantTypeId()));
             report.setType("Monthly");
             report = reportService.saveReport(report);
             _createSectionsForReports(reportTemplate, val.getAttributes(), report);
