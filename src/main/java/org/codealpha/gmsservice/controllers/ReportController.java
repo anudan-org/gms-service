@@ -1608,57 +1608,60 @@ public class ReportController {
             });
         } else {
 
-            User granteeUser = usersToNotify.stream()
-                    .filter(u -> u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")).findFirst()
-                    .get();
-            usersToNotify.removeIf(u -> u.getId().longValue() == granteeUser.getId().longValue() || u.isDeleted());
+            Optional<User> granteeUsr =  usersToNotify.stream()
+                    .filter(u -> u.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")).findFirst();
+                    if(granteeUsr.isPresent()){
+                        User granteeUser = granteeUsr.get();
+                        usersToNotify.removeIf(u -> u.getId().longValue() == granteeUser.getId().longValue() || u.isDeleted());
 
-            String emailNotificationContent[] = reportService.buildEmailNotificationContent(finalReport, granteeUser,
-                    granteeUser.getFirstName().concat(" ").concat(granteeUser.getLastName()), null,
-                    new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
-                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
-                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
-                    workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
-                    previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                    transition.getAction(), "Yes", "Please review.",
-                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
-                            : "No",
-                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
-                            ? "Please review."
-                            : "",
-                    null, null, null, null, null);
-            commonEmailSevice
-                    .sendMail(new String[] { !granteeUser.isDeleted() ? granteeUser.getEmailId() : null },
-                            usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
-                                    .toArray(new String[usersToNotify.size()]),
-                            emailNotificationContent[0], emailNotificationContent[1],
-                            new String[] { appConfigService
-                                    .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                                            AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                    .getConfigValue().replaceAll("%RELEASE_VERSION%",
-                                            releaseService.getCurrentRelease().getVersion()) });
+                        String emailNotificationContent[] = reportService.buildEmailNotificationContent(finalReport, granteeUser,
+                                granteeUser.getFirstName().concat(" ").concat(granteeUser.getLastName()), null,
+                                new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                                appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                        AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
+                                appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                        AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
+                                workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
+                                previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                                transition.getAction(), "Yes", "Please review.",
+                                reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
+                                        : "No",
+                                reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                                        ? "Please review."
+                                        : "",
+                                null, null, null, null, null);
+                        commonEmailSevice
+                                .sendMail(new String[] { !granteeUser.isDeleted() ? granteeUser.getEmailId() : null },
+                                        usersToNotify.stream().map(mapper -> mapper.getEmailId()).collect(Collectors.toList())
+                                                .toArray(new String[usersToNotify.size()]),
+                                        emailNotificationContent[0], emailNotificationContent[1],
+                                        new String[] { appConfigService
+                                                .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                                        AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                                .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                                releaseService.getCurrentRelease().getVersion()) });
 
-            String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, granteeUser,
-                    granteeUser.getFirstName().concat(" ").concat(granteeUser.getLastName()), toStatus.getVerb(),
-                    new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
-                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
-                    appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
-                    workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
-                    previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                    transition.getAction(), "Yes", "Please review.",
-                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
-                            : "No",
-                    reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
-                            ? "Please review."
-                            : "",
-                    null, null, null, null, null);
+                        String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, granteeUser,
+                                granteeUser.getFirstName().concat(" ").concat(granteeUser.getLastName()), toStatus.getVerb(),
+                                new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                                appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                        AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
+                                appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
+                                        AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
+                                workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
+                                previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
+                                transition.getAction(), "Yes", "Please review.",
+                                reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
+                                        : "No",
+                                reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
+                                        ? "Please review."
+                                        : "",
+                                null, null, null, null, null);
 
-            notificationsService.saveNotification(notificationContent, granteeUser.getId(), finalReport.getId(),
-                    "REPORT");
+                        notificationsService.saveNotification(notificationContent, granteeUser.getId(), finalReport.getId(),
+                                "REPORT");
+                    }
+
 
             usersToNotify.stream().forEach(u -> {
                 final String[] nc = reportService.buildEmailNotificationContent(finalReport, u,
