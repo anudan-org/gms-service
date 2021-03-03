@@ -139,15 +139,15 @@ public class GrantController {
     @Autowired
     private DisbursementService disbursementService;
 
-    @GetMapping("/create/{templateId}")
+    @GetMapping("/create/{templateId}/{grantTypeId}")
     @ApiOperation("Create new grant with a template")
     public Grant createGrant(
-            @ApiParam(name = "templateId", value = "Unique identifier for the selected template") @PathVariable("templateId") Long templateId,
+            @ApiParam(name = "templateId", value = "Unique identifier for the selected template") @PathVariable("templateId") Long templateId,@PathVariable("grantTypeId") Long grantTypeId,
             @PathVariable("userId") Long userId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Grant grant = new Grant();
 
-        grant = createGrantBasicDetails(templateId, userId, tenantCode, grant, "");
+        grant = createGrantBasicDetails(templateId, userId, tenantCode, grant, "",grantTypeId);
 
         GrantAssignments assignment = null;
 
@@ -215,7 +215,7 @@ public class GrantController {
         List<WorkflowStatus> statuses = new ArrayList<>();
         List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionService
                 .getStatusTransitionsForWorkflow(
-                        workflowService.findDefaultByGranterAndObject(granterOrg, WorkflowObject.GRANT));
+                        workflowService.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(), WorkflowObject.GRANT.name()));
         for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
             if (!statuses.stream()
                     .filter(s -> s.getId().longValue() == supportedTransition.getFromState().getId().longValue())
@@ -248,14 +248,14 @@ public class GrantController {
     }
 
     private Grant createGrantBasicDetails(Long templateId, Long userId, String tenantCode, Grant grant,
-            String grantName) {
+            String grantName, Long grantTypeId) {
         grant.setName(grantName);
         grant.setStartDate(null);
         grant.setStDate("");
         // grant.setAmount(0D);
         grant.setDescription("");
         grant.setGrantStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT",
-                organizationService.findOrganizationByTenantCode(tenantCode).getId()));
+                organizationService.findOrganizationByTenantCode(tenantCode).getId(),grantTypeId));
         grant.setStatusName(GrantStatus.DRAFT);
         grant.setEndDate(null);
         grant.setEnDate("");
@@ -265,6 +265,7 @@ public class GrantController {
         grant.setGrantorOrganization((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
         grant.setRepresentative("");
         grant.setTemplateId(templateId);
+        grant.setGrantTypeId(grantTypeId);
         grant.setDeleted(false);
         grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(templateId));
 
@@ -280,7 +281,7 @@ public class GrantController {
         grant.setAmount(originalGrant.getAmount());
         grant.setDescription(originalGrant.getDescription());
         grant.setGrantStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT",
-                organizationService.findOrganizationByTenantCode(tenantCode).getId()));
+                organizationService.findOrganizationByTenantCode(tenantCode).getId(),originalGrant.getGrantTypeId()));
         grant.setStatusName(GrantStatus.DRAFT);
         grant.setEndDate(originalGrant.getEndDate());
         grant.setEnDate(originalGrant.getEnDate());
@@ -298,18 +299,19 @@ public class GrantController {
         return grant;
     }
 
-    @GetMapping("/{grantId}/copy")
+    @GetMapping("/{grantId}/copy/{grantTypeId}")
     @ApiOperation("Create copy of an existing grant")
     public Grant copyGrant(
             @ApiParam(name = "grantId", value = "Unique identifier for the selected grant") @PathVariable("grantId") Long grantId,
             @PathVariable("userId") Long userId,
-            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("grantTypeId")Long grantTypeId) {
 
         Grant existingGrant = grantService.getById(grantId);
         Grant grant = new Grant();
 
         grant = createGrantBasicDetails(existingGrant.getTemplateId(), userId, tenantCode, grant,
-                "< New Draft Grant based on " + existingGrant.getName() + " >");
+                "< New Draft Grant based on " + existingGrant.getName() + " >",grantTypeId);
 
         Organization granterOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         createInitialAssignmentsPlaceholders(userId, grant, granterOrg);
@@ -1035,23 +1037,8 @@ public class GrantController {
     }
 
     private Grant _processGrant(Grant grantToSave, Organization tenant, User user) {
-        Grant grant = null;
-        // grant =
-        // grantService.findGrantByNameAndGranter(grantToSave.getName(),(Granter)tenant);
-        if (grantToSave.getId() < 0) {
-            grant = new Grant();
-            grant.setGrantStatus(
-                    workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", tenant.getId()));
-            grant.setSubstatus(
-                    workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", tenant.getId()));
-            grant.setOrganization((Grantee) grantToSave.getOrganization());
-            List<GrantStringAttribute> stringAttributes = new ArrayList<>();
-            List<GrantDocumentAttributes> docAttributes = new ArrayList<>();
-            grant.setStringAttributes(stringAttributes);
-            // grant.setDocumentAttributes(docAttributes);
-        } else {
-            grant = grantService.getById(grantToSave.getId());
-        }
+        Grant grant = grantService.getById(grantToSave.getId());
+
         grant.setAmount(grantToSave.getAmount());
         grant.setDescription(grantToSave.getDescription());
         grant.setRepresentative(grantToSave.getRepresentative());
@@ -1633,7 +1620,8 @@ public class GrantController {
             }
             referenceCode = "A" + grant.getAmendmentNo() + "-" + prevRefNo;
         } else {
-            referenceCode = grant.getOrganization().getName().replaceAll(" ", "").substring(0, 4).toUpperCase() + "-"
+            String code = grant.getOrganization()==null?grant.getGrantorOrganization().getName():grant.getOrganization().getName();
+            referenceCode = code.replaceAll(" ", "").substring(0, 4).toUpperCase() + "-"
                     + stFormat.format(grant.getStartDate()) + "-" + enFormat.format(grant.getEndDate()) + "-" + (sNo);
         }
         grant.setReferenceNo(referenceCode);
@@ -1802,7 +1790,7 @@ public class GrantController {
             report.setTemplate(reportTemplate);
             report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",
-                    grant.getGrantorOrganization().getId()));
+                    grant.getGrantorOrganization().getId(),grant.getGrantTypeId()));
             report.setType("Yearly");
 
             report = reportService.saveReport(report);
@@ -1834,7 +1822,7 @@ public class GrantController {
             report.setTemplate(reportTemplate);
             report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",
-                    grant.getGrantorOrganization().getId()));
+                    grant.getGrantorOrganization().getId(),grant.getGrantTypeId()));
             report.setType("Half-Yearly");
             report = reportService.saveReport(report);
             _createSectionsForReports(reportTemplate, val.getAttributes(), report);
@@ -1863,7 +1851,7 @@ public class GrantController {
             report.setTemplate(reportTemplate);
             report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",
-                    grant.getGrantorOrganization().getId()));
+                    grant.getGrantorOrganization().getId(),grant.getGrantTypeId()));
             report.setType("Quarterly");
             report = reportService.saveReport(report);
             _createSectionsForReports(reportTemplate, val.getAttributes(), report);
@@ -1892,7 +1880,7 @@ public class GrantController {
             report.setTemplate(reportTemplate);
             report.setStartDate(entry.getStart());
             report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("REPORT",
-                    grant.getGrantorOrganization().getId()));
+                    grant.getGrantorOrganization().getId(),grant.getGrantTypeId()));
             report.setType("Monthly");
             report = reportService.saveReport(report);
             _createSectionsForReports(reportTemplate, val.getAttributes(), report);
@@ -2577,6 +2565,33 @@ public class GrantController {
             assignment.setUpdatedBy(userId);
             assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
 
+            //Change the reports anchor to the new Grant Active State Owner
+            if(grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE") && assignmentsVO.getStateId()==grant.getGrantStatus().getId()){
+                List<Report> reports = reportService.getReportsForGrant(grant);
+                reports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+                for(Report report : reports){
+                    List<ReportAssignment> reportAssignments = reportService.getAssignmentsForReport(report);
+                    reportAssignments.removeIf(ass -> !ass.isAnchor());
+                    for(ReportAssignment rAssignment: reportAssignments){
+                        rAssignment.setAssignment(assignmentsVO.getAssignments());
+                        reportService.saveAssignmentForReport(rAssignment);
+                    }
+                }
+            }
+
+            //Change the disbursements anchor to the new Grant Active State Owner
+            if(grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE") && assignmentsVO.getStateId()==grant.getGrantStatus().getId()){
+                List<Disbursement> disbursements = disbursementService.getAllDisbursementsForGrant(grant.getId());
+                disbursements.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+                for(Disbursement disbursement : disbursements){
+                    List<DisbursementAssignment> disbursementAssignments = disbursementService.getDisbursementAssignments(disbursement);
+                    disbursementAssignments.removeIf(ass -> !ass.getAnchor());
+                    for(DisbursementAssignment dAssignment: disbursementAssignments){
+                        dAssignment.setOwner(assignmentsVO.getAssignments());
+                        disbursementService.saveAssignmentForDisbursement(dAssignment);
+                    }
+                }
+            }
             grantService.saveAssignmentForGrant(assignment);
         }
 
@@ -3154,5 +3169,11 @@ public class GrantController {
     @GetMapping("/granteeOrgs")
     public List<Organization> getAssociatedGranteesForTenant(@RequestHeader("X-TENANT-CODE") String tenantCode){
         return organizationService.getAssociatedGranteesForTenant(organizationService.findOrganizationByTenantCode(tenantCode));
+    }
+
+
+    @GetMapping("/grantTypes")
+    public List<GrantType> getGrantTypes(@RequestHeader("X-TENANT-CODE") String tenantCode){
+        return grantService.getGrantTypesForTenantOrg(organizationService.findOrganizationByTenantCode(tenantCode).getId());
     }
 }

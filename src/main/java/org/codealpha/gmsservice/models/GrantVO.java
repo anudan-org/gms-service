@@ -58,6 +58,7 @@ public class GrantVO {
   private int projectDocumentsCount = 0;
   private Double approvedDisbursementsTotal = 0d;
   private int approvedReportsForGrant;
+  private Long grantTypeId;
   @JsonIgnore
   private List<GrantStringAttribute> stringAttributes;
 
@@ -504,4 +505,11 @@ public class GrantVO {
     this.minEndEndate = minEndEndate;
   }
 
+  public Long getGrantTypeId() {
+    return grantTypeId;
+  }
+
+  public void setGrantTypeId(Long grantTypeId) {
+    this.grantTypeId = grantTypeId;
+  }
 }

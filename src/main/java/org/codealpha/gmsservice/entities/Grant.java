@@ -189,6 +189,8 @@ public class Grant {
   private Date minEndEndate;
   @Column
   private Boolean internal;
+  @Column
+  private Long grantTypeId;
 
   public Long getId() {
     return id;
@@ -572,5 +574,13 @@ public class Grant {
 
   public void setInternal(Boolean internal) {
     this.internal = internal;
+  }
+
+  public Long getGrantTypeId() {
+    return grantTypeId;
+  }
+
+  public void setGrantTypeId(Long grantTypeId) {
+    this.grantTypeId = grantTypeId;
   }
 }

@@ -3,6 +3,8 @@ package org.codealpha.gmsservice.controllers;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -132,6 +134,14 @@ public class GranterController {
 		org.setName(granterName);
 		org.setOrganizationType("GRANTER");
 		org = granterService.createGranter((Granter) org, image);
+
+		File file = new File("/opt/gms/secure-sites.txt");
+		try{
+
+			Files.write(file.toPath(),System.lineSeparator().concat(slug.toLowerCase()).concat(".").getBytes(), StandardOpenOption.APPEND);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 		try {
 			String filePath = uploadLocation + slug.toUpperCase() + "/logo/";
@@ -323,10 +333,9 @@ public class GranterController {
 	private void buildWorkflowsBasedOnTempOrg(Organization org) {
 
 		Organization tempOrg = organizationService.findOrganizationByTenantCode("TEMPORG");
-		Workflow tempGrantWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg, WorkflowObject.GRANT);
-		Workflow tempReportWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg, WorkflowObject.REPORT);
-		Workflow tempDisbursementWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg,
-				WorkflowObject.DISBURSEMENT);
+		Workflow tempGrantWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg.getId(), "GRANT");
+		Workflow tempReportWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg.getId(), "REPORT");
+		Workflow tempDisbursementWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg.getId(), "DISBURSEMENT");
 		List<WorkflowStatus> tempGrantStatuses = workflowStatusService
 				.getTenantWorkflowStatuses(WorkflowObject.GRANT.name(), tempOrg.getId());
 		List<WorkflowStatus> tempReportStatuses = workflowStatusService

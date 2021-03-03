@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.controllers.ReportController;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.ColumnData;
@@ -94,7 +93,7 @@ public class ReportService {
         Organization granterOrg = organizationRepository.findByCode(tenantCode);
         List<WorkflowStatus> statuses = new ArrayList<>();
         List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionRepository
-                .findByWorkflow(workflowRepository.findByGranterAndObject(granterOrg, WorkflowObject.REPORT).get(0));
+                .findByWorkflow(workflowRepository.findByGranterAndObjectAndType(granterOrg.getId(), "REPORT",report.getGrant().getGrantTypeId()).get(0));
         for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
             if (!statuses.stream()
                     .filter(s -> s.getId().longValue() == supportedTransition.getFromState().getId().longValue())
@@ -270,7 +269,7 @@ public class ReportService {
         Map<Long, List<Long>> grantWorkflowStatusIds = new HashMap<>();
         Map<Long, Long[][]> grantWorkflowTransitionIds = new HashMap<>();
         if (report.getGrant() != null) {
-            workflowRepository.findByGranterAndObject(report.getGrant().getGrantorOrganization(), WorkflowObject.REPORT)
+            workflowRepository.findByGranterAndObjectAndType(report.getGrant().getGrantorOrganization().getId(), "REPORT",report.getGrant().getGrantTypeId())
                     .forEach(w -> {
                         grantWorkflowIds.add(w.getId());
                         List<Long> wfStatusIds = new ArrayList<>();
@@ -538,7 +537,7 @@ public class ReportService {
                 .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
                 .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
                 .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replaceAll("%GRANTEE%", finalReport.getGrant().getOrganization().getName())
+                .replaceAll("%GRANTEE%", finalReport.getGrant().getOrganization()!=null?finalReport.getGrant().getOrganization().getName():finalReport.getGrant().getGrantorOrganization().getName())
                 .replaceAll("%GRANTEE_REPORT_LINK%", granteeUrl).replaceAll("%GRANTER_REPORT_LINK%", granterUrl)
                 .replaceAll("%GRANTER%", finalReport.getGrant().getGrantorOrganization().getName())
                 .replaceAll("%ENTITY_TYPE%", "report")

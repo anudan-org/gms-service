@@ -12,7 +12,7 @@ public class WorkflowTransitionModelService {
     @Autowired
     private WorkflowTransitionModelRepository workflowTransitionModelRepository;
 
-    public List<WorkflowTransitionModel> getWorkflowsByGranterAndType(Long granterId, String type) {
-        return workflowTransitionModelRepository.getWorkflowsByGranterAndObject(granterId, type);
+    public List<WorkflowTransitionModel> getWorkflowsByGranterAndType(Long granterId, String type, Long grantTypeId) {
+        return workflowTransitionModelRepository.getWorkflowsByGranterAndObject(granterId, type,grantTypeId);
     }
 }

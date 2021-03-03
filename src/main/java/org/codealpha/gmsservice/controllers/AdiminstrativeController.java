@@ -98,6 +98,12 @@ public class AdiminstrativeController {
     private GrantToFixRepository grantToFixRepository;
     @Autowired
     private GrantSnapshotRepository grantSnapshotRepository;
+    @Autowired
+    private GrantTypeService grantTypeService;
+    @Autowired
+    private GrantTypeWorkflowMappingService grantTypeWorkflowMappingService;
+    @Autowired
+    private GranterService granterService;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -112,7 +118,7 @@ public class AdiminstrativeController {
             org = organizationService.findOrganizationByTenantCode(tenantCode);
         }
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "GRANT");
+        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "GRANT",grantService.getById(grantId).getGrantTypeId());
     }
 
     @GetMapping("/workflow/report/{reportId}/user/{userId}")
@@ -129,7 +135,7 @@ public class AdiminstrativeController {
         }
         organizationService.findOrganizationByTenantCode(tenantCode);
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "REPORT");
+        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "REPORT",reportService.getReportById(reportId).getGrant().getGrantTypeId());
     }
 
     @GetMapping("/workflow/disbursement/{disbursementId}/user/{userId}")
@@ -146,7 +152,7 @@ public class AdiminstrativeController {
         }
         organizationService.findOrganizationByTenantCode(tenantCode);
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "DISBURSEMENT");
+        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "DISBURSEMENT",disbursementService.getDisbursementById(disbursementId).getGrant().getGrantTypeId());
     }
 
     @PostMapping("/workflow")
@@ -814,5 +820,105 @@ public class AdiminstrativeController {
         // FileUtils.writeStringToFile(new File(new
         // URI("c:\\sustainplus\\snapshot_fix.sql")), scripts);
         return HttpStatus.OK;
+    }
+
+    @GetMapping("/create-grant-types")
+    public boolean createGrantTypes(){
+
+        List<Granter> granters = granterService.getAllGranters();
+        granters.removeIf(g -> g.getCode().equalsIgnoreCase("TEMPORG"));
+        for(Organization granter:granters){
+            List<Workflow> grantWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(),"GRANT");
+            List<GrantType> grantTypes = grantTypeService.findGrantTypesForTenant(granter.getId());
+            for(Workflow grantWf: grantWorkflows){
+                if(grantTypes.size()==0){
+                    GrantType gt = new GrantType();
+                    gt.setColorCode("#fdf6ff");
+                    gt.setDescription("Implemented via external partner");
+                    gt.setGranterId(granter.getId());
+                    gt.setInternal(false);
+                    gt.setName("External Implementation");
+                    gt = grantTypeService.save(gt);
+                    grantTypes.add(gt);
+
+                    List<Grant> grants = grantService.getAllGrantsForGranter(granter.getId());
+                    for(Grant grant: grants){
+                        grant.setGrantTypeId(gt.getId());
+                        grantService.saveGrant(grant);
+                    }
+                }
+                for(GrantType gt : grantTypes){
+                    List<GrantTypeWorkflowMapping> typeWfMapping = grantTypeWorkflowMappingService.findByWorkflow(grantWf.getId());
+                    if(typeWfMapping.size()==0){
+                        GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
+                        gtm.setGrantTypeId(gt.getId());
+                        gtm.setInternal(false);
+                        gtm.setWorkflowId(grantWf.getId());
+                        gtm = grantTypeWorkflowMappingService.save(gtm);
+                    }
+                }
+            }
+
+            List<Workflow> reportWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(),"REPORT");
+            for(Workflow reportWf: reportWorkflows){
+                if(grantTypes.size()==0){
+                    GrantType gt = new GrantType();
+                    gt.setColorCode("#fdf6ff");
+                    gt.setDescription("Implemented via external partner");
+                    gt.setGranterId(granter.getId());
+                    gt.setInternal(false);
+                    gt.setName("External Implementation");
+                    gt = grantTypeService.save(gt);
+                    grantTypes.add(gt);
+
+                    List<Grant> grants = grantService.getAllGrantsForGranter(granter.getId());
+                    for(Grant grant: grants){
+                        grant.setGrantTypeId(gt.getId());
+                        grantService.saveGrant(grant);
+                    }
+                }
+                for(GrantType gt : grantTypes){
+                    List<GrantTypeWorkflowMapping> typeWfMapping = grantTypeWorkflowMappingService.findByWorkflow(reportWf.getId());
+                    if(typeWfMapping.size()==0){
+                        GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
+                        gtm.setGrantTypeId(gt.getId());
+                        gtm.setInternal(false);
+                        gtm.setWorkflowId(reportWf.getId());
+                        gtm = grantTypeWorkflowMappingService.save(gtm);
+                    }
+                }
+            }
+
+            List<Workflow> disbursementWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(),"DISBURSEMENT");
+            for(Workflow disbWf: disbursementWorkflows){
+                if(grantTypes.size()==0){
+                    GrantType gt = new GrantType();
+                    gt.setColorCode("#fdf6ff");
+                    gt.setDescription("Implemented via external partner");
+                    gt.setGranterId(granter.getId());
+                    gt.setInternal(false);
+                    gt.setName("External Implementation");
+                    gt = grantTypeService.save(gt);
+                    grantTypes.add(gt);
+
+                    List<Grant> grants = grantService.getAllGrantsForGranter(granter.getId());
+                    for(Grant grant: grants){
+                        grant.setGrantTypeId(gt.getId());
+                        grantService.saveGrant(grant);
+                    }
+                }
+                for(GrantType gt : grantTypes){
+                    List<GrantTypeWorkflowMapping> typeWfMapping = grantTypeWorkflowMappingService.findByWorkflow(disbWf.getId());
+                    if(typeWfMapping.size()==0){
+                        GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
+                        gtm.setGrantTypeId(gt.getId());
+                        gtm.setInternal(false);
+                        gtm.setWorkflowId(disbWf.getId());
+                        gtm = grantTypeWorkflowMappingService.save(gtm);
+                    }
+                }
+            }
+        }
+        return true;
     }
 }
