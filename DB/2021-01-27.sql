@@ -30,7 +30,7 @@ CREATE TABLE public.grant_type_workflow_mapping
     CONSTRAINT grant_type_workflow_pkey PRIMARY KEY (id)
 );
 
-alter table grants drop column internal;
+--alter table grants drop column internal;
 alter table grants add column grant_type_id bigint;
 alter table grant_types add column granter_id bigint;
 alter table grant_types add column color_code varchar(50);

@@ -865,4 +865,7 @@ public class GrantService {
         return grantTypeRepository.findById(grantTypeId).get();
     }
 
+    public List<Grant> getAllGrantsForGranter(Long granterId){
+        return grantRepository.getAllGrantsForGranter(granterId);
+    }
 }
