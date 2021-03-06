@@ -1,29 +1,12 @@
 package org.codealpha.gmsservice.controllers;
 
-import java.awt.*;
-import java.io.*;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.time.Month;
-import java.util.*;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
-
+import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -35,12 +18,17 @@ import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.codealpha.gmsservice.constants.*;
+import org.codealpha.gmsservice.constants.AppConfiguration;
+import org.codealpha.gmsservice.constants.Frequency;
+import org.codealpha.gmsservice.constants.GrantStatus;
+import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.exceptions.ApplicationException;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.GrantValidator;
+import org.hibernate.Session;
+import org.hibernate.transform.AliasToEntityMapResultTransformer;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -53,12 +41,38 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.web.util.*;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 import springfox.documentation.annotations.ApiIgnore;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
+import java.io.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.time.Month;
+import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @RestController
 @RequestMapping("/user/{userId}/grant")
@@ -138,6 +152,10 @@ public class GrantController {
     private WorkflowService workflowService;
     @Autowired
     private DisbursementService disbursementService;
+    @PersistenceContext
+    private EntityManager entityManager;
+    @Autowired
+    private DataExportConfigService exportConfigService;
 
     @GetMapping("/create/{templateId}/{grantTypeId}")
     @ApiOperation("Create new grant with a template")
@@ -2890,6 +2908,61 @@ public class GrantController {
         }
         IOUtils.closeQuietly(bufferedOutputStream);
         IOUtils.closeQuietly(byteArrayOutputStream);
+        return byteArrayOutputStream.toByteArray();
+    }
+
+    @PostMapping(value = "/data/", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public byte[] exportDataForGrants(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,
+                                              HttpServletResponse response) throws IOException {
+
+        //ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
+        // setting headers
+        response.setContentType("application/zip");
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
+
+        // creating byteArray stream, make it bufforable and passing this buffor to
+        // ZipOutputStream
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+        ZipOutputStream zipOut = new ZipOutputStream(bufferedOutputStream);
+
+        /*Query query = entityManager.createNativeQuery("select * from grants where grantor_org_id=:tenantId");
+        query.setParameter("tenantId",11);*/
+
+        //org.hibernate.query.Query hQuery = ((Session) entityManager.getDelegate()).createSQLQuery("select b.name as organization_name,a.reference_no,a.name as grant_name,d.name as grant_type,a.start_date,a.end_date,a.amount, case when d.internal then b.name else (select name from organizations where id=a.organization_id) end as implementing_organization, a.representative as implementing_org_rep, case when orig_grant_id is not null then 'Yes' else 'No' end as is_amended from grants a inner join organizations b on b.id=a.grantor_org_id inner join workflow_statuses c on c.id=a.grant_status_id inner join grant_types d on d.id=a.grant_type_id where b.id=:tenantId and c.internal_status='ACTIVE'");
+
+        try{
+        EntityManagerFactoryInfo info = (EntityManagerFactoryInfo) entityManager.getEntityManagerFactory();
+        Connection conn = info.getDataSource().getConnection();
+
+        Long tenantId = organizationService.findOrganizationByTenantCode(tenantCode).getId();
+        List<DataExportConfig> exportConfigs = exportConfigService.getDataExportConfigForTenantByCategory("ACTIVE_GRANTS_DETAILS",tenantId);
+        for(DataExportConfig exportConfig: exportConfigs){
+            String q = exportConfig.getQuery().replaceAll("%tenantId%",String.valueOf(tenantId));
+            exportConfig.setQuery(q);
+
+            PreparedStatement activeGrantsStatement =  conn.prepareStatement(exportConfig.getQuery());
+
+            ResultSet activeGrants = activeGrantsStatement.executeQuery();
+            //BufferedWriter out = new BufferedWriter(new FileWriter("result.csv"));
+            String filename = exportConfig.getName()+"_"+new SimpleDateFormat("dd-MM-yyyy").format(DateTime.now().toDate())+".csv";
+            ZipEntry entry = new ZipEntry(filename);
+            zipOut.putNextEntry(entry);
+            CSVWriter writer = new CSVWriter(new OutputStreamWriter(zipOut));
+            writer.writeAll(activeGrants,true);
+            writer.flush();
+            zipOut.closeEntry();
+
+        }
+            zipOut.close();
+
+
+
+    }catch(Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+
         return byteArrayOutputStream.toByteArray();
     }
 
