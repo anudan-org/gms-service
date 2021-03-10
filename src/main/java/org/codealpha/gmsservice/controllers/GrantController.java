@@ -1641,7 +1641,7 @@ public class GrantController {
         } else {
             String code = grant.getOrganization()==null?grant.getGrantorOrganization().getName():grant.getOrganization().getName();
             referenceCode = code.replaceAll(" ", "").substring(0, 4).toUpperCase() + "-"
-                    + stFormat.format(grant.getStartDate()) + "-" + enFormat.format(grant.getEndDate()) + "-" + (sNo);
+                    + stFormat.format(grant.getStartDate()) + "-" + enFormat.format(grant.getEndDate()) + ("-" + (sNo+1));
         }
         grant.setReferenceNo(referenceCode);
         return grantService.saveGrant(grant);

@@ -16,6 +16,10 @@ public class TransitionStatusOrder {
     private int seqOrder;
     @Column
     private Long fromStateId;
+    @Column
+    private Long workflowId;
+    @Column
+    private Long grantTypeId;
 
     public Long getId() {
         return id;
@@ -55,5 +59,21 @@ public class TransitionStatusOrder {
 
     public void setFromStateId(Long fromStateId) {
         this.fromStateId = fromStateId;
+    }
+
+    public Long getWorkflowId() {
+        return workflowId;
+    }
+
+    public void setWorkflowId(Long workflowId) {
+        this.workflowId = workflowId;
+    }
+
+    public Long getGrantTypeId() {
+        return grantTypeId;
+    }
+
+    public void setGrantTypeId(Long grantTypeId) {
+        this.grantTypeId = grantTypeId;
     }
 }
