@@ -438,7 +438,7 @@ public class UserController {
                         reportsByStatuses.sort(comparator);
 
                         for(TransitionStatusOrder order : orderedTransitions){
-                            Optional<GranterReportSummaryStatus> optionalReportStatus = reportsByStatuses.stream().filter(r -> r.getStatusId()==order.getFromStateId() && r.getGrantTypeId()==mapping.getGrantTypeId() && r.getWorkflowId()==wf.getId()).findFirst();
+                            Optional<GranterReportSummaryStatus> optionalReportStatus = reportsByStatuses.stream().filter(r -> r.getStatusId().longValue()==order.getFromStateId().longValue() && r.getGrantTypeId().longValue()==mapping.getGrantTypeId().longValue() && r.getWorkflowId().longValue()==wf.getId().longValue()).findFirst();
                             GranterReportSummaryStatus reportStatus = optionalReportStatus.isPresent()?optionalReportStatus.get():initNewGranterReportSummaryStatus(tenantOrg,order);
 
 
