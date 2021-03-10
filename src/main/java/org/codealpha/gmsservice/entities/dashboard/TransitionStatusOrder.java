@@ -14,6 +14,8 @@ public class TransitionStatusOrder {
     private String internalStatus;
     @Column
     private int seqOrder;
+    @Column
+    private Long fromStateId;
 
     public Long getId() {
         return id;
@@ -45,5 +47,13 @@ public class TransitionStatusOrder {
 
     public void setInternalStatus(String internalStatus) {
         this.internalStatus = internalStatus;
+    }
+
+    public Long getFromStateId() {
+        return fromStateId;
+    }
+
+    public void setFromStateId(Long fromStateId) {
+        this.fromStateId = fromStateId;
     }
 }

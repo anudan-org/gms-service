@@ -310,6 +310,7 @@ public class GrantController {
         grant.setRepresentative(originalGrant.getRepresentative());
         grant.setTemplateId(templateId);
         grant.setDeleted(false);
+        grant.setGrantTypeId(originalGrant.getGrantTypeId());
         grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(templateId));
         grant.setOrigGrantId(originalGrant.getId());
 

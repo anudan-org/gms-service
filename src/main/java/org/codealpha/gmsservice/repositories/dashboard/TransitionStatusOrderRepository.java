@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface TransitionStatusOrderRepository extends CrudRepository<TransitionStatusOrder,Long> {
 
-    @Query(value = "select row_number() over () as id,* from (select * from (select (select name from workflow_statuses where from_state_id=id) state,(select internal_status from workflow_statuses where from_state_id=id) internal_status,seq_order from workflow_status_transitions where workflow_id=?1 and seq_order<50 order by seq_order) X union select name state,internal_status,100 as seq_order from workflow_statuses where workflow_id=?1 and terminal=true) Y order by seq_order desc",nativeQuery = true)
+    @Query(value = "select row_number() over () as id,* from (select * from (select (select name from workflow_statuses where from_state_id=id) state,from_state_id,(select internal_status from workflow_statuses where from_state_id=id) internal_status,seq_order from workflow_status_transitions where workflow_id=?1 and seq_order<50 order by seq_order) X union select name state,id from_state_id,internal_status,100 as seq_order from workflow_statuses where workflow_id=?1 and terminal=true) Y order by seq_order desc",nativeQuery = true)
     List<TransitionStatusOrder> getTransitionOrder(Long workflowId);
 }

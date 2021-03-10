@@ -24,4 +24,8 @@ public class GrantTypeService {
 
         return grantTypeRepository.save(gt);
     }
+
+    public GrantType findById(Long id){
+        return grantTypeRepository.findById(id).get();
+    }
 }

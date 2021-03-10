@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
@@ -18,7 +17,6 @@ import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.GrantSnapshotRepository;
 import org.codealpha.gmsservice.repositories.GrantToFixRepository;
-import org.codealpha.gmsservice.repositories.UserRoleRepository;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +38,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -48,7 +45,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -104,6 +100,8 @@ public class AdiminstrativeController {
     private GrantTypeWorkflowMappingService grantTypeWorkflowMappingService;
     @Autowired
     private GranterService granterService;
+    @Autowired
+    private OrgTagService orgTagService;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -920,5 +918,21 @@ public class AdiminstrativeController {
             }
         }
         return true;
+    }
+
+    @PostMapping("/tags/{name}")
+    public OrgTag createOrgTag(@PathVariable("name") String tagName,@RequestHeader("X-TENANT-CODE") String tenantCode){
+        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        OrgTag tag = new OrgTag();
+        tag.setName(tagName);
+        tag.setTenant(tenantOrg.getId());
+        tag = orgTagService.createTag(tag);
+        return tag;
+    }
+
+    @GetMapping("/user/{userId}/tags")
+    public List<OrgTag> getOrgTags(@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode){
+        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        return orgTagService.getOrgTags(tenantOrg.getId());
     }
 }
