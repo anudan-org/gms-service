@@ -434,8 +434,12 @@ public class DashboardService {
         return granterReportSummaryStatusRepository.getReportsByStatusForGranter(granterId);
     }
 
-    public List<TransitionStatusOrder> getStatusTransitionOrder(Long workflowId){
-        return transitionStatusOrderRepository.getTransitionOrder(workflowId);
+    public List<TransitionStatusOrder> getStatusTransitionOrderByWorflowAndGrantType(Long workflowId,Long grantTypeId){
+        return transitionStatusOrderRepository.getTransitionOrderByWorkflowAndGrantType(workflowId,grantTypeId);
+    }
+
+    public TransitionStatusOrder getStatusTransitionOrderForTerminalState(Long workflowId,Long grantTypeId){
+        return transitionStatusOrderRepository.getTransitionOrderForTerminalState(workflowId,grantTypeId);
     }
 
     public List<GranterReportStatus> findGrantCountsByReportNumbersAndStatusForGranter(Long granterId, String status) {

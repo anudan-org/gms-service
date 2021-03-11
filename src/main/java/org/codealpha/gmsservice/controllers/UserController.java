@@ -24,6 +24,7 @@ import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.models.dashboard.*;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.DashboardValidator;
+import org.hibernate.jdbc.Work;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -79,6 +80,10 @@ public class UserController {
     private ReleaseService releaseService;
     @Autowired
     private WorkflowService workflowService;
+    @Autowired
+    private GrantTypeWorkflowMappingService grantTypeWorkflowMappingService;
+    @Autowired
+    private GrantTypeService grantTypeService;
 
     @GetMapping(value = "/{userId}")
     public User get(@PathVariable(name = "userId") Long id, @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -408,32 +413,72 @@ public class UserController {
 
                 List<Workflow> granterReportWorkflows = workflowService.getAllWorkflowsForGranterByType(tenantOrg.getId(),"REPORT");
 
-                for(Workflow reportWf: granterReportWorkflows){
-                    List<TransitionStatusOrder> orderedTransitions = dashboardService.getStatusTransitionOrder(reportWf.getId());
-                    List<String> statusOrder = orderedTransitions.stream().map(a -> a.getState()).collect(Collectors.toList());
-                    Comparator<GranterReportSummaryStatus> comparator = Comparator
-                            .comparing(c -> {
-                                        return statusOrder.indexOf(c.getStatus());
-                                    }
-                            );
-                    for(TransitionStatusOrder sto: orderedTransitions){
-                        if(!reportsByStatuses.stream().filter(a -> a.getStatus().equalsIgnoreCase(sto.getState())).findFirst().isPresent()){
-                            GranterReportSummaryStatus summaryStatus = new GranterReportSummaryStatus();
-                            summaryStatus.setCount(0);
-                            summaryStatus.setGranterId(tenantOrg.getId());
-                            summaryStatus.setId(1L);
-                            summaryStatus.setInternalStatus(sto.getInternalStatus());
-                            summaryStatus.setStatus(sto.getState());
-                            reportsByStatuses.add(summaryStatus);
+                /*List<String> statusOrder = orderedTransitions.stream().map(a -> a.getState()).collect(Collectors.toList());
+                Comparator<GranterReportSummaryStatus> comparator = Comparator
+                        .comparing(c -> {
+                                    return statusOrder.indexOf(c.getStatus());
+                                }
+                        );
+
+                        reportsByStatuses.sort(comparator);*/
+                List<Workflow> workflows = workflowService.getAllWorkflowsForGranterByType(tenantOrg.getId(),"REPORT");
+                for(Workflow wf : workflows){
+                    List<GrantTypeWorkflowMapping> mappings = grantTypeWorkflowMappingService.findByWorkflow(wf.getId());
+                    for(GrantTypeWorkflowMapping mapping:mappings){
+                        List<TransitionStatusOrder> orderedTransitions = dashboardService.getStatusTransitionOrderByWorflowAndGrantType(wf.getId(),mapping.getGrantTypeId());
+                        orderedTransitions.add(0, dashboardService.getStatusTransitionOrderForTerminalState(wf.getId(),mapping.getGrantTypeId()));
+
+                        List<String> statusOrder = orderedTransitions.stream().map(a -> a.getState()).collect(Collectors.toList());
+                        Comparator<GranterReportSummaryStatus> comparator = Comparator
+                                .comparing(c -> {
+                                            return statusOrder.indexOf(c.getStatus());
+                                        }
+                                );
+
+                        reportsByStatuses.sort(comparator);
+
+                        for(TransitionStatusOrder order : orderedTransitions){
+                            Optional<GranterReportSummaryStatus> optionalReportStatus = reportsByStatuses.stream().filter(r -> r.getStatusId().longValue()==order.getFromStateId().longValue() && r.getGrantTypeId().longValue()==mapping.getGrantTypeId().longValue() && r.getWorkflowId().longValue()==wf.getId().longValue()).findFirst();
+                            GranterReportSummaryStatus reportStatus = optionalReportStatus.isPresent()?optionalReportStatus.get():initNewGranterReportSummaryStatus(tenantOrg,order);
+
+
+                            reportStatusSummaryList
+                                    .add(new ReportStatusSummary(reportStatus.getStatus(), reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount()), reportStatus.getGrantType()));
+
                         }
-                    }
-                    reportsByStatuses.sort(comparator);
-                    for (GranterReportSummaryStatus reportStatus : reportsByStatuses) {
-                        reportStatusSummaryList
-                                .add(new ReportStatusSummary(reportStatus.getStatus(), reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount())));
                     }
                 }
 
+                /*List<TransitionStatusOrder> orderedTransitions = dashboardService.getStatusTransitionOrder(tenantOrg.getId());
+
+                        for (GranterReportSummaryStatus reportStatus : reportsByStatuses) {
+
+                            orderedTransitions.add(0, dashboardService.getStatusTransitionOrderForTerminalState(reportStatus.getWorkflowId()));
+                        *//*Collections.sort(orderedTransitions,(s1,s2)->{
+                            return s1.getSeqOrder()>s2.getSeqOrder()?-1:1;
+                        });*//*
+
+                            if(!orderedTransitions.stream().filter(a->a.getFromStateId().longValue()==reportStatus.getStatusId()).findFirst().isPresent()){
+                                reportStatus.setCount(0);
+                                reportStatus.setGranterId(tenantOrg.getId());
+                                reportStatus.setId(1L);
+                                reportStatus.setInternalStatus(reportStatus.getInternalStatus());
+                                reportStatus.setStatus(reportStatus.getStatus());
+                                reportStatus.setGrantTypeId(reportStatus.getGrantTypeId());
+                                reportStatus.setGrantType(grantTypeService.findById(reportStatus.getGrantTypeId()).getName());
+                            }
+                            *//*for (TransitionStatusOrder sto : orderedTransitions) {
+
+                                if (reportStatus.getStatusId() != sto.getFromStateId() && reportStatus.getGrantTypeId() != reportStatus.getGrantTypeId()) {
+
+                                    //reportsByStatuses.add(summaryStatus);
+
+                                }
+                            }*//*
+
+                            reportStatusSummaryList
+                                    .add(new ReportStatusSummary(reportStatus.getStatus(), reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount()), reportStatus.getGrantType()));
+                        }*/
 
             }
         } else if (status.equalsIgnoreCase("CLOSED")) {
@@ -486,6 +531,18 @@ public class UserController {
             return detailsOrder.indexOf(c.getName());
         }));
         return categoryFilter;
+    }
+
+    private GranterReportSummaryStatus initNewGranterReportSummaryStatus(Organization tenantOrg,TransitionStatusOrder order) {
+        GranterReportSummaryStatus reportStatus = new GranterReportSummaryStatus();
+        reportStatus.setCount(0);
+        reportStatus.setGranterId(tenantOrg.getId());
+        reportStatus.setId(1L);
+        reportStatus.setInternalStatus(order.getInternalStatus());
+        reportStatus.setStatus(order.getState());
+        reportStatus.setGrantTypeId(order.getGrantTypeId());
+        reportStatus.setGrantType(grantTypeService.findById(order.getGrantTypeId()).getName());
+        return reportStatus;
     }
 
     @GetMapping("/forgot/{emailId}")

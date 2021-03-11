@@ -17,6 +17,14 @@ public class GranterReportSummaryStatus {
     private String status;
     @Column
     private int count;
+    @Column
+    private String grantType;
+    @Column
+    private Long statusId;
+    @Column
+    private Long workflowId;
+    @Column
+    private Long grantTypeId;
 
     public Long getId() {
         return id;
@@ -56,5 +64,37 @@ public class GranterReportSummaryStatus {
 
     public void setCount(int count) {
         this.count = count;
+    }
+
+    public String getGrantType() {
+        return grantType;
+    }
+
+    public void setGrantType(String grantType) {
+        this.grantType = grantType;
+    }
+
+    public Long getStatusId() {
+        return statusId;
+    }
+
+    public void setStatusId(Long statusId) {
+        this.statusId = statusId;
+    }
+
+    public Long getWorkflowId() {
+        return workflowId;
+    }
+
+    public void setWorkflowId(Long workflowId) {
+        this.workflowId = workflowId;
+    }
+
+    public Long getGrantTypeId() {
+        return grantTypeId;
+    }
+
+    public void setGrantTypeId(Long grantTypeId) {
+        this.grantTypeId = grantTypeId;
     }
 }

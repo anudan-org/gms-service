@@ -17,13 +17,16 @@ public class ReportStatusSummary extends DetailedSummary {
     private Long value;
     @JsonProperty("internalStatus")
     private String internalStatus;
+    @JsonProperty("grantType")
+    private String grantType;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    public ReportStatusSummary(String name, String internalStatus, Long value) {
+    public ReportStatusSummary(String name, String internalStatus, Long value,String grantType) {
         super(name);
         this.internalStatus = internalStatus;
         this.value = value;
+        this.grantType = grantType;
     }
 
     @JsonProperty("value")
@@ -56,4 +59,11 @@ public class ReportStatusSummary extends DetailedSummary {
         this.additionalProperties.put(name, value);
     }
 
+    public String getGrantType() {
+        return grantType;
+    }
+
+    public void setGrantType(String grantType) {
+        this.grantType = grantType;
+    }
 }
