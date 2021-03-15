@@ -3248,6 +3248,7 @@ public class GrantController {
 
     @GetMapping("/grantTypes")
     public List<GrantType> getGrantTypes(@RequestHeader("X-TENANT-CODE") String tenantCode){
+        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         return grantService.getGrantTypesForTenantOrg(organizationService.findOrganizationByTenantCode(tenantCode).getId());
     }
 }

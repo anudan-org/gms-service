@@ -121,15 +121,32 @@ public class ReportController {
             Date start = DateTime.now().withTimeAtStartOfDay().toDate();
             Date end = new DateTime(start, DateTimeZone.forID(timezone)).plusDays(30).withTime(23, 59, 59, 999)
                     .toDate();
+            boolean isAdmin = false;
+
+            for (Role role : userRoleService.findRolesForUser(userService.getUserById(userId))) {
+                if (role.getName().equalsIgnoreCase("ADMIN")) {
+                    isAdmin = true;
+                    break;
+                }
+            }
             if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING")) {
-                reports = reportService.getUpcomingReportsForGranterUserByDateRange(userId, org.getId(), start, end);
+                if(!isAdmin) {
+                    reports = reportService.getUpcomingReportsForGranterUserByDateRange(userId, org.getId(), start, end);
+                }else{
+                    reports = reportService.getUpcomingReportsForAdminGranterUserByDateRange(userId, org.getId(), start, end);
+
+                }
                 for (Report report : reports) {
                     int futureReportsCount = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId,
                             org.getId(), end, report.getGrant().getId()).size();
                     report.setFutureReportsCount(futureReportsCount);
                 }
             } else if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-FUTURE")) {
-                 reports = reportService.getUpcomingFutureReportsForGranterUserByDate(userId, org.getId(), end);
+                if(!isAdmin) {
+                    reports = reportService.getUpcomingFutureReportsForGranterUserByDate(userId, org.getId(), end);
+                }else{
+                    reports = reportService.getUpcomingFutureReportsForAdminGranterUserByDate(userId, org.getId(), end);
+                }
                 Map<Long, Report> reportsHolder = new LinkedHashMap<Long, Report>();
                 for (Report report : reports) {
                     if (!reportsHolder.keySet().contains(report.getGrant().getId())) {
@@ -154,12 +171,25 @@ public class ReportController {
                 reports.sort(Comparator.comparing(Report::getEndDate));
                 reports.addAll(reportWithNullEndDate);
             } else if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-DUE")) {
-                reports = reportService.getReadyToSubmitReportsForGranterUserByDateRange(userId, org.getId(), start,
-                        end);
+                if(!isAdmin) {
+                    reports = reportService.getReadyToSubmitReportsForGranterUserByDateRange(userId, org.getId(), start,
+                            end);
+                }else{
+                    reports = reportService.getReadyToSubmitReportsForAdminGranterUserByDateRange(userId, org.getId(), start,
+                            end);
+                }
             } else if (filterClause != null && filterClause.equalsIgnoreCase("SUBMITTED")) {
-                reports = reportService.getSubmittedReportsForGranterUserByDateRange(userId, org.getId());
+                if(!isAdmin){
+                    reports = reportService.getSubmittedReportsForGranterUserByDateRange(userId, org.getId());
+                }else{
+                    reports = reportService.getSubmittedReportsForAdminGranterUserByDateRange(userId, org.getId());
+                }
             } else if (filterClause != null && filterClause.equalsIgnoreCase("APPROVED")) {
-                reports = reportService.getApprovedReportsForGranterUserByDateRange(userId, org.getId());
+                if(!isAdmin) {
+                    reports = reportService.getApprovedReportsForGranterUserByDateRange(userId, org.getId());
+                }else{
+                    reports = reportService.getApprovedReportsForAdminGranterUserByDateRange(userId, org.getId());
+                }
             }
             // reports = reportService.getAllAssignedReportsForGranterUser(userId,
             // org.getId());

@@ -53,6 +53,8 @@ public class DisbursementService {
     private DisabledUsersEntityRepository disabledUsersEntityRepository;
     @Value("${spring.timezone}")
     private String timezone;
+    @Autowired
+    private UserRoleService userRoleService;
 
     public Disbursement saveDisbursement(Disbursement disbursement) {
         return disbursementRepository.save(disbursement);
@@ -186,8 +188,22 @@ public class DisbursementService {
 
     public List<Disbursement> getDisbursementsForUserByStatus(User user, Organization org, String status) {
         List<Disbursement> disbursements = new ArrayList<>();
+
+        boolean isAdmin = false;
+
+        for (Role role : userRoleService.findRolesForUser(userService.getUserById(user.getId()))) {
+            if (role.getName().equalsIgnoreCase("ADMIN")) {
+                isAdmin = true;
+                break;
+            }
+        }
+
         if (status.equalsIgnoreCase("DRAFT")) {
-            disbursements = disbursementRepository.getInprogressDisbursementsForUser(user.getId(), org.getId());
+            if(!isAdmin) {
+                disbursements = disbursementRepository.getInprogressDisbursementsForUser(user.getId(), org.getId());
+            }else{
+                disbursements = disbursementRepository.getInprogressDisbursementsForAdminUser(user.getId(), org.getId());
+            }
         } else if (status.equalsIgnoreCase("ACTIVE")) {
             disbursements = disbursementRepository.getActiveDisbursementsForUser(org.getId());
         } else if (status.equalsIgnoreCase("CLOSED")) {

@@ -206,14 +206,12 @@ public class DisbursementsController {
         public List<Disbursement> getDisbursementsForUser(@PathVariable("userId") Long userId,
                         @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("status") String status) {
                 User user = userService.getUserById(userId);
-                Organization org = null;
+                Organization org = org = user.getOrganization();;
                 List<Disbursement> disbursements = new ArrayList<>();
 
                 if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
-                        org = user.getOrganization();
                         disbursements = disbursementService.getDisbursementsForUserByStatus(user, org, status);
                 } else if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-                        org = user.getOrganization();
                         disbursements = disbursementService.getDisbursementsForUserByStatus(user, org, status);
                 }
 

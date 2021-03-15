@@ -188,6 +188,12 @@ public class ReportService {
         return reportRepository.findUpcomingReportsForGranterUserByDateRange(userId, granterOrgId, start, end);
     }
 
+    public List<Report> getUpcomingReportsForAdminGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
+                                                                    Date end) {
+
+        return reportRepository.findUpcomingReportsForAdminGranterUserByDateRange(userId, granterOrgId, start, end);
+    }
+
     public List<Report> getFutureReportForGranterUserByDateRangeAndGrant(Long userId, Long granterOrgId, Date end,
             Long grantId) {
 
@@ -201,14 +207,30 @@ public class ReportService {
         return reportRepository.findReadyToSubmitReportsForGranterUserByDateRange(userId, granterOrgId, start, end);
     }
 
+    public List<Report> getReadyToSubmitReportsForAdminGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
+                                                                         Date end) {
+
+        return reportRepository.findReadyToSubmitReportsForAdminGranterUserByDateRange(userId, granterOrgId, start, end);
+    }
+
     public List<Report> getSubmittedReportsForGranterUserByDateRange(Long userId, Long granterOrgId) {
 
         return reportRepository.findSubmittedReportsForGranterUserByDateRange(userId, granterOrgId);
     }
 
+    public List<Report> getSubmittedReportsForAdminGranterUserByDateRange(Long userId, Long granterOrgId) {
+
+        return reportRepository.findSubmittedReportsForAdminGranterUserByDateRange(userId, granterOrgId);
+    }
+
     public List<Report> getApprovedReportsForGranterUserByDateRange(Long userId, Long granterOrgId) {
 
         return reportRepository.findApprovedReportsForGranterUserByDateRange(userId, granterOrgId);
+    }
+
+    public List<Report> getApprovedReportsForAdminGranterUserByDateRange(Long userId, Long granterOrgId) {
+
+        return reportRepository.findApprovedReportsForAdminGranterUserByDateRange(userId, granterOrgId);
     }
 
     public GranterReportTemplate getDefaultTemplate(Long granterId) {
@@ -817,6 +839,9 @@ public class ReportService {
 
     public List<Report> getUpcomingFutureReportsForGranterUserByDate(Long userId, Long id, Date end) {
         return reportRepository.findUpcomingFutureReports(userId, id);
+    }
+    public List<Report> getUpcomingFutureReportsForAdminGranterUserByDate(Long userId, Long id, Date end) {
+        return reportRepository.findUpcomingFutureAdminReports(userId, id);
     }
 
     public List<DisabledUsersEntity> getReportsWithDisabledUsers(){
