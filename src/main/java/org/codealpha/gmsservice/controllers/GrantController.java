@@ -135,6 +135,8 @@ public class GrantController {
     private UserRoleService userRoleService;
     @Autowired
     private ReleaseService releaseService;
+    @Autowired
+    private OrgTagService orgTagService;
 
     @Autowired
     private ReportService reportService;
@@ -3250,5 +3252,27 @@ public class GrantController {
     public List<GrantType> getGrantTypes(@RequestHeader("X-TENANT-CODE") String tenantCode){
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         return grantService.getGrantTypesForTenantOrg(organizationService.findOrganizationByTenantCode(tenantCode).getId());
+    }
+
+    @PostMapping("/{grantId}/tags/{orgTagId}")
+    public GrantTagVO attachTagToGrant(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId,
+                                       @RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable("orgTagId")Long orgTagId){
+
+        GrantTag tag = new GrantTag();
+        tag.setGrantId(grantId);
+        tag.setOrgTagId(orgTagId);
+
+        tag = grantService.attachTagToGrant(tag);
+
+        return new GrantTagVO(tag.getId(),orgTagService.getOrgTagById(orgTagId).getName(),grantId,orgTagId);
+
+    }
+
+    @DeleteMapping("/{grantId}/tags/{tagId}")
+    public void detachTagFromGrant(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId,
+                                       @RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable("tagId")Long tagId){
+        GrantTag grantTag = grantService.getGrantTagById(tagId);
+        grantService.detachTagToGrant(grantTag);
+
     }
 }

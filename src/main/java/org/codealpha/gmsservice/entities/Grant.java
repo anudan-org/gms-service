@@ -191,6 +191,8 @@ public class Grant {
   private Boolean internal;
   @Column
   private Long grantTypeId;
+  @Transient
+  private List<GrantTagVO> grantTags;
 
   public Long getId() {
     return id;
@@ -582,5 +584,13 @@ public class Grant {
 
   public void setGrantTypeId(Long grantTypeId) {
     this.grantTypeId = grantTypeId;
+  }
+
+  public List<GrantTagVO> getGrantTags() {
+    return grantTags;
+  }
+
+  public void setGrantTags(List<GrantTagVO> grantTags) {
+    this.grantTags = grantTags;
   }
 }
