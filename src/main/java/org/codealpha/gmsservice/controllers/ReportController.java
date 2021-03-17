@@ -98,6 +98,8 @@ public class ReportController {
     private ReleaseService releaseService;
     @Value("${spring.timezone}")
     private String timezone;
+    @Autowired
+    private OrgTagService orgTagService;
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId,
@@ -406,6 +408,19 @@ public class ReportController {
         });
         report.setSecurityCode(reportService.buildHashCode(report));
         report.setFlowAuthorities(reportService.getFlowAuthority(report, userId));
+
+        List<GrantTag> grantTags = grantService.getTagsForGrant(report.getGrant().getId());
+        List<GrantTagVO> grantTagsVoList = new ArrayList<>();
+        for(GrantTag tag: grantTags){
+            GrantTagVO vo =new GrantTagVO();
+            vo.setGrantId(report.getGrant().getId());
+            vo.setId(tag.getId());
+            vo.setOrgTagId(tag.getOrgTagId());
+            vo.setTagName(orgTagService.getOrgTagById(tag.getOrgTagId()).getName());
+            grantTagsVoList.add(vo);
+        }
+        report.getGrant().setGrantTags(grantTagsVoList);
+
         return report;
     }
 
