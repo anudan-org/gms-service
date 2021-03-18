@@ -2,6 +2,7 @@ package org.codealpha.gmsservice.services;
 
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.models.GrantTagVO;
 import org.codealpha.gmsservice.models.GrantVO;
 import org.codealpha.gmsservice.repositories.*;
 import org.joda.time.DateTime;
@@ -55,6 +56,8 @@ public class DisbursementService {
     private String timezone;
     @Autowired
     private UserRoleService userRoleService;
+    @Autowired
+    private OrgTagService orgTagService;
 
     public Disbursement saveDisbursement(Disbursement disbursement) {
         return disbursementRepository.save(disbursement);
@@ -161,6 +164,18 @@ public class DisbursementService {
 
         List<ActualDisbursement> approvedActualDisbursements = getApprovedActualDisbursements(disbursement, statusIds);
         disbursement.setApprovedActualsDibursements(approvedActualDisbursements);
+
+        List<GrantTag> grantTags = grantService.getTagsForGrant(disbursement.getGrant().getId());
+        List<GrantTagVO> grantTagsVoList = new ArrayList<>();
+        for(GrantTag tag: grantTags){
+            GrantTagVO grantTagVO =new GrantTagVO();
+            grantTagVO.setGrantId(disbursement.getGrant().getId());
+            grantTagVO.setId(tag.getId());
+            grantTagVO.setOrgTagId(tag.getOrgTagId());
+            grantTagVO.setTagName(orgTagService.getOrgTagById(tag.getOrgTagId()).getName());
+            grantTagsVoList.add(grantTagVO);
+        }
+        disbursement.getGrant().setGrantTags(grantTagsVoList);
 
         return disbursement;
     }
