@@ -100,6 +100,8 @@ public class ReportController {
     private String timezone;
     @Autowired
     private OrgTagService orgTagService;
+    @Autowired
+    private GrantTypeService grantTypeService;
 
     @GetMapping("/")
     public List<Report> getAllReports(@PathVariable("userId") Long userId,
@@ -773,7 +775,7 @@ public class ReportController {
 
                     reportStringAttribute.setTarget(sectionAttributesVO.getTarget());
                     reportStringAttribute.setFrequency(sectionAttributesVO.getFrequency());
-                    if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                    if ((user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && !grantTypeService.findById(report.getGrant().getGrantTypeId()).isInternal()) || (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER") && grantTypeService.findById(report.getGrant().getGrantTypeId()).isInternal())) {
                         reportStringAttribute.setActualTarget(sectionAttributesVO.getActualTarget());
                     }
                     if (sectionAttribute.getFieldType().equalsIgnoreCase("table")
