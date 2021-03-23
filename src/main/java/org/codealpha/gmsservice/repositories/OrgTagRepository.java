@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface OrgTagRepository extends CrudRepository<OrgTag,Long> {
 
-    @Query(value = "select * from org_tags where tenant=?1",nativeQuery = true)
+    @Query(value = "select * from org_tags where tenant=?1 order by id asc",nativeQuery = true)
     List<OrgTag> getOrgTags(Long orgId);
 }
