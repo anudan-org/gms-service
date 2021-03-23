@@ -112,6 +112,8 @@ public class GrantService {
     private  GrantTagRepository grantTagRepository;
     @Autowired
     private OrgTagService orgTagService;
+    @Autowired
+    private OrgTagRepository orgTagRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -899,5 +901,9 @@ public class GrantService {
 
     public GrantTag getGrantTagById(Long id){
         return grantTagRepository.findById(id).get();
+    }
+
+    public boolean isTagInUse(Long orgTagId){
+        return grantTagRepository.isTagInUse(orgTagId);
     }
 }

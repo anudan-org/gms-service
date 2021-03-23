@@ -933,6 +933,31 @@ public class AdiminstrativeController {
     @GetMapping("/user/{userId}/tags")
     public List<OrgTag> getOrgTags(@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode){
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
-        return orgTagService.getOrgTags(tenantOrg.getId());
+        List<OrgTag> tags = orgTagService.getOrgTags(tenantOrg.getId());
+        for(OrgTag tag : tags){
+            if(grantService.isTagInUse(tag.getId())){
+                tag.setUsed(true);
+            }else{
+                tag.setUsed(false);
+            }
+        }
+        return tags;
+    }
+
+    @PutMapping("/user/{userId}/tags")
+    public OrgTag updateOrgTag(@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode,@RequestBody OrgTag tag){
+        OrgTag existingTag = orgTagService.getOrgTagById(tag.getId());
+        existingTag.setUsed(tag.getUsed());
+        existingTag.setName(tag.getName());
+        existingTag.setDisabled(tag.getDisabled());
+
+        existingTag = orgTagService.save(existingTag);
+        return existingTag;
+    }
+
+    @DeleteMapping("/user/{userId}/tags/{tagId}")
+    public void deleteOrgTag(@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable Long tagId){
+        OrgTag existingTag = orgTagService.getOrgTagById(tagId);
+        orgTagService.delete(existingTag);
     }
 }

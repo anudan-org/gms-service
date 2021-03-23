@@ -24,4 +24,12 @@ public class OrgTagService {
     public OrgTag getOrgTagById(Long id){
         return orgTagRepository.findById(id).get();
     }
+
+    public OrgTag save(OrgTag existingTag) {
+        return orgTagRepository.save(existingTag);
+    }
+
+    public void delete(OrgTag existingTag) {
+        orgTagRepository.delete(existingTag);
+    }
 }

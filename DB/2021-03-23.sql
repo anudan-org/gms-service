@@ -1,0 +1,1 @@
+alter table org_tags add column disabled boolean default false;
