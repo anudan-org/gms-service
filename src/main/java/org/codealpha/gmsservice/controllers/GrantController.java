@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.controllers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
@@ -2954,7 +2955,35 @@ public class GrantController {
         Long tenantId = organizationService.findOrganizationByTenantCode(tenantCode).getId();
         List<DataExportConfig> exportConfigs = exportConfigService.getDataExportConfigForTenantByCategory("ACTIVE_GRANTS_DETAILS",tenantId);
         for(DataExportConfig exportConfig: exportConfigs){
+
             String q = exportConfig.getQuery().replaceAll("%tenantId%",String.valueOf(tenantId));
+            if(q.indexOf("%grantTags%")>=0){
+                PreparedStatement ps = null;
+                String grantsTagsQuery = "select string_agg(concat('\"',name,'\" as \"Tag - ',name,'\"'),',') from org_tags where tenant=%tenantId% group by tenant";
+                grantsTagsQuery = grantsTagsQuery.replaceAll("%tenantId%",String.valueOf(tenantId));
+
+                ps = conn.prepareStatement(grantsTagsQuery);
+                ResultSet grantTagsSelectStatement =  ps.executeQuery();
+                String tagsSelect = null;
+                while(grantTagsSelectStatement.next()){
+                    tagsSelect = grantTagsSelectStatement.getString("string_agg");
+                }
+                q = q.replaceAll("%grantTags%",tagsSelect);
+            }
+
+            if(q.indexOf("%grantTagDefs%")>=0){
+                PreparedStatement ps = null;
+                String grantsTagsDefQuery = "select string_agg(concat('\"',name,'\" text'),',') from org_tags where tenant=%tenantId% group by tenant";
+                grantsTagsDefQuery = grantsTagsDefQuery.replaceAll("%tenantId%",String.valueOf(tenantId));
+
+                ps = conn.prepareStatement(grantsTagsDefQuery);
+                ResultSet grantTagsDefsStatement =  ps.executeQuery();
+                String tagsDefs = null;
+                while(grantTagsDefsStatement.next()){
+                    tagsDefs = grantTagsDefsStatement.getString("string_agg");
+                }
+                q = q.replaceAll("%grantTagDefs%",tagsDefs);
+            }
             exportConfig.setQuery(q);
 
             PreparedStatement activeGrantsStatement =  conn.prepareStatement(exportConfig.getQuery());

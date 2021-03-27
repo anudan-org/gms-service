@@ -13,6 +13,8 @@ public class DataExportConfig {
     private String description;
     @Column
     private String query;
+    @Column
+    private String params;
 
     public Long getId() {
         return id;
@@ -44,5 +46,13 @@ public class DataExportConfig {
 
     public void setQuery(String query) {
         this.query = query;
+    }
+
+    public String getParams() {
+        return params;
+    }
+
+    public void setParams(String params) {
+        this.params = params;
     }
 }
