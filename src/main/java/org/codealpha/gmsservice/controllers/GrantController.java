@@ -2954,6 +2954,11 @@ public class GrantController {
 
         Long tenantId = organizationService.findOrganizationByTenantCode(tenantCode).getId();
         List<DataExportConfig> exportConfigs = exportConfigService.getDataExportConfigForTenantByCategory("ACTIVE_GRANTS_DETAILS",tenantId);
+
+        List<String[]> summary = new ArrayList<>();
+        summary.add(new String[]{"Summary for","Extract Requested By","Extract Requested On","Records Retrieved"});
+        String orgName = organizationService.get(tenantId).getName();
+        String dt = new SimpleDateFormat("dd-MM-yyyy").format(DateTime.now().toDate());
         for(DataExportConfig exportConfig: exportConfigs){
 
             String q = exportConfig.getQuery().replaceAll("%tenantId%",String.valueOf(tenantId));
@@ -2990,15 +2995,30 @@ public class GrantController {
 
             ResultSet activeGrants = activeGrantsStatement.executeQuery();
             //BufferedWriter out = new BufferedWriter(new FileWriter("result.csv"));
-            String filename = exportConfig.getName()+"_"+new SimpleDateFormat("dd-MM-yyyy").format(DateTime.now().toDate())+".csv";
+
+
+            String filename = orgName+"_" + exportConfig.getName()+"_"+dt+".csv";
+            ZipEntry entry = new ZipEntry(filename);
+
+            //Summary CSV
+
+            //End of Summary CSV
+            zipOut.putNextEntry(entry);
+            CSVWriter writer = new CSVWriter(new OutputStreamWriter(zipOut));
+            int count = writer.writeAll(activeGrants,true);
+            summary.add(new String[]{orgName+"_" + exportConfig.getName()+"_"+dt,userService.getUserById(userId).getFirstName().concat(" ").concat(userService.getUserById(userId).getLastName()),dt,String.valueOf(count)});
+            writer.flush();
+            //zipOut.closeEntry();
+
+        }
+            String filename = orgName+"_Extract_Summary_" +dt+".csv";
             ZipEntry entry = new ZipEntry(filename);
             zipOut.putNextEntry(entry);
             CSVWriter writer = new CSVWriter(new OutputStreamWriter(zipOut));
-            writer.writeAll(activeGrants,true);
+            writer.writeAll(summary);
+            //writer.writeAll(summaryDetails);
             writer.flush();
             zipOut.closeEntry();
-
-        }
             zipOut.close();
 
 
