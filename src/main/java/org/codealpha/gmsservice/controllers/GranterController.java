@@ -117,7 +117,7 @@ public class GranterController {
 
 	}
 
-	@PostMapping(value = "/user/{userId}/onboard/{grantName}/slug/{tenantSlug}/granterUser/{granterUserEmail}", consumes = {
+	@PostMapping(value = "/user/{userId}/onboard/{grantName}/slug/{tenantSlug}/granterUser/{granterUserEmail}/{refOrgCode}", consumes = {
 			"multipart/form-data" })
 	@ApiOperation(value = "Onboard new granter with basic details", notes = "Currently harcoded users and roles for the newly created Granter is implemented. This feature will be enhanced in the future")
 	public Organization onBoardGranter(
@@ -125,7 +125,8 @@ public class GranterController {
 			@ApiParam(name = "slug", value = "Name of granter slug. This will be used to create the Tenant Code as well us the subdomain") @PathVariable("tenantSlug") String slug,
 			@ApiParam(name = "image", value = "Uploaded image file to be used as granter's logo") @RequestParam(value = "file") MultipartFile image,
 			@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
-			@ApiParam(name = "userEmail", value = "Email Id of primary admin of Granter organization to whom email invite will be sent") @PathVariable("granterUserEmail") String userEmail) {
+			@ApiParam(name = "userEmail", value = "Email Id of primary admin of Granter organization to whom email invite will be sent") @PathVariable("granterUserEmail") String userEmail,
+			@PathVariable("refOrgCode") String refOrgCode) {
 
 		Organization org = new Granter();
 		org.setCode(slug.toUpperCase());
@@ -236,8 +237,8 @@ public class GranterController {
 		 * workflowService.saveWorkflow(workflow);
 		 */
 
-		buildWorkflowsBasedOnTempOrg(org);
-		buildDefaultTemplates(org, organizationService.findOrganizationByTenantCode("TEMPORG"));
+		buildWorkflowsBasedOnTempOrg(org,refOrgCode);
+		buildDefaultTemplates(org, organizationService.findOrganizationByTenantCode(refOrgCode));
 
 		return org;
 	}
@@ -330,9 +331,9 @@ public class GranterController {
 		}
 	}
 
-	private void buildWorkflowsBasedOnTempOrg(Organization org) {
+	private void buildWorkflowsBasedOnTempOrg(Organization org,String refOrgCode) {
 
-		Organization tempOrg = organizationService.findOrganizationByTenantCode("TEMPORG");
+		Organization tempOrg = organizationService.findOrganizationByTenantCode(refOrgCode);
 		Workflow tempGrantWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg.getId(), "GRANT");
 		Workflow tempReportWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg.getId(), "REPORT");
 		Workflow tempDisbursementWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg.getId(), "DISBURSEMENT");
