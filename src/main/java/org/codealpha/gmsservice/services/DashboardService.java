@@ -85,6 +85,8 @@ public class DashboardService {
 
     @Autowired
     private DisbursementService disbursementService;
+    @Autowired
+    private OrgTagService orgTagService;
 
     @Value("${spring.timezone}")
     private String timezone;
@@ -318,6 +320,18 @@ public class DashboardService {
                             }
                         }*/
                     }
+
+                    List<GrantTag> grantTags = grantService.getTagsForGrant(grant.getId());
+                    List<GrantTagVO> grantTagsVoList = new ArrayList<>();
+                    for(GrantTag tag: grantTags){
+                        GrantTagVO vo =new GrantTagVO();
+                        vo.setGrantId(grant.getId());
+                        vo.setId(tag.getId());
+                        vo.setOrgTagId(tag.getOrgTagId());
+                        vo.setTagName(orgTagService.getOrgTagById(tag.getOrgTagId()).getName());
+                        grantTagsVoList.add(vo);
+                    }
+                    grant.setGrantTags(grantTagsVoList);
 
                     grantList.add(grant);
                     tenant.setGrants(grantList);

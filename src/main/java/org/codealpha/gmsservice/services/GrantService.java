@@ -108,6 +108,12 @@ public class GrantService {
     private DisabledUsersEntityRepository disabledUsersEntityRepository;
     @Autowired
     private GrantTypeRepository grantTypeRepository;
+    @Autowired
+    private  GrantTagRepository grantTagRepository;
+    @Autowired
+    private OrgTagService orgTagService;
+    @Autowired
+    private OrgTagRepository orgTagRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -814,6 +820,18 @@ public class GrantService {
                 }
             }*/
         }
+
+        List<GrantTag> grantTags = getTagsForGrant(grant.getId());
+        List<GrantTagVO> grantTagsVoList = new ArrayList<>();
+        for(GrantTag tag: grantTags){
+            GrantTagVO vo =new GrantTagVO();
+            vo.setGrantId(grant.getId());
+            vo.setId(tag.getId());
+            vo.setOrgTagId(tag.getOrgTagId());
+            vo.setTagName(orgTagService.getOrgTagById(tag.getOrgTagId()).getName());
+            grantTagsVoList.add(vo);
+        }
+        grant.setGrantTags(grantTagsVoList);
         return grant;
     }
 
@@ -867,5 +885,25 @@ public class GrantService {
 
     public List<Grant> getAllGrantsForGranter(Long granterId){
         return grantRepository.getAllGrantsForGranter(granterId);
+    }
+
+    public List<GrantTag> getTagsForGrant(Long grantId){
+        return grantTagRepository.getTagsForGrant(grantId);
+    }
+
+    public GrantTag attachTagToGrant(GrantTag tag){
+        return grantTagRepository.save(tag);
+    }
+
+    public void detachTagToGrant(GrantTag tag){
+        grantTagRepository.delete(tag);
+    }
+
+    public GrantTag getGrantTagById(Long id){
+        return grantTagRepository.findById(id).get();
+    }
+
+    public boolean isTagInUse(Long orgTagId){
+        return grantTagRepository.isTagInUse(orgTagId);
     }
 }

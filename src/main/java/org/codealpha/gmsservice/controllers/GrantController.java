@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.controllers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
@@ -135,6 +136,8 @@ public class GrantController {
     private UserRoleService userRoleService;
     @Autowired
     private ReleaseService releaseService;
+    @Autowired
+    private OrgTagService orgTagService;
 
     @Autowired
     private ReportService reportService;
@@ -1029,6 +1032,18 @@ public class GrantController {
                 }
             }
         }
+
+        List<GrantTag> grantTags = grantService.getTagsForGrant(grant.getId());
+        List<GrantTagVO> grantTagsVoList = new ArrayList<>();
+        for(GrantTag tag: grantTags){
+            GrantTagVO vo =new GrantTagVO();
+            vo.setGrantId(grant.getId());
+            vo.setId(tag.getId());
+            vo.setOrgTagId(tag.getOrgTagId());
+            vo.setTagName(orgTagService.getOrgTagById(tag.getOrgTagId()).getName());
+            grantTagsVoList.add(vo);
+        }
+        grant.setGrantTags(grantTagsVoList);
         return grant;
     }
 
@@ -2939,23 +2954,71 @@ public class GrantController {
 
         Long tenantId = organizationService.findOrganizationByTenantCode(tenantCode).getId();
         List<DataExportConfig> exportConfigs = exportConfigService.getDataExportConfigForTenantByCategory("ACTIVE_GRANTS_DETAILS",tenantId);
+
+        List<String[]> summary = new ArrayList<>();
+        summary.add(new String[]{"Summary for","Extract Requested By","Extract Requested On","Records Retrieved"});
+        String orgName = organizationService.get(tenantId).getName();
+        String dt = new SimpleDateFormat("dd-MM-yyyy").format(DateTime.now().toDate());
         for(DataExportConfig exportConfig: exportConfigs){
+
             String q = exportConfig.getQuery().replaceAll("%tenantId%",String.valueOf(tenantId));
+            if(q.indexOf("%grantTags%")>=0){
+                PreparedStatement ps = null;
+                String grantsTagsQuery = "select string_agg(concat('\"',name,'\" as \"Tag - ',name,'\"'),',') from org_tags where tenant=%tenantId% group by tenant";
+                grantsTagsQuery = grantsTagsQuery.replaceAll("%tenantId%",String.valueOf(tenantId));
+
+                ps = conn.prepareStatement(grantsTagsQuery);
+                ResultSet grantTagsSelectStatement =  ps.executeQuery();
+                String tagsSelect = null;
+                while(grantTagsSelectStatement.next()){
+                    tagsSelect = grantTagsSelectStatement.getString("string_agg");
+                }
+                q = q.replaceAll("%grantTags%",tagsSelect);
+            }
+
+            if(q.indexOf("%grantTagDefs%")>=0){
+                PreparedStatement ps = null;
+                String grantsTagsDefQuery = "select string_agg(concat('\"',name,'\" text'),',') from org_tags where tenant=%tenantId% group by tenant";
+                grantsTagsDefQuery = grantsTagsDefQuery.replaceAll("%tenantId%",String.valueOf(tenantId));
+
+                ps = conn.prepareStatement(grantsTagsDefQuery);
+                ResultSet grantTagsDefsStatement =  ps.executeQuery();
+                String tagsDefs = null;
+                while(grantTagsDefsStatement.next()){
+                    tagsDefs = grantTagsDefsStatement.getString("string_agg");
+                }
+                q = q.replaceAll("%grantTagDefs%",tagsDefs);
+            }
             exportConfig.setQuery(q);
 
             PreparedStatement activeGrantsStatement =  conn.prepareStatement(exportConfig.getQuery());
 
             ResultSet activeGrants = activeGrantsStatement.executeQuery();
             //BufferedWriter out = new BufferedWriter(new FileWriter("result.csv"));
-            String filename = exportConfig.getName()+"_"+new SimpleDateFormat("dd-MM-yyyy").format(DateTime.now().toDate())+".csv";
+
+
+            String filename = orgName+"_" + exportConfig.getName()+"_"+dt+".csv";
+            ZipEntry entry = new ZipEntry(filename);
+
+            //Summary CSV
+
+            //End of Summary CSV
+            zipOut.putNextEntry(entry);
+            CSVWriter writer = new CSVWriter(new OutputStreamWriter(zipOut));
+            int count = writer.writeAll(activeGrants,true);
+            summary.add(new String[]{orgName+"_" + exportConfig.getName()+"_"+dt,userService.getUserById(userId).getFirstName().concat(" ").concat(userService.getUserById(userId).getLastName()),dt,String.valueOf(count)});
+            writer.flush();
+            //zipOut.closeEntry();
+
+        }
+            String filename = orgName+"_Extract_Summary_" +dt+".csv";
             ZipEntry entry = new ZipEntry(filename);
             zipOut.putNextEntry(entry);
             CSVWriter writer = new CSVWriter(new OutputStreamWriter(zipOut));
-            writer.writeAll(activeGrants,true);
+            writer.writeAll(summary);
+            //writer.writeAll(summaryDetails);
             writer.flush();
             zipOut.closeEntry();
-
-        }
             zipOut.close();
 
 
@@ -3250,5 +3313,27 @@ public class GrantController {
     public List<GrantType> getGrantTypes(@RequestHeader("X-TENANT-CODE") String tenantCode){
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         return grantService.getGrantTypesForTenantOrg(organizationService.findOrganizationByTenantCode(tenantCode).getId());
+    }
+
+    @PostMapping("/{grantId}/tags/{orgTagId}")
+    public GrantTagVO attachTagToGrant(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId,
+                                       @RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable("orgTagId")Long orgTagId){
+
+        GrantTag tag = new GrantTag();
+        tag.setGrantId(grantId);
+        tag.setOrgTagId(orgTagId);
+
+        tag = grantService.attachTagToGrant(tag);
+
+        return new GrantTagVO(tag.getId(),orgTagService.getOrgTagById(orgTagId).getName(),grantId,orgTagId);
+
+    }
+
+    @DeleteMapping("/{grantId}/tags/{tagId}")
+    public void detachTagFromGrant(@PathVariable("userId") Long userId, @PathVariable("grantId") Long grantId,
+                                       @RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable("tagId")Long tagId){
+        GrantTag grantTag = grantService.getGrantTagById(tagId);
+        grantService.detachTagToGrant(grantTag);
+
     }
 }

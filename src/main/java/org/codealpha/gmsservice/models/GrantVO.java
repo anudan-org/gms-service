@@ -17,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
+import javax.persistence.Transient;
+
 public class GrantVO {
 
   private Long id;
@@ -59,6 +61,7 @@ public class GrantVO {
   private Double approvedDisbursementsTotal = 0d;
   private int approvedReportsForGrant;
   private Long grantTypeId;
+  private List<GrantTagVO> grantTags;
   @JsonIgnore
   private List<GrantStringAttribute> stringAttributes;
 
@@ -511,5 +514,13 @@ public class GrantVO {
 
   public void setGrantTypeId(Long grantTypeId) {
     this.grantTypeId = grantTypeId;
+  }
+
+  public List<GrantTagVO> getGrantTags() {
+    return grantTags;
+  }
+
+  public void setGrantTags(List<GrantTagVO> grantTags) {
+    this.grantTags = grantTags;
   }
 }

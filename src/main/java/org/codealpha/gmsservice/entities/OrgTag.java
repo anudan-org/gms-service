@@ -11,6 +11,10 @@ public class OrgTag {
     private String name;
     @Column
     private Long tenant;
+    @Column
+    private Boolean disabled;
+    @Transient
+    private Boolean used;
 
     public Long getId() {
         return id;
@@ -34,5 +38,21 @@ public class OrgTag {
 
     public void setTenant(Long tenant) {
         this.tenant = tenant;
+    }
+
+    public Boolean getDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(Boolean disabled) {
+        this.disabled = disabled;
+    }
+
+    public Boolean getUsed() {
+        return used;
+    }
+
+    public void setUsed(Boolean used) {
+        this.used = used;
     }
 }
