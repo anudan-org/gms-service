@@ -114,7 +114,7 @@ public class DisbursementService {
                 .findByDisbursementId(disbursement.getId());
 
         for (DisbursementAssignment ass : disbursementAssignments) {
-            if(ass.getOwner()!=null) {
+            if(ass.getOwner()!=null && ass.getOwner()!=0) {
                 ass.setAssignmentUser(userService.getUserById(ass.getOwner()));
             }
             if (disbursementRepository.findDisbursementsThatMovedAtleastOnce(ass.getDisbursementId()).size() > 0) {
