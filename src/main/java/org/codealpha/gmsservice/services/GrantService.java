@@ -22,6 +22,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.xml.crypto.Data;
+
 @Service
 public class GrantService {
 
@@ -114,6 +116,8 @@ public class GrantService {
     private OrgTagService orgTagService;
     @Autowired
     private OrgTagRepository orgTagRepository;
+    @Autowired
+    private DataExportSummaryRepository dataExportSummaryRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -905,5 +909,9 @@ public class GrantService {
 
     public boolean isTagInUse(Long orgTagId){
         return grantTagRepository.isTagInUse(orgTagId);
+    }
+
+    public DataExportSummary saveExportSummary(DataExportSummary summary){
+        return dataExportSummaryRepository.save(summary);
     }
 }

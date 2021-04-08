@@ -13,6 +13,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -141,6 +142,7 @@ public class GrantController {
 
     @Autowired
     private ReportService reportService;
+
 
     @Value("${spring.upload-file-location}")
     private String uploadLocation;
@@ -2958,7 +2960,9 @@ public class GrantController {
         List<String[]> summary = new ArrayList<>();
         summary.add(new String[]{"Summary for","Extract Requested By","Extract Requested On","Records Retrieved"});
         String orgName = organizationService.get(tenantId).getName();
-        String dt = new SimpleDateFormat("dd-MM-yyyy").format(DateTime.now().toDate());
+        Date extractDate = DateTime.now().toDate();
+        String dt = new SimpleDateFormat("dd-MM-yyyy").format(extractDate);
+        List<Long> summaryListIds = new ArrayList<>();
         for(DataExportConfig exportConfig: exportConfigs){
 
             String q = exportConfig.getQuery().replaceAll("%tenantId%",String.valueOf(tenantId));
@@ -2978,20 +2982,30 @@ public class GrantController {
 
             if(q.indexOf("%grantTagDefs%")>=0){
                 PreparedStatement ps = null;
+                PreparedStatement ps2 = null;
                 String grantsTagsDefQuery = "select string_agg(concat('\"',name,'\" text'),',') from org_tags where tenant=%tenantId% group by tenant";
+                String grantsTagsSelectDefQuery = "select string_agg(concat('string_agg(\"',name,'\",'','') \"',name,'\"'),',') from org_tags where tenant=%tenantId% group by tenant";
                 grantsTagsDefQuery = grantsTagsDefQuery.replaceAll("%tenantId%",String.valueOf(tenantId));
+                grantsTagsSelectDefQuery = grantsTagsSelectDefQuery.replaceAll("%tenantId%",String.valueOf(tenantId));
 
                 ps = conn.prepareStatement(grantsTagsDefQuery);
+                ps2 = conn.prepareStatement(grantsTagsSelectDefQuery);
                 ResultSet grantTagsDefsStatement =  ps.executeQuery();
+                ResultSet grantTagsSelectDefsStatement =  ps2.executeQuery();
                 String tagsDefs = null;
+                String tagsSelectDefs = null;
                 while(grantTagsDefsStatement.next()){
                     tagsDefs = grantTagsDefsStatement.getString("string_agg");
                 }
+                while(grantTagsSelectDefsStatement.next()){
+                    tagsSelectDefs = grantTagsSelectDefsStatement.getString("string_agg");
+                }
                 q = q.replaceAll("%grantTagDefs%",tagsDefs);
+                q = q.replaceAll("%grantTagSelectDefs%",tagsSelectDefs);
             }
-            exportConfig.setQuery(q);
-
-            PreparedStatement activeGrantsStatement =  conn.prepareStatement(exportConfig.getQuery());
+            //exportConfig.setQuery(q);
+            //String finalQuery = new String(exportConfig.getQuery());
+            PreparedStatement activeGrantsStatement =  conn.prepareStatement(q);
 
             ResultSet activeGrants = activeGrantsStatement.executeQuery();
             //BufferedWriter out = new BufferedWriter(new FileWriter("result.csv"));
@@ -3006,16 +3020,25 @@ public class GrantController {
             zipOut.putNextEntry(entry);
             CSVWriter writer = new CSVWriter(new OutputStreamWriter(zipOut));
             int count = writer.writeAll(activeGrants,true);
-            summary.add(new String[]{orgName+"_" + exportConfig.getName()+"_"+dt,userService.getUserById(userId).getFirstName().concat(" ").concat(userService.getUserById(userId).getLastName()),dt,String.valueOf(count)});
+            //summary.add(new String[]{orgName+"_" + exportConfig.getName()+"_"+dt,userService.getUserById(userId).getFirstName().concat(" ").concat(userService.getUserById(userId).getLastName()),dt,String.valueOf(count)});
+            DataExportSummary exportSummary = new DataExportSummary(orgName+"_" + exportConfig.getName()+"_"+dt,userService.getUserById(userId).getFirstName().concat(" ").concat(userService.getUserById(userId).getLastName()),extractDate,count-1);
+            exportSummary = grantService.saveExportSummary(exportSummary);
+            summaryListIds.add(exportSummary.getId());
             writer.flush();
             //zipOut.closeEntry();
 
         }
+
+            String summaryQuery = "select summary_for as \"Summary For\",extract_request_by as \"Extract Requested By\",extract_requested_on as \"Extract Requested On\",records_retrieved as \"Records Retrieved\" from data_extract_logs where id in (%logIds%)";
+            summaryQuery = summaryQuery.replaceAll("%logIds%", StringUtils.join(summaryListIds.toArray(new Long[summaryListIds.size()]),","));
+
+            PreparedStatement summaryStmnt = conn.prepareStatement(summaryQuery);
+            ResultSet summaryResult = summaryStmnt.executeQuery();
             String filename = orgName+"_Extract_Summary_" +dt+".csv";
             ZipEntry entry = new ZipEntry(filename);
             zipOut.putNextEntry(entry);
             CSVWriter writer = new CSVWriter(new OutputStreamWriter(zipOut));
-            writer.writeAll(summary);
+            writer.writeAll(summaryResult,true);
             //writer.writeAll(summaryDetails);
             writer.flush();
             zipOut.closeEntry();
