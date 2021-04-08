@@ -3003,9 +3003,9 @@ public class GrantController {
                 q = q.replaceAll("%grantTagDefs%",tagsDefs);
                 q = q.replaceAll("%grantTagSelectDefs%",tagsSelectDefs);
             }
-            exportConfig.setQuery(q);
-
-            PreparedStatement activeGrantsStatement =  conn.prepareStatement(exportConfig.getQuery());
+            //exportConfig.setQuery(q);
+            //String finalQuery = new String(exportConfig.getQuery());
+            PreparedStatement activeGrantsStatement =  conn.prepareStatement(q);
 
             ResultSet activeGrants = activeGrantsStatement.executeQuery();
             //BufferedWriter out = new BufferedWriter(new FileWriter("result.csv"));
