@@ -39,7 +39,7 @@ public class Grant {
   @ApiModelProperty(name = "grantorOrganization", value = "Granter or tenant organization associated with the grant", dataType = "Granter")
   private Granter grantorOrganization;
 
-  @OneToMany(mappedBy = "grant")
+  @Transient
   @JsonProperty("stringAttribute")
   @ApiModelProperty(name = "stringAttributes", value = "Grant template structure with values", dataType = "List<GrantStringAttributes>")
   private List<GrantStringAttribute> stringAttributes;

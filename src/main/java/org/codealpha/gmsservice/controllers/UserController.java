@@ -173,7 +173,8 @@ public class UserController {
 
     @GetMapping("/{userId}/dashboard")
     public ResponseEntity<DashboardService> getDashbaord(@RequestHeader("X-TENANT-CODE") String tenantCode,
-                                                         @PathVariable("userId") Long userId) {
+                                                         @PathVariable("userId") Long userId,
+                                                         @RequestParam(value = "forStatus",required = false,defaultValue = "inprogress")String forStatus) {
 
         dashboardValidator.validate(userId, tenantCode);
         User user = userService.getUserById(userId);
@@ -186,7 +187,7 @@ public class UserController {
                 grants = granteeService.getGrantsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getUserRoles());
                 return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
             case "GRANTER":
-                grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId());
+                grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId(),forStatus);
                 return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
         }
 
