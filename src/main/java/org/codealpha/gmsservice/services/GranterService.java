@@ -38,7 +38,7 @@ public class GranterService {
     return (List<Granter>) granterRepository.findAll();
   }
 
-  public List<Grant> getGrantsOfGranterForGrantor(Long granterOrgId, Organization tenantOrg, Long userId) {
+  public List<Grant> getGrantsOfGranterForGrantor(Long granterOrgId, Organization tenantOrg, Long userId, String forStatus) {
 
     List<Grant> allGrants = new ArrayList<>();
 
@@ -54,7 +54,13 @@ public class GranterService {
       if (!isAdmin) {
         allGrants.addAll(grantRepository.findAssignedGrantsOfGranter(granterOrgId, userId));
       } else {
-        allGrants.addAll(grantRepository.findGrantsForAdmin(granterOrgId, userId));
+        if(forStatus.equalsIgnoreCase("inprogress")) {
+          allGrants.addAll(grantRepository.findInProgressGrantsForAdmin(granterOrgId, userId));
+        }else if(forStatus.equalsIgnoreCase("active")) {
+          allGrants.addAll(grantRepository.findActiveGrantsForAdmin(granterOrgId));
+        }else if(forStatus.equalsIgnoreCase("closed")) {
+          allGrants.addAll(grantRepository.findClosedGrantsForAdmin(granterOrgId));
+        }
       }
     } else if ("PLATFORM".equalsIgnoreCase(tenantOrg.getType())) {
       allGrants.addAll(grantRepository.findGrantsOfGranter(granterOrgId));

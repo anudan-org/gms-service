@@ -221,7 +221,7 @@ public class DashboardService {
                                     .compareTo(Long.valueOf(b.getAttributeOrder())));
                         }
                     }
-                    grant.setSecurityCode(grantService.buildHashCode(grant));
+                    //grant.setSecurityCode(grantService.buildHashCode(grant));
                     grant.setProjectDocumentsCount(grantService.getGrantsDocuments(grant.getId()).size());
 
                     List<WorkflowStatus> workflowStatuses = workflowStatusRepository
