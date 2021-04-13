@@ -25,10 +25,10 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
     @Query(value = "select distinct A.* from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=?1 and A.deleted=false and ( (B.anchor=true and B.assignments=?2) or (B.assignments=?2 and B.state_id=A.grant_status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 and ?2 = any (array(select assignments from grant_assignments where grant_id=A.id))) or (C.internal_status='REVIEW' and ?2 = any( array(select assignments from grant_assignments where grant_id=A.id))) or (C.internal_status='ACTIVE' or C.internal_status='CLOSED' ) or ((select count(*) from grant_history where id=A.id)>0) ) order by A.updated_at desc", nativeQuery = true)
     public List<Grant> findGrantsForAdmin(Long granterId, Long userId);
 
-    @Query(value="select distinct A.* from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=?1 and A.deleted=false and ( (B.anchor=true and B.assignments=?2) or (B.assignments=?2 and B.state_id=A.grant_status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 ) or (C.internal_status='REVIEW') ) order by A.updated_at desc",nativeQuery = true)
+    @Query(value="select distinct A.*, approved_reports_for_grant(a.id) approved_reports_for_grant, disbursed_amount_for_grant(a.id) approved_disbursements_total, project_documents_for_grant(a.id) project_documents_count from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=?1 and A.deleted=false and ( (B.anchor=true and B.assignments=?2) or (B.assignments=?2 and B.state_id=A.grant_status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 ) or (C.internal_status='REVIEW') ) order by A.updated_at desc",nativeQuery = true)
     public List<Grant> findInProgressGrantsForAdmin(Long granterId,Long userId);
 
-    @Query(value="select distinct A.* from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=?1 and A.deleted=false and ( (C.internal_status='ACTIVE') ) order by A.updated_at desc",nativeQuery = true)
+    @Query(value="select distinct A.*,approved_reports_for_grant(a.id) approved_reports_for_grant, disbursed_amount_for_grant(a.id) approved_disbursements_total, project_documents_for_grant(a.id) project_documents_count from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=?1 and A.deleted=false and ( (C.internal_status='ACTIVE') ) order by A.updated_at desc\n",nativeQuery = true)
     public List<Grant> findActiveGrantsForAdmin(Long granterId);
 
     @Query(value="select distinct A.* from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=?1 and A.deleted=false and ( (C.internal_status='CLOSED') ) order by A.updated_at desc",nativeQuery = true)
@@ -73,4 +73,7 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
 
     @Query(value = "select * from grants where grantor_org_id=?1",nativeQuery = true)
     List<Grant> getAllGrantsForGranter(Long granterId);
+
+    @Query(value = "select g.* from grants g inner join workflow_statuses w on w.id=g.grant_status_id where g.grantor_org_id=?1 and w.internal_status=?2 and g.deleted=false",nativeQuery = true)
+    List<Grant> findGrantsByStatus(Long granterId,String status);
 }

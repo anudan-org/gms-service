@@ -350,7 +350,7 @@ public class UserController {
         }
         Filter closedFilter = getFilterForGrantsByStatus(tenantOrg, "CLOSED");
         if (closedFilter != null) {
-            categoryFilters.add(getFilterForGrantsByStatus(tenantOrg, "CLOSED"));
+            categoryFilters.add(closedFilter);
         }
 
         dashboardCategory = new Category("CEO", categorySummary, categoryFilters);

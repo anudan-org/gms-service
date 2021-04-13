@@ -122,39 +122,6 @@ public class DashboardService {
                         || (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"))) {
                     List<Grant> grantList = tenant.getGrants();
 
-                    grant.setActionAuthorities(
-                            workflowPermissionService.getGrantActionPermissions(grant.getGrantorOrganization().getId(),
-                                    user.getUserRoles(), grant.getGrantStatus().getId(), user.getId(), grant.getId()));
-
-                    grant.setFlowAuthorities(workflowPermissionService
-                            .getGrantFlowPermissions(grant.getGrantStatus().getId(), user.getId(), grant.getId()));
-
-                    for (Submission submission : grant.getSubmissions()) {
-                        submission.setActionAuthorities(workflowPermissionService.getSubmissionActionPermission(
-                                grant.getGrantorOrganization().getId(), user.getUserRoles()));
-
-                        AppConfig submissionWindow = appConfigService.getAppConfigForGranterOrg(
-                                submission.getGrant().getGrantorOrganization().getId(),
-                                AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS);
-                        Date submissionWindowStart = new DateTime(submission.getSubmitBy(),
-                                DateTimeZone.forID(timezone))
-                                        .minusDays(Integer.valueOf(submissionWindow.getConfigValue()) + 1).toDate();
-
-                        List<WorkFlowPermission> flowPermissions = workflowPermissionService
-                                .getSubmissionFlowPermissions(grant.getGrantorOrganization().getId(),
-                                        user.getUserRoles(), submission.getSubmissionStatus().getId());
-
-                        if (!flowPermissions.isEmpty() && DateTime.now().toDate().after(submissionWindowStart)) {
-                            submission.setFlowAuthorities(flowPermissions);
-                        }
-
-                        if (DateTime.now().toDate().after(submissionWindowStart)) {
-                            submission.setOpenForReporting(true);
-                        } else {
-                            submission.setOpenForReporting(false);
-                        }
-                    }
-
                     GrantVO grantVO = new GrantVO();
                     grantVO = grantVO.build(grant, grantService.getGrantSections(grant), workflowPermissionService,
                             user, appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
@@ -222,7 +189,7 @@ public class DashboardService {
                         }
                     }
                     //grant.setSecurityCode(grantService.buildHashCode(grant));
-                    grant.setProjectDocumentsCount(grantService.getGrantsDocuments(grant.getId()).size());
+                    /*grant.setProjectDocumentsCount(grantService.getGrantsDocuments(grant.getId()).size());
 
                     List<WorkflowStatus> workflowStatuses = workflowStatusRepository
                             .getAllTenantStatuses("DISBURSEMENT", grant.getGrantorOrganization().getId());
@@ -231,7 +198,7 @@ public class DashboardService {
                             .collect(Collectors.toList());
                     List<Long> statusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
                             .collect(Collectors.toList());
-                    /*List<Disbursement> approvedDisbursements = disbursementRepository
+                    *//*List<Disbursement> approvedDisbursements = disbursementRepository
                             .getDisbursementByGrantAndStatuses(grant.getId(), statusIds);
                     List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
                     if (approvedDisbursements != null) {
@@ -243,9 +210,9 @@ public class DashboardService {
                                 approvedActualDisbursements.addAll(approvedActuals);
                             }
                         }
-                    }*/
+                    }*//*
                     Double total = 0d;
-                    /*if (approvedActualDisbursements.size() > 0) {
+                    *//*if (approvedActualDisbursements.size() > 0) {
 
                         for (ActualDisbursement ad : approvedActualDisbursements) {
                             if (ad.getActualAmount() != null) {
@@ -253,13 +220,13 @@ public class DashboardService {
                             }
                         }
 
-                    }*/
+                    }*//*
                         //if(grant.getOrigGrantId()!=null){
                             total +=getAllLinkedGrantsDisbursementsTotal(grant,statusIds);
                         //}
-                    grant.setApprovedDisbursementsTotal(total);
+                    grant.setApprovedDisbursementsTotal(total);*/
 
-                    Optional<WorkflowStatus> reportApprovedStatus = workflowStatusService
+                    /*Optional<WorkflowStatus> reportApprovedStatus = workflowStatusService
                             .getTenantWorkflowStatuses("REPORT", tenantOrg.getId()).stream()
                             .filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
                     List<Report> reports = new ArrayList<>();
@@ -275,7 +242,7 @@ public class DashboardService {
                         }
                         // End
                         grant.setApprovedReportsForGrant(noOfReports);
-                    }
+                    }*/
 
                     if (grant.getOrigGrantId() != null
                             && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE")
@@ -409,7 +376,7 @@ public class DashboardService {
         List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
                 .collect(Collectors.toList());
 
-        List<Grant> activeGrants = grantRepository.findActiveGrants(granterId);
+        List<Grant> activeGrants = grantRepository.findGrantsByStatus(granterId,status);
         if (activeGrants != null && !activeGrants.isEmpty()) {
             for (Grant ag : activeGrants) {
                 disbursedAmount+= getAllLinkedGrantsDisbursementsTotal(ag,closedStatusIds);
@@ -504,6 +471,40 @@ public class DashboardService {
                     period = String.valueOf(grantDate.getYear() - 1) + " - " + String.valueOf(grantDate.getYear());
                     periods.put(grantDate.getYear() - 1, period);
                 }
+
+                //////
+                List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
+                        granterId);
+
+                List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
+                        .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
+                List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                        .collect(Collectors.toList());
+                List<Disbursement> allClosedDisbursements = new ArrayList<>();
+                List<Disbursement> closedDisbursements = disbursementRepository
+                        .getDisbursementByGrantAndStatuses(granterGrantSummaryDisbursed.getGrantId(), closedStatusIds);
+                allClosedDisbursements.addAll(closedDisbursements);
+
+                for (Disbursement cd : allClosedDisbursements) {
+                    List<ActualDisbursement> actualDisbursements = actualDisbursementRepository
+                            .findByDisbursementId(cd.getId());
+
+                    for(ActualDisbursement ad : actualDisbursements){
+                        DateTime actualDisbursementDate = new DateTime(ad.getDisbursementDate(),
+                                DateTimeZone.forID(timezone));
+                        DateTime calendarYearStart1 = new DateTime(DateTimeZone.forID(timezone)).withYear(actualDisbursementDate.getYear())
+                                .withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
+                        String period1 = null;
+                        if (actualDisbursementDate.isAfter(calendarYearStart1)) {
+                            period1 = String.valueOf(actualDisbursementDate.getYear()) + " - " + String.valueOf(actualDisbursementDate.getYear() + 1);
+                            periods.put(actualDisbursementDate.getYear(), period1);
+                        } else {
+                            period1 = String.valueOf(actualDisbursementDate.getYear() - 1) + " - " + String.valueOf(actualDisbursementDate.getYear());
+                            periods.put(actualDisbursementDate.getYear() - 1, period1);
+                        }
+                    }
+                }
+                ///
             }
         }
         return periods;
@@ -521,11 +522,11 @@ public class DashboardService {
         List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
                 .collect(Collectors.toList());
 
-        List<Grant> activeGrants = grantRepository.findActiveGrants(granterId);
-        if (activeGrants != null && !activeGrants.isEmpty()) {
+        List<Grant> grantsByStatus = grantRepository.findGrantsByStatus(granterId,status);
+        if (grantsByStatus != null && !grantsByStatus.isEmpty()) {
             List<Disbursement> allClosedDisbursements = new ArrayList<>();
 
-            for (Grant ag : activeGrants) {
+            for (Grant ag : grantsByStatus) {
                 List<Disbursement> closedDisbursements = disbursementRepository
                         .getDisbursementByGrantAndStatuses(ag.getId(), closedStatusIds);
                 allClosedDisbursements.addAll(closedDisbursements);
