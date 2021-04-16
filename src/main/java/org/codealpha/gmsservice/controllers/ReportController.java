@@ -104,21 +104,21 @@ public class ReportController {
     private GrantTypeService grantTypeService;
 
     @GetMapping("/")
-    public List<Report> getAllReports(@PathVariable("userId") Long userId,
+    public List<ReportCard> getAllReports(@PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode,
             @RequestParam(value = "q", required = false) String filterClause) {
         Organization org = null;
         User user = userService.getUserById(userId);
 
-        List<Report> reports = null;
+        List<ReportCard> reports = null;
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
             org = user.getOrganization();
             if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-DUE")) {
-                reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId(), "ACTIVE");
+                reports = reportService.getAllAssignedReportCardsForGranteeUser(userId, org.getId(), "ACTIVE");
             } else if (filterClause != null && filterClause.equalsIgnoreCase("SUBMITTED")) {
-                reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId(), "REVIEW");
+                reports = reportService.getAllAssignedReportCardsForGranteeUser(userId, org.getId(), "REVIEW");
             } else if (filterClause != null && filterClause.equalsIgnoreCase("APPROVED")) {
-                reports = reportService.getAllAssignedReportsForGranteeUser(userId, org.getId(), "CLOSED");
+                reports = reportService.getAllAssignedReportCardsForGranteeUser(userId, org.getId(), "CLOSED");
             }
         } else {
             org = organizationService.findOrganizationByTenantCode(tenantCode);
@@ -135,24 +135,24 @@ public class ReportController {
             }
             if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING")) {
                 if(!isAdmin) {
-                    reports = reportService.getUpcomingReportsForGranterUserByDateRange(userId, org.getId(), start, end);
+                    reports = reportService.getUpcomingReportCardsForGranterUserByDateRange(userId, org.getId(), start, end);
                 }else{
-                    reports = reportService.getUpcomingReportsForAdminGranterUserByDateRange(userId, org.getId(), start, end);
+                    reports = reportService.getUpcomingReportCardsForAdminGranterUserByDateRange(userId, org.getId(), start, end);
 
                 }
-                for (Report report : reports) {
-                    int futureReportsCount = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId,
+                for (ReportCard report : reports) {
+                    int futureReportsCount = reportService.getFutureReportCardsForGranterUserByDateRangeAndGrant(userId,
                             org.getId(), end, report.getGrant().getId()).size();
                     report.setFutureReportsCount(futureReportsCount);
                 }
             } else if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-FUTURE")) {
                 if(!isAdmin) {
-                    reports = reportService.getUpcomingFutureReportsForGranterUserByDate(userId, org.getId(), end);
+                    reports = reportService.getUpcomingFutureReportCardsForGranterUserByDate(userId, org.getId(), end);
                 }else{
-                    reports = reportService.getUpcomingFutureReportsForAdminGranterUserByDate(userId, org.getId(), end);
+                    reports = reportService.getUpcomingFutureReportCardsForAdminGranterUserByDate(userId, org.getId(), end);
                 }
-                Map<Long, Report> reportsHolder = new LinkedHashMap<Long, Report>();
-                for (Report report : reports) {
+                Map<Long, ReportCard> reportsHolder = new LinkedHashMap<Long, ReportCard>();
+                for (ReportCard report : reports) {
                     if (!reportsHolder.keySet().contains(report.getGrant().getId())) {
                         reportsHolder.put(report.getGrant().getId(), report);
                     }
@@ -161,55 +161,55 @@ public class ReportController {
                 reports = new ArrayList<>();
 
                 for (Long key : reportsHolder.keySet()) {
-                    Report r = reportsHolder.get(key);
-                    List<Report> otherReports = reportService.getReportsForGrant(r.getGrant());
+                    ReportCard r = reportsHolder.get(key);
+                    List<ReportCard> otherReports = reportService.getReportCardsForGrant(r.getGrant());
                     otherReports.removeIf(a -> a.getId() == r.getId());
                     r.setFutureReportsCount(otherReports.size());
                     reports.add(r);
                 }
 
-                List<Report> reportWithNullEndDate = new ArrayList<>();
+                List<ReportCard> reportWithNullEndDate = new ArrayList<>();
                 reportWithNullEndDate = reports.stream().filter(r -> r.getEndDate() == null)
                         .collect(Collectors.toList());
                 reports.removeAll(reportWithNullEndDate);
-                reports.sort(Comparator.comparing(Report::getEndDate));
+                reports.sort(Comparator.comparing(ReportCard::getEndDate));
                 reports.addAll(reportWithNullEndDate);
             } else if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-DUE")) {
                 if(!isAdmin) {
-                    reports = reportService.getReadyToSubmitReportsForGranterUserByDateRange(userId, org.getId(), start,
+                    reports = reportService.getReadyToSubmitReportCardsForGranterUserByDateRange(userId, org.getId(), start,
                             end);
                 }else{
-                    reports = reportService.getReadyToSubmitReportsForAdminGranterUserByDateRange(userId, org.getId(), start,
+                    reports = reportService.getReadyToSubmitReportCardsForAdminGranterUserByDateRange(userId, org.getId(), start,
                             end);
                 }
             } else if (filterClause != null && filterClause.equalsIgnoreCase("SUBMITTED")) {
                 if(!isAdmin){
-                    reports = reportService.getSubmittedReportsForGranterUserByDateRange(userId, org.getId());
+                    reports = reportService.getSubmittedReportCardsForGranterUserByDateRange(userId, org.getId());
                 }else{
-                    reports = reportService.getSubmittedReportsForAdminGranterUserByDateRange(userId, org.getId());
+                    reports = reportService.getSubmittedReportCardsForAdminGranterUserByDateRange(userId, org.getId());
                 }
             } else if (filterClause != null && filterClause.equalsIgnoreCase("APPROVED")) {
                 if(!isAdmin) {
-                    reports = reportService.getApprovedReportsForGranterUserByDateRange(userId, org.getId());
+                    reports = reportService.getApprovedReportCardsForGranterUserByDateRange(userId, org.getId());
                 }else{
-                    reports = reportService.getApprovedReportsForAdminGranterUserByDateRange(userId, org.getId());
+                    reports = reportService.getApprovedReportCardsForAdminGranterUserByDateRange(userId, org.getId());
                 }
             }
             // reports = reportService.getAllAssignedReportsForGranterUser(userId,
             // org.getId());
         }
 
-        if (reports != null) {
+        /*if (reports != null) {
             for (Report report : reports) {
 
                 report = _ReportToReturn(report, userId);
 
             }
-        }
+        }*/
 
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && filterClause != null
                 && filterClause.equalsIgnoreCase("SUBMITTED")) {
-            for (Report report : reports) {
+            for (ReportCard report : reports) {
                 try {
                     ReportHistory historicReport = reportService.getSingleReportHistoryByStatusAndReportId("ACTIVE",
                             report.getId());
@@ -412,7 +412,7 @@ public class ReportController {
         report.setFlowAuthorities(reportService.getFlowAuthority(report, userId));
 
         List<GrantTag> grantTags = grantService.getTagsForGrant(report.getGrant().getId());
-        List<GrantTagVO> grantTagsVoList = new ArrayList<>();
+        /*List<GrantTagVO> grantTagsVoList = new ArrayList<>();
         for(GrantTag tag: grantTags){
             GrantTagVO vo =new GrantTagVO();
             vo.setGrantId(report.getGrant().getId());
@@ -420,8 +420,8 @@ public class ReportController {
             vo.setOrgTagId(tag.getOrgTagId());
             vo.setTagName(orgTagService.getOrgTagById(tag.getOrgTagId()).getName());
             grantTagsVoList.add(vo);
-        }
-        report.getGrant().setGrantTags(grantTagsVoList);
+        }*/
+        report.getGrant().setGrantTags(grantTags);
 
         return report;
     }

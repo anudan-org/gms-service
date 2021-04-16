@@ -43,8 +43,9 @@ public class GrantVO {
   private User noteAddedByUser;
   private String representative;
   private Double amount;
-  private List<AssignedTo> currentAssignment;
+  private Long currentAssignment;
   private List<GrantAssignments> workflowAssignment;
+  List<GrantAssignmentsVO> workflowAssignments;
   private List<Submission> submissions;
   private WorkflowActionPermission actionAuthorities;
   private List<WorkFlowPermission> flowAuthorities;
@@ -61,7 +62,8 @@ public class GrantVO {
   private Double approvedDisbursementsTotal = 0d;
   private int approvedReportsForGrant;
   private Long grantTypeId;
-  private List<GrantTagVO> grantTags;
+  private List<GrantTag> grantTags;
+  private List<GrantTagVO> tags;
   @JsonIgnore
   private List<GrantStringAttribute> stringAttributes;
 
@@ -74,7 +76,6 @@ public class GrantVO {
   private int amendmentNo;
   private Date minEndEndate;
   private Boolean internal;
-
   private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
   public Long getId() {
@@ -206,11 +207,11 @@ public class GrantVO {
     this.startDate = startDate;
   }
 
-  public List<AssignedTo> getCurrentAssignment() {
+  public Long getCurrentAssignment() {
     return currentAssignment;
   }
 
-  public void setCurrentAssignment(List<AssignedTo> currentAssignment) {
+  public void setCurrentAssignment(Long currentAssignment) {
     this.currentAssignment = currentAssignment;
   }
 
@@ -375,6 +376,8 @@ public class GrantVO {
           logger.error(e.getMessage(), e);
         } catch (InvocationTargetException e) {
           logger.error(e.getMessage(), e);
+        }catch (Exception e){
+          logger.error(e.getMessage(),e);
         }
       }
     }
@@ -516,11 +519,27 @@ public class GrantVO {
     this.grantTypeId = grantTypeId;
   }
 
-  public List<GrantTagVO> getGrantTags() {
+  public List<GrantTag> getGrantTags() {
     return grantTags;
   }
 
-  public void setGrantTags(List<GrantTagVO> grantTags) {
+  public void setGrantTags(List<GrantTag> grantTags) {
     this.grantTags = grantTags;
+  }
+
+  public List<GrantTagVO> getTags() {
+    return tags;
+  }
+
+  public void setTags(List<GrantTagVO> tags) {
+    this.tags = tags;
+  }
+
+  public List<GrantAssignmentsVO> getWorkflowAssignments() {
+    return workflowAssignments;
+  }
+
+  public void setWorkflowAssignments(List<GrantAssignmentsVO> workflowAssignments) {
+    this.workflowAssignments = workflowAssignments;
   }
 }

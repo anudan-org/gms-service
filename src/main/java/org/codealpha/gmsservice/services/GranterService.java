@@ -1,22 +1,22 @@
 package org.codealpha.gmsservice.services;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import org.codealpha.gmsservice.entities.Grant;
-import org.codealpha.gmsservice.entities.Granter;
-import org.codealpha.gmsservice.entities.GranterGrantSection;
-import org.codealpha.gmsservice.entities.Organization;
-import org.codealpha.gmsservice.entities.Role;
-import org.codealpha.gmsservice.entities.UserRole;
+import java.util.Set;
+
+import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.repositories.GrantRepository;
-import org.codealpha.gmsservice.repositories.GranterGrantSectionRepository;
 import org.codealpha.gmsservice.repositories.GranterRepository;
 import org.codealpha.gmsservice.repositories.OrganizationRepository;
 import org.codealpha.gmsservice.repositories.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import javax.persistence.*;
 
 @Service
 public class GranterService {
@@ -33,14 +33,21 @@ public class GranterService {
   private UserRoleService userRoleService;
   @Autowired
   private RoleService roleService;
+  @PersistenceContext
+  private EntityManager entityManager;
+
+  private final Logger logger = LoggerFactory.getLogger(GranterService.class);
+
+  private static String INPROGRESS_GRANTS_FOR_ADMIN = "select distinct A.id,A.name, approved_reports_for_grant(a.id) approved_reports_for_grant, disbursed_amount_for_grant(a.id) approved_disbursements_total, project_documents_for_grant(a.id) project_documents_count from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=%1 and A.deleted=false and ( (B.anchor=true and B.assignments=%2) or (B.assignments=%2 and B.state_id=A.grant_status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 ) or (C.internal_status='REVIEW') ) order by A.updated_at desc";
+  private static String ACTIVE_GRANTS_FOR_ADMIN = "select distinct A.*,approved_reports_for_grant(a.id) approved_reports_for_grant, disbursed_amount_for_grant(a.id) approved_disbursements_total, project_documents_for_grant(a.id) project_documents_count from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=%1 and A.deleted=false and ( (C.internal_status='ACTIVE') ) order by A.updated_at desc";
 
   public List<Granter> getAllGranters() {
     return (List<Granter>) granterRepository.findAll();
   }
 
-  public List<Grant> getGrantsOfGranterForGrantor(Long granterOrgId, Organization tenantOrg, Long userId, String forStatus) {
+  public List<GrantCard> getGrantsOfGranterForGrantor(Long granterOrgId, Organization tenantOrg, Long userId, String forStatus) {
 
-    List<Grant> allGrants = new ArrayList<>();
+    List<GrantCard> allGrants = new ArrayList<>();
 
     if ("GRANTER".equalsIgnoreCase(tenantOrg.getType())) {
       boolean isAdmin = false;
@@ -52,20 +59,44 @@ public class GranterService {
         }
       }
       if (!isAdmin) {
-        allGrants.addAll(grantRepository.findAssignedGrantsOfGranter(granterOrgId, userId));
+        allGrants.addAll(getGrantsForUser("LISTNONADMINGRANTS",granterOrgId, userId));
       } else {
         if(forStatus.equalsIgnoreCase("inprogress")) {
-          allGrants.addAll(grantRepository.findInProgressGrantsForAdmin(granterOrgId, userId));
+          allGrants.addAll(getGrantsForUser("LISTINPROGRESSGRANTS",granterOrgId,userId));
         }else if(forStatus.equalsIgnoreCase("active")) {
-          allGrants.addAll(grantRepository.findActiveGrantsForAdmin(granterOrgId));
+          allGrants.addAll(getGrantsForUser("LISTACTIVEGRANTS",granterOrgId,userId));
         }else if(forStatus.equalsIgnoreCase("closed")) {
-          allGrants.addAll(grantRepository.findClosedGrantsForAdmin(granterOrgId));
+          allGrants.addAll(getGrantsForUser("LISTCLOSEDGRANTS",granterOrgId,userId));
         }
       }
     } else if ("PLATFORM".equalsIgnoreCase(tenantOrg.getType())) {
-      allGrants.addAll(grantRepository.findGrantsOfGranter(granterOrgId));
+      //allGrants.addAll(grantRepository.findGrantsOfGranter(granterOrgId));
     }
     return allGrants;
+  }
+
+
+
+  private List<GrantCard> getGrantsForUser(String _for, Long granterId, Long userId) {
+
+
+    try {
+      Query q = entityManager.createNamedQuery(_for);
+      Set<Parameter<?>> params =  q.getParameters();
+
+      for(Parameter p : params){
+        if(p.getName().equalsIgnoreCase("granterId")){
+          q.setParameter(p.getName(),granterId);
+        }else if(p.getName().equalsIgnoreCase("userId")){
+          q.setParameter(p.getName(),userId);
+        }
+      }
+     List<GrantCard> grants = Collections.checkedList(q.getResultList(), GrantCard.class);
+     return grants;
+    } catch (Exception e) {
+      logger.error(e.getMessage(),e);
+    }
+    return null;
   }
 
   public Organization createGranter(Granter granterOrg, MultipartFile image) {

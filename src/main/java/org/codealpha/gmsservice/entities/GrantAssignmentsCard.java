@@ -2,13 +2,12 @@ package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.*;
-
-@Entity
-public class GrantAssignments {
+@Entity(name = "grant_assignments")
+public class GrantAssignmentsCard {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -16,7 +15,7 @@ public class GrantAssignments {
     @ManyToOne
     @JoinColumn(referencedColumnName = "id")
     @JsonIgnore
-    private Grant grant;
+    private GrantCard grant;
 
     @Column
     private Long stateId;
@@ -44,11 +43,11 @@ public class GrantAssignments {
         this.id = id;
     }
 
-    public Grant getGrant() {
+    public GrantCard getGrant() {
         return grant;
     }
 
-    public void setGrant(Grant grant) {
+    public void setGrant(GrantCard grant) {
         this.grant = grant;
     }
 

@@ -13,4 +13,7 @@ public interface GrantTagRepository extends CrudRepository<GrantTag,Long> {
 
     @Query(value = "select case when count(*)>0 then true else false end from grant_tags where org_tag_id=?1",nativeQuery = true)
     boolean isTagInUse(Long orgTagId);
+
+    @Query(value = "select * from grant_tags where id=?1",nativeQuery = true)
+    GrantTag getTagById(Long id);
 }

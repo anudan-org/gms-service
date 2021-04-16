@@ -390,7 +390,7 @@ public class ScheduledJobs {
                                 grantIdsToSkip.keySet().stream().collect(Collectors.toList()));
                         if (usersToNotify != null && usersToNotify.size() > 0) {
                             for (GrantAssignments grantAssignment : usersToNotify) {
-                                Grant grant = grantService.getById(grantAssignment.getGrantId());
+                                Grant grant = grantService.getById(grantAssignment.getGrant().getId());
 
                                 List<GrantAssignments> grantAssignments = grantService
                                         .getGrantWorkflowAssignments(grant);
@@ -451,7 +451,7 @@ public class ScheduledJobs {
                         List<GrantAssignments> usersToNotify = grantService.getActionDueGrantsForGranterOrg(configId);
                         if (usersToNotify != null && usersToNotify.size() > 0) {
                             for (GrantAssignments grantAssignment : usersToNotify) {
-                                Grant grant = grantService.getById(grantAssignment.getGrantId());
+                                Grant grant = grantService.getById(grantAssignment.getGrant().getId());
 
                                 List<GrantAssignments> grantAssignments = grantService
                                         .getGrantWorkflowAssignments(grant);
