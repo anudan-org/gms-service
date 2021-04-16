@@ -3,10 +3,9 @@ package org.codealpha.gmsservice.services;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.codealpha.gmsservice.entities.Grant;
-import org.codealpha.gmsservice.entities.Grantee;
-import org.codealpha.gmsservice.entities.Organization;
-import org.codealpha.gmsservice.entities.UserRole;
+
+import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.repositories.GrantCardRepository;
 import org.codealpha.gmsservice.repositories.GrantRepository;
 import org.codealpha.gmsservice.repositories.GranteeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +16,9 @@ public class GranteeService {
 
   @Autowired
   private GrantRepository grantRepository;
+
+  @Autowired
+  private GrantCardRepository grantCardRepository;
 
   @Autowired
   private GranteeRepository granteeRepository;
@@ -31,6 +33,20 @@ public class GranteeService {
           .addAll(grantRepository.findGrantsOfGranteeForTenantOrg(granteeOrgId, tenantOrg.getId(),userRoleIds));
     }else if("PLATFORM".equalsIgnoreCase(tenantOrg.getOrganizationType())){
       allGrants.addAll(grantRepository.findAllGrantsOfGrantee(granteeOrgId));
+    }
+    return allGrants;
+  }
+
+  public List<GrantCard> getGrantCardsOfGranteeForGrantor(Long granteeOrgId, Organization tenantOrg, List<UserRole> userRoles){
+    List<GrantCard> allGrants = new ArrayList<>();
+
+    if("GRANTER".equalsIgnoreCase(tenantOrg.getOrganizationType())){
+      List<Long> userRoleIds = userRoles.stream().map(e->new Long(e.getRole().getId())).collect(
+              Collectors.toList());
+      allGrants
+              .addAll(grantCardRepository.findGrantsOfGranteeForTenantOrg(granteeOrgId, tenantOrg.getId(),userRoleIds));
+    }else if("PLATFORM".equalsIgnoreCase(tenantOrg.getOrganizationType())){
+      allGrants.addAll(grantCardRepository.findAllGrantsOfGrantee(granteeOrgId));
     }
     return allGrants;
   }

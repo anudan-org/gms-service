@@ -181,10 +181,10 @@ public class UserController {
         Organization userOrg = user.getOrganization();
         Organization tenantOrg = null;
         tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
-        List<Grant> grants = null;
+        List<GrantCard> grants = null;
         switch (userOrg.getType()) {
             case "GRANTEE":
-                grants = granteeService.getGrantsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getUserRoles());
+                grants = granteeService.getGrantCardsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getUserRoles());
                 return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
             case "GRANTER":
                 grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId(),forStatus);

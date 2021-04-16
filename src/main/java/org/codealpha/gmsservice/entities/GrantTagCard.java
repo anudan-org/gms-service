@@ -5,14 +5,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.persistence.*;
 
 @Entity(name = "grant_tags")
-public class GrantTag {
+public class GrantTagCard {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @ManyToOne
     @JoinColumn(referencedColumnName = "id")
     @JsonIgnore
-    private Grant grant;
+    private GrantCard grant;
     @Column
     private Long orgTagId;
 
@@ -24,11 +24,11 @@ public class GrantTag {
         this.id = id;
     }
 
-    public Grant getGrant() {
+    public GrantCard getGrant() {
         return grant;
     }
 
-    public void setGrant(Grant grant) {
+    public void setGrant(GrantCard grant) {
         this.grant = grant;
     }
 

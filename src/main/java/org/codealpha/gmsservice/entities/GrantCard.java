@@ -4,16 +4,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import javax.persistence.*;
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.codealpha.gmsservice.constants.GrantStatus;
-import org.codealpha.gmsservice.models.*;
+import org.codealpha.gmsservice.models.GrantDetailVO;
+import org.codealpha.gmsservice.models.TableData;
+
+import javax.persistence.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author Developer code-alpha.org
@@ -21,9 +21,9 @@ import org.codealpha.gmsservice.models.*;
 @Entity
 @Table(name = "grants")
 @ApiModel(value = "Grant Model", description = "Data model of a Grant")
-@SqlResultSetMapping(name="ONEGRANT",
+@SqlResultSetMapping(name="GRANTSLIST",
         entities={
-                @EntityResult(entityClass= org.codealpha.gmsservice.entities.Grant.class
+                @EntityResult(entityClass= GrantCard.class
                         /*fields={
                                 @FieldResult(name="id",column="id"),
                                 @FieldResult(name="name", column="name"),
@@ -33,11 +33,26 @@ import org.codealpha.gmsservice.models.*;
         }
 )
 @NamedNativeQuery(
-        name="SINGLEGRANT",
+        name="LISTINPROGRESSGRANTS",
         query = "select distinct A.*,(select assignments from grant_assignments where grant_id=a.id and state_id=a.grant_status_id) current_assignment,approved_reports_for_grant(a.id) approved_reports_for_grant, disbursed_amount_for_grant(a.id) approved_disbursements_total, project_documents_for_grant(a.id) project_documents_count from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (B.anchor=true and B.assignments=:userId) or (B.assignments=:userId and B.state_id=A.grant_status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 ) or (C.internal_status='REVIEW') ) order by A.updated_at desc",
-        resultSetMapping = "ONEGRANT"
+        resultSetMapping = "GRANTSLIST"
 )
-public class Grant {
+@NamedNativeQuery(
+        name="LISTACTIVEGRANTS",
+        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,approved_reports_for_grant(A.id) approved_reports_for_grant, disbursed_amount_for_grant(A.id) approved_disbursements_total, project_documents_for_grant(A.id) project_documents_count from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (C.internal_status='ACTIVE') ) order by A.updated_at desc",
+        resultSetMapping = "GRANTSLIST"
+)
+@NamedNativeQuery(
+        name="LISTCLOSEDGRANTS",
+        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (C.internal_status='CLOSED') ) order by A.updated_at desc",
+        resultSetMapping = "GRANTSLIST"
+)
+@NamedNativeQuery(
+        name="LISTNONADMINGRANTS",
+        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (B.anchor=true and B.assignments=:userId) or (B.assignments=:userId and B.state_id=A.grant_status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 and :userId = any (array(select assignments from grant_assignments where grant_id=A.id))) or (C.internal_status='REVIEW' and :userId = any( array(select assignments from grant_assignments where grant_id=A.id))) or (C.internal_status='ACTIVE' or C.internal_status='CLOSED' ) ) order by A.updated_at desc",
+        resultSetMapping = "GRANTSLIST"
+)
+public class GrantCard {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,11 +69,6 @@ public class Grant {
   @JoinColumn(name = "grantor_org_id")
   @ApiModelProperty(name = "grantorOrganization", value = "Granter or tenant organization associated with the grant", dataType = "Granter")
   private Granter grantorOrganization;
-
-  @OneToMany(mappedBy = "grant")
-  @JsonProperty("stringAttribute")
-  @ApiModelProperty(name = "stringAttributes", value = "Grant template structure with values", dataType = "List<GrantStringAttributes>")
-  private List<GrantStringAttribute> stringAttributes;
 
   @Column(name = "name", columnDefinition = "text")
   @ApiModelProperty(name = "name", value = "Title of the grant", dataType = "String")
@@ -162,21 +172,15 @@ public class Grant {
   @Transient
   @ApiModelProperty(name = "grantDetails", value = "All grant section and section attributes and values of the grant", dataType = "GrantDetailVO")
   private GrantDetailVO grantDetails;
-  @Transient
+  @Column
   @ApiModelProperty(name = "currentAssignment", value = "Current owner of grant based on grant status", dataType = "List<AssignedTo>")
   private Long currentAssignment;
   @OneToMany(mappedBy = "grant")
   @ApiModelProperty(name = "workflowAssignment", value = "Allowed workflow ownership assignments for the grant", dataType = "List<GrantAssignmentsVO>")
-  private List<GrantAssignments> workflowAssignment;
-
-  @Transient
-  List<GrantAssignmentsVO> workflowAssignments;
+  private List<GrantAssignmentsCard> workflowAssignment;
 
   @OneToMany(mappedBy = "grant")
-  private List<GrantTag> grantTags;
-
-  @Transient
-  private List<GrantTagVO> tags;
+  private List<GrantTagCard> grantTags;
 
   @Transient
   @ApiModelProperty(name = "securityCode", value = "Secure code for grant")
@@ -194,11 +198,11 @@ public class Grant {
   private Boolean deleted;
   @Transient
   private Boolean hasOngoingDisbursement = false;
-  @Transient
+  @Column
   private int projectDocumentsCount = 0;
-  @Transient
+  @Column
   private Double approvedDisbursementsTotal = 0d;
-  @Transient
+  @Column()
   private int approvedReportsForGrant;
   @Column
   private Long origGrantId;
@@ -304,14 +308,6 @@ public class Grant {
 
   public void setGrantStatus(WorkflowStatus status) {
     this.grantStatus = status;
-  }
-
-  public List<GrantStringAttribute> getStringAttributes() {
-    return stringAttributes;
-  }
-
-  public void setStringAttributes(List<GrantStringAttribute> stringAttributes) {
-    this.stringAttributes = stringAttributes;
   }
 
   public WorkflowActionPermission getActionAuthorities() {
@@ -434,11 +430,11 @@ public class Grant {
     this.currentAssignment = currentAssignment;
   }
 
-  public List<GrantAssignments> getWorkflowAssignment() {
+  public List<GrantAssignmentsCard> getWorkflowAssignment() {
     return workflowAssignment;
   }
 
-  public void setWorkflowAssignment(List<GrantAssignments> workflowAssignment) {
+  public void setWorkflowAssignment(List<GrantAssignmentsCard> workflowAssignment) {
     this.workflowAssignment = workflowAssignment;
   }
 
@@ -610,27 +606,14 @@ public class Grant {
     this.grantTypeId = grantTypeId;
   }
 
-  public List<GrantTag> getGrantTags() {
+  public List<GrantTagCard> getGrantTags() {
     return grantTags;
   }
 
-  public void setGrantTags(List<GrantTag> grantTags) {
+  public void setGrantTags(List<GrantTagCard> grantTags) {
     this.grantTags = grantTags;
   }
 
-  public List<GrantAssignmentsVO> getWorkflowAssignments() {
-    return workflowAssignments;
-  }
 
-  public void setWorkflowAssignments(List<GrantAssignmentsVO> workflowAssignments) {
-    this.workflowAssignments = workflowAssignments;
-  }
 
-  public List<GrantTagVO> getTags() {
-    return tags;
-  }
-
-  public void setTags(List<GrantTagVO> tags) {
-    this.tags = tags;
-  }
 }

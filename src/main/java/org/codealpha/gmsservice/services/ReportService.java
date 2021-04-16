@@ -22,6 +22,9 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -34,10 +37,15 @@ import java.util.stream.Collectors;
 @Service
 public class ReportService {
 
+    private static final String APPROVED_REPORTS_FOR_ADMIN_GRANTER_BY_DATE_RANGE="select distinct C.internal_status,A.* from reports A inner join grants Z on Z.id=A.grant_id inner join report_assignments B on B.report_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.anchor=true and B.assignment = %1) or (B.assignment=%1 and B.state_id=A.status_id) or (C.internal_status='CLOSED' ) ) and Z.grantor_org_id=%2 and Z.deleted=false and (C.internal_status ='CLOSED') and A.deleted=false order by A.moved_on desc";
     private static final Logger logger = LoggerFactory.getLogger(ReportService.class);
     private final String SECRET = "78yughvdbfv87ny4w87rbshfiv8aw4tr87awvyeruvbhdkjfhbity834t";
     @Autowired
     private ReportRepository reportRepository;
+
+    @Autowired
+    private ReportCardRepository reportCardRepository;
+
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
@@ -78,6 +86,8 @@ public class ReportService {
     private UserService userService;
     @Autowired
     private DisabledUsersEntityRepository disabledUsersEntityRepository;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public Report saveReport(Report report) {
         return reportRepository.save(report);
@@ -173,6 +183,12 @@ public class ReportService {
         return reportRepository.findAllAssignedReportsForGranteeUser(userId, granteeOrgId, status);
     }
 
+
+    public List<ReportCard> getAllAssignedReportCardsForGranteeUser(Long userId, Long granteeOrgId, String status) {
+
+        return reportCardRepository.findAllAssignedReportsForGranteeUser(userId, granteeOrgId, status);
+    }
+
     public ReportHistory getSingleReportHistoryByStatusAndReportId(String status, Long reportId) {
         return reportHistoryRepository.getSingleReportHistoryByStatusAndReportId(status, reportId);
     }
@@ -188,10 +204,22 @@ public class ReportService {
         return reportRepository.findUpcomingReportsForGranterUserByDateRange(userId, granterOrgId, start, end);
     }
 
+    public List<ReportCard> getUpcomingReportCardsForGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
+                                                                    Date end) {
+
+        return reportCardRepository.findUpcomingReportsForGranterUserByDateRange(userId, granterOrgId, start, end);
+    }
+
     public List<Report> getUpcomingReportsForAdminGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
                                                                     Date end) {
 
         return reportRepository.findUpcomingReportsForAdminGranterUserByDateRange(userId, granterOrgId, start, end);
+    }
+
+    public List<ReportCard> getUpcomingReportCardsForAdminGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
+                                                                         Date end) {
+
+        return reportCardRepository.findUpcomingReportsForAdminGranterUserByDateRange(userId, granterOrgId, start, end);
     }
 
     public List<Report> getFutureReportForGranterUserByDateRangeAndGrant(Long userId, Long granterOrgId, Date end,
@@ -201,10 +229,23 @@ public class ReportService {
                 grantId);
     }
 
+    public List<ReportCard> getFutureReportCardsForGranterUserByDateRangeAndGrant(Long userId, Long granterOrgId, Date end,
+                                                                         Long grantId) {
+
+        return reportCardRepository.findFutureReportsToSubmitForGranterUserByDateRangeAndGrant(userId, granterOrgId, end,
+                grantId);
+    }
+
     public List<Report> getReadyToSubmitReportsForGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
             Date end) {
 
         return reportRepository.findReadyToSubmitReportsForGranterUserByDateRange(userId, granterOrgId, start, end);
+    }
+
+    public List<ReportCard> getReadyToSubmitReportCardsForGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
+                                                                         Date end) {
+
+        return reportCardRepository.findReadyToSubmitReportsForGranterUserByDateRange(userId, granterOrgId, start, end);
     }
 
     public List<Report> getReadyToSubmitReportsForAdminGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
@@ -213,9 +254,20 @@ public class ReportService {
         return reportRepository.findReadyToSubmitReportsForAdminGranterUserByDateRange(userId, granterOrgId, start, end);
     }
 
+    public List<ReportCard> getReadyToSubmitReportCardsForAdminGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
+                                                                              Date end) {
+
+        return reportCardRepository.findReadyToSubmitReportsForAdminGranterUserByDateRange(userId, granterOrgId, start, end);
+    }
+
     public List<Report> getSubmittedReportsForGranterUserByDateRange(Long userId, Long granterOrgId) {
 
         return reportRepository.findSubmittedReportsForGranterUserByDateRange(userId, granterOrgId);
+    }
+
+    public List<ReportCard> getSubmittedReportCardsForGranterUserByDateRange(Long userId, Long granterOrgId) {
+
+        return reportCardRepository.findSubmittedReportsForGranterUserByDateRange(userId, granterOrgId);
     }
 
     public List<Report> getSubmittedReportsForAdminGranterUserByDateRange(Long userId, Long granterOrgId) {
@@ -223,14 +275,38 @@ public class ReportService {
         return reportRepository.findSubmittedReportsForAdminGranterUserByDateRange(userId, granterOrgId);
     }
 
+    public List<ReportCard> getSubmittedReportCardsForAdminGranterUserByDateRange(Long userId, Long granterOrgId) {
+
+        return reportCardRepository.findSubmittedReportsForAdminGranterUserByDateRange(userId, granterOrgId);
+    }
+
     public List<Report> getApprovedReportsForGranterUserByDateRange(Long userId, Long granterOrgId) {
 
         return reportRepository.findApprovedReportsForGranterUserByDateRange(userId, granterOrgId);
     }
 
+    public List<ReportCard> getApprovedReportCardsForGranterUserByDateRange(Long userId, Long granterOrgId) {
+
+        return reportCardRepository.findApprovedReportsForGranterUserByDateRange(userId, granterOrgId);
+    }
+
     public List<Report> getApprovedReportsForAdminGranterUserByDateRange(Long userId, Long granterOrgId) {
 
         return reportRepository.findApprovedReportsForAdminGranterUserByDateRange(userId, granterOrgId);
+    }
+
+    public List<ReportCard> getApprovedReportCardsForAdminGranterUserByDateRange(Long userId, Long granterOrgId) {
+
+        return reportCardRepository.findApprovedReportsForAdminGranterUserByDateRange(userId, granterOrgId);
+    }
+
+    private List<Report> findApprovedReportsForAdminGranterUserByDateRange(String approvedReportsForAdminGranterByDateRange, Long userId, Long granterOrgId) {
+        approvedReportsForAdminGranterByDateRange = approvedReportsForAdminGranterByDateRange.replaceAll("%1",String.valueOf(userId)).replaceAll("%2",String.valueOf(granterOrgId));
+
+        Query q = entityManager.createNativeQuery(approvedReportsForAdminGranterByDateRange,Report.class);
+        @SuppressWarnings("unchecked")
+        List<Report> reports = (List<Report>)q.getResultList();
+        return reports;
     }
 
     public GranterReportTemplate getDefaultTemplate(Long granterId) {
@@ -785,6 +861,10 @@ public class ReportService {
         return reportRepository.getReportsByGrant(grant.getId());
     }
 
+    public List<ReportCard> getReportCardsForGrant(Grant grant) {
+        return reportCardRepository.getReportsByGrant(grant.getId());
+    }
+
     public void setAssignmentHistory(ReportAssignmentsVO assignmentsVO) {
 
         if (reportRepository.findReportsThatMovedAtleastOnce(assignmentsVO.getReportId()).size() > 0) {
@@ -840,8 +920,16 @@ public class ReportService {
     public List<Report> getUpcomingFutureReportsForGranterUserByDate(Long userId, Long id, Date end) {
         return reportRepository.findUpcomingFutureReports(userId, id);
     }
+
+    public List<ReportCard> getUpcomingFutureReportCardsForGranterUserByDate(Long userId, Long id, Date end) {
+        return reportCardRepository.findUpcomingFutureReports(userId, id);
+    }
     public List<Report> getUpcomingFutureReportsForAdminGranterUserByDate(Long userId, Long id, Date end) {
         return reportRepository.findUpcomingFutureAdminReports(userId, id);
+    }
+
+    public List<ReportCard> getUpcomingFutureReportCardsForAdminGranterUserByDate(Long userId, Long id, Date end) {
+        return reportCardRepository.findUpcomingFutureAdminReports(userId, id);
     }
 
     public List<DisabledUsersEntity> getReportsWithDisabledUsers(){

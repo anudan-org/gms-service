@@ -166,7 +166,7 @@ public class DisbursementService {
         disbursement.setApprovedActualsDibursements(approvedActualDisbursements);
 
         List<GrantTag> grantTags = grantService.getTagsForGrant(disbursement.getGrant().getId());
-        List<GrantTagVO> grantTagsVoList = new ArrayList<>();
+        /*List<GrantTagVO> grantTagsVoList = new ArrayList<>();
         for(GrantTag tag: grantTags){
             GrantTagVO grantTagVO =new GrantTagVO();
             grantTagVO.setGrantId(disbursement.getGrant().getId());
@@ -174,8 +174,8 @@ public class DisbursementService {
             grantTagVO.setOrgTagId(tag.getOrgTagId());
             grantTagVO.setTagName(orgTagService.getOrgTagById(tag.getOrgTagId()).getName());
             grantTagsVoList.add(grantTagVO);
-        }
-        disbursement.getGrant().setGrantTags(grantTagsVoList);
+        }*/
+        disbursement.getGrant().setGrantTags(grantTags);
 
         return disbursement;
     }
