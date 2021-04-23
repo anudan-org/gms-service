@@ -774,14 +774,14 @@ public class GrantService {
         Optional<WorkflowStatus> reportApprovedStatus = workflowStatusService
                 .getTenantWorkflowStatuses("REPORT", grant.getGrantorOrganization().getId()).stream()
                 .filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
-        List<Report> reports = new ArrayList<>();
+        List<ReportCard> reports = new ArrayList<>();
         int noOfReports = 0;
         if (reportApprovedStatus.isPresent()) {
-            reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(), grant);
+            reports = reportService.findReportCardsByStatusForGrant(reportApprovedStatus.get(), grant);
             noOfReports = reports.size();
             // Include approved reports of orgiginal grant if exist
             if (grant.getOrigGrantId() != null) {
-                reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(),
+                reports = reportService.findReportCardsByStatusForGrant(reportApprovedStatus.get(),
                         getById(grant.getOrigGrantId()));
                 noOfReports += reports.size();
             }
