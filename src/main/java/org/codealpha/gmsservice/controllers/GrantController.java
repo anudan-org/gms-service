@@ -2968,7 +2968,7 @@ public class GrantController {
             String q = exportConfig.getQuery().replaceAll("%tenantId%",String.valueOf(tenantId));
             if(q.indexOf("%grantTags%")>=0){
                 PreparedStatement ps = null;
-                String grantsTagsQuery = "select string_agg(concat('\"',name,'\" as \"Tag - ',name,'\"'),',') from org_tags where tenant=%tenantId% group by tenant";
+                String grantsTagsQuery = "select string_agg(concat('\"',name,'\" as \"Tag - ',name,'\"'),',') from (select * from org_tags order by name) X where tenant=%tenantId% group by tenant";
                 grantsTagsQuery = grantsTagsQuery.replaceAll("%tenantId%",String.valueOf(tenantId));
 
                 ps = conn.prepareStatement(grantsTagsQuery);
@@ -2983,8 +2983,8 @@ public class GrantController {
             if(q.indexOf("%grantTagDefs%")>=0){
                 PreparedStatement ps = null;
                 PreparedStatement ps2 = null;
-                String grantsTagsDefQuery = "select string_agg(concat('\"',name,'\" text'),',') from org_tags where tenant=%tenantId% group by tenant";
-                String grantsTagsSelectDefQuery = "select string_agg(concat('string_agg(\"',name,'\",'','') \"',name,'\"'),',') from org_tags where tenant=%tenantId% group by tenant";
+                String grantsTagsDefQuery = "select string_agg(concat('\"',name,'\" text'),',') from (select * from org_tags order by name) X where tenant=%tenantId% group by tenant";
+                String grantsTagsSelectDefQuery = "select string_agg(concat('string_agg(\"',name,'\",'','') \"',name,'\"'),',') from (select * from org_tags order by name) X where tenant=%tenantId% group by tenant";
                 grantsTagsDefQuery = grantsTagsDefQuery.replaceAll("%tenantId%",String.valueOf(tenantId));
                 grantsTagsSelectDefQuery = grantsTagsSelectDefQuery.replaceAll("%tenantId%",String.valueOf(tenantId));
 
