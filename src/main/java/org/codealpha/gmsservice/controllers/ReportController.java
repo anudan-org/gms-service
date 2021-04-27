@@ -42,7 +42,9 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -1988,6 +1990,8 @@ public class ReportController {
 
         List<GranterReportSection> granterReportSections = reportTemplate.getSections();
         report.setStringAttributes(new ArrayList<>());
+        AtomicBoolean reportTemplateHasDisbursement = new AtomicBoolean(false);
+        AtomicReference<ReportStringAttribute> disbursementAttributeValue = null;
 
         for (GranterReportSection reportSection : granterReportSections) {
             ReportSpecificSection specificSection = new ReportSpecificSection();
@@ -2003,6 +2007,8 @@ public class ReportController {
             Report finalReport = report;
             final AtomicInteger[] attribVOOrder = { new AtomicInteger(1) };
             Report finalReport1 = report;
+
+
             reportSection.getAttributes().forEach(a -> {
                 ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
                 sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
@@ -2028,7 +2034,76 @@ public class ReportController {
                     stringAttribute.setValue(a.getExtras());
                 }
                 stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
+                if (sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
+                    reportTemplateHasDisbursement.set(true);
+                    disbursementAttributeValue.set(stringAttribute);
+                }
             });
+        }
+
+        // Handle logic for setting dibursement type in reports
+        for (GrantSpecificSection grantSection : grantService.getGrantSections(report.getGrant())) {
+            for (GrantSpecificSectionAttribute specificSectionAttribute : grantService
+                    .getAttributesBySection(grantSection)) {
+                if (specificSectionAttribute.getFieldType().equalsIgnoreCase("disbursement")) {
+                    if (reportTemplateHasDisbursement.get()) {
+                        ObjectMapper mapper = new ObjectMapper();
+                        String[] colHeaders = new String[] { "Disbursement Date", "Actual Disbursement",
+                                "Funds from other Sources", "Notes" };
+                        List<TableData> tableDataList = new ArrayList<>();
+                        TableData tableData = new TableData();
+                        tableData.setName("1");
+                        tableData.setHeader("Planned Installment #");
+                        tableData.setEnteredByGrantee(false);
+                        tableData.setColumns(new ColumnData[4]);
+                        for (int i = 0; i < tableData.getColumns().length; i++) {
+
+                            tableData.getColumns()[i] = new ColumnData(colHeaders[i], "",
+                                    (i == 1 || i == 2) ? "currency" : (i == 0) ? "date" : null);
+                        }
+                        tableDataList.add(tableData);
+
+                        try {
+                            disbursementAttributeValue.get().setValue(mapper.writeValueAsString(tableDataList));
+                            reportService.saveReportStringAttribute(disbursementAttributeValue.get());
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        ReportSpecificSection specificSection = new ReportSpecificSection();
+                        specificSection.setDeletable(true);
+                        specificSection.setGranter((Granter) report.getGrant().getGrantorOrganization());
+                        specificSection.setReportId(report.getId());
+                        specificSection.setReportTemplateId(reportTemplate.getId());
+                        specificSection.setSectionName("Project Funds");
+                        List<ReportSpecificSection> reportSections = reportService.getReportSections(report);
+                        specificSection.setSectionOrder(Collections.max(reportSections.stream()
+                                .map(rs -> new Integer(rs.getSectionOrder())).collect(Collectors.toList())) + 1);
+                        specificSection = reportService.saveReportSpecificSection(specificSection);
+
+                        ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
+                        sectionAttribute.setAttributeOrder(1);
+                        sectionAttribute.setDeletable(true);
+                        sectionAttribute.setFieldName("Disbursement Details");
+                        sectionAttribute.setFieldType("disbursement");
+                        sectionAttribute.setGranter((Granter) report.getGrant().getGrantorOrganization());
+                        sectionAttribute.setRequired(false);
+                        sectionAttribute.setSection(specificSection);
+                        sectionAttribute.setCanEdit(true);
+                        sectionAttribute.setExtras(null);
+                        sectionAttribute = reportService.saveReportSpecificSectionAttribute(sectionAttribute);
+
+                        ReportStringAttribute stringAttribute = new ReportStringAttribute();
+
+                        stringAttribute.setSection(specificSection);
+                        stringAttribute.setReport(report);
+                        stringAttribute.setSectionAttribute(sectionAttribute);
+
+                        stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
+
+                    }
+                }
+            }
         }
 
         report = _ReportToReturn(report, userId);
