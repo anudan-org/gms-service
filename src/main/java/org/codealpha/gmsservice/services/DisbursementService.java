@@ -162,7 +162,7 @@ public class DisbursementService {
         List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
                 .collect(Collectors.toList());
 
-        List<ActualDisbursement> approvedActualDisbursements = getApprovedActualDisbursements(disbursement, statusIds);
+        List<ActualDisbursement> approvedActualDisbursements = getApprovedActualDisbursements(disbursement, statusIds,false);
         disbursement.setApprovedActualsDibursements(approvedActualDisbursements);
 
         List<GrantTag> grantTags = grantService.getTagsForGrant(disbursement.getGrant().getId());
@@ -180,17 +180,26 @@ public class DisbursementService {
         return disbursement;
     }
 
-    private List<ActualDisbursement> getApprovedActualDisbursements(Disbursement disbursement, List<Long> statusIds) {
+    private List<ActualDisbursement> getApprovedActualDisbursements(Disbursement disbursement, List<Long> statusIds,boolean includeCurrent) {
         List<Disbursement> approvedDisbursements = getDibursementsForGrantByStatuses(disbursement.getGrant().getId(),
                 statusIds);
         List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
         if (approvedDisbursements != null) {
-            approvedDisbursements.removeIf(d -> d.getId().longValue() == disbursement.getId().longValue());
+            if(!includeCurrent){
+                approvedDisbursements.removeIf(d -> d.getId().longValue() == disbursement.getId().longValue());
+            }
             approvedDisbursements.removeIf(d -> new DateTime(d.getMovedOn(), DateTimeZone.forID(timezone))
                     .isAfter(new DateTime(disbursement.getMovedOn(), DateTimeZone.forID(timezone))));
             for (Disbursement approved : approvedDisbursements) {
                 List<ActualDisbursement> approvedActuals = getActualDisbursementsForDisbursement(approved);
                 approvedActualDisbursements.addAll(approvedActuals);
+            }
+        }
+        //Get previous actual disbursements if grant is amended
+        if(disbursement.getGrant().getOrigGrantId()!=null){
+            List<Disbursement> disbs = getAllDisbursementsForGrant(disbursement.getGrant().getOrigGrantId());
+            for(Disbursement d : disbs){
+                approvedActualDisbursements.addAll(getApprovedActualDisbursements(d,statusIds,true));
             }
         }
         approvedActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
