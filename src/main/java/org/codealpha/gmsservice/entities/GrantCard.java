@@ -44,7 +44,7 @@ import java.util.List;
 )
 @NamedNativeQuery(
         name="LISTCLOSEDGRANTS",
-        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (C.internal_status='CLOSED') ) order by A.updated_at desc",
+        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,approved_reports_for_grant(A.id) approved_reports_for_grant, disbursed_amount_for_grant(A.id) approved_disbursements_total, project_documents_for_grant(A.id) project_documents_count from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (C.internal_status='CLOSED') ) order by A.updated_at desc",
         resultSetMapping = "GRANTSLIST"
 )
 @NamedNativeQuery(
