@@ -10,6 +10,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiParam;
@@ -188,6 +190,11 @@ public class UserController {
                 return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
             case "GRANTER":
                 grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId(),forStatus);
+                try {
+                    System.out.println(new ObjectMapper().writeValueAsString(grants));
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
                 return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
         }
 

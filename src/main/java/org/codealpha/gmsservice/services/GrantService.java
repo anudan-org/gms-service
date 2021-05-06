@@ -16,7 +16,9 @@ import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -121,6 +123,8 @@ public class GrantService {
     private OrgTagRepository orgTagRepository;
     @Autowired
     private DataExportSummaryRepository dataExportSummaryRepository;
+    @Value("${spring.timezone}")
+    private String timezone;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -766,6 +770,13 @@ public class GrantService {
                 approvedActualDisbursements.addAll(approvedActuals);
             }
         }
+
+        if(grant.getOrigGrantId()!=null) {
+            approvedActualDisbursements.addAll(getPastApprovedActualDisbursementsForGrant(getById(grant.getOrigGrantId()),true));
+        }
+        HashSet<Object> seen=new HashSet<>();
+        approvedActualDisbursements.removeIf(e->!seen.add(e.getId()));
+
         grant.setProjectDocumentsCount(getGrantsDocuments(grant.getId()).size());
         approvedActualDisbursements.removeIf(ad -> ad.getActualAmount() == null);
         grant.setApprovedDisbursementsTotal(
@@ -840,6 +851,47 @@ public class GrantService {
         }
         grant.setTags(grantTagsVoList);
         return grant;
+    }
+
+    private List<ActualDisbursement> getPastApprovedActualDisbursementsForGrant(Grant grant,boolean includeCurrent) {
+        List<Disbursement> disbs = disbursementService.getAllDisbursementsForGrant(grant.getId());
+        List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
+        List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses("DISBURSEMENT",
+                grant.getGrantorOrganization().getId());
+
+        List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE")
+                        || ws.getInternalStatus().equalsIgnoreCase("CLOSED"))
+                .collect(Collectors.toList());
+        List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                .collect(Collectors.toList());
+
+        for(Disbursement disbursement:disbs){
+            List<Disbursement> approvedDisbursements = disbursementService.getDibursementsForGrantByStatuses(disbursement.getGrant().getId(),
+                    statusIds);
+
+            if (approvedDisbursements != null) {
+                if(!includeCurrent){
+                    approvedDisbursements.removeIf(d -> d.getId().longValue() == disbursement.getId().longValue());
+                }
+                approvedDisbursements.removeIf(d -> new DateTime(d.getMovedOn(), DateTimeZone.forID(timezone))
+                        .isAfter(new DateTime(disbursement.getMovedOn(), DateTimeZone.forID(timezone))));
+                for (Disbursement approved : approvedDisbursements) {
+                    List<ActualDisbursement> approvedActuals = disbursementService.getActualDisbursementsForDisbursement(approved);
+                    approvedActualDisbursements.addAll(approvedActuals);
+                }
+            }
+            //Get previous actual disbursements if grant is amended
+            if(grant.getOrigGrantId()!=null){
+                List<Disbursement> disburs = disbursementService.getAllDisbursementsForGrant(disbursement.getGrant().getOrigGrantId());
+                for(Disbursement d : disburs){
+                    approvedActualDisbursements.addAll(getPastApprovedActualDisbursementsForGrant(d.getGrant(),true));
+                }
+            }
+        }
+
+        approvedActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
+        return approvedActualDisbursements;
     }
 
     public void setAssignmentHistory(Grant grant, GrantAssignmentsVO assignmentsVO) {
