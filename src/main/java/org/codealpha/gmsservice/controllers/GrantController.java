@@ -3263,7 +3263,49 @@ public class GrantController {
             attachments.add(attachment);
         }
 
+        updateProjectDocuments(grantId,tenantCode,userId);
+
         return attachments;
+    }
+
+    private void updateProjectDocuments(Long grantId, String tenantCode, Long userId) {
+        List<Long> projectGrantIds = grantService.getAllGrantIdsForProject(grantId);
+        List<GrantDocument> projectDocs = grantService.getGrantsDocuments(grantId);
+        if(projectGrantIds!=null && projectGrantIds.size()>0){
+            for(Long id : projectGrantIds){
+                List<GrantDocument> existingDocs = grantService.getGrantsDocuments(id);
+                if(existingDocs!=null && existingDocs.size()>0){
+                    for(GrantDocument d : existingDocs){
+                        File file = new File(d.getLocation());
+                        grantService.deleteGrantDocument(d);
+                        file.delete();
+                    }
+                }
+
+                if(projectDocs!=null && projectDocs.size()>0){
+                    for(GrantDocument d :projectDocs){
+                        GrantDocument newDoc = new GrantDocument();
+                        newDoc.setName(d.getName());
+                        File dir = new File(uploadLocation + tenantCode + "/grant-documents/" + id);
+                        dir.mkdirs();
+                        newDoc.setLocation( dir.getPath() + "/"+ d.getName()+"."+d.getExtension());
+                        newDoc.setExtension(d.getExtension());
+                        newDoc.setGrantId(id);
+                        newDoc.setUploadedOn(DateTime.now().toDate());
+                        newDoc.setUploadedBy(userId);
+                        grantService.saveGrantDocument(newDoc);
+                        File file = new File(d.getLocation());
+                        File newFile = new File(newDoc.getLocation());
+
+                        try {
+                            FileCopyUtils.copy(file,newFile);
+                        } catch (IOException e) {
+                            logger.error(e.getMessage(),e);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @PostMapping(value = "/{grantId}/documents/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -3324,6 +3366,8 @@ public class GrantController {
         grantService.deleteGrantDocument(doc);
         file.delete();
 
+        updateProjectDocuments(grantId,tenantCode,userId);
+
     }
 
     @GetMapping("/granteeOrgs")
@@ -3348,8 +3392,31 @@ public class GrantController {
 
         tag = grantService.attachTagToGrant(tag);
 
+        updateProjectTags(grantId);
+
         return new GrantTagVO(tag.getId(),orgTagService.getOrgTagById(orgTagId).getName(),grantId,orgTagId);
 
+    }
+
+    private void updateProjectTags(Long grantId) {
+        List<Long> projectGrants = grantService.getAllGrantIdsForProject(grantId);
+        if(projectGrants!=null && projectGrants.size()>0){
+            List<GrantTag> tagsToSet = grantService.getTagsForGrant(grantId);
+            for(Long id: projectGrants){
+                List<GrantTag> tags = grantService.getTagsForGrant(id);
+                if(tags!=null && tags.size()>0){
+                    for(GrantTag t : tags) {
+                        grantService.detachTagToGrant(t);
+                    }
+                }
+                for(GrantTag t : tagsToSet){
+                    GrantTag t1 = new GrantTag();
+                    t1.setOrgTagId(t.getOrgTagId());
+                    t1.setGrant(grantService.getById(id));
+                    grantService.attachTagToGrant(t1);
+                }
+            }
+        }
     }
 
     @DeleteMapping("/{grantId}/tags/{tagId}")
@@ -3357,6 +3424,8 @@ public class GrantController {
                                        @RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable("tagId")Long tagId){
         GrantTag grantTag = grantService.getGrantTagById(tagId);
         grantService.detachTagToGrant(grantTag);
+
+        updateProjectTags(grantId);
 
     }
 }
