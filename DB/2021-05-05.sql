@@ -41,6 +41,10 @@ begin
 	where w.internal_status='CLOSED' and d.grant_id=grantId
 	group by d.id;
 
+	if disbursedAmount is null then
+	    disbursedAmount = 0;
+	end if;
+
 	select orig_grant_id into orgGrantId from grants where id=grantId;
 
 	if orgGrantId is not null then

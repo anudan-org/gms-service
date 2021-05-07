@@ -969,4 +969,43 @@ public class GrantService {
     public DataExportSummary saveExportSummary(DataExportSummary summary){
         return dataExportSummaryRepository.save(summary);
     }
+
+    public List<Long> getAllGrantIdsForProject(Long grantId){
+        List<Long> dGrantIds = getDownstreamGrantIds(grantId);
+        List<Long> uGrantIds = getUpstreamGrantIds(grantId);
+
+        Set<Long> finalGrantIds = new HashSet<>();
+        finalGrantIds.addAll(dGrantIds);
+        finalGrantIds.addAll(uGrantIds);
+        finalGrantIds.removeIf(g -> g.longValue()==grantId.longValue());
+        return finalGrantIds.stream().collect(Collectors.toList());
+    }
+
+    private List<Long> getDownstreamGrantIds(Long grantId) {
+        List<Long> ids = new ArrayList<>();
+        ids.add(grantId);
+        Grant grant = getById(grantId);
+        if(grant.getOrigGrantId()!=null){
+            ids.addAll(getDownstreamGrantIds(grant.getOrigGrantId()));
+        }
+        return ids;
+    }
+
+    private List<Long> getUpstreamGrantIds(Long grantId) {
+        List<Long> ids = new ArrayList<>();
+
+        Grant grant = getByOrigGrantId(grantId);
+
+        if(grant!=null){
+            ids.add(grant.getId());
+            ids.addAll(getUpstreamGrantIds(grant.getId()));
+        }
+        return ids;
+    }
+
+    public Grant getByOrigGrantId(Long grantId){
+        return grantRepository.getByOrigGrantId(grantId);
+    }
+
+
 }
