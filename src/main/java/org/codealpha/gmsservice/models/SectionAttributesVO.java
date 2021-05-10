@@ -3,7 +3,6 @@ package org.codealpha.gmsservice.models;
 import org.codealpha.gmsservice.entities.GrantStringAttributeAttachments;
 import org.codealpha.gmsservice.entities.TemplateLibrary;
 
-import javax.persistence.Transient;
 import java.util.List;
 import java.util.Objects;
 
@@ -18,7 +17,7 @@ public class SectionAttributesVO {
   private List<GrantStringAttributeAttachments> attachments;
   private int attributeOrder;
   private String target;
-  private String actualTarget;
+  private Double actualTarget;
   private String frequency;
   private boolean deletable;
   private boolean required;
@@ -138,11 +137,11 @@ public class SectionAttributesVO {
     this.grantLevelTarget = grantLevelTarget;
   }
 
-  public String getActualTarget() {
+  public Double getActualTarget() {
     return actualTarget;
   }
 
-  public void setActualTarget(String actualTarget) {
+  public void setActualTarget(Double actualTarget) {
     this.actualTarget = actualTarget;
   }
 

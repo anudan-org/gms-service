@@ -46,7 +46,7 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
     List<Report> findApprovedReportsForAdminGranterUserByDateRange(Long id, Long granterOrgId);
 
 
-    @Query(value = "select sum(cast(c.actual_target as bigint)) from reports A inner join workflow_statuses B on B.id=A.status_id inner join report_string_attributes C on C.report_id=A.id inner join report_specific_section_attributes D on D.id=C.section_attribute_id where A. grant_id=?1 and B.internal_status='CLOSED' and D.field_name=?2 and A.deleted=false group by D.field_name;", nativeQuery = true)
+    @Query(value = "select sum(c.actual_target) from reports A inner join workflow_statuses B on B.id=A.status_id inner join report_string_attributes C on C.report_id=A.id inner join report_specific_section_attributes D on D.id=C.section_attribute_id where A. grant_id=?1 and B.internal_status='CLOSED' and D.field_name=?2 and A.deleted=false group by D.field_name;", nativeQuery = true)
     Long getApprovedReportsActualSumForGrantAndAttribute(Long id, String attributeName);
 
     @Query(value = "select * from reports r inner join grants g on g.id=r.grant_id inner join workflow_statuses wf on wf.id=r.status_id where r.due_date=?1 and wf.internal_status='ACTIVE' and g.grantor_org_id not in (?2) and g.deleted=false and r.deleted=false order by r.due_date", nativeQuery = true)
@@ -61,7 +61,8 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
     @Query(value = "select * from reports where id in (?1) and deleted=false", nativeQuery = true)
     public List<Report> findReportsByIds(List<Long> reportIds);
 
-    public List<Report> findByStatusAndGrant(WorkflowStatus status, Grant grant);
+    @Query(value = "select * from reports a where a.status_id=?1 and a.grant_id=?2",nativeQuery = true)
+    public List<Report> findByStatusAndGrant(Long statusId, Long grantId);
 
     @Query(value="select * from reports where grant_id=? and deleted=false",nativeQuery = true)
     List<Report> getReportsByGrant(Long grantId);
