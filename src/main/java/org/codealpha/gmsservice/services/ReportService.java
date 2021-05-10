@@ -854,7 +854,7 @@ public class ReportService {
     }
 
     public List<Report> findReportsByStatusForGrant(WorkflowStatus status, Grant grant) {
-        return reportRepository.findByStatusAndGrant(status, grant);
+        return reportRepository.findByStatusAndGrant(status.getId(), grant.getId());
     }
 
     public List<ReportCard> findReportCardsByStatusForGrant(WorkflowStatus status, Grant grant) {

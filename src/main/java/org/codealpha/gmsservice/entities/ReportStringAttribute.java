@@ -22,7 +22,7 @@ public class ReportStringAttribute {
   @Column
   private String target;
   @Column
-  private String actualTarget;
+  private Double actualTarget;
   @Column
   private String frequency;
   @ManyToOne(fetch = FetchType.EAGER)
@@ -111,11 +111,11 @@ public class ReportStringAttribute {
         this.grantLevelTarget = grantLevelTarget;
     }
 
-  public String getActualTarget() {
+  public Double getActualTarget() {
     return actualTarget;
   }
 
-  public void setActualTarget(String actualTarget) {
+  public void setActualTarget(Double actualTarget) {
     this.actualTarget = actualTarget;
   }
 }
