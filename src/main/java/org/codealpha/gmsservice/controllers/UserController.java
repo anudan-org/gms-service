@@ -190,11 +190,6 @@ public class UserController {
                 return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
             case "GRANTER":
                 grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId(),forStatus);
-                try {
-                    System.out.println(new ObjectMapper().writeValueAsString(grants));
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
                 return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
         }
 

@@ -1766,7 +1766,7 @@ public class ReportController {
 
             if (draftDisbursements != null && draftDisbursements.size() > 0) {
                 draftDisbursements
-                        .removeIf(dd -> (dd.getReportId().longValue() != fReport.getId().longValue() && dd.isGranteeEntry()));
+                        .removeIf(dd -> (dd.getReportId()==null || dd.getReportId().longValue() != fReport.getId().longValue() && dd.isGranteeEntry()));
                 if (draftDisbursements != null && draftDisbursements.size() > 0) {
                     for (Disbursement d : draftDisbursements) {
                         d.setStatus(closedtatus);
