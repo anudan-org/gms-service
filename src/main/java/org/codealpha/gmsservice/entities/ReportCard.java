@@ -85,7 +85,7 @@ public class ReportCard {
     @Transient
     @ApiModelProperty(name = "currentAssignment", value = "Current owner of grant based on grant status", dataType = "List<AssignedTo>")
     private List<AssignedTo> currentAssignment;
-    @Transient
+    @Column
     private boolean canManage;
     @Transient
     private List<WorkFlowPermission> flowAuthorities;
