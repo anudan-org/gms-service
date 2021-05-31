@@ -2977,7 +2977,7 @@ public class GrantController {
                 while(grantTagsSelectStatement.next()){
                     tagsSelect = grantTagsSelectStatement.getString("string_agg");
                 }
-                q = q.replaceAll("%grantTags%",tagsSelect);
+                q = q.replaceAll("%grantTags%",tagsSelect==null?"'' as Tags":tagsSelect);
             }
 
             if(q.indexOf("%grantTagDefs%")>=0){
@@ -3000,8 +3000,8 @@ public class GrantController {
                 while(grantTagsSelectDefsStatement.next()){
                     tagsSelectDefs = grantTagsSelectDefsStatement.getString("string_agg");
                 }
-                q = q.replaceAll("%grantTagDefs%",tagsDefs);
-                q = q.replaceAll("%grantTagSelectDefs%",tagsSelectDefs);
+                q = q.replaceAll("%grantTagDefs%",tagsDefs==null?"no_tag text":tagsDefs);
+                q = q.replaceAll("%grantTagSelectDefs%",tagsSelectDefs==null?"string_agg(no_tag,',') as no_tag":tagsSelectDefs);
             }
             //exportConfig.setQuery(q);
             //String finalQuery = new String(exportConfig.getQuery());

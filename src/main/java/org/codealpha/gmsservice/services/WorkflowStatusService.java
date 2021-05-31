@@ -32,4 +32,8 @@ public class WorkflowStatusService {
   public WorkflowStatus saveWorkflowStatus(WorkflowStatus status){
     return workflowStatusRepository.save(status);
   }
+
+  public List<WorkflowStatus> findByWorkflow(Workflow workflow){
+    return  workflowStatusRepository.findByWorkflow(workflow);
+  }
 }

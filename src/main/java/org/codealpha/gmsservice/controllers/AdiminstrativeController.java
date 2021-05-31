@@ -102,6 +102,8 @@ public class AdiminstrativeController {
     private GranterService granterService;
     @Autowired
     private OrgTagService orgTagService;
+    @Autowired
+    private WorkflowStatusService workflowStatusService;
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -116,7 +118,8 @@ public class AdiminstrativeController {
             org = organizationService.findOrganizationByTenantCode(tenantCode);
         }
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "GRANT",grantService.getById(grantId).getGrantTypeId());
+        WorkflowStatus grantStatus = workflowStatusService.findById(grantService.getById(grantId).getGrantStatus().getId());
+        return workflowTransitionModelService.getWorkflowsByWorkflowStatusId(grantStatus.getWorkflow().getId());
     }
 
     @GetMapping("/workflow/report/{reportId}/user/{userId}")
@@ -133,7 +136,9 @@ public class AdiminstrativeController {
         }
         organizationService.findOrganizationByTenantCode(tenantCode);
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "REPORT",reportService.getReportById(reportId).getGrant().getGrantTypeId());
+        WorkflowStatus reportStatus = workflowStatusService.findById(reportService.getReportById(reportId).getStatus().getId());
+
+        return workflowTransitionModelService.getWorkflowsByWorkflowStatusId(reportStatus.getWorkflow().getId());
     }
 
     @GetMapping("/workflow/disbursement/{disbursementId}/user/{userId}")
@@ -150,7 +155,8 @@ public class AdiminstrativeController {
         }
         organizationService.findOrganizationByTenantCode(tenantCode);
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "DISBURSEMENT",disbursementService.getDisbursementById(disbursementId).getGrant().getGrantTypeId());
+        WorkflowStatus disbursementStatus = workflowStatusService.findById(disbursementService.getDisbursementById(disbursementId).getStatus().getId());
+        return workflowTransitionModelService.getWorkflowsByWorkflowStatusId(disbursementStatus.getWorkflow().getId());
     }
 
     @PostMapping("/workflow")
@@ -850,7 +856,8 @@ public class AdiminstrativeController {
                     if(typeWfMapping.size()==0){
                         GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
                         gtm.setGrantTypeId(gt.getId());
-                        gtm.setInternal(false);
+                        //gtm.setInternal(false);
+                        gtm.set_default(false);
                         gtm.setWorkflowId(grantWf.getId());
                         gtm = grantTypeWorkflowMappingService.save(gtm);
                     }
@@ -880,7 +887,7 @@ public class AdiminstrativeController {
                     if(typeWfMapping.size()==0){
                         GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
                         gtm.setGrantTypeId(gt.getId());
-                        gtm.setInternal(false);
+                        gtm.set_default(false);
                         gtm.setWorkflowId(reportWf.getId());
                         gtm = grantTypeWorkflowMappingService.save(gtm);
                     }
@@ -910,7 +917,7 @@ public class AdiminstrativeController {
                     if(typeWfMapping.size()==0){
                         GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
                         gtm.setGrantTypeId(gt.getId());
-                        gtm.setInternal(false);
+                        gtm.set_default(false);
                         gtm.setWorkflowId(disbWf.getId());
                         gtm = grantTypeWorkflowMappingService.save(gtm);
                     }
