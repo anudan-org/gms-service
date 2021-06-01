@@ -11,8 +11,8 @@ public class GrantTypeWorkflowMapping {
     private Long grantTypeId;
     @Column
     private Long workflowId;
-    @Column
-    private boolean internal;
+    @Column(name = "_default")
+    private boolean _default;
 
     public Long getId() {
         return id;
@@ -38,11 +38,11 @@ public class GrantTypeWorkflowMapping {
         this.workflowId = workflowId;
     }
 
-    public boolean isInternal() {
-        return internal;
+    public boolean is_default() {
+        return _default;
     }
 
-    public void setInternal(boolean internal) {
-        this.internal = internal;
+    public void set_default(boolean _default) {
+        this._default = _default;
     }
 }

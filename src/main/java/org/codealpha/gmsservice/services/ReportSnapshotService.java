@@ -8,6 +8,8 @@ import org.codealpha.gmsservice.repositories.ReportSnapshotRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class ReportSnapshotService {
 
@@ -25,5 +27,9 @@ public class ReportSnapshotService {
 
     public ReportSnapshot saveReportSnapshot(ReportSnapshot snapshot) {
         return reportSnapshotRepository.save(snapshot);
+    }
+
+    public List<ReportSnapshot> getReportSnapshotForReport(Long reportId) {
+        return reportSnapshotRepository.getReportShanpshotsForReport(reportId);
     }
 }

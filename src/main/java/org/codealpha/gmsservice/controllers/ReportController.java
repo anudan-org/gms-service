@@ -1847,7 +1847,7 @@ public class ReportController {
     public List<ReportHistory> getReportHistory(@PathVariable("reportId") Long reportId,
             @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        List<ReportHistory> history = null;
+        /*List<ReportHistory> history = null;
         User user = userService.getUserById(userId);
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
             history = reportService.getReportHistory(reportId);
@@ -1858,7 +1858,33 @@ public class ReportController {
         for (ReportHistory historyEntry : history) {
             historyEntry.setNoteAddedByUser(userService.getUserById(historyEntry.getNoteAddedBy()));
         }
+        return history;*/
+
+        List<ReportHistory> history = new ArrayList();
+        List<ReportSnapshot> reportSnapshotHistory = reportSnapshotService.getReportSnapshotForReport(reportId);
+        if (reportSnapshotHistory == null
+                || (reportSnapshotHistory != null && reportSnapshotHistory.get(0).getFromStateId() == null)) {
+            history = reportService.getReportHistory(reportId);
+            for (ReportHistory historyEntry : history) {
+                historyEntry.setNoteAddedByUser(userService.getUserById(historyEntry.getNoteAddedBy()));
+            }
+        } else {
+            for (ReportSnapshot snapShot : reportSnapshotHistory) {
+                ReportHistory hist = new ReportHistory();
+                hist.setName(snapShot.getName());
+                hist.setId(snapShot.getReportId());
+                hist.setNote(snapShot.getFromNote());
+                hist.setNoteAdded(snapShot.getMovedOn());
+                User assignedBy = userService.getUserById(snapShot.getMovedBy());
+                hist.setNoteAddedBy(assignedBy.getId());
+                hist.setNoteAddedByUser(assignedBy);
+                hist.setStatus(workflowStatusService.findById(snapShot.getFromStateId()));
+                history.add(hist);
+            }
+        }
+
         return history;
+
     }
 
     @PostMapping("/{reportId}/section/{sectionId}/field/{fieldId}")
@@ -1995,7 +2021,7 @@ public class ReportController {
         List<GranterReportSection> granterReportSections = reportTemplate.getSections();
         report.setStringAttributes(new ArrayList<>());
         AtomicBoolean reportTemplateHasDisbursement = new AtomicBoolean(false);
-        AtomicReference<ReportStringAttribute> disbursementAttributeValue = null;
+        AtomicReference<ReportStringAttribute> disbursementAttributeValue = new AtomicReference<>(new ReportStringAttribute());
 
         for (GranterReportSection reportSection : granterReportSections) {
             ReportSpecificSection specificSection = new ReportSpecificSection();

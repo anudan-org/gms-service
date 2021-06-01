@@ -88,6 +88,8 @@ public class ReportService {
     private DisabledUsersEntityRepository disabledUsersEntityRepository;
     @PersistenceContext
     private EntityManager entityManager;
+    @Autowired
+    private GrantTypeWorkflowMappingService grantTypeWorkflowMappingService;
 
     public Report saveReport(Report report) {
         return reportRepository.save(report);
@@ -117,9 +119,12 @@ public class ReportService {
             }
         }
 
+        Workflow grantWorkflow = workflowRepository.findWorkflowByGrantTypeAndObject(report.getGrant().getGrantTypeId(),"GRANT");
         Optional<WorkflowStatus> grantActiveStatus = workflowStatusRepository
                 .getAllTenantStatuses("GRANT", report.getGrant().getGrantorOrganization().getId()).stream()
-                .filter(s -> s.getInternalStatus().equalsIgnoreCase("ACTIVE")).findFirst();
+                .filter(s -> s.getInternalStatus().equalsIgnoreCase("ACTIVE") && s.getWorkflow().getId().longValue()==grantWorkflow.getId().longValue()).findFirst();
+
+
         GrantAssignments anchorAssignment = null;
         if (grantActiveStatus.isPresent()) {
             anchorAssignment = grantAssignmentRepository
@@ -858,7 +863,7 @@ public class ReportService {
     }
 
     public List<ReportCard> findReportCardsByStatusForGrant(WorkflowStatus status, Grant grant) {
-        return reportCardRepository.findByStatusAndGrant(status, grant);
+        return reportCardRepository.findByStatusAndGrant(status.getId(), grant.getId());
     }
 
     public List<Report> getReportsForGrant(Grant grant) {

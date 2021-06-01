@@ -15,4 +15,8 @@ public class WorkflowTransitionModelService {
     public List<WorkflowTransitionModel> getWorkflowsByGranterAndType(Long granterId, String type, Long grantTypeId) {
         return workflowTransitionModelRepository.getWorkflowsByGranterAndObject(granterId, type,grantTypeId);
     }
+
+    public List<WorkflowTransitionModel> getWorkflowsByWorkflowStatusId(Long workflowStatusId) {
+        return workflowTransitionModelRepository.getWorkflowByStatusId(workflowStatusId);
+    }
 }

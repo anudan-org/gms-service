@@ -1,18 +1,7 @@
 package org.codealpha.gmsservice.controllers;
 
 import org.codealpha.gmsservice.constants.AppConfiguration;
-import org.codealpha.gmsservice.entities.ActualDisbursement;
-import org.codealpha.gmsservice.entities.Disbursement;
-import org.codealpha.gmsservice.entities.DisbursementAssignment;
-import org.codealpha.gmsservice.entities.DisbursementHistory;
-import org.codealpha.gmsservice.entities.DisbursementSnapshot;
-import org.codealpha.gmsservice.entities.Grant;
-import org.codealpha.gmsservice.entities.Organization;
-import org.codealpha.gmsservice.entities.Report;
-import org.codealpha.gmsservice.entities.ReportStringAttribute;
-import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.entities.WorkflowStatus;
-import org.codealpha.gmsservice.entities.WorkflowStatusTransition;
+import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.ColumnData;
 import org.codealpha.gmsservice.models.DisbursementAssignmentModel;
@@ -73,6 +62,8 @@ public class DisbursementsController {
         private WorkflowStatusRepository workflowStatusRepository;
         @Autowired
         private ReleaseService releaseService;
+        @Autowired
+        private WorkflowService workflowService;
 
         @GetMapping("/active-grants")
         public List<Grant> getActiveGrantsOwnedByUser(@PathVariable("userId") Long userId,
@@ -80,9 +71,10 @@ public class DisbursementsController {
                 List<Grant> ownerGrants = grantService.getGrantsOwnedByUserByStatus(userId, "ACTIVE");
                 List<Grant> grantsToReturn = new ArrayList<>();
                 if (ownerGrants != null && ownerGrants.size() > 0) {
-                        List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses(
+                        /*List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses(
                                         "DISBURSEMENT", ownerGrants.get(0).getGrantorOrganization().getId());
 
+                        workflowStatusService.findInitialStatusByObjectAndGranterOrgId()
                         List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream()
                                         .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED"))
                                         .collect(Collectors.toList());
@@ -94,10 +86,15 @@ public class DisbursementsController {
                                                         || ws.getInternalStatus().equalsIgnoreCase("REVIEW"))
                                         .collect(Collectors.toList());
                         List<Long> draftAndReviewStatusIds = draftAndReviewStatuses.stream().mapToLong(s -> s.getId())
-                                        .boxed().collect(Collectors.toList());
+                                        .boxed().collect(Collectors.toList());*/
 
                         for (Grant g : ownerGrants) {
                                 Double total = 0d;
+
+                                List<Long> statusIds=workflowStatusService.findByWorkflow(workflowService.findWorkflowByGrantTypeAndObject(g.getGrantTypeId(),"DISBURSEMENT")).stream()
+                                        .filter(st ->st.getInternalStatus().equalsIgnoreCase("CLOSED"))
+                                        .mapToLong(s -> s.getId()).boxed()
+                                        .collect(Collectors.toList());
                                 List<Disbursement> closedDisbursements = disbursementService
                                                 .getDibursementsForGrantByStatuses(g.getId(), statusIds);
                                 if (closedDisbursements != null && closedDisbursements.size() > 0) {
@@ -122,6 +119,11 @@ public class DisbursementsController {
                         }
 
                         for (Grant ownerGrant : grantsToReturn) {
+                                List<Long> draftAndReviewStatusIds = workflowStatusRepository.findByWorkflow(workflowService.findWorkflowByGrantTypeAndObject(ownerGrant.getGrantTypeId(),"DISBURSEMENT"))
+                                        .stream()
+                                        .filter(st -> (st.getInternalStatus().equalsIgnoreCase("DRAFT") || st.getInternalStatus().equalsIgnoreCase("REVIEW")))
+                                        .mapToLong(s->s.getId()).boxed()
+                                        .collect(Collectors.toList());
                                 List<Disbursement> draftAndReviewDisbursements = disbursementService
                                                 .getDibursementsForGrantByStatuses(ownerGrant.getId(),
                                                                 draftAndReviewStatusIds);
@@ -506,12 +508,7 @@ public class DisbursementsController {
                                         finalDisbursement.getId(), "DISBURSEMENT");
 
                 } else {
-
-                        WorkflowStatus activeStatus = workflowStatusService
-                                        .getTenantWorkflowStatuses("DISBURSEMENT",
-                                                        disbursement.getGrant().getGrantorOrganization().getId())
-                                        .stream().filter(st -> st.getInternalStatus().equalsIgnoreCase("ACTIVE"))
-                                        .findFirst().get();
+                        WorkflowStatus activeStatus = workflowStatusService.findById(fromStateId);
                         User activeStatusOwner = userService.getUserById(disbursementService
                                         .getDisbursementAssignments(disbursement).stream()
                                         .filter(ass -> ass.getStateId().longValue() == activeStatus.getId().longValue())
@@ -572,7 +569,7 @@ public class DisbursementsController {
         public List<DisbursementHistory> getDisbursementHistory(@PathVariable("disbursementId") Long disbursementId,
                         @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-                List<DisbursementHistory> history = null;
+                /*List<DisbursementHistory> history = null;
                 User user = userService.getUserById(userId);
                 if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
                         history = disbursementService.getDisbursementHistory(disbursementId);
@@ -581,6 +578,31 @@ public class DisbursementsController {
                 for (DisbursementHistory dh : history) {
                         dh.setNoteAddedByUser(userService.getUserById(dh.getNoteAddedBy()));
                         dh.setStatus(workflowStatusService.findById(dh.getStatusId()));
+                }
+
+                return history;*/
+
+                List<DisbursementHistory> history = new ArrayList();
+                List<DisbursementSnapshot> disbursementSnapshotHistory = disbursementSnapshotService.getDisbursementSnapshotForDisbursement(disbursementId);
+                if (disbursementSnapshotHistory == null
+                        || (disbursementSnapshotHistory != null && disbursementSnapshotHistory.get(0).getFromStateId() == null)) {
+                        history = disbursementService.getDisbursementHistory(disbursementId);
+                        for (DisbursementHistory historyEntry : history) {
+                                historyEntry.setNoteAddedByUser(userService.getUserById(historyEntry.getNoteAddedBy()));
+                        }
+                } else {
+                        for (DisbursementSnapshot snapShot : disbursementSnapshotHistory) {
+                                DisbursementHistory hist = new DisbursementHistory();
+                                //hist.set(snapShot.);
+                                hist.setId(snapShot.getDisbursementId());
+                                hist.setNote(snapShot.getFromNote());
+                                hist.setNoteAdded(snapShot.getMovedOn());
+                                User assignedBy = userService.getUserById(snapShot.getMovedBy());
+                                hist.setNoteAddedBy(assignedBy.getId());
+                                hist.setNoteAddedByUser(assignedBy);
+                                hist.setStatus(workflowStatusService.findById(snapShot.getFromStateId()));
+                                history.add(hist);
+                        }
                 }
 
                 return history;
