@@ -43,6 +43,10 @@ public class WorkflowStatusTransition {
   private String updatedBy;
   @Column
   private Integer seqOrder;
+  @Column
+  private Boolean allowTransitionOnValidationWarning;
+  @Column
+  private Boolean isForwardDirection;
 
 
   public Long getId() {
@@ -143,5 +147,21 @@ public class WorkflowStatusTransition {
 
   public void setSeqOrder(Integer seqOrder) {
     this.seqOrder = seqOrder;
+  }
+
+  public Boolean getAllowTransitionOnValidationWarning() {
+    return allowTransitionOnValidationWarning;
+  }
+
+  public void setAllowTransitionOnValidationWarning(Boolean allowTransitionOnValidationWarning) {
+    this.allowTransitionOnValidationWarning = allowTransitionOnValidationWarning;
+  }
+
+  public Boolean getForwardDirection() {
+    return isForwardDirection;
+  }
+
+  public void setForwardDirection(Boolean forwardDirection) {
+    isForwardDirection = forwardDirection;
   }
 }
