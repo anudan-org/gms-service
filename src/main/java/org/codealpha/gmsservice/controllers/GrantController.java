@@ -308,7 +308,7 @@ public class GrantController {
         grant.setStatusName(GrantStatus.DRAFT);
         grant.setEndDate(originalGrant.getEndDate());
         grant.setEnDate(originalGrant.getEnDate());
-        grant.setOrganization((Grantee) originalGrant.getOrganization());
+        grant.setOrganization(originalGrant.getOrganization());
         grant.setCreatedAt(new Date());
         grant.setCreatedBy(userService.getUserById(userId).getEmailId());
         grant.setGrantorOrganization((Granter) originalGrant.getGrantorOrganization());
@@ -918,7 +918,12 @@ public class GrantController {
         } else {
             tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         }
-        grantToSave.setOrganization(_processNewGranteeOrgIfPresent(grantToSave));
+        GrantType grantType = grantService.getGrantypeById(grantToSave.getGrantTypeId());
+        if(grantType.isInternal()){
+            grantToSave.setOrganization(tenantOrg);
+        }else {
+            grantToSave.setOrganization(_processNewGranteeOrgIfPresent(grantToSave));
+        }
         Grant grant = _processGrant(grantToSave, tenantOrg, user);
 
         // grant = _processGrantKpis(grantToSave, tenantOrg, user);
@@ -1091,9 +1096,9 @@ public class GrantController {
         grant.setGrantStatus(grantToSave.getGrantStatus());
         grant.setName(grantToSave.getName());
 
-        grantToSave.setOrganization((Grantee) grantToSave.getOrganization());
+        grantToSave.setOrganization(grantToSave.getOrganization());
 
-        grant.setOrganization((Grantee) grantToSave.getOrganization());
+        grant.setOrganization(grantToSave.getOrganization());
 
         grant.setStatusName(grantToSave.getStatusName());
         if (grantToSave.getEndDate() != null) {

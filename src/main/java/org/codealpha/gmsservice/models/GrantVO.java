@@ -22,7 +22,7 @@ import javax.persistence.Transient;
 public class GrantVO {
 
   private Long id;
-  private Grantee organization;
+  private Organization organization;
   private Granter grantorOrganization;
   private String name;
   private String description;
@@ -90,7 +90,7 @@ public class GrantVO {
     return organization;
   }
 
-  public void setOrganization(Grantee organization) {
+  public void setOrganization(Organization organization) {
     this.organization = organization;
   }
 

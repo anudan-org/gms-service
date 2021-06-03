@@ -59,3 +59,11 @@ update workflow_status_transitions set allow_transition_on_validation_warning=(s
 drop table temp_validation_flag;
 
 alter table workflow_validations add column message_id bigint;
+
+alter table grants drop constraint fkfxhc0yhlrne4obtxvc11skonn;
+alter table grant_history drop constraint fkfxhc0yhlrne4obtxvc11skonn;
+
+-- FOR CINI MIGRATION
+update organizations set name=(select name from organizations where id=69) where id=11;
+
+update organizations set name='Collectives of Integrated Livelihood Initiatives' where id=11;

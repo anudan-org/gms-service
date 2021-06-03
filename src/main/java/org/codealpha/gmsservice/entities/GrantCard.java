@@ -63,7 +63,7 @@ public class GrantCard {
   @ManyToOne
   @JoinColumn(name = "organization_id")
   @ApiModelProperty(name = "organization", value = "Grantee organization associated with the grant", dataType = "Organization")
-  private Grantee organization;
+  private Organization organization;
 
   @ManyToOne
   @JoinColumn(name = "grantor_org_id")
@@ -234,7 +234,7 @@ public class GrantCard {
     return organization;
   }
 
-  public void setOrganization(Grantee organization) {
+  public void setOrganization(Organization organization) {
     this.organization = organization;
   }
 
