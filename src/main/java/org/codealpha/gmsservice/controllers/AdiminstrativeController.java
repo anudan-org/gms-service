@@ -987,7 +987,7 @@ public class AdiminstrativeController {
                                                         @PathVariable("object")String _object,
                                                         @PathVariable("fromStateId")Long fromStateId,
                                                         @PathVariable("toStateId")Long toStateId,
-                                                        @RequestBody List<ColumnData> meta){
+                                                        @RequestBody(required = false) List<ColumnData> meta){
         WorkflowValidationResult validationResult = new WorkflowValidationResult();
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(workflowStatusService.getById(fromStateId),workflowStatusService.getById(toStateId));
 
@@ -1009,7 +1009,7 @@ public class AdiminstrativeController {
                         query = validation.getValidationQuery().replaceAll("%disbursementId%",String.valueOf(objectId));
                     }
 
-                    if(meta.size()>0){
+                    if(meta!=null && meta.size()>0){
                         for(ColumnData p : meta){
                             query = query.replaceAll("%"+p.getName()+"%",p.getValue());
                         }
