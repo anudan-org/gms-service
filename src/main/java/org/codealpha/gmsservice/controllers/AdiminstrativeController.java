@@ -1031,7 +1031,13 @@ public class AdiminstrativeController {
                         }
                     }
                 }
-                validationResult.setCanMove(transition.getAllowTransitionOnValidationWarning());
+                boolean canMove = transition.getAllowTransitionOnValidationWarning()==null?true:transition.getAllowTransitionOnValidationWarning();
+                if(!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).size()>0){
+                    canMove = false;
+                }else if(!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).size()==0){
+                    canMove = true;
+                }
+                validationResult.setCanMove(canMove);
                 validationResult.setMessages(wfValidationMessages);
 
             }catch (Exception e){
