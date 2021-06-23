@@ -19,11 +19,14 @@ import org.codealpha.gmsservice.repositories.GrantSnapshotRepository;
 import org.codealpha.gmsservice.repositories.GrantToFixRepository;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,6 +42,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -49,6 +53,8 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletResponse;
 
 @RestController
@@ -104,6 +110,14 @@ public class AdiminstrativeController {
     private OrgTagService orgTagService;
     @Autowired
     private WorkflowStatusService workflowStatusService;
+    @PersistenceContext
+    private EntityManager entityManager;
+    @Autowired
+    private WorkflowValidationService workflowValidationService;
+    @Autowired
+    private WorkflowStatusTransitionService workflowStatusTransitionService;
+
+    private static Logger logger = LoggerFactory.getLogger(AdiminstrativeController.class);
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -966,5 +980,77 @@ public class AdiminstrativeController {
     public void deleteOrgTag(@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable Long tagId){
         OrgTag existingTag = orgTagService.getOrgTagById(tagId);
         orgTagService.delete(existingTag);
+    }
+
+    @PostMapping("/{id}/workflow/validate/{object}/{fromStateId}/{toStateId}")
+    public WorkflowValidationResult getGrantValidations(@PathVariable("id")Long objectId,
+                                                        @PathVariable("object")String _object,
+                                                        @PathVariable("fromStateId")Long fromStateId,
+                                                        @PathVariable("toStateId")Long toStateId,
+                                                        @RequestBody(required = false) List<ColumnData> meta){
+        WorkflowValidationResult validationResult = new WorkflowValidationResult();
+        WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(workflowStatusService.getById(fromStateId),workflowStatusService.getById(toStateId));
+
+        List<WorkflowValidation> validationsToRun = workflowValidationService.getActiveValidationsByObject(_object.toUpperCase());
+        if(!validationsToRun.isEmpty()){
+            Connection conn = null;
+            try {
+                List<WarningMessage> wfValidationMessages = new ArrayList<>();
+                EntityManagerFactoryInfo info = (EntityManagerFactoryInfo) entityManager.getEntityManagerFactory();
+                conn = info.getDataSource().getConnection();
+
+                for (WorkflowValidation validation : validationsToRun) {
+                    String query = null;
+                    if(_object.equalsIgnoreCase("GRANT")){
+                        query = validation.getValidationQuery().replaceAll("%grantId%",String.valueOf(objectId));
+                    }else if(_object.equalsIgnoreCase("REPORT")){
+                        query = validation.getValidationQuery().replaceAll("%reportId%",String.valueOf(objectId));
+                    }else if(_object.equalsIgnoreCase("DISBURSEMENT")){
+                        query = validation.getValidationQuery().replaceAll("%disbursementId%",String.valueOf(objectId));
+                    }
+
+                    /*if(meta!=null && meta.size()>0){
+                        for(ColumnData p : meta){
+                            query = query.replaceAll("%"+p.getName()+"%",p.getValue());
+                        }
+                    }*/
+                    PreparedStatement ps = conn.prepareStatement(query);
+                    ResultSet result = ps.executeQuery();
+                    ResultSetMetaData rsMetaData = result.getMetaData();
+
+
+                    while (result.next()){
+                        if(result.getBoolean(1)==true){
+
+
+                            String msg = validation.getMessage();
+                            for(int i=1;i<=rsMetaData.getColumnCount();i++){
+                                msg = msg.replaceAll("%"+rsMetaData.getColumnName(i)+"%",result.getString(i));
+                            }
+                            wfValidationMessages.add(new WarningMessage(validation.getType(),msg));
+                        }
+                    }
+                }
+                boolean canMove = transition.getAllowTransitionOnValidationWarning()==null?true:transition.getAllowTransitionOnValidationWarning();
+                if(!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).size()>0){
+                    canMove = false;
+                }else if(!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).size()==0){
+                    canMove = true;
+                }
+                validationResult.setCanMove(canMove);
+                validationResult.setMessages(wfValidationMessages);
+
+            }catch (Exception e){
+                logger.error(e.getMessage(),e);
+            }finally {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    logger.error(e.getMessage(),e);
+                }
+            }
+        }
+
+        return validationResult;
     }
 }

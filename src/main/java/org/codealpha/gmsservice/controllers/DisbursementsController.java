@@ -175,6 +175,7 @@ public class DisbursementsController {
                 existingDisbursement.setUpdatedBy(userService.getUserById(userId).getEmailId());
                 existingDisbursement = disbursementService.saveDisbursement(existingDisbursement);
 
+                List<ActualDisbursement> existingActualDisbursements = new ArrayList<>();
                 if (disbursementToSave.getActualDisbursements() != null
                                 && disbursementToSave.getActualDisbursements().size() > 0) {
                         for (ActualDisbursement ad : disbursementToSave.getActualDisbursements()) {
@@ -197,8 +198,11 @@ public class DisbursementsController {
                                 existingActualDisbursement.setSaved(true);
                                 existingActualDisbursement = disbursementService
                                                 .saveActualDisbursement(existingActualDisbursement);
+                                existingActualDisbursements.add(existingActualDisbursement);
                         }
                 }
+
+                existingDisbursement.setActualDisbursements(existingActualDisbursements);
 
                 return disbursementService.disbursementToReturn(existingDisbursement, userId);
 

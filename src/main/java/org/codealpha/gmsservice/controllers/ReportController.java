@@ -29,6 +29,7 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,16 +37,20 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Month;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -108,6 +113,10 @@ public class ReportController {
     private OrgTagService orgTagService;
     @Autowired
     private GrantTypeService grantTypeService;
+    @Autowired
+    private WorkflowValidationService workflowValidationService;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @GetMapping("/")
     public List<ReportCard> getAllReports(@PathVariable("userId") Long userId,
@@ -2635,6 +2644,5 @@ public class ReportController {
             Report report = reportService.getReportById(reportId);
 
         reportService.deleteReport(report);
-
     }
 }

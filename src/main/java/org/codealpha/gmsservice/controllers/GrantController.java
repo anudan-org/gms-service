@@ -3434,47 +3434,5 @@ public class GrantController {
 
     }
 
-    @GetMapping("/{grantId}/workflow/validate/{fromStateId}/{toStateId}")
-    public WorkflowValidationResult getGrantValidations(@PathVariable("grantId")Long grantId,
-                                                              @PathVariable("fromStateId")Long fromStateId,
-                                                              @PathVariable("toStateId")Long toStateId){
-        Grant grant = grantService.getById(grantId);
-        WorkflowValidationResult validationResult = new WorkflowValidationResult();
-        WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(workflowStatusService.getById(fromStateId),workflowStatusService.getById(toStateId));
 
-        List<WorkflowValidation> validationsToRun = workflowValidationService.getActiveValidationsByObject("GRANT");
-        if(!validationsToRun.isEmpty()){
-            try {
-                List<WarningMessage> wfValidationMessages = new ArrayList<>();
-                EntityManagerFactoryInfo info = (EntityManagerFactoryInfo) entityManager.getEntityManagerFactory();
-                Connection conn = info.getDataSource().getConnection();
-
-                for (WorkflowValidation validation : validationsToRun) {
-                    String query = validation.getValidationQuery().replaceAll("%grantId%",String.valueOf(grantId));
-                    PreparedStatement ps = conn.prepareStatement(query);
-                    ResultSet result = ps.executeQuery();
-                    ResultSetMetaData rsMetaData = result.getMetaData();
-
-
-                    while (result.next()){
-                        if(result.getBoolean(1)==true){
-
-
-                            String msg = "";
-                            for(int i=1;i<=rsMetaData.getColumnCount();i++){
-                                msg = validation.getMessage().replaceAll("%"+rsMetaData.getColumnName(i)+"%",result.getString(i));
-                            }
-                            wfValidationMessages.add(new WarningMessage(validation.getType(),msg));
-                        }
-                    }
-                }
-                validationResult.setCanMove(transition.getAllowTransitionOnValidationWarning());
-                validationResult.setMessages(wfValidationMessages);
-            }catch (Exception e){
-                logger.error(e.getMessage(),e);
-            }
-        }
-
-        return validationResult;
-    }
 }
