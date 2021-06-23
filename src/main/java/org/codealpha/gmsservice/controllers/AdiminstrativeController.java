@@ -1009,11 +1009,11 @@ public class AdiminstrativeController {
                         query = validation.getValidationQuery().replaceAll("%disbursementId%",String.valueOf(objectId));
                     }
 
-                    if(meta!=null && meta.size()>0){
+                    /*if(meta!=null && meta.size()>0){
                         for(ColumnData p : meta){
                             query = query.replaceAll("%"+p.getName()+"%",p.getValue());
                         }
-                    }
+                    }*/
                     PreparedStatement ps = conn.prepareStatement(query);
                     ResultSet result = ps.executeQuery();
                     ResultSetMetaData rsMetaData = result.getMetaData();
@@ -1023,9 +1023,9 @@ public class AdiminstrativeController {
                         if(result.getBoolean(1)==true){
 
 
-                            String msg = "";
+                            String msg = validation.getMessage();
                             for(int i=1;i<=rsMetaData.getColumnCount();i++){
-                                msg = validation.getMessage().replaceAll("%"+rsMetaData.getColumnName(i)+"%",result.getString(i));
+                                msg = msg.replaceAll("%"+rsMetaData.getColumnName(i)+"%",result.getString(i));
                             }
                             wfValidationMessages.add(new WarningMessage(validation.getType(),msg));
                         }
