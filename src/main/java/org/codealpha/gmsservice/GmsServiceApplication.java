@@ -44,7 +44,7 @@ public class GmsServiceApplication {
         mailSender.setPort(587);
 
         mailSender.setUsername("donotreply@anudan.org");
-        mailSender.setPassword("Soci@l123$");
+        mailSender.setPassword("Social@123");
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
