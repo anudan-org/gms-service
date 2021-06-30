@@ -9,7 +9,7 @@ import org.codealpha.gmsservice.entities.*;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 @ApiModel("User Interface Configuration and Application data for tenant")
 public class UIConfig {

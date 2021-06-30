@@ -31,7 +31,7 @@ public class DisbursementHistory {
     private String createdBy;
     @Column
     private Date createdAt;
-    @Column 
+    @Column
     private String updatedBy;
     @Column
     private Date updatedAt;
@@ -43,7 +43,9 @@ public class DisbursementHistory {
     private boolean granteeEntry;
     @Column
     private Double otherSources;
-    
+    @Transient
+    private WorkflowStatus status;
+
     public Long getId() {
         return id;
     }
@@ -188,6 +190,12 @@ public class DisbursementHistory {
         this.otherSources = otherSources;
     }
 
-    
-    
+    public WorkflowStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(WorkflowStatus status) {
+        this.status = status;
+    }
+
 }

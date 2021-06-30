@@ -11,7 +11,7 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 @Entity
 @Table(name = "platform")

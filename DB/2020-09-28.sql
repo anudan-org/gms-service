@@ -1,0 +1,1 @@
+alter table reports add column disabled_by_amendment boolean default false;

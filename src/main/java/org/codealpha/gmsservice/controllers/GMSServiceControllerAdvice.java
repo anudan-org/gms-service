@@ -16,7 +16,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import static org.springframework.http.HttpStatus.*;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 @RestControllerAdvice
 public class GMSServiceControllerAdvice {

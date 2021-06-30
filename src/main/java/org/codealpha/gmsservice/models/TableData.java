@@ -13,6 +13,8 @@ public class TableData {
     private boolean saved;
     private Long actualDisbursementId;
     private Long disbursementId;
+    private Long reportId;
+    private boolean showForGrantee = true;
 
     public String getName() {
         return name;
@@ -78,4 +80,19 @@ public class TableData {
         this.disbursementId = disbursementId;
     }
 
+    public Long getReportId() {
+        return reportId;
+    }
+
+    public void setReportId(Long reportId) {
+        this.reportId = reportId;
+    }
+
+    public boolean isShowForGrantee() {
+        return showForGrantee;
+    }
+
+    public void setShowForGrantee(boolean showForGrantee) {
+        this.showForGrantee = showForGrantee;
+    }
 }

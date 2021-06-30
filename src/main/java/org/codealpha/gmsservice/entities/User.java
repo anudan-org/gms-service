@@ -7,7 +7,7 @@ import java.util.List;
 import javax.persistence.*;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 @Entity
 @Table(name = "users")

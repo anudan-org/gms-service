@@ -17,10 +17,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
+import javax.persistence.Transient;
+
 public class GrantVO {
 
   private Long id;
-  private Grantee organization;
+  private Organization organization;
   private Granter grantorOrganization;
   private String name;
   private String description;
@@ -41,8 +43,9 @@ public class GrantVO {
   private User noteAddedByUser;
   private String representative;
   private Double amount;
-  private List<AssignedTo> currentAssignment;
+  private Long currentAssignment;
   private List<GrantAssignments> workflowAssignment;
+  List<GrantAssignmentsVO> workflowAssignments;
   private List<Submission> submissions;
   private WorkflowActionPermission actionAuthorities;
   private List<WorkFlowPermission> flowAuthorities;
@@ -57,11 +60,22 @@ public class GrantVO {
   private Boolean hasOngoingDisbursement;
   private int projectDocumentsCount = 0;
   private Double approvedDisbursementsTotal = 0d;
+  private int approvedReportsForGrant;
+  private Long grantTypeId;
+  private List<GrantTag> grantTags;
+  private List<GrantTagVO> tags;
   @JsonIgnore
   private List<GrantStringAttribute> stringAttributes;
 
   private String securityCode;
 
+  private Long origGrantId;
+  private Long amendGrantId;
+  private boolean amended;
+  private String origGrantRefNo;
+  private int amendmentNo;
+  private Date minEndEndate;
+  private Boolean internal;
   private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
   public Long getId() {
@@ -76,7 +90,7 @@ public class GrantVO {
     return organization;
   }
 
-  public void setOrganization(Grantee organization) {
+  public void setOrganization(Organization organization) {
     this.organization = organization;
   }
 
@@ -152,6 +166,14 @@ public class GrantVO {
     this.updatedBy = updatedBy;
   }
 
+  public Boolean getInternal() {
+    return internal;
+  }
+
+  public void setInternal(Boolean internal) {
+    this.internal = internal;
+  }
+
   public WorkflowStatus getGrantStatus() {
     return grantStatus;
   }
@@ -185,11 +207,11 @@ public class GrantVO {
     this.startDate = startDate;
   }
 
-  public List<AssignedTo> getCurrentAssignment() {
+  public Long getCurrentAssignment() {
     return currentAssignment;
   }
 
-  public void setCurrentAssignment(List<AssignedTo> currentAssignment) {
+  public void setCurrentAssignment(Long currentAssignment) {
     this.currentAssignment = currentAssignment;
   }
 
@@ -354,6 +376,8 @@ public class GrantVO {
           logger.error(e.getMessage(), e);
         } catch (InvocationTargetException e) {
           logger.error(e.getMessage(), e);
+        }catch (Exception e){
+          logger.error(e.getMessage(),e);
         }
       }
     }
@@ -429,5 +453,93 @@ public class GrantVO {
 
   public void setApprovedDisbursementsTotal(Double approvedDisbursementsTotal) {
     this.approvedDisbursementsTotal = approvedDisbursementsTotal;
+  }
+
+  public int getApprovedReportsForGrant() {
+    return approvedReportsForGrant;
+  }
+
+  public void setApprovedReportsForGrant(int approvedReportsForGrant) {
+    this.approvedReportsForGrant = approvedReportsForGrant;
+  }
+
+  public Long getOrigGrantId() {
+    return origGrantId;
+  }
+
+  public void setOrigGrantId(Long origGrantId) {
+    this.origGrantId = origGrantId;
+  }
+
+  public Long getAmendGrantId() {
+    return amendGrantId;
+  }
+
+  public void setAmendGrantId(Long amendGrantId) {
+    this.amendGrantId = amendGrantId;
+  }
+
+  public boolean isAmended() {
+    return amended;
+  }
+
+  public void setAmended(boolean amended) {
+    this.amended = amended;
+  }
+
+  public String getOrigGrantRefNo() {
+    return origGrantRefNo;
+  }
+
+  public void setOrigGrantRefNo(String origGrantRefNo) {
+    this.origGrantRefNo = origGrantRefNo;
+  }
+
+  public int getAmendmentNo() {
+    return amendmentNo;
+  }
+
+  public void setAmendmentNo(int amendmentNo) {
+    this.amendmentNo = amendmentNo;
+  }
+
+  public Date getMinEndEndate() {
+    return minEndEndate;
+  }
+
+  public void setMinEndEndate(Date minEndEndate) {
+    this.minEndEndate = minEndEndate;
+  }
+
+  public Long getGrantTypeId() {
+    return grantTypeId;
+  }
+
+  public void setGrantTypeId(Long grantTypeId) {
+    this.grantTypeId = grantTypeId;
+  }
+
+  public List<GrantTag> getGrantTags() {
+    return grantTags;
+  }
+
+  public void setGrantTags(List<GrantTag> grantTags) {
+    this.grantTags = grantTags;
+  }
+
+  public List<GrantTagVO> getTags() {
+    return tags;
+  }
+
+  public void setTags(List<GrantTagVO> tags) {
+    this.tags = tags;
+  }
+
+  public List<GrantAssignmentsVO> getWorkflowAssignments() {
+    return workflowAssignments;
+  }
+
+  public void setWorkflowAssignments(List<GrantAssignmentsVO> workflowAssignments) {
+    this.workflowAssignments = workflowAssignments;
   }
 }

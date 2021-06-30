@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.util.Date;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 @Entity
 @Table(name = "grant_snapshot")
@@ -30,10 +30,10 @@ public class GrantSnapshot {
   @Column(columnDefinition = "text")
   private String stringAttributes;
 
-  @Column(name = "name",columnDefinition = "text")
+  @Column(name = "name", columnDefinition = "text")
   private String name;
 
-  @Column(name = "description",columnDefinition = "text")
+  @Column(name = "description", columnDefinition = "text")
   private String description;
 
   @Column
@@ -53,6 +53,23 @@ public class GrantSnapshot {
 
   @Column
   private Date movedOn;
+
+  @Column
+  private Long origGrantId;
+  @Column
+  private Long amendGrantId;
+  @Column
+  private boolean amended;
+  @Column
+  private Long fromStateId;
+  @Column
+  private Long toStateId;
+  @Column
+  private String fromNote;
+  @Column
+  private Long movedBy;
+  @Column
+  private String fromStringAttributes;
 
   public Long getId() {
     return id;
@@ -118,15 +135,15 @@ public class GrantSnapshot {
     this.amount = amount;
   }
 
-    public Long getGrantStatusId() {
-        return grantStatusId;
-    }
+  public Long getGrantStatusId() {
+    return grantStatusId;
+  }
 
-    public void setGrantStatusId(Long grantStatusId) {
-        this.grantStatusId = grantStatusId;
-    }
+  public void setGrantStatusId(Long grantStatusId) {
+    this.grantStatusId = grantStatusId;
+  }
 
-    public Date getStartDate() {
+  public Date getStartDate() {
     return startDate;
   }
 
@@ -165,4 +182,69 @@ public class GrantSnapshot {
   public void setAssignedBy(Long assignedBy) {
     this.assignedBy = assignedBy;
   }
+
+  public Long getOrigGrantId() {
+    return origGrantId;
+  }
+
+  public void setOrigGrantId(Long origGrantId) {
+    this.origGrantId = origGrantId;
+  }
+
+  public Long getAmendGrantId() {
+    return amendGrantId;
+  }
+
+  public void setAmendGrantId(Long amendGrantId) {
+    this.amendGrantId = amendGrantId;
+  }
+
+  public boolean isAmended() {
+    return amended;
+  }
+
+  public void setAmended(boolean amended) {
+    this.amended = amended;
+  }
+
+  public Long getFromStateId() {
+    return fromStateId;
+  }
+
+  public void setFromStateId(Long fromStateId) {
+    this.fromStateId = fromStateId;
+  }
+
+  public String getFromNote() {
+    return fromNote;
+  }
+
+  public void setFromNote(String fromNote) {
+    this.fromNote = fromNote;
+  }
+
+  public Long getMovedBy() {
+    return movedBy;
+  }
+
+  public void setMovedBy(Long movedBy) {
+    this.movedBy = movedBy;
+  }
+
+  public String getFromStringAttributes() {
+    return fromStringAttributes;
+  }
+
+  public void setFromStringAttributes(String fromStringAttributes) {
+    this.fromStringAttributes = fromStringAttributes;
+  }
+
+  public Long getToStateId() {
+    return toStateId;
+  }
+
+  public void setToStateId(Long toStateId) {
+    this.toStateId = toStateId;
+  }
+
 }

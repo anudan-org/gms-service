@@ -16,11 +16,27 @@ import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.models.*;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 @Entity
 @Table(name = "grants")
 @ApiModel(value = "Grant Model", description = "Data model of a Grant")
+@SqlResultSetMapping(name="ONEGRANT",
+        entities={
+                @EntityResult(entityClass= org.codealpha.gmsservice.entities.Grant.class
+                        /*fields={
+                                @FieldResult(name="id",column="id"),
+                                @FieldResult(name="name", column="name"),
+                                @FieldResult(name="amendGrantId",column = "amend_grant_id"),
+                                @FieldResult(name="approvedReportsForGrant",column="approved_reports_for_grant")
+                        }*/),
+        }
+)
+@NamedNativeQuery(
+        name="SINGLEGRANT",
+        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=a.id and state_id=a.grant_status_id) current_assignment,approved_reports_for_grant(a.id) approved_reports_for_grant, disbursed_amount_for_grant(a.id) approved_disbursements_total, project_documents_for_grant(a.id) project_documents_count from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (B.anchor=true and B.assignments=:userId) or (B.assignments=:userId and B.state_id=A.grant_status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 ) or (C.internal_status='REVIEW') ) order by A.updated_at desc",
+        resultSetMapping = "ONEGRANT"
+)
 public class Grant {
 
   @Id
@@ -32,7 +48,7 @@ public class Grant {
   @ManyToOne
   @JoinColumn(name = "organization_id")
   @ApiModelProperty(name = "organization", value = "Grantee organization associated with the grant", dataType = "Organization")
-  private Grantee organization;
+  private Organization organization;
 
   @ManyToOne
   @JoinColumn(name = "grantor_org_id")
@@ -148,10 +164,19 @@ public class Grant {
   private GrantDetailVO grantDetails;
   @Transient
   @ApiModelProperty(name = "currentAssignment", value = "Current owner of grant based on grant status", dataType = "List<AssignedTo>")
-  private List<AssignedTo> currentAssignment;
-  @Transient
+  private Long currentAssignment;
+  @OneToMany(mappedBy = "grant")
   @ApiModelProperty(name = "workflowAssignment", value = "Allowed workflow ownership assignments for the grant", dataType = "List<GrantAssignmentsVO>")
-  private List<GrantAssignmentsVO> workflowAssignment;
+  private List<GrantAssignments> workflowAssignment;
+
+  @Transient
+  List<GrantAssignmentsVO> workflowAssignments;
+
+  @OneToMany(mappedBy = "grant")
+  private List<GrantTag> grantTags;
+
+  @Transient
+  private List<GrantTagVO> tags;
 
   @Transient
   @ApiModelProperty(name = "securityCode", value = "Secure code for grant")
@@ -173,6 +198,25 @@ public class Grant {
   private int projectDocumentsCount = 0;
   @Transient
   private Double approvedDisbursementsTotal = 0d;
+  @Transient
+  private int approvedReportsForGrant;
+  @Column
+  private Long origGrantId;
+  @Transient
+  private String origGrantRefNo;
+  @Column
+  private Long amendGrantId;
+  @Column
+  private boolean amended;
+  @Column
+  private int amendmentNo = 0;
+  @Transient
+  private Date minEndEndate;
+  @Column
+  private Boolean internal;
+  @Column
+  private Long grantTypeId;
+
 
   public Long getId() {
     return id;
@@ -186,7 +230,7 @@ public class Grant {
     return organization;
   }
 
-  public void setOrganization(Grantee organization) {
+  public void setOrganization(Organization organization) {
     this.organization = organization;
   }
 
@@ -382,19 +426,19 @@ public class Grant {
     this.updatedBy = updatedBy;
   }
 
-  public List<AssignedTo> getCurrentAssignment() {
+  public Long getCurrentAssignment() {
     return currentAssignment;
   }
 
-  public void setCurrentAssignment(List<AssignedTo> currentAssignment) {
+  public void setCurrentAssignment(Long currentAssignment) {
     this.currentAssignment = currentAssignment;
   }
 
-  public List<GrantAssignmentsVO> getWorkflowAssignment() {
+  public List<GrantAssignments> getWorkflowAssignment() {
     return workflowAssignment;
   }
 
-  public void setWorkflowAssignment(List<GrantAssignmentsVO> workflowAssignment) {
+  public void setWorkflowAssignment(List<GrantAssignments> workflowAssignment) {
     this.workflowAssignment = workflowAssignment;
   }
 
@@ -494,4 +538,99 @@ public class Grant {
     this.approvedDisbursementsTotal = approvedDisbursementsTotal;
   }
 
+  public int getApprovedReportsForGrant() {
+    return approvedReportsForGrant;
+  }
+
+  public void setApprovedReportsForGrant(int approvedReportsForGrant) {
+    this.approvedReportsForGrant = approvedReportsForGrant;
+  }
+
+  public Long getOrigGrantId() {
+    return origGrantId;
+  }
+
+  public void setOrigGrantId(Long origGrantId) {
+    this.origGrantId = origGrantId;
+  }
+
+  public Long getAmendGrantId() {
+    return amendGrantId;
+  }
+
+  public void setAmendGrantId(Long amendGrantId) {
+    this.amendGrantId = amendGrantId;
+  }
+
+  public boolean isAmended() {
+    return amended;
+  }
+
+  public void setAmended(boolean amended) {
+    this.amended = amended;
+  }
+
+  public String getOrigGrantRefNo() {
+    return origGrantRefNo;
+  }
+
+  public void setOrigGrantRefNo(String origGrantRefNo) {
+    this.origGrantRefNo = origGrantRefNo;
+  }
+
+  public int getAmendmentNo() {
+    return amendmentNo;
+  }
+
+  public void setAmendmentNo(int amendmentNo) {
+    this.amendmentNo = amendmentNo;
+  }
+
+  public Date getMinEndEndate() {
+    return minEndEndate;
+  }
+
+  public void setMinEndEndate(Date minEndEndate) {
+    this.minEndEndate = minEndEndate;
+  }
+
+  public Boolean getInternal() {
+    return internal;
+  }
+
+  public void setInternal(Boolean internal) {
+    this.internal = internal;
+  }
+
+  public Long getGrantTypeId() {
+    return grantTypeId;
+  }
+
+  public void setGrantTypeId(Long grantTypeId) {
+    this.grantTypeId = grantTypeId;
+  }
+
+  public List<GrantTag> getGrantTags() {
+    return grantTags;
+  }
+
+  public void setGrantTags(List<GrantTag> grantTags) {
+    this.grantTags = grantTags;
+  }
+
+  public List<GrantAssignmentsVO> getWorkflowAssignments() {
+    return workflowAssignments;
+  }
+
+  public void setWorkflowAssignments(List<GrantAssignmentsVO> workflowAssignments) {
+    this.workflowAssignments = workflowAssignments;
+  }
+
+  public List<GrantTagVO> getTags() {
+    return tags;
+  }
+
+  public void setTags(List<GrantTagVO> tags) {
+    this.tags = tags;
+  }
 }

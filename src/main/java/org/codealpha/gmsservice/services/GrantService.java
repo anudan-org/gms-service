@@ -1,9 +1,6 @@
 package org.codealpha.gmsservice.services;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -15,16 +12,20 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.KpiType;
-import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import javax.xml.crypto.Data;
 
 @Service
 public class GrantService {
@@ -32,6 +33,8 @@ public class GrantService {
     private static final String SECRET = "bhjgsdf788778hsdfhgsdf777werghsbdfjhdsf88yw3r7t7yt^%^%%@#Ghj";
     @Autowired
     private GrantRepository grantRepository;
+    @Autowired
+    private GrantCardRepository grantCardRepository;
     @Autowired
     private GranterGrantSectionRepository granterGrantSectionRepository;
     @Autowired
@@ -104,6 +107,24 @@ public class GrantService {
     private DisbursementRepository disbursementRepository;
     @Autowired
     private ActualDisbursementRepository actualDisbursementRepository;
+    @Autowired
+    private ReportService reportService;
+    @Autowired
+    private DisbursementService disbursementService;
+    @Autowired
+    private DisabledUsersEntityRepository disabledUsersEntityRepository;
+    @Autowired
+    private GrantTypeRepository grantTypeRepository;
+    @Autowired
+    private  GrantTagRepository grantTagRepository;
+    @Autowired
+    private OrgTagService orgTagService;
+    @Autowired
+    private OrgTagRepository orgTagRepository;
+    @Autowired
+    private DataExportSummaryRepository dataExportSummaryRepository;
+    @Value("${spring.timezone}")
+    private String timezone;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -114,7 +135,11 @@ public class GrantService {
     }
 
     public Grant getById(Long id) {
-        return grantRepository.findById(id).get();
+        return grantRepository.getById(id);
+    }
+
+    public GrantCard getGrantCardById(Long id) {
+        return grantCardRepository.getById(id);
     }
 
     public GrantSpecificSection getGrantSectionBySectionId(Long sectionId) {
@@ -137,25 +162,20 @@ public class GrantService {
                 return grantStringAttribute.get().getSectionAttribute();
             }
         } else if (type.equalsIgnoreCase("multiline")) {
-            Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
-            if (grantStringAttribute.isPresent()) {
-                return grantStringAttribute.get().getSectionAttribute();
-            }
+           GrantStringAttribute grantStringAttribute = grantStringAttributeRepository.getGrantStringAttributeById(attributeId);
+                return grantStringAttribute.getSectionAttribute();
+
         } else if (type.equalsIgnoreCase("document")) {
-            Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
-            if (grantStringAttribute.isPresent()) {
-                return grantStringAttribute.get().getSectionAttribute();
-            }
+            GrantStringAttribute grantStringAttribute = grantStringAttributeRepository.getGrantStringAttributeById(attributeId);
+                return grantStringAttribute.getSectionAttribute();
+
         } else if (type.equalsIgnoreCase("kpi")) {
-            Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
-            if (grantStringAttribute.isPresent()) {
-                return grantStringAttribute.get().getSectionAttribute();
-            }
+            GrantStringAttribute grantStringAttribute = grantStringAttributeRepository.getGrantStringAttributeById(attributeId);
+                return grantStringAttribute.getSectionAttribute();
+
         } else if (type.equalsIgnoreCase("table") || type.equalsIgnoreCase("disbursement")) {
-            Optional<GrantStringAttribute> grantStringAttribute = grantStringAttributeRepository.findById(attributeId);
-            if (grantStringAttribute.isPresent()) {
-                return grantStringAttribute.get().getSectionAttribute();
-            }
+            GrantStringAttribute grantStringAttribute = grantStringAttributeRepository.getGrantStringAttributeById(attributeId);
+                return grantStringAttribute.getSectionAttribute();
         }
 
         return null;
@@ -334,7 +354,7 @@ public class GrantService {
     }
 
     public Grant findGrantByNameAndGranter(String name, Granter granter) {
-        return grantRepository.findByNameAndGrantorOrganization(name, granter);
+        return grantRepository.findByNameAndGrantorOrganization(name, granter.getId());
     }
 
     public String buildNotificationContent(Grant grant, WorkflowStatus status, String configValue) {
@@ -493,7 +513,13 @@ public class GrantService {
             url = url + "/home/?action=login&g=" + code + "&email=&type=grant";
         }
 
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName())
+        String grantName = "";
+        if((finalGrant.getGrantStatus().getInternalStatus().equalsIgnoreCase("DRAFT") || finalGrant.getGrantStatus().getInternalStatus().equalsIgnoreCase("REVIEW")) && finalGrant.getOrigGrantId()!=null){
+            grantName = "Amendment in-progress ["+getById(finalGrant.getOrigGrantId()).getReferenceNo()+"] "+ finalGrant.getName();
+        }else{
+            grantName = finalGrant.getReferenceNo()!=null?"[".concat(finalGrant.getReferenceNo()).concat("] ").concat(finalGrant.getName()):finalGrant.getName();
+        }
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", grantName)
                 .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
                 .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
                 .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
@@ -508,7 +534,7 @@ public class GrantService {
                 .replaceAll("%APPROVER_TYPE%", "Approver").replaceAll("%ENTITY_TYPE%", "grant")
                 .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
                 .replaceAll("%ENTITY_NAME%", finalGrant.getName());
-        String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalGrant.getName());
+        String subject = subConfigValue.replaceAll("%GRANT_NAME%", grantName);
 
         return new String[] { subject, message };
     }
@@ -579,7 +605,7 @@ public class GrantService {
         List<Long> grantWorkflowIds = new ArrayList<>();
         Map<Long, List<Long>> grantWorkflowStatusIds = new HashMap<>();
         Map<Long, Long[][]> grantWorkflowTransitionIds = new HashMap<>();
-        workflowRepository.findByGranterAndObject(grant.getGrantorOrganization(), WorkflowObject.GRANT).forEach(w -> {
+        workflowRepository.findByGranterAndObjectAndType(grant.getGrantorOrganization().getId(), "GRANT",grant.getGrantTypeId()).forEach(w -> {
             grantWorkflowIds.add(w.getId());
             List<Long> wfStatusIds = new ArrayList<>();
             workflowStatusRepository.findByWorkflow(w).forEach(ws -> {
@@ -680,7 +706,8 @@ public class GrantService {
         grant.setNoteAddedByUser(grantVO.getNoteAddedByUser());
 
         List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
-        for (GrantAssignments assignment : getGrantWorkflowAssignments(grant)) {
+        grant.setWorkflowAssignment(getGrantWorkflowAssignments(grant));
+        for (GrantAssignments assignment : grant.getWorkflowAssignment()) {
             GrantAssignmentsVO assignmentsVO = new GrantAssignmentsVO();
             assignmentsVO.setId(assignment.getId());
             assignmentsVO.setAnchor(assignment.isAnchor());
@@ -688,26 +715,26 @@ public class GrantService {
             if (assignment.getAssignments() != null && assignment.getAssignments() > 0) {
                 assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
             }
-            assignmentsVO.setGrantId(assignment.getGrantId());
+            assignmentsVO.setGrantId(assignment.getGrant().getId());
             assignmentsVO.setStateId(assignment.getStateId());
             assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
 
             setAssignmentHistory(grant, assignmentsVO);
             workflowAssignments.add(assignmentsVO);
         }
-        grant.setWorkflowAssignment(workflowAssignments);
+        grant.setWorkflowAssignments(workflowAssignments);
         List<GrantAssignments> grantAssignments = getGrantCurrentAssignments(grant);
         if (grantAssignments != null) {
             for (GrantAssignments assignment : grantAssignments) {
-                if (grant.getCurrentAssignment() == null) {
-                    List<AssignedTo> assignedToList = new ArrayList<>();
+                /*if (grant.getCurrentAssignment() == null) {
+                    Long assignedToList = new ArrayList<>();
                     grant.setCurrentAssignment(assignedToList);
-                }
-                AssignedTo newAssignedTo = new AssignedTo();
+                }*/
+                /*AssignedTo newAssignedTo = new AssignedTo();
                 if (assignment.getAssignments() != null && assignment.getAssignments() > 0) {
                     newAssignedTo.setUser(userService.getUserById(assignment.getAssignments()));
-                }
-                grant.getCurrentAssignment().add(newAssignedTo);
+                }*/
+                grant.setCurrentAssignment(assignment.getAssignments());
             }
         }
         grant = saveGrant(grant);
@@ -743,11 +770,128 @@ public class GrantService {
                 approvedActualDisbursements.addAll(approvedActuals);
             }
         }
+
+        if(grant.getOrigGrantId()!=null) {
+            approvedActualDisbursements.addAll(getPastApprovedActualDisbursementsForGrant(getById(grant.getOrigGrantId()),true));
+        }
+        HashSet<Object> seen=new HashSet<>();
+        approvedActualDisbursements.removeIf(e->!seen.add(e.getId()));
+
         grant.setProjectDocumentsCount(getGrantsDocuments(grant.getId()).size());
         approvedActualDisbursements.removeIf(ad -> ad.getActualAmount() == null);
         grant.setApprovedDisbursementsTotal(
                 approvedActualDisbursements.stream().mapToDouble(ActualDisbursement::getActualAmount).sum());
+
+        Optional<WorkflowStatus> reportApprovedStatus = workflowStatusService
+                .getTenantWorkflowStatuses("REPORT", grant.getGrantorOrganization().getId()).stream()
+                .filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
+        List<ReportCard> reports = new ArrayList<>();
+        int noOfReports = 0;
+        if (reportApprovedStatus.isPresent()) {
+            reports = reportService.findReportCardsByStatusForGrant(reportApprovedStatus.get(), grant);
+            noOfReports = reports.size();
+            // Include approved reports of orgiginal grant if exist
+            if (grant.getOrigGrantId() != null) {
+                reports = reportService.findReportCardsByStatusForGrant(reportApprovedStatus.get(),
+                        getById(grant.getOrigGrantId()));
+                noOfReports += reports.size();
+            }
+            // End
+            grant.setApprovedReportsForGrant(noOfReports);
+        }
+
+        // Set old grant ref no if current amendment grant is still in porogress
+        if (grant.getOrigGrantId() != null && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE")
+                && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
+            grant.setOrigGrantRefNo(getById(grant.getOrigGrantId()).getReferenceNo());
+        }
+
+        // Set Minimum End Date for Amendment grant
+        if (grant.getOrigGrantId() != null) {
+            List<Report> existingReports = reportService.getReportsForGrant(getById(grant.getOrigGrantId()));
+            if (existingReports != null && existingReports.size() > 0) {
+                //existingReports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
+                existingReports.removeIf(r -> r.getEndDate()==null);
+                if (existingReports != null && existingReports.size() > 0) {
+
+                    Comparator<Report> endDateComparator = Comparator.comparing(c -> c.getEndDate());
+                    existingReports.sort(endDateComparator);
+                    Report lastReport = existingReports.get(existingReports.size() - 1);
+                    grant.setMinEndEndate(lastReport.getEndDate());
+                }
+            }
+
+            List<Disbursement> existingDisbursements = disbursementService
+                    .getAllDisbursementsForGrant(grant.getOrigGrantId());
+            if (existingDisbursements != null && existingDisbursements.size() > 0) {
+                existingDisbursements.removeIf(d -> !d.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
+                if (existingDisbursements != null && existingDisbursements.size() > 0) {
+
+                    Comparator<Disbursement> endDateComparator = Comparator.comparing(d -> d.getMovedOn());
+                    existingDisbursements.sort(endDateComparator);
+                    Disbursement lastDisbursement = existingDisbursements.get(existingDisbursements.size() - 1);
+                    if (grant.getMinEndEndate() != null && new DateTime(lastDisbursement.getMovedOn())
+                            .isAfter(new DateTime(grant.getMinEndEndate()))) {
+                        grant.setMinEndEndate(lastDisbursement.getMovedOn());
+                    }
+
+                }
+            }
+        }
+
+        List<GrantTag> grantTags = getTagsForGrant(grant.getId());
+        List<GrantTagVO> grantTagsVoList = new ArrayList<>();
+        for(GrantTag tag: grantTags){
+            GrantTagVO vo =new GrantTagVO();
+            vo.setGrantId(grant.getId());
+            vo.setId(tag.getId());
+            vo.setOrgTagId(tag.getOrgTagId());
+            vo.setTagName(orgTagService.getOrgTagById(tag.getOrgTagId()).getName());
+            grantTagsVoList.add(vo);
+        }
+        grant.setTags(grantTagsVoList);
         return grant;
+    }
+
+    private List<ActualDisbursement> getPastApprovedActualDisbursementsForGrant(Grant grant,boolean includeCurrent) {
+        List<Disbursement> disbs = disbursementService.getAllDisbursementsForGrant(grant.getId());
+        List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
+        List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses("DISBURSEMENT",
+                grant.getGrantorOrganization().getId());
+
+        List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE")
+                        || ws.getInternalStatus().equalsIgnoreCase("CLOSED"))
+                .collect(Collectors.toList());
+        List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                .collect(Collectors.toList());
+
+        for(Disbursement disbursement:disbs){
+            List<Disbursement> approvedDisbursements = disbursementService.getDibursementsForGrantByStatuses(disbursement.getGrant().getId(),
+                    statusIds);
+
+            if (approvedDisbursements != null) {
+                if(!includeCurrent){
+                    approvedDisbursements.removeIf(d -> d.getId().longValue() == disbursement.getId().longValue());
+                }
+                approvedDisbursements.removeIf(d -> new DateTime(d.getMovedOn(), DateTimeZone.forID(timezone))
+                        .isAfter(new DateTime(disbursement.getMovedOn(), DateTimeZone.forID(timezone))));
+                for (Disbursement approved : approvedDisbursements) {
+                    List<ActualDisbursement> approvedActuals = disbursementService.getActualDisbursementsForDisbursement(approved);
+                    approvedActualDisbursements.addAll(approvedActuals);
+                }
+            }
+            //Get previous actual disbursements if grant is amended
+            if(grant.getOrigGrantId()!=null){
+                List<Disbursement> disburs = disbursementService.getAllDisbursementsForGrant(disbursement.getGrant().getOrigGrantId());
+                for(Disbursement d : disburs){
+                    approvedActualDisbursements.addAll(getPastApprovedActualDisbursementsForGrant(d.getGrant(),true));
+                }
+            }
+        }
+
+        approvedActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
+        return approvedActualDisbursements;
     }
 
     public void setAssignmentHistory(Grant grant, GrantAssignmentsVO assignmentsVO) {
@@ -785,4 +929,83 @@ public class GrantService {
     public void deleteGrantDocument(GrantDocument doc) {
         grantDocumentRepository.delete(doc);
     }
+
+    public List<DisabledUsersEntity> getGrantsWithDisabledUsers(){
+        return disabledUsersEntityRepository.getGrants();
+    }
+
+    public List<GrantType> getGrantTypesForTenantOrg(Long orgId){
+        return grantTypeRepository.findGrantTypesForTenant(orgId);
+    }
+
+    public GrantType getGrantypeById(Long grantTypeId){
+        return grantTypeRepository.findById(grantTypeId).get();
+    }
+
+    public List<Grant> getAllGrantsForGranter(Long granterId){
+        return grantRepository.getAllGrantsForGranter(granterId);
+    }
+
+    public List<GrantTag> getTagsForGrant(Long grantId){
+        return grantTagRepository.getTagsForGrant(grantId);
+    }
+
+    public GrantTag attachTagToGrant(GrantTag tag){
+        return grantTagRepository.save(tag);
+    }
+
+    public void detachTagToGrant(GrantTag tag){
+        grantTagRepository.delete(tag);
+    }
+
+    public GrantTag getGrantTagById(Long id){
+        return grantTagRepository.getTagById(id);
+    }
+
+    public boolean isTagInUse(Long orgTagId){
+        return grantTagRepository.isTagInUse(orgTagId);
+    }
+
+    public DataExportSummary saveExportSummary(DataExportSummary summary){
+        return dataExportSummaryRepository.save(summary);
+    }
+
+    public List<Long> getAllGrantIdsForProject(Long grantId){
+        List<Long> dGrantIds = getDownstreamGrantIds(grantId);
+        List<Long> uGrantIds = getUpstreamGrantIds(grantId);
+
+        Set<Long> finalGrantIds = new HashSet<>();
+        finalGrantIds.addAll(dGrantIds);
+        finalGrantIds.addAll(uGrantIds);
+        finalGrantIds.removeIf(g -> g.longValue()==grantId.longValue());
+        return finalGrantIds.stream().collect(Collectors.toList());
+    }
+
+    private List<Long> getDownstreamGrantIds(Long grantId) {
+        List<Long> ids = new ArrayList<>();
+        ids.add(grantId);
+        Grant grant = getById(grantId);
+        if(grant.getOrigGrantId()!=null){
+            ids.addAll(getDownstreamGrantIds(grant.getOrigGrantId()));
+        }
+        return ids;
+    }
+
+    private List<Long> getUpstreamGrantIds(Long grantId) {
+        List<Long> ids = new ArrayList<>();
+
+        Grant grant = getByOrigGrantId(grantId);
+
+        if(grant!=null){
+            ids.add(grant.getId());
+            ids.addAll(getUpstreamGrantIds(grant.getId()));
+        }
+        return ids;
+    }
+
+    public Grant getByOrigGrantId(Long grantId){
+        return grantRepository.getByOrigGrantId(grantId);
+    }
+
+
 }

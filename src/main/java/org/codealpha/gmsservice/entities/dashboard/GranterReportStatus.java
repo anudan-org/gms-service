@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.entities.dashboard;
 import javax.persistence.*;
 
 @Entity(name = "granter_report_statuses")
+@Cacheable(value = false)
 public class GranterReportStatus {
 
     @Id

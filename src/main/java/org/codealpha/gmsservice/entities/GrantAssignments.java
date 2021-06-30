@@ -1,5 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Date;
 import java.util.List;
 
@@ -11,8 +13,10 @@ public class GrantAssignments {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
-    private Long grantId;
+    @ManyToOne
+    @JoinColumn(referencedColumnName = "id")
+    @JsonIgnore
+    private Grant grant;
 
     @Column
     private Long stateId;
@@ -40,12 +44,12 @@ public class GrantAssignments {
         this.id = id;
     }
 
-    public Long getGrantId() {
-        return grantId;
+    public Grant getGrant() {
+        return grant;
     }
 
-    public void setGrantId(Long grantId) {
-        this.grantId = grantId;
+    public void setGrant(Grant grant) {
+        this.grant = grant;
     }
 
     public Long getAssignments() {
@@ -95,5 +99,7 @@ public class GrantAssignments {
     public void setUpdatedBy(Long updatedBy) {
         this.updatedBy = updatedBy;
     }
+
+
 
 }

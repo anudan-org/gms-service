@@ -3,6 +3,7 @@ package org.codealpha.gmsservice.controllers;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiOperation;
@@ -14,14 +15,18 @@ import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
-import org.codealpha.gmsservice.repositories.UserRoleRepository;
+import org.codealpha.gmsservice.repositories.GrantSnapshotRepository;
+import org.codealpha.gmsservice.repositories.GrantToFixRepository;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,22 +34,27 @@ import org.springframework.web.multipart.MultipartFile;
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletResponse;
 
 @RestController
@@ -86,6 +96,28 @@ public class AdiminstrativeController {
     private String uploadLocation;
     @Autowired
     private ResourceLoader resourceLoader;
+    @Autowired
+    private GrantToFixRepository grantToFixRepository;
+    @Autowired
+    private GrantSnapshotRepository grantSnapshotRepository;
+    @Autowired
+    private GrantTypeService grantTypeService;
+    @Autowired
+    private GrantTypeWorkflowMappingService grantTypeWorkflowMappingService;
+    @Autowired
+    private GranterService granterService;
+    @Autowired
+    private OrgTagService orgTagService;
+    @Autowired
+    private WorkflowStatusService workflowStatusService;
+    @PersistenceContext
+    private EntityManager entityManager;
+    @Autowired
+    private WorkflowValidationService workflowValidationService;
+    @Autowired
+    private WorkflowStatusTransitionService workflowStatusTransitionService;
+
+    private static Logger logger = LoggerFactory.getLogger(AdiminstrativeController.class);
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -100,7 +132,8 @@ public class AdiminstrativeController {
             org = organizationService.findOrganizationByTenantCode(tenantCode);
         }
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "GRANT");
+        WorkflowStatus grantStatus = workflowStatusService.findById(grantService.getById(grantId).getGrantStatus().getId());
+        return workflowTransitionModelService.getWorkflowsByWorkflowStatusId(grantStatus.getWorkflow().getId());
     }
 
     @GetMapping("/workflow/report/{reportId}/user/{userId}")
@@ -117,7 +150,9 @@ public class AdiminstrativeController {
         }
         organizationService.findOrganizationByTenantCode(tenantCode);
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "REPORT");
+        WorkflowStatus reportStatus = workflowStatusService.findById(reportService.getReportById(reportId).getStatus().getId());
+
+        return workflowTransitionModelService.getWorkflowsByWorkflowStatusId(reportStatus.getWorkflow().getId());
     }
 
     @GetMapping("/workflow/disbursement/{disbursementId}/user/{userId}")
@@ -134,7 +169,8 @@ public class AdiminstrativeController {
         }
         organizationService.findOrganizationByTenantCode(tenantCode);
 
-        return workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(), "DISBURSEMENT");
+        WorkflowStatus disbursementStatus = workflowStatusService.findById(disbursementService.getDisbursementById(disbursementId).getStatus().getId());
+        return workflowTransitionModelService.getWorkflowsByWorkflowStatusId(disbursementStatus.getWorkflow().getId());
     }
 
     @PostMapping("/workflow")
@@ -751,5 +787,270 @@ public class AdiminstrativeController {
         }
 
         return orgs;
+    }
+
+    @PostMapping("/fixgrants")
+    public HttpStatus fixSustainPlusGrants()
+            throws JsonParseException, JsonMappingException, IOException, URISyntaxException {
+        List<GrantToFix> grants2Fix = grantToFixRepository.getGrantsToFix();
+        String scripts = "";
+        FileWriter fw = new FileWriter("c:\\sustainplus\\snapshot_fix.sql", true);
+        BufferedWriter bw = new BufferedWriter(fw);
+
+        for (GrantToFix toFix : grants2Fix) {
+            ObjectMapper mapper = new ObjectMapper();
+            List<TableData> disbsToSet = mapper.readValue(toFix.getValue(), new TypeReference<List<TableData>>() {
+            });
+
+            GrantDetailVO detail = mapper.readValue(toFix.getStringAttributes(), GrantDetailVO.class);
+            for (SectionVO section : detail.getSections()) {
+                section.getAttributes().removeIf(at -> at.getId().longValue() == 8665);
+                List<SectionAttributesVO> attributes = section.getAttributes();
+                if (attributes != null && attributes.size() > 0) {
+                    for (SectionAttributesVO attribute : attributes) {
+                        if (attribute.getId() == 8655) {
+                            attribute.setFieldValue(
+                                    "PRADAN, 3 Community Shopping Centre, Niti Bagh, New Delhi - 110049");//
+                        }
+                        if (attribute.getFieldType().equalsIgnoreCase("DISBURSEMENT")) {
+                            attribute.setFieldTableValue(disbsToSet);
+                            attribute.setFieldValue(mapper.writeValueAsString(disbsToSet));
+                        }
+
+                    }
+                }
+
+                // GrantSnapshot snapshot =
+                // grantSnapshotRepository.findById(toFix.getId()).get();
+                // snapshot.setStringAttributes(mapper.writeValueAsString(detail));
+
+                String updateString = mapper.writeValueAsString(detail);
+                updateString = updateString.replaceAll("'", "''");
+                bw.write("update grant_snapshot set string_attributes='" + updateString + "' where id=" + toFix.getId()
+                        + ";");
+                bw.newLine();
+                // grantSnapshotRepository.save(snapshot);
+
+            }
+        }
+        // bw.write("update grant_stri")
+        bw.close();
+        // FileUtils.writeStringToFile(new File(new
+        // URI("c:\\sustainplus\\snapshot_fix.sql")), scripts);
+        return HttpStatus.OK;
+    }
+
+    @GetMapping("/create-grant-types")
+    public boolean createGrantTypes(){
+
+        List<Granter> granters = granterService.getAllGranters();
+        granters.removeIf(g -> g.getCode().equalsIgnoreCase("TEMPORG"));
+        for(Organization granter:granters){
+            List<Workflow> grantWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(),"GRANT");
+            List<GrantType> grantTypes = grantTypeService.findGrantTypesForTenant(granter.getId());
+            for(Workflow grantWf: grantWorkflows){
+                if(grantTypes.size()==0){
+                    GrantType gt = new GrantType();
+                    gt.setColorCode("#fdf6ff");
+                    gt.setDescription("Implemented via external partner");
+                    gt.setGranterId(granter.getId());
+                    gt.setInternal(false);
+                    gt.setName("External Implementation");
+                    gt = grantTypeService.save(gt);
+                    grantTypes.add(gt);
+
+                    List<Grant> grants = grantService.getAllGrantsForGranter(granter.getId());
+                    for(Grant grant: grants){
+                        grant.setGrantTypeId(gt.getId());
+                        grantService.saveGrant(grant);
+                    }
+                }
+                for(GrantType gt : grantTypes){
+                    List<GrantTypeWorkflowMapping> typeWfMapping = grantTypeWorkflowMappingService.findByWorkflow(grantWf.getId());
+                    if(typeWfMapping.size()==0){
+                        GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
+                        gtm.setGrantTypeId(gt.getId());
+                        //gtm.setInternal(false);
+                        gtm.set_default(false);
+                        gtm.setWorkflowId(grantWf.getId());
+                        gtm = grantTypeWorkflowMappingService.save(gtm);
+                    }
+                }
+            }
+
+            List<Workflow> reportWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(),"REPORT");
+            for(Workflow reportWf: reportWorkflows){
+                if(grantTypes.size()==0){
+                    GrantType gt = new GrantType();
+                    gt.setColorCode("#fdf6ff");
+                    gt.setDescription("Implemented via external partner");
+                    gt.setGranterId(granter.getId());
+                    gt.setInternal(false);
+                    gt.setName("External Implementation");
+                    gt = grantTypeService.save(gt);
+                    grantTypes.add(gt);
+
+                    List<Grant> grants = grantService.getAllGrantsForGranter(granter.getId());
+                    for(Grant grant: grants){
+                        grant.setGrantTypeId(gt.getId());
+                        grantService.saveGrant(grant);
+                    }
+                }
+                for(GrantType gt : grantTypes){
+                    List<GrantTypeWorkflowMapping> typeWfMapping = grantTypeWorkflowMappingService.findByWorkflow(reportWf.getId());
+                    if(typeWfMapping.size()==0){
+                        GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
+                        gtm.setGrantTypeId(gt.getId());
+                        gtm.set_default(false);
+                        gtm.setWorkflowId(reportWf.getId());
+                        gtm = grantTypeWorkflowMappingService.save(gtm);
+                    }
+                }
+            }
+
+            List<Workflow> disbursementWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(),"DISBURSEMENT");
+            for(Workflow disbWf: disbursementWorkflows){
+                if(grantTypes.size()==0){
+                    GrantType gt = new GrantType();
+                    gt.setColorCode("#fdf6ff");
+                    gt.setDescription("Implemented via external partner");
+                    gt.setGranterId(granter.getId());
+                    gt.setInternal(false);
+                    gt.setName("External Implementation");
+                    gt = grantTypeService.save(gt);
+                    grantTypes.add(gt);
+
+                    List<Grant> grants = grantService.getAllGrantsForGranter(granter.getId());
+                    for(Grant grant: grants){
+                        grant.setGrantTypeId(gt.getId());
+                        grantService.saveGrant(grant);
+                    }
+                }
+                for(GrantType gt : grantTypes){
+                    List<GrantTypeWorkflowMapping> typeWfMapping = grantTypeWorkflowMappingService.findByWorkflow(disbWf.getId());
+                    if(typeWfMapping.size()==0){
+                        GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
+                        gtm.setGrantTypeId(gt.getId());
+                        gtm.set_default(false);
+                        gtm.setWorkflowId(disbWf.getId());
+                        gtm = grantTypeWorkflowMappingService.save(gtm);
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    @PostMapping("/tags/{name}")
+    public OrgTag createOrgTag(@PathVariable("name") String tagName,@RequestHeader("X-TENANT-CODE") String tenantCode){
+        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        OrgTag tag = new OrgTag();
+        tag.setName(tagName);
+        tag.setTenant(tenantOrg.getId());
+        tag = orgTagService.createTag(tag);
+        return tag;
+    }
+
+    @GetMapping("/user/{userId}/tags")
+    public List<OrgTag> getOrgTags(@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode){
+        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+        List<OrgTag> tags = orgTagService.getOrgTags(tenantOrg.getId());
+        for(OrgTag tag : tags){
+            if(grantService.isTagInUse(tag.getId())){
+                tag.setUsed(true);
+            }else{
+                tag.setUsed(false);
+            }
+        }
+        return tags;
+    }
+
+    @PutMapping("/user/{userId}/tags")
+    public OrgTag updateOrgTag(@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode,@RequestBody OrgTag tag){
+        OrgTag existingTag = orgTagService.getOrgTagById(tag.getId());
+        existingTag.setUsed(tag.getUsed());
+        existingTag.setName(tag.getName());
+        existingTag.setDisabled(tag.getDisabled());
+
+        existingTag = orgTagService.save(existingTag);
+        return existingTag;
+    }
+
+    @DeleteMapping("/user/{userId}/tags/{tagId}")
+    public void deleteOrgTag(@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable Long tagId){
+        OrgTag existingTag = orgTagService.getOrgTagById(tagId);
+        orgTagService.delete(existingTag);
+    }
+
+    @PostMapping("/{id}/workflow/validate/{object}/{fromStateId}/{toStateId}")
+    public WorkflowValidationResult getGrantValidations(@PathVariable("id")Long objectId,
+                                                        @PathVariable("object")String _object,
+                                                        @PathVariable("fromStateId")Long fromStateId,
+                                                        @PathVariable("toStateId")Long toStateId,
+                                                        @RequestBody(required = false) List<ColumnData> meta){
+        WorkflowValidationResult validationResult = new WorkflowValidationResult();
+        WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(workflowStatusService.getById(fromStateId),workflowStatusService.getById(toStateId));
+
+        List<WorkflowValidation> validationsToRun = workflowValidationService.getActiveValidationsByObject(_object.toUpperCase());
+        if(!validationsToRun.isEmpty()){
+            Connection conn = null;
+            try {
+                List<WarningMessage> wfValidationMessages = new ArrayList<>();
+                EntityManagerFactoryInfo info = (EntityManagerFactoryInfo) entityManager.getEntityManagerFactory();
+                conn = info.getDataSource().getConnection();
+
+                for (WorkflowValidation validation : validationsToRun) {
+                    String query = null;
+                    if(_object.equalsIgnoreCase("GRANT")){
+                        query = validation.getValidationQuery().replaceAll("%grantId%",String.valueOf(objectId));
+                    }else if(_object.equalsIgnoreCase("REPORT")){
+                        query = validation.getValidationQuery().replaceAll("%reportId%",String.valueOf(objectId));
+                    }else if(_object.equalsIgnoreCase("DISBURSEMENT")){
+                        query = validation.getValidationQuery().replaceAll("%disbursementId%",String.valueOf(objectId));
+                    }
+
+                    /*if(meta!=null && meta.size()>0){
+                        for(ColumnData p : meta){
+                            query = query.replaceAll("%"+p.getName()+"%",p.getValue());
+                        }
+                    }*/
+                    PreparedStatement ps = conn.prepareStatement(query);
+                    ResultSet result = ps.executeQuery();
+                    ResultSetMetaData rsMetaData = result.getMetaData();
+
+
+                    while (result.next()){
+                        if(result.getBoolean(1)==true){
+
+
+                            String msg = validation.getMessage();
+                            for(int i=1;i<=rsMetaData.getColumnCount();i++){
+                                msg = msg.replaceAll("%"+rsMetaData.getColumnName(i)+"%",result.getString(i));
+                            }
+                            wfValidationMessages.add(new WarningMessage(validation.getType(),msg));
+                        }
+                    }
+                }
+                boolean canMove = transition.getAllowTransitionOnValidationWarning()==null?true:transition.getAllowTransitionOnValidationWarning();
+                if(!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).size()>0){
+                    canMove = false;
+                }else if(!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).size()==0){
+                    canMove = true;
+                }
+                validationResult.setCanMove(canMove);
+                validationResult.setMessages(wfValidationMessages);
+
+            }catch (Exception e){
+                logger.error(e.getMessage(),e);
+            }finally {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    logger.error(e.getMessage(),e);
+                }
+            }
+        }
+
+        return validationResult;
     }
 }

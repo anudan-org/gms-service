@@ -18,8 +18,8 @@ public class WorkflowStatusService {
     return workflowStatusRepository.findById(id).get();
   }
 
-  public WorkflowStatus findInitialStatusByObjectAndGranterOrgId(String object, Long orgid){
-    return workflowStatusRepository.getInitialStatusByObjectAndGranterOrg(object,orgid);
+  public WorkflowStatus findInitialStatusByObjectAndGranterOrgId(String object, Long orgid, Long grantType){
+    return workflowStatusRepository.getInitialStatusByObjectAndGranterOrg(object,orgid, grantType);
   }
 
   public List<WorkflowStatus> getTenantWorkflowStatuses(String object, Long granterOrgId){
@@ -31,5 +31,9 @@ public class WorkflowStatusService {
 
   public WorkflowStatus saveWorkflowStatus(WorkflowStatus status){
     return workflowStatusRepository.save(status);
+  }
+
+  public List<WorkflowStatus> findByWorkflow(Workflow workflow){
+    return  workflowStatusRepository.findByWorkflow(workflow);
   }
 }

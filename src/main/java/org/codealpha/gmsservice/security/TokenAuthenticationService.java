@@ -38,16 +38,17 @@ public class TokenAuthenticationService {
      */
   }
 
-  public static void addAuthentication(HttpServletResponse res, String auth,
-      JsonNode userNode, String tenant) throws IOException {
-    String JWT = Jwts.builder().setSubject(auth+"^"+tenant)
-        .setExpiration(new Date(System.currentTimeMillis() + EXPIRATIONTIME))
-        .signWith(SignatureAlgorithm.HS512, SECRET).compact();
+  public static void addAuthentication(HttpServletResponse res, String auth, JsonNode userNode, String tenant)
+      throws IOException {
+    String JWT = Jwts.builder().setSubject(auth + "^" + tenant)
+        .setExpiration(new Date(System.currentTimeMillis() + EXPIRATIONTIME)).signWith(SignatureAlgorithm.HS512, SECRET)
+        .compact();
     res.addHeader(HEADER_STRING, TOKEN_PREFIX + " " + JWT);
     res.addIntHeader(HEADER_EXPIRES_IN, EXPIRATIONTIME);
-    res.setHeader("X-TENANT-CODE",tenant);
-    res.setHeader("Access-Control-Allow-Headers","Authorization, x-xsrf-token, Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, " +
-        "Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, X-TENANT-CODE, ACCESS_TOKEN, X-USER-ID");
+    res.setHeader("X-TENANT-CODE", tenant);
+    res.setHeader("Access-Control-Allow-Headers",
+        "Authorization, x-xsrf-token, Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, "
+            + "Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, X-TENANT-CODE, ACCESS_TOKEN, X-USER-ID");
     ObjectMapper mapper = new ObjectMapper();
     res.getWriter().write(mapper.writeValueAsString(userNode));
 
@@ -59,16 +60,16 @@ public class TokenAuthenticationService {
       // parse the token.
       String user = null;
       try {
-        user = Jwts.parser().setSigningKey(SECRET)
-            .parseClaimsJws(token.replace(TOKEN_PREFIX, "")).getBody().getSubject();
-      }catch (ExpiredJwtException e){
+        user = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token.replace(TOKEN_PREFIX, "")).getBody()
+            .getSubject();
+      } catch (ExpiredJwtException e) {
         throw new TokenExpiredException("Token Expired");
       }
 
       List<GrantedAuthority> list = new ArrayList<>();
       list.add(new SimpleGrantedAuthority("ADMIN"));
       return user != null ? new UsernamePasswordAuthenticationToken(user, null, list) : null;
-    }else{
+    } else {
       throw new InvalidCredentialsException("You are not authorized to perform this action");
     }
   }

@@ -1,5 +1,7 @@
 package org.codealpha.gmsservice.services;
 
+import java.util.List;
+
 import org.codealpha.gmsservice.entities.GrantSnapshot;
 import org.codealpha.gmsservice.repositories.GrantSnapshotRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,5 +24,9 @@ public class GrantSnapshotService {
 
     public GrantSnapshot saveGrantSnapshot(GrantSnapshot snapshot) {
         return grantSnapshotRepository.save(snapshot);
+    }
+
+    public List<GrantSnapshot> getGrantSnapshotForGrant(Long grantId) {
+        return grantSnapshotRepository.getGrantShanpshotsForGrant(grantId);
     }
 }

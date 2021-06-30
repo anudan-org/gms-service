@@ -42,6 +42,8 @@ dependencies {
     compile group: 'net.sf.cssbox', name: 'cssbox', version: '4.15'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'
     compile group: 'joda-time', name: 'joda-time', version: '2.9.9'
+    implementation group: 'com.opencsv', name: 'opencsv', version: '5.3'
+
 
 
     compile('io.jsonwebtoken:jjwt:0.7.0')
@@ -62,6 +64,11 @@ dependencies {
 jacoco {
     toolVersion = "0.7.6.201602180812"
     reportsDir = file("$buildDir/JacocoReport")
+}
+
+javadoc {
+    source = sourceSets.main.allJava
+    classpath = configurations.compile
 }
 
 jacocoTestReport {

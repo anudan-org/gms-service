@@ -28,7 +28,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 @RestController
 @RequestMapping(value = "/app")
@@ -110,13 +110,13 @@ public class ApplicationController {
                         .concat(config.getLogoUrl()));
                 config.setTenantCode(org.getCode());
                 config.setNavbarTextColor(config.getNavbarTextColor());
-                config.setGrantInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", org.getId()));
-                config.setSubmissionInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", org.getId()));
+                //config.setGrantInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", org.getId()));
+                //config.setSubmissionInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", org.getId()));
                 config.setWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANT",org.getId()));
                 config.setReportWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("REPORT",org.getId()));
                 config.setTenantUsers(userService.getAllTenantUsers(org));
-                config.setTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"GRANT"));
-                config.setReportTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"REPORT"));
+                //config.setTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"GRANT"));
+                //config.setReportTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"REPORT"));
                 config.setGranteeOrgs(organizationService.getAssociatedGranteesForTenant(org));
                 config.setDaysBeforePublishingReport(Integer.valueOf(appConfigService.getAppConfigForGranterOrg(orgId, AppConfiguration.REPORT_SETUP_INTERVAL).getConfigValue()));
                 config.setTemplateLibrary(templateLibraryService.getTemplateLibraryForOrganization(org.getId()));
@@ -286,7 +286,7 @@ public class ApplicationController {
             Report report = reportService.getReportById(id);
             config.setTenantUsers(userService.getAllTenantUsers(report.getGrant().getGrantorOrganization()));
             config.setReportWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("REPORT",report.getGrant().getGrantorOrganization().getId()));
-            config.setReportTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(report.getGrant().getGrantorOrganization().getId(),"REPORT"));
+            config.setReportTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(report.getGrant().getGrantorOrganization().getId(),"REPORT",report.getGrant().getGrantTypeId()));
         }else if("disbursement".equalsIgnoreCase(type)){
             Disbursement disbursement = disbursementService.getDisbursementById(id);
             config.setTenantUsers(userService.getAllTenantUsers(disbursement.getGrant().getGrantorOrganization()));

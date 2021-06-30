@@ -17,7 +17,7 @@ import java.util.List;
 public class ReportVO {
 
     private static Logger logger = LoggerFactory.getLogger(ReportVO.class);
-    
+
     private Long id;
     private String name;
     private Date startDate;
@@ -53,6 +53,9 @@ public class ReportVO {
     private int futureReportsCount;
     private String linkedApprovedReports;
     private String reportDetail;
+    private boolean disabledByAmendment;
+    private boolean deleted;
+
     public Long getId() {
         return id;
     }
@@ -327,26 +330,29 @@ public class ReportVO {
 
     // BUILD THE VO
 
-    public ReportVO build(Report report, List<ReportSpecificSection> sections, UserService userService, ReportService reportService) {
+    public ReportVO build(Report report, List<ReportSpecificSection> sections, UserService userService,
+            ReportService reportService) {
         PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(report.getClass());
         ReportVO vo = new ReportVO();
         for (PropertyDescriptor descriptor : propertyDescriptors) {
             if (!descriptor.getName().equalsIgnoreCase("class")) {
                 try {
                     Object value = descriptor.getReadMethod().invoke(report);
-                    PropertyDescriptor voPd = BeanUtils
-                            .getPropertyDescriptor(vo.getClass(), descriptor.getName());
+                    PropertyDescriptor voPd = BeanUtils.getPropertyDescriptor(vo.getClass(), descriptor.getName());
                     if (voPd.getName().equalsIgnoreCase("stringAttributes")) {
                         ReportDetailVO reportDetailVO = null;
                         reportDetailVO = vo.getReportDetails();
-                        if(reportDetailVO == null){
+                        if (reportDetailVO == null) {
                             reportDetailVO = new ReportDetailVO();
                         }
-                        reportDetailVO = reportDetailVO.buildStringAttributes(sections, (List<ReportStringAttribute>) value,reportService,report.getGrant()==null?0:report.getGrant().getId());
+                        reportDetailVO = reportDetailVO.buildStringAttributes(sections,
+                                (List<ReportStringAttribute>) value, reportService,
+                                report.getGrant() == null ? 0 : report.getGrant().getId());
                         vo.setReportDetails(reportDetailVO);
-                    }else if (voPd.getName().equalsIgnoreCase("noteAddedBy") || voPd.getName().equalsIgnoreCase("noteAddedByUser")) {
+                    } else if (voPd.getName().equalsIgnoreCase("noteAddedBy")
+                            || voPd.getName().equalsIgnoreCase("noteAddedByUser")) {
                         vo.setNoteAddedBy(report.getNoteAddedBy());
-                        if(report.getNoteAddedBy()!=null) {
+                        if (report.getNoteAddedBy() != null) {
                             vo.setNoteAddedByUser(userService.getUserById(report.getNoteAddedBy()));
                         }
 
@@ -363,7 +369,22 @@ public class ReportVO {
 
         Collections.sort(vo.getReportDetails().getSections());
 
-
         return vo;
+    }
+
+    public boolean isDisabledByAmendment() {
+        return disabledByAmendment;
+    }
+
+    public void setDisabledByAmendment(boolean disabledByAmendment) {
+        this.disabledByAmendment = disabledByAmendment;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }

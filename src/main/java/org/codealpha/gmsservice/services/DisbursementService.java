@@ -2,17 +2,13 @@ package org.codealpha.gmsservice.services;
 
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.models.GrantTagVO;
 import org.codealpha.gmsservice.models.GrantVO;
-import org.codealpha.gmsservice.repositories.ActualDisbursementRepository;
-import org.codealpha.gmsservice.repositories.DisbursementAssignmentHistoryRepository;
-import org.codealpha.gmsservice.repositories.DisbursementAssignmentRepository;
-import org.codealpha.gmsservice.repositories.DisbursementHistoryRepository;
-import org.codealpha.gmsservice.repositories.DisbursementRepository;
-import org.codealpha.gmsservice.repositories.WorkflowPermissionRepository;
-import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
-import org.codealpha.gmsservice.repositories.WorkflowStatusTransitionRepository;
+import org.codealpha.gmsservice.repositories.*;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
@@ -54,6 +50,14 @@ public class DisbursementService {
     private WorkflowStatusRepository workflowStatusRepository;
     @Autowired
     private DisbursementAssignmentHistoryRepository assignmentHistoryRepository;
+    @Autowired
+    private DisabledUsersEntityRepository disabledUsersEntityRepository;
+    @Value("${spring.timezone}")
+    private String timezone;
+    @Autowired
+    private UserRoleService userRoleService;
+    @Autowired
+    private OrgTagService orgTagService;
 
     public Disbursement saveDisbursement(Disbursement disbursement) {
         return disbursementRepository.save(disbursement);
@@ -110,6 +114,9 @@ public class DisbursementService {
                 .findByDisbursementId(disbursement.getId());
 
         for (DisbursementAssignment ass : disbursementAssignments) {
+            if(ass.getOwner()!=null && ass.getOwner()!=0) {
+                ass.setAssignmentUser(userService.getUserById(ass.getOwner()));
+            }
             if (disbursementRepository.findDisbursementsThatMovedAtleastOnce(ass.getDisbursementId()).size() > 0) {
                 List<DisbursementAssignmentHistory> assignmentHistories = assignmentHistoryRepository
                         .findByDisbursementIdAndStateIdOrderByUpdatedOnDesc(ass.getDisbursementId(), ass.getStateId());
@@ -155,23 +162,44 @@ public class DisbursementService {
         List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
                 .collect(Collectors.toList());
 
-        List<ActualDisbursement> approvedActualDisbursements = getApprovedActualDisbursements(disbursement, statusIds);
+        List<ActualDisbursement> approvedActualDisbursements = getApprovedActualDisbursements(disbursement, statusIds,false);
         disbursement.setApprovedActualsDibursements(approvedActualDisbursements);
+
+        List<GrantTag> grantTags = grantService.getTagsForGrant(disbursement.getGrant().getId());
+        /*List<GrantTagVO> grantTagsVoList = new ArrayList<>();
+        for(GrantTag tag: grantTags){
+            GrantTagVO grantTagVO =new GrantTagVO();
+            grantTagVO.setGrantId(disbursement.getGrant().getId());
+            grantTagVO.setId(tag.getId());
+            grantTagVO.setOrgTagId(tag.getOrgTagId());
+            grantTagVO.setTagName(orgTagService.getOrgTagById(tag.getOrgTagId()).getName());
+            grantTagsVoList.add(grantTagVO);
+        }*/
+        disbursement.getGrant().setGrantTags(grantTags);
 
         return disbursement;
     }
 
-    private List<ActualDisbursement> getApprovedActualDisbursements(Disbursement disbursement, List<Long> statusIds) {
+    private List<ActualDisbursement> getApprovedActualDisbursements(Disbursement disbursement, List<Long> statusIds,boolean includeCurrent) {
         List<Disbursement> approvedDisbursements = getDibursementsForGrantByStatuses(disbursement.getGrant().getId(),
                 statusIds);
         List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
         if (approvedDisbursements != null) {
-            approvedDisbursements.removeIf(d -> d.getId().longValue() == disbursement.getId().longValue());
-            approvedDisbursements
-                    .removeIf(d -> new DateTime(d.getMovedOn()).isAfter(new DateTime(disbursement.getMovedOn())));
+            if(!includeCurrent){
+                approvedDisbursements.removeIf(d -> d.getId().longValue() == disbursement.getId().longValue());
+            }
+            approvedDisbursements.removeIf(d -> new DateTime(d.getMovedOn(), DateTimeZone.forID(timezone))
+                    .isAfter(new DateTime(disbursement.getMovedOn(), DateTimeZone.forID(timezone))));
             for (Disbursement approved : approvedDisbursements) {
                 List<ActualDisbursement> approvedActuals = getActualDisbursementsForDisbursement(approved);
                 approvedActualDisbursements.addAll(approvedActuals);
+            }
+        }
+        //Get previous actual disbursements if grant is amended
+        if(disbursement.getGrant().getOrigGrantId()!=null){
+            List<Disbursement> disbs = getAllDisbursementsForGrant(disbursement.getGrant().getOrigGrantId());
+            for(Disbursement d : disbs){
+                approvedActualDisbursements.addAll(getApprovedActualDisbursements(d,statusIds,true));
             }
         }
         approvedActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
@@ -184,8 +212,22 @@ public class DisbursementService {
 
     public List<Disbursement> getDisbursementsForUserByStatus(User user, Organization org, String status) {
         List<Disbursement> disbursements = new ArrayList<>();
+
+        boolean isAdmin = false;
+
+        for (Role role : userRoleService.findRolesForUser(userService.getUserById(user.getId()))) {
+            if (role.getName().equalsIgnoreCase("ADMIN")) {
+                isAdmin = true;
+                break;
+            }
+        }
+
         if (status.equalsIgnoreCase("DRAFT")) {
-            disbursements = disbursementRepository.getInprogressDisbursementsForUser(user.getId(), org.getId());
+            if(!isAdmin) {
+                disbursements = disbursementRepository.getInprogressDisbursementsForUser(user.getId(), org.getId());
+            }else{
+                disbursements = disbursementRepository.getInprogressDisbursementsForAdminUser(user.getId(), org.getId());
+            }
         } else if (status.equalsIgnoreCase("ACTIVE")) {
             disbursements = disbursementRepository.getActiveDisbursementsForUser(org.getId());
         } else if (status.equalsIgnoreCase("CLOSED")) {
@@ -251,7 +293,14 @@ public class DisbursementService {
             url = url + "/home/?action=login&d=" + code + "&email=&type=disbursement";
         }
 
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalDisbursement.getGrant().getName())
+        String grantName = "";
+        if(finalDisbursement.getGrant().getReferenceNo()!=null){
+            grantName = "[".concat(finalDisbursement.getGrant().getReferenceNo()).concat("] ").concat(finalDisbursement.getGrant().getName());
+        }else{
+            grantName = finalDisbursement.getGrant().getName();
+        }
+
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", grantName)
                 .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
                 .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
                 .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
@@ -262,11 +311,11 @@ public class DisbursementService {
                 .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
                 .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
                 .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replaceAll("%GRANTEE%", finalDisbursement.getGrant().getOrganization().getName())
+                .replaceAll("%GRANTEE%", finalDisbursement.getGrant().getOrganization()!=null?finalDisbursement.getGrant().getOrganization().getName():finalDisbursement.getGrant().getGrantorOrganization().getName())
                 .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
                 .replaceAll("%ENTITY_TYPE%", "Approval Request Note of ")
-                .replaceAll("%ENTITY_NAME%", finalDisbursement.getGrant().getName());
-        String subject = subConfigValue.replaceAll("%GRANT_NAME%", finalDisbursement.getGrant().getName());
+                .replaceAll("%ENTITY_NAME%", grantName);
+        String subject = subConfigValue.replaceAll("%GRANT_NAME%", grantName);
 
         return new String[] { subject, message };
     }
@@ -350,5 +399,13 @@ public class DisbursementService {
 
     public boolean checkIfDisbursementMovedThroughWFAtleastOnce(Long id) {
         return disbursementRepository.findDisbursementsThatMovedAtleastOnce(id).size() > 0;
+    }
+
+    public List<Disbursement> getAllDisbursementsForGrant(Long grantId) {
+        return disbursementRepository.getAllDisbursementsForGrant(grantId);
+    }
+
+    public List<DisabledUsersEntity> getDisbursementsWithDisabledUsers(){
+        return disabledUsersEntityRepository.getDisbursements();
     }
 }

@@ -9,7 +9,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 @Repository
 public interface OrganizationRepository extends CrudRepository<Organization, Long> {
@@ -26,7 +26,7 @@ public interface OrganizationRepository extends CrudRepository<Organization, Lon
 
   public Organization findByNameAndOrganizationType(String name, String type);
 
-  @Query(value = "select distinct B.* from grants A inner join organizations B on B.id=A.organization_id where A.grantor_org_id=?1",nativeQuery = true)
+  @Query(value = "select distinct B.* from grants A inner join organizations B on B.id=A.organization_id where A.grantor_org_id=?1 order by B.name",nativeQuery = true)
   public List<Organization> getAssociatedGranteesForTenant(Long granterId);
 
 

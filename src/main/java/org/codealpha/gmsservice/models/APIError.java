@@ -3,7 +3,7 @@ package org.codealpha.gmsservice.models;
 import org.springframework.http.HttpStatus;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 public class APIError {
 

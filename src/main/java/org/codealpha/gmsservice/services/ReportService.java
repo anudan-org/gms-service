@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.controllers.ReportController;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.ColumnData;
@@ -23,6 +22,9 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -35,10 +37,15 @@ import java.util.stream.Collectors;
 @Service
 public class ReportService {
 
+    private static final String APPROVED_REPORTS_FOR_ADMIN_GRANTER_BY_DATE_RANGE="select distinct C.internal_status,A.* from reports A inner join grants Z on Z.id=A.grant_id inner join report_assignments B on B.report_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.anchor=true and B.assignment = %1) or (B.assignment=%1 and B.state_id=A.status_id) or (C.internal_status='CLOSED' ) ) and Z.grantor_org_id=%2 and Z.deleted=false and (C.internal_status ='CLOSED') and A.deleted=false order by A.moved_on desc";
     private static final Logger logger = LoggerFactory.getLogger(ReportService.class);
     private final String SECRET = "78yughvdbfv87ny4w87rbshfiv8aw4tr87awvyeruvbhdkjfhbity834t";
     @Autowired
     private ReportRepository reportRepository;
+
+    @Autowired
+    private ReportCardRepository reportCardRepository;
+
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
@@ -77,6 +84,12 @@ public class ReportService {
     private ReportAssignmentHistoryRepository assignmentHistoryRepository;
     @Autowired
     private UserService userService;
+    @Autowired
+    private DisabledUsersEntityRepository disabledUsersEntityRepository;
+    @PersistenceContext
+    private EntityManager entityManager;
+    @Autowired
+    private GrantTypeWorkflowMappingService grantTypeWorkflowMappingService;
 
     public Report saveReport(Report report) {
         return reportRepository.save(report);
@@ -92,7 +105,7 @@ public class ReportService {
         Organization granterOrg = organizationRepository.findByCode(tenantCode);
         List<WorkflowStatus> statuses = new ArrayList<>();
         List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionRepository
-                .findByWorkflow(workflowRepository.findByGranterAndObject(granterOrg, WorkflowObject.REPORT).get(0));
+                .findByWorkflow(workflowRepository.findByGranterAndObjectAndType(granterOrg.getId(), "REPORT",report.getGrant().getGrantTypeId()).get(0));
         for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
             if (!statuses.stream()
                     .filter(s -> s.getId().longValue() == supportedTransition.getFromState().getId().longValue())
@@ -106,9 +119,12 @@ public class ReportService {
             }
         }
 
+        Workflow grantWorkflow = workflowRepository.findWorkflowByGrantTypeAndObject(report.getGrant().getGrantTypeId(),"GRANT");
         Optional<WorkflowStatus> grantActiveStatus = workflowStatusRepository
                 .getAllTenantStatuses("GRANT", report.getGrant().getGrantorOrganization().getId()).stream()
-                .filter(s -> s.getInternalStatus().equalsIgnoreCase("ACTIVE")).findFirst();
+                .filter(s -> s.getInternalStatus().equalsIgnoreCase("ACTIVE") && s.getWorkflow().getId().longValue()==grantWorkflow.getId().longValue()).findFirst();
+
+
         GrantAssignments anchorAssignment = null;
         if (grantActiveStatus.isPresent()) {
             anchorAssignment = grantAssignmentRepository
@@ -172,6 +188,12 @@ public class ReportService {
         return reportRepository.findAllAssignedReportsForGranteeUser(userId, granteeOrgId, status);
     }
 
+
+    public List<ReportCard> getAllAssignedReportCardsForGranteeUser(Long userId, Long granteeOrgId, String status) {
+
+        return reportCardRepository.findAllAssignedReportsForGranteeUser(userId, granteeOrgId, status);
+    }
+
     public ReportHistory getSingleReportHistoryByStatusAndReportId(String status, Long reportId) {
         return reportHistoryRepository.getSingleReportHistoryByStatusAndReportId(status, reportId);
     }
@@ -187,10 +209,35 @@ public class ReportService {
         return reportRepository.findUpcomingReportsForGranterUserByDateRange(userId, granterOrgId, start, end);
     }
 
+    public List<ReportCard> getUpcomingReportCardsForGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
+                                                                    Date end) {
+
+        return reportCardRepository.findUpcomingReportsForGranterUserByDateRange(userId, granterOrgId, start, end);
+    }
+
+    public List<Report> getUpcomingReportsForAdminGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
+                                                                    Date end) {
+
+        return reportRepository.findUpcomingReportsForAdminGranterUserByDateRange(userId, granterOrgId, start, end);
+    }
+
+    public List<ReportCard> getUpcomingReportCardsForAdminGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
+                                                                         Date end) {
+
+        return reportCardRepository.findUpcomingReportsForAdminGranterUserByDateRange(userId, granterOrgId, start, end);
+    }
+
     public List<Report> getFutureReportForGranterUserByDateRangeAndGrant(Long userId, Long granterOrgId, Date end,
             Long grantId) {
 
         return reportRepository.findFutureReportsToSubmitForGranterUserByDateRangeAndGrant(userId, granterOrgId, end,
+                grantId);
+    }
+
+    public List<ReportCard> getFutureReportCardsForGranterUserByDateRangeAndGrant(Long userId, Long granterOrgId, Date end,
+                                                                         Long grantId) {
+
+        return reportCardRepository.findFutureReportsToSubmitForGranterUserByDateRangeAndGrant(userId, granterOrgId, end,
                 grantId);
     }
 
@@ -200,14 +247,71 @@ public class ReportService {
         return reportRepository.findReadyToSubmitReportsForGranterUserByDateRange(userId, granterOrgId, start, end);
     }
 
+    public List<ReportCard> getReadyToSubmitReportCardsForGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
+                                                                         Date end) {
+
+        return reportCardRepository.findReadyToSubmitReportsForGranterUserByDateRange(userId, granterOrgId, start, end);
+    }
+
+    public List<Report> getReadyToSubmitReportsForAdminGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
+                                                                         Date end) {
+
+        return reportRepository.findReadyToSubmitReportsForAdminGranterUserByDateRange(userId, granterOrgId, start, end);
+    }
+
+    public List<ReportCard> getReadyToSubmitReportCardsForAdminGranterUserByDateRange(Long userId, Long granterOrgId, Date start,
+                                                                              Date end) {
+
+        return reportCardRepository.findReadyToSubmitReportsForAdminGranterUserByDateRange(userId, granterOrgId, start, end);
+    }
+
     public List<Report> getSubmittedReportsForGranterUserByDateRange(Long userId, Long granterOrgId) {
 
         return reportRepository.findSubmittedReportsForGranterUserByDateRange(userId, granterOrgId);
     }
 
+    public List<ReportCard> getSubmittedReportCardsForGranterUserByDateRange(Long userId, Long granterOrgId) {
+
+        return reportCardRepository.findSubmittedReportsForGranterUserByDateRange(userId, granterOrgId);
+    }
+
+    public List<Report> getSubmittedReportsForAdminGranterUserByDateRange(Long userId, Long granterOrgId) {
+
+        return reportRepository.findSubmittedReportsForAdminGranterUserByDateRange(userId, granterOrgId);
+    }
+
+    public List<ReportCard> getSubmittedReportCardsForAdminGranterUserByDateRange(Long userId, Long granterOrgId) {
+
+        return reportCardRepository.findSubmittedReportsForAdminGranterUserByDateRange(userId, granterOrgId);
+    }
+
     public List<Report> getApprovedReportsForGranterUserByDateRange(Long userId, Long granterOrgId) {
 
         return reportRepository.findApprovedReportsForGranterUserByDateRange(userId, granterOrgId);
+    }
+
+    public List<ReportCard> getApprovedReportCardsForGranterUserByDateRange(Long userId, Long granterOrgId) {
+
+        return reportCardRepository.findApprovedReportsForGranterUserByDateRange(userId, granterOrgId);
+    }
+
+    public List<Report> getApprovedReportsForAdminGranterUserByDateRange(Long userId, Long granterOrgId) {
+
+        return reportRepository.findApprovedReportsForAdminGranterUserByDateRange(userId, granterOrgId);
+    }
+
+    public List<ReportCard> getApprovedReportCardsForAdminGranterUserByDateRange(Long userId, Long granterOrgId) {
+
+        return reportCardRepository.findApprovedReportsForAdminGranterUserByDateRange(userId, granterOrgId);
+    }
+
+    private List<Report> findApprovedReportsForAdminGranterUserByDateRange(String approvedReportsForAdminGranterByDateRange, Long userId, Long granterOrgId) {
+        approvedReportsForAdminGranterByDateRange = approvedReportsForAdminGranterByDateRange.replaceAll("%1",String.valueOf(userId)).replaceAll("%2",String.valueOf(granterOrgId));
+
+        Query q = entityManager.createNativeQuery(approvedReportsForAdminGranterByDateRange,Report.class);
+        @SuppressWarnings("unchecked")
+        List<Report> reports = (List<Report>)q.getResultList();
+        return reports;
     }
 
     public GranterReportTemplate getDefaultTemplate(Long granterId) {
@@ -268,7 +372,7 @@ public class ReportService {
         Map<Long, List<Long>> grantWorkflowStatusIds = new HashMap<>();
         Map<Long, Long[][]> grantWorkflowTransitionIds = new HashMap<>();
         if (report.getGrant() != null) {
-            workflowRepository.findByGranterAndObject(report.getGrant().getGrantorOrganization(), WorkflowObject.REPORT)
+            workflowRepository.findByGranterAndObjectAndType(report.getGrant().getGrantorOrganization().getId(), "REPORT",report.getGrant().getGrantTypeId())
                     .forEach(w -> {
                         grantWorkflowIds.add(w.getId());
                         List<Long> wfStatusIds = new ArrayList<>();
@@ -518,7 +622,13 @@ public class ReportService {
             }
         }
 
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", finalReport.getGrant().getName())
+        String grantName = "";
+        if(finalReport.getGrant().getReferenceNo()!=null){
+            grantName = "[".concat(finalReport.getGrant().getReferenceNo()).concat("] ").concat(finalReport.getGrant().getName());
+        }else{
+            grantName = finalReport.getGrant().getName();
+        }
+        String message = msgConfigValue.replaceAll("%GRANT_NAME%", grantName)
                 .replaceAll("%REPORT_NAME%", finalReport.getName()).replaceAll("%REPORT_LINK%", granteeUrl)
                 .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
                 .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
@@ -530,12 +640,12 @@ public class ReportService {
                 .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
                 .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
                 .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replaceAll("%GRANTEE%", finalReport.getGrant().getOrganization().getName())
+                .replaceAll("%GRANTEE%", finalReport.getGrant().getOrganization()!=null?finalReport.getGrant().getOrganization().getName():finalReport.getGrant().getGrantorOrganization().getName())
                 .replaceAll("%GRANTEE_REPORT_LINK%", granteeUrl).replaceAll("%GRANTER_REPORT_LINK%", granterUrl)
                 .replaceAll("%GRANTER%", finalReport.getGrant().getGrantorOrganization().getName())
                 .replaceAll("%ENTITY_TYPE%", "report")
                 .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
-                .replaceAll("%ENTITY_NAME%", finalReport.getName() + " of grant " + finalReport.getGrant().getName());
+                .replaceAll("%ENTITY_NAME%", finalReport.getName() + " of grant " + grantName);
         String subject = subConfigValue.replaceAll("%REPORT_NAME%", finalReport.getName());
 
         return new String[] { subject, message };
@@ -749,11 +859,19 @@ public class ReportService {
     }
 
     public List<Report> findReportsByStatusForGrant(WorkflowStatus status, Grant grant) {
-        return reportRepository.findByStatusAndGrant(status, grant);
+        return reportRepository.findByStatusAndGrant(status.getId(), grant.getId());
+    }
+
+    public List<ReportCard> findReportCardsByStatusForGrant(WorkflowStatus status, Grant grant) {
+        return reportCardRepository.findByStatusAndGrant(status.getId(), grant.getId());
     }
 
     public List<Report> getReportsForGrant(Grant grant) {
-        return reportRepository.getReportsByGrant(grant);
+        return reportRepository.getReportsByGrant(grant.getId());
+    }
+
+    public List<ReportCard> getReportCardsForGrant(Grant grant) {
+        return reportCardRepository.getReportsByGrant(grant.getId());
     }
 
     public void setAssignmentHistory(ReportAssignmentsVO assignmentsVO) {
@@ -785,10 +903,45 @@ public class ReportService {
 
     public void deleteReport(Report report) {
 
-        reportRepository.delete(report);
+        if(checkIfReportMovedThroughWFAtleastOnce(report.getId())){
+            report.setDeleted(true);
+            saveReport(report);
+        }else {
+            for (ReportSpecificSection section : getReportSections(report)) {
+                List<ReportSpecificSectionAttribute> attribs = getSpecificSectionAttributesBySection(section);
+                for (ReportSpecificSectionAttribute attribute : attribs) {
+                    List<ReportStringAttribute> strAttribs = getReportStringAttributesByAttribute(attribute);
+                    deleteStringAttributes(strAttribs);
+                }
+                deleteSectionAttributes(attribs);
+                deleteSection(section);
+            }
+
+            reportRepository.delete(report);
+
+            GranterReportTemplate template = granterReportTemplateRepository.findById(report.getTemplate().getId()).get();
+            if (!template.isPublished()) {
+                deleteReportTemplate(template);
+            }
+        }
     }
 
     public List<Report> getUpcomingFutureReportsForGranterUserByDate(Long userId, Long id, Date end) {
         return reportRepository.findUpcomingFutureReports(userId, id);
+    }
+
+    public List<ReportCard> getUpcomingFutureReportCardsForGranterUserByDate(Long userId, Long id, Date end) {
+        return reportCardRepository.findUpcomingFutureReports(userId, id);
+    }
+    public List<Report> getUpcomingFutureReportsForAdminGranterUserByDate(Long userId, Long id, Date end) {
+        return reportRepository.findUpcomingFutureAdminReports(userId, id);
+    }
+
+    public List<ReportCard> getUpcomingFutureReportCardsForAdminGranterUserByDate(Long userId, Long id, Date end) {
+        return reportCardRepository.findUpcomingFutureAdminReports(userId, id);
+    }
+
+    public List<DisabledUsersEntity> getReportsWithDisabledUsers(){
+        return disabledUsersEntityRepository.getReports();
     }
 }

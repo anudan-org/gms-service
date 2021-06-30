@@ -4,8 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,8 +13,6 @@ import java.util.List;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.repositories.GranterRepository;
@@ -30,7 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import springfox.documentation.annotations.ApiIgnore;
 
 /**
- * @author Developer <developer@enstratify.com>
+ * @author Developer code-alpha.org
  **/
 @RestController
 @RequestMapping(value = "/granter", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -120,7 +117,7 @@ public class GranterController {
 
 	}
 
-	@PostMapping(value = "/user/{userId}/onboard/{grantName}/slug/{tenantSlug}/granterUser/{granterUserEmail}", consumes = {
+	@PostMapping(value = "/user/{userId}/onboard/{grantName}/slug/{tenantSlug}/granterUser/{granterUserEmail}/{refOrgCode}", consumes = {
 			"multipart/form-data" })
 	@ApiOperation(value = "Onboard new granter with basic details", notes = "Currently harcoded users and roles for the newly created Granter is implemented. This feature will be enhanced in the future")
 	public Organization onBoardGranter(
@@ -128,7 +125,8 @@ public class GranterController {
 			@ApiParam(name = "slug", value = "Name of granter slug. This will be used to create the Tenant Code as well us the subdomain") @PathVariable("tenantSlug") String slug,
 			@ApiParam(name = "image", value = "Uploaded image file to be used as granter's logo") @RequestParam(value = "file") MultipartFile image,
 			@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
-			@ApiParam(name = "userEmail", value = "Email Id of primary admin of Granter organization to whom email invite will be sent") @PathVariable("granterUserEmail") String userEmail) {
+			@ApiParam(name = "userEmail", value = "Email Id of primary admin of Granter organization to whom email invite will be sent") @PathVariable("granterUserEmail") String userEmail,
+			@PathVariable("refOrgCode") String refOrgCode) {
 
 		Organization org = new Granter();
 		org.setCode(slug.toUpperCase());
@@ -137,6 +135,14 @@ public class GranterController {
 		org.setName(granterName);
 		org.setOrganizationType("GRANTER");
 		org = granterService.createGranter((Granter) org, image);
+
+		File file = new File("/opt/gms/secure-sites.txt");
+		try{
+
+			Files.write(file.toPath(),System.lineSeparator().concat(slug.toLowerCase()).concat(".").getBytes(), StandardOpenOption.APPEND);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 		try {
 			String filePath = uploadLocation + slug.toUpperCase() + "/logo/";
@@ -189,7 +195,7 @@ public class GranterController {
 		organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailSevice, releaseService,
 				userService.getUserById(userId), org, granterUser, Arrays.asList(new UserRole[] { userRole }));
 
-		GranterGrantTemplate defaulTemplate = new GranterGrantTemplate();
+		/*GranterGrantTemplate defaulTemplate = new GranterGrantTemplate();
 		defaulTemplate.setPublished(true);
 		defaulTemplate.setName("Anudan Template");
 		defaulTemplate.setGranterId(org.getId());
@@ -218,7 +224,7 @@ public class GranterController {
 				attribute.setDeletable(true);
 				grantService.saveGrantTemaplteSectionAttribute(attribute);
 			}
-		}
+		}*/
 
 		/*
 		 * Workflow workflow = new Workflow();
@@ -231,8 +237,8 @@ public class GranterController {
 		 * workflowService.saveWorkflow(workflow);
 		 */
 
-		buildWorkflowsBasedOnSustainPlus(org);
-		buildDefaultTemplates(org, organizationService.findOrganizationByTenantCode("SUSTAINPLUS"));
+		buildWorkflowsBasedOnTempOrg(org,refOrgCode);
+		buildDefaultTemplates(org, organizationService.findOrganizationByTenantCode(refOrgCode));
 
 		return org;
 	}
@@ -325,34 +331,33 @@ public class GranterController {
 		}
 	}
 
-	private void buildWorkflowsBasedOnSustainPlus(Organization org) {
+	private void buildWorkflowsBasedOnTempOrg(Organization org,String refOrgCode) {
 
-		Organization susplusOrg = organizationService.findOrganizationByTenantCode("SUSTAINPLUS");
-		Workflow susplusGrantWorkflow = workflowService.findByGranterAndObject(susplusOrg, WorkflowObject.GRANT);
-		Workflow susplusReportWorkflow = workflowService.findByGranterAndObject(susplusOrg, WorkflowObject.REPORT);
-		Workflow susplusDisbursementWorkflow = workflowService.findByGranterAndObject(susplusOrg,
-				WorkflowObject.DISBURSEMENT);
-		List<WorkflowStatus> susplusGrantStatuses = workflowStatusService
-				.getTenantWorkflowStatuses(WorkflowObject.GRANT.name(), susplusOrg.getId());
-		List<WorkflowStatus> susplusReportStatuses = workflowStatusService
-				.getTenantWorkflowStatuses(WorkflowObject.REPORT.name(), susplusOrg.getId());
-		List<WorkflowStatus> susplusDisbursementStatuses = workflowStatusService
-				.getTenantWorkflowStatuses(WorkflowObject.DISBURSEMENT.name(), susplusOrg.getId());
-		List<WorkflowStatusTransition> susplusGrantTransitions = workflowStatusTransitionService
-				.getStatusTransitionsForWorkflow(susplusGrantWorkflow);
-		List<WorkflowStatusTransition> susplusReportTransitions = workflowStatusTransitionService
-				.getStatusTransitionsForWorkflow(susplusReportWorkflow);
-		List<WorkflowStatusTransition> susplusDisbursementTransitions = workflowStatusTransitionService
-				.getStatusTransitionsForWorkflow(susplusDisbursementWorkflow);
+		Organization tempOrg = organizationService.findOrganizationByTenantCode(refOrgCode);
+		Workflow tempGrantWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg.getId(), "GRANT");
+		Workflow tempReportWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg.getId(), "REPORT");
+		Workflow tempDisbursementWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg.getId(), "DISBURSEMENT");
+		List<WorkflowStatus> tempGrantStatuses = workflowStatusService
+				.getTenantWorkflowStatuses(WorkflowObject.GRANT.name(), tempOrg.getId());
+		List<WorkflowStatus> tempReportStatuses = workflowStatusService
+				.getTenantWorkflowStatuses(WorkflowObject.REPORT.name(), tempOrg.getId());
+		List<WorkflowStatus> tempDisbursementStatuses = workflowStatusService
+				.getTenantWorkflowStatuses(WorkflowObject.DISBURSEMENT.name(), tempOrg.getId());
+		List<WorkflowStatusTransition> tempGrantTransitions = workflowStatusTransitionService
+				.getStatusTransitionsForWorkflow(tempGrantWorkflow);
+		List<WorkflowStatusTransition> tempReportTransitions = workflowStatusTransitionService
+				.getStatusTransitionsForWorkflow(tempReportWorkflow);
+		List<WorkflowStatusTransition> tempDisbursementTransitions = workflowStatusTransitionService
+				.getStatusTransitionsForWorkflow(tempDisbursementWorkflow);
 
-		generateGrantWorkflow(org, susplusGrantStatuses, susplusGrantTransitions);
-		generateReportWorkflow(org, susplusReportStatuses, susplusReportTransitions);
-		generateDisbursementWorkflow(org, susplusDisbursementStatuses, susplusDisbursementTransitions);
+		generateGrantWorkflow(org, tempGrantStatuses, tempGrantTransitions);
+		generateReportWorkflow(org, tempReportStatuses, tempReportTransitions);
+		generateDisbursementWorkflow(org, tempDisbursementStatuses, tempDisbursementTransitions);
 
 	}
 
-	private void generateGrantWorkflow(Organization org, List<WorkflowStatus> susplusGrantStatuses,
-			List<WorkflowStatusTransition> susplusGrantTransitions) {
+	private void generateGrantWorkflow(Organization org, List<WorkflowStatus> tempGrantStatuses,
+			List<WorkflowStatusTransition> tempGrantTransitions) {
 		Workflow grantWorkflow = new Workflow();
 		grantWorkflow.setCreatedAt(DateTime.now().toDate());
 		grantWorkflow.setCreatedBy("System");
@@ -363,43 +368,43 @@ public class GranterController {
 		grantWorkflow = workflowService.saveWorkflow(grantWorkflow);
 
 		List<WorkflowStatus> grantStatuses = new ArrayList<>();
-		for (WorkflowStatus susplusStatus : susplusGrantStatuses) {
+		for (WorkflowStatus tempStatus : tempGrantStatuses) {
 			WorkflowStatus status = new WorkflowStatus();
 			status.setCreatedAt(DateTime.now().toDate());
 			status.setCreatedBy("System");
-			status.setDisplayName(susplusStatus.getDisplayName());
-			status.setInitial(susplusStatus.isInitial());
-			status.setInternalStatus(susplusStatus.getInternalStatus());
-			status.setName(susplusStatus.getName());
-			status.setTerminal(susplusStatus.getTerminal());
+			status.setDisplayName(tempStatus.getDisplayName());
+			status.setInitial(tempStatus.isInitial());
+			status.setInternalStatus(tempStatus.getInternalStatus());
+			status.setName(tempStatus.getName());
+			status.setTerminal(tempStatus.getTerminal());
 			status.setWorkflow(grantWorkflow);
 			status = workflowStatusService.saveWorkflowStatus(status);
 			grantStatuses.add(status);
 		}
 
-		for (WorkflowStatusTransition susplusTransition : susplusGrantTransitions) {
+		for (WorkflowStatusTransition tempTransition : tempGrantTransitions) {
 
 			WorkflowStatusTransition transition = new WorkflowStatusTransition();
-			transition.setAction(susplusTransition.getAction());
+			transition.setAction(tempTransition.getAction());
 			transition.setCreatedAt(DateTime.now().toDate());
 			transition.setCreatedBy("System");
-			WorkflowStatus fromStatus = susplusGrantStatuses.stream()
-					.filter(st -> st.getId().longValue() == susplusTransition.getFromState().getId()).findFirst().get();
-			WorkflowStatus toStatus = susplusGrantStatuses.stream()
-					.filter(st -> st.getId().longValue() == susplusTransition.getToState().getId()).findFirst().get();
+			WorkflowStatus fromStatus = tempGrantStatuses.stream()
+					.filter(st -> st.getId().longValue() == tempTransition.getFromState().getId()).findFirst().get();
+			WorkflowStatus toStatus = tempGrantStatuses.stream()
+					.filter(st -> st.getId().longValue() == tempTransition.getToState().getId()).findFirst().get();
 			transition.setFromState(grantStatuses.stream()
 					.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().get());
 			transition.setToState(grantStatuses.stream().filter(s -> s.getName().equalsIgnoreCase(toStatus.getName()))
 					.findFirst().get());
 			transition.setNoteRequired(true);
-			transition.setSeqOrder(susplusTransition.getSeqOrder());
+			transition.setSeqOrder(tempTransition.getSeqOrder());
 			transition.setWorkflow(grantWorkflow);
 			transition = workflowStatusTransitionService.saveStatusTransition(transition);
 		}
 	}
 
-	private void generateReportWorkflow(Organization org, List<WorkflowStatus> susplusReportStatuses,
-			List<WorkflowStatusTransition> susplusReportTransitions) {
+	private void generateReportWorkflow(Organization org, List<WorkflowStatus> tempReportStatuses,
+			List<WorkflowStatusTransition> tempReportTransitions) {
 		Workflow reportWorkflow = new Workflow();
 		reportWorkflow.setCreatedAt(DateTime.now().toDate());
 		reportWorkflow.setCreatedBy("System");
@@ -410,43 +415,43 @@ public class GranterController {
 		reportWorkflow = workflowService.saveWorkflow(reportWorkflow);
 
 		List<WorkflowStatus> reportStatuses = new ArrayList<>();
-		for (WorkflowStatus susplusStatus : susplusReportStatuses) {
+		for (WorkflowStatus tempStatus : tempReportStatuses) {
 			WorkflowStatus status = new WorkflowStatus();
 			status.setCreatedAt(DateTime.now().toDate());
 			status.setCreatedBy("System");
-			status.setDisplayName(susplusStatus.getDisplayName());
-			status.setInitial(susplusStatus.isInitial());
-			status.setInternalStatus(susplusStatus.getInternalStatus());
-			status.setName(susplusStatus.getName());
-			status.setTerminal(susplusStatus.getTerminal());
+			status.setDisplayName(tempStatus.getDisplayName());
+			status.setInitial(tempStatus.isInitial());
+			status.setInternalStatus(tempStatus.getInternalStatus());
+			status.setName(tempStatus.getName());
+			status.setTerminal(tempStatus.getTerminal());
 			status.setWorkflow(reportWorkflow);
 			status = workflowStatusService.saveWorkflowStatus(status);
 			reportStatuses.add(status);
 		}
 
-		for (WorkflowStatusTransition susplusTransition : susplusReportTransitions) {
+		for (WorkflowStatusTransition tempTransition : tempReportTransitions) {
 
 			WorkflowStatusTransition transition = new WorkflowStatusTransition();
-			transition.setAction(susplusTransition.getAction());
+			transition.setAction(tempTransition.getAction());
 			transition.setCreatedAt(DateTime.now().toDate());
 			transition.setCreatedBy("System");
-			WorkflowStatus fromStatus = susplusReportStatuses.stream()
-					.filter(st -> st.getId().longValue() == susplusTransition.getFromState().getId()).findFirst().get();
-			WorkflowStatus toStatus = susplusReportStatuses.stream()
-					.filter(st -> st.getId().longValue() == susplusTransition.getToState().getId()).findFirst().get();
+			WorkflowStatus fromStatus = tempReportStatuses.stream()
+					.filter(st -> st.getId().longValue() == tempTransition.getFromState().getId()).findFirst().get();
+			WorkflowStatus toStatus = tempReportStatuses.stream()
+					.filter(st -> st.getId().longValue() == tempTransition.getToState().getId()).findFirst().get();
 			transition.setFromState(reportStatuses.stream()
 					.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().get());
 			transition.setToState(reportStatuses.stream().filter(s -> s.getName().equalsIgnoreCase(toStatus.getName()))
 					.findFirst().get());
 			transition.setNoteRequired(true);
-			transition.setSeqOrder(susplusTransition.getSeqOrder());
+			transition.setSeqOrder(tempTransition.getSeqOrder());
 			transition.setWorkflow(reportWorkflow);
 			transition = workflowStatusTransitionService.saveStatusTransition(transition);
 		}
 	}
 
-	private void generateDisbursementWorkflow(Organization org, List<WorkflowStatus> susplusDisbursementStatuses,
-			List<WorkflowStatusTransition> susplusDisbursementTransitions) {
+	private void generateDisbursementWorkflow(Organization org, List<WorkflowStatus> tempDisbursementStatuses,
+			List<WorkflowStatusTransition> tempDisbursementTransitions) {
 		Workflow disbursementWorkflow = new Workflow();
 		disbursementWorkflow.setCreatedAt(DateTime.now().toDate());
 		disbursementWorkflow.setCreatedBy("System");
@@ -457,36 +462,36 @@ public class GranterController {
 		disbursementWorkflow = workflowService.saveWorkflow(disbursementWorkflow);
 
 		List<WorkflowStatus> disbursementStatuses = new ArrayList<>();
-		for (WorkflowStatus susplusStatus : susplusDisbursementStatuses) {
+		for (WorkflowStatus tempStatus : tempDisbursementStatuses) {
 			WorkflowStatus status = new WorkflowStatus();
 			status.setCreatedAt(DateTime.now().toDate());
 			status.setCreatedBy("System");
-			status.setDisplayName(susplusStatus.getDisplayName());
-			status.setInitial(susplusStatus.isInitial());
-			status.setInternalStatus(susplusStatus.getInternalStatus());
-			status.setName(susplusStatus.getName());
-			status.setTerminal(susplusStatus.getTerminal());
+			status.setDisplayName(tempStatus.getDisplayName());
+			status.setInitial(tempStatus.isInitial());
+			status.setInternalStatus(tempStatus.getInternalStatus());
+			status.setName(tempStatus.getName());
+			status.setTerminal(tempStatus.getTerminal());
 			status.setWorkflow(disbursementWorkflow);
 			status = workflowStatusService.saveWorkflowStatus(status);
 			disbursementStatuses.add(status);
 		}
 
-		for (WorkflowStatusTransition susplusTransition : susplusDisbursementTransitions) {
+		for (WorkflowStatusTransition tempTransition : tempDisbursementTransitions) {
 
 			WorkflowStatusTransition transition = new WorkflowStatusTransition();
-			transition.setAction(susplusTransition.getAction());
+			transition.setAction(tempTransition.getAction());
 			transition.setCreatedAt(DateTime.now().toDate());
 			transition.setCreatedBy("System");
-			WorkflowStatus fromStatus = susplusDisbursementStatuses.stream()
-					.filter(st -> st.getId().longValue() == susplusTransition.getFromState().getId()).findFirst().get();
-			WorkflowStatus toStatus = susplusDisbursementStatuses.stream()
-					.filter(st -> st.getId().longValue() == susplusTransition.getToState().getId()).findFirst().get();
+			WorkflowStatus fromStatus = tempDisbursementStatuses.stream()
+					.filter(st -> st.getId().longValue() == tempTransition.getFromState().getId()).findFirst().get();
+			WorkflowStatus toStatus = tempDisbursementStatuses.stream()
+					.filter(st -> st.getId().longValue() == tempTransition.getToState().getId()).findFirst().get();
 			transition.setFromState(disbursementStatuses.stream()
 					.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().get());
 			transition.setToState(disbursementStatuses.stream()
 					.filter(s -> s.getName().equalsIgnoreCase(toStatus.getName())).findFirst().get());
 			transition.setNoteRequired(true);
-			transition.setSeqOrder(susplusTransition.getSeqOrder());
+			transition.setSeqOrder(tempTransition.getSeqOrder());
 			transition.setWorkflow(disbursementWorkflow);
 			transition = workflowStatusTransitionService.saveStatusTransition(transition);
 		}
