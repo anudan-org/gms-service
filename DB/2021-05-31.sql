@@ -45,7 +45,7 @@ case when object='GRANT' then
 		case when object='REPORT' then
 			(case when b.internal_status='CLOSED' then 'false' else 'true' end)
 		else
-			(case when b.internal_status='ACTIVE' then 'false' else 'true' end)
+			(case when b.internal_status='ACTIVE' or b.internal_status='CLOSED' then 'false' else 'true' end)
 		end
 end
 _do,  a.id tid,c.object,is_forward_direction,seq_order from workflow_status_transitions a

@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.controllers;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -24,6 +25,7 @@ import org.codealpha.gmsservice.entities.dashboard.*;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.models.dashboard.*;
+import org.codealpha.gmsservice.models.dashboard.mydashboard.MyCategory;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.DashboardValidator;
 import org.hibernate.jdbc.Work;
@@ -331,7 +333,7 @@ public class UserController {
     @GetMapping("/{userId}/dashboard/summary")
     public ResponseEntity<Category> getDasboardSummary(@RequestHeader("X-TENANT-CODE") String tenantCode,
                                                        @PathVariable("userId") Long userId) {
-        DashboardSummary dashboardSummary = new DashboardSummary();
+
         Category dashboardCategory = null;
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
 
@@ -358,6 +360,21 @@ public class UserController {
         dashboardCategory = new Category("CEO", categorySummary, categoryFilters);
 
         return new ResponseEntity(dashboardCategory, HttpStatus.OK);
+    }
+
+    @GetMapping("/{userId}/dashboard/mysummary")
+    public ResponseEntity<Category> getMyDashboardSummary(@RequestHeader("X-TENANT-CODE") String tenantCode,
+                                                       @PathVariable("userId") Long userId) {
+
+        String data = "{ \"name\": \"My Dashboard\", \"summary\": { \"ActionsPending\": { \"Grants\": 3, \"Reports\": 4, \"DisbursementApprovals\": 5 }, \"UpcomingGrants\": { \"DraftGrants\": 3, \"Grantsinmyworkflow\": 4, \"GrantAmount\": 5 } }, \"filters\": [ { \"name\": \"Active Grants\", \"totalGrants\": 12, \"granteeOrgs\": 8, \"grantswithnoapprovedreports\": 4, \"grantswithnokpis\": 12, \"period\": \"2019-2024\", \"disbursedAmount\": 2000000, \"committedAmount\": 800000, \"details\": [ { \"name\": \"Disbursements\", \"summary\": { \"disbursement\": [ { \"name\": \"2019 - 2020\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"142.03\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"1841.22\", \"count\": 25 } ] }, { \"name\": \"2020 - 2021\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"348.28\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"10264.48\", \"count\": 30 } ] }, { \"name\": \"2021 - 2022\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"0.40\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"496.10\", \"count\": 4 } ] } ] } }, { \"name\": \"Reports\", \"DueOverdueSummary\": [ { \"name\": \"Due\", \"value\": 12 }, { \"name\": \"Overdue\", \"value\": 15 } ], \"ApprovedReportsSummary\": [ { \"name\": \"My approved reports on schedule\", \"value\": 10 }, { \"name\": \"Reports approved after their due dates\", \"value\": 12 } ] } ] }, { \"name\": \"Closed Grants\", \"totalGrants\": 5, \"granteeOrgs\": 3, \"grantswithnoapprovedreports\": 10, \"grantswithnokpis\": 12, \"period\": \"2019-2024\", \"disbursedAmount\": 1000000, \"committedAmount\": 2000000, \"details\": [ { \"name\": \"Disbursements\", \"summary\": { \"disbursement\": [ { \"name\": \"2019 - 2020\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"142.03\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"1841.22\", \"count\": 25 } ] }, { \"name\": \"2020 - 2021\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"348.28\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"10264.48\", \"count\": 30 } ] }, { \"name\": \"2021 - 2022\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"0.40\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"496.10\", \"count\": 4 } ] } ] } }, { \"name\": \"Reports\", \"DueOverdueSummary\": [ { \"name\": \"Due\", \"value\": 4 }, { \"name\": \"Overdue\", \"value\": 1 } ], \"ApprovedReportsSummary\": [ { \"name\": \"My approved reports on schedule\", \"value\": 15 }, { \"name\": \"Reports approved after their due dates\", \"value\": 2 } ] } ] } ] }";
+        ObjectMapper mapper = new ObjectMapper();
+        MyCategory category = null;
+        try {
+            category = mapper.readValue(data,MyCategory.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new ResponseEntity(category,HttpStatus.OK);
     }
 
     private Filter getFilterForGrantsByStatus(Organization tenantOrg, String status) {
@@ -391,14 +408,7 @@ public class UserController {
                         .isPresent()) {
                     reportSummaryList.add(new ReportSummary("Due", Long.valueOf(0)));
                 }
-                /*if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("unapproved")).findAny()
-                        .isPresent()) {
-                    reportSummaryList.add(new ReportSummary("Unapproved", Long.valueOf(0)));
-                }*/
-                /*if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("approved")).findAny()
-                        .isPresent()) {
-                    reportSummaryList.add(new ReportSummary("Approved", Long.valueOf(0)));
-                }*/
+
                 if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny()
                         .isPresent()) {
                     reportSummaryList.add(new ReportSummary("Overdue", Long.valueOf(0)));
@@ -415,15 +425,6 @@ public class UserController {
             if (reportsByStatuses != null && reportsByStatuses.size() > 0) {
 
                 List<Workflow> granterReportWorkflows = workflowService.getAllWorkflowsForGranterByType(tenantOrg.getId(),"REPORT");
-
-                /*List<String> statusOrder = orderedTransitions.stream().map(a -> a.getState()).collect(Collectors.toList());
-                Comparator<GranterReportSummaryStatus> comparator = Comparator
-                        .comparing(c -> {
-                                    return statusOrder.indexOf(c.getStatus());
-                                }
-                        );
-
-                        reportsByStatuses.sort(comparator);*/
                 List<Workflow> workflows = workflowService.getAllWorkflowsForGranterByType(tenantOrg.getId(),"REPORT");
                 for(Workflow wf : workflows){
                     List<GrantTypeWorkflowMapping> mappings = grantTypeWorkflowMappingService.findByWorkflow(wf.getId());
@@ -451,38 +452,6 @@ public class UserController {
                         }
                     }
                 }
-
-                /*List<TransitionStatusOrder> orderedTransitions = dashboardService.getStatusTransitionOrder(tenantOrg.getId());
-
-                        for (GranterReportSummaryStatus reportStatus : reportsByStatuses) {
-
-                            orderedTransitions.add(0, dashboardService.getStatusTransitionOrderForTerminalState(reportStatus.getWorkflowId()));
-                        *//*Collections.sort(orderedTransitions,(s1,s2)->{
-                            return s1.getSeqOrder()>s2.getSeqOrder()?-1:1;
-                        });*//*
-
-                            if(!orderedTransitions.stream().filter(a->a.getFromStateId().longValue()==reportStatus.getStatusId()).findFirst().isPresent()){
-                                reportStatus.setCount(0);
-                                reportStatus.setGranterId(tenantOrg.getId());
-                                reportStatus.setId(1L);
-                                reportStatus.setInternalStatus(reportStatus.getInternalStatus());
-                                reportStatus.setStatus(reportStatus.getStatus());
-                                reportStatus.setGrantTypeId(reportStatus.getGrantTypeId());
-                                reportStatus.setGrantType(grantTypeService.findById(reportStatus.getGrantTypeId()).getName());
-                            }
-                            *//*for (TransitionStatusOrder sto : orderedTransitions) {
-
-                                if (reportStatus.getStatusId() != sto.getFromStateId() && reportStatus.getGrantTypeId() != reportStatus.getGrantTypeId()) {
-
-                                    //reportsByStatuses.add(summaryStatus);
-
-                                }
-                            }*//*
-
-                            reportStatusSummaryList
-                                    .add(new ReportStatusSummary(reportStatus.getStatus(), reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount()), reportStatus.getGrantType()));
-                        }*/
-
             }
         } else if (status.equalsIgnoreCase("CLOSED")) {
             reportStatuses = dashboardService.findGrantCountsByReportNumbersAndStatusForGranter(tenantOrg.getId(),

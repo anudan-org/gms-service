@@ -1,5 +1,6 @@
-truncate table messages;
 truncate table workflow_validations;
+truncate table messages;
+
 INSERT INTO public.messages (id, message) VALUES (2, '%_for% has missing header information.');
 INSERT INTO public.messages (id, message) VALUES (1, 'Planned Disbursements does not match the Grant Amount of %grantamount%.');
 INSERT INTO public.messages (id, message) VALUES (3, 'Planned Disbursements is missing for this project.');
@@ -7,6 +8,9 @@ INSERT INTO public.messages (id, message) VALUES (4, 'Requested amount cannot be
 INSERT INTO public.messages (id, message) VALUES (5, 'The disbursed total cannot be greater than the approved amount of %requested_amount%.');
 INSERT INTO public.messages (id, message) VALUES (6, 'This grant is missing project KPIs.');
 INSERT INTO public.messages (id, message) VALUES (7, 'This grant is missing project documents.');
+INSERT INTO public.messages (id, message) VALUES (8, 'Disbursement record amount (%recorded_amount%) is lower than the disbursement approval amount (%requested_amount%). Unused approved amount (%unused_amount%) will not be available if you proceed.');
+INSERT INTO public.messages (id, message) VALUES (9, 'Grant has KPIs specified but this report is not checking for KPIs');
+
 
 
 INSERT INTO public.workflow_validations (id, object, validation_query, type, active, message_id) VALUES (2, 'GRANT', 'select case when amount is null or amount=0 or representative is null or representative='''' or name is null or name='''' or organization_id is null or start_date is null or end_date is null then true else false end _failed,''GRANT'' _for
@@ -28,9 +32,24 @@ INSERT INTO public.workflow_validations (id, object, validation_query, type, act
 left join actual_disbursements c on c.disbursement_id = a.id
 inner join grants b on b.id=a.grant_id
 where a.id=%disbursementId% ', 'WARN', true, 4);
-INSERT INTO public.workflow_validations (id, object, validation_query, type, active, message_id) VALUES (6, 'DISBURSEMENT', 'select case when %amount_to_record%>requested_amount then true else false end _failed,requested_amount from disbursements where id=%disbursementId%;', 'WARN', true, 5);
 INSERT INTO public.workflow_validations (id, object, validation_query, type, active, message_id) VALUES (7, 'GRANT', 'select not exists(select * from grant_specific_section_attributes a
 inner join grant_string_attributes b on a.id=b.section_attribute_id
 where b.grant_id=%grantId% and a.field_type=''kpi'') _failed;', 'INFO', true, 6);
 INSERT INTO public.workflow_validations (id, object, validation_query, type, active, message_id) VALUES (8, 'GRANT', 'select not exists(select * from grant_documents a
 where a.grant_id=%grantId%) _failed;', 'INFO', true, 7);
+INSERT INTO public.workflow_validations (id, object, validation_query, type, active, message_id) VALUES (10, 'REPORT', 'select case when grantKpiExists=true and reportKpiExists=false then true else false end from (select (select exists (select a.grant_id,count(*) grant_count from grant_string_attributes a
+inner join grant_specific_section_attributes b on b.id=a.section_attribute_id
+where a.grant_id=r.grant_id and b.field_type=''kpi'' group by a.grant_id)) grantKpiExists,
+(select exists (select * from reports l
+left join report_string_attributes m on m.report_id=l.id
+left join report_specific_section_attributes n on n.id=m.section_attribute_id
+where l.id=%reportId% and n.field_type=''kpi'')) reportKpiExists
+from reports r
+where r.id=%reportId%) M', 'INFO', true, 9);
+INSERT INTO public.workflow_validations (id, object, validation_query, type, active, message_id) VALUES (9, 'DISBURSEMENT', 'select case when requested_amount>sum(actual_amount) then TRUE else FALSE end _failed,to_char(requested_amount,''FM99,FM99,99,999'') requested_amount,to_char(sum(actual_amount),''FM99,FM99,99,999'') recorded_amount,to_char((requested_amount-sum(actual_amount)),''FM99,FM99,99,999'') unused_amount from actual_disbursements a
+inner join disbursements b on b.id=a.disbursement_id
+where a.disbursement_id=%disbursementId%
+group by a.disbursement_id,requested_amount;', 'INFO', true, 8);
+INSERT INTO public.workflow_validations (id, object, validation_query, type, active, message_id) VALUES (6, 'DISBURSEMENT', 'select case when sum(a.actual_amount)>b.requested_amount then true else false end _failed,to_char(b.requested_amount,''FM99,FM99,99,999'') requested_amount from actual_disbursements a
+inner join disbursements b on b.id=a.disbursement_id
+where b.id=%disbursementId% group by b.id;', 'WARN', true, 5);

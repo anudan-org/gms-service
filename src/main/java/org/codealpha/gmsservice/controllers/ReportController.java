@@ -138,7 +138,7 @@ public class ReportController {
         } else {
             org = organizationService.findOrganizationByTenantCode(tenantCode);
             Date start = DateTime.now().withTimeAtStartOfDay().toDate();
-            Date end = new DateTime(start, DateTimeZone.forID(timezone)).plusDays(30).withTime(23, 59, 59, 999)
+            Date end = new DateTime(start, DateTimeZone.forID(timezone)).plusDays(15).withTime(23, 59, 59, 999)
                     .toDate();
             boolean isAdmin = false;
 
