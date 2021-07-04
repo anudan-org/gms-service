@@ -1,23 +1,26 @@
 package org.codealpha.gmsservice.controllers;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.models.AssignedTo;
-import org.codealpha.gmsservice.models.ColumnData;
-import org.codealpha.gmsservice.models.DisbursementAssignmentModel;
-import org.codealpha.gmsservice.models.DisbursementAssignmentsVO;
-import org.codealpha.gmsservice.models.DisbursementWithNote;
-import org.codealpha.gmsservice.models.TableData;
+import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.MediaType;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @RestController
 @RequestMapping("/user/{userId}/disbursements")
@@ -64,6 +69,10 @@ public class DisbursementsController {
         private ReleaseService releaseService;
         @Autowired
         private WorkflowService workflowService;
+        @Value("${spring.upload-file-location}")
+        private String uploadLocation;
+        @Autowired
+        private ResourceLoader resourceLoader;
 
         @GetMapping("/active-grants")
         public List<Grant> getActiveGrantsOwnedByUser(@PathVariable("userId") Long userId,
@@ -733,5 +742,107 @@ public class DisbursementsController {
                 disbursementService.deleteActualDisbursement(actualDisbursement);
                 disbursementService.deleteDisbursement(
                                 disbursementService.getDisbursementById(actualDisbursement.getDisbursementId()));
+        }
+
+        @PostMapping(value = "/{disbursementId}/documents/upload", consumes = { "multipart/form-data" })
+        public List<DisbursementDocument> saveUploadedFiles(
+
+                @PathVariable("userId") Long userId,
+                @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("disbursementId") Long disbursementId,
+                @RequestParam("file") MultipartFile[] files,
+                @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+
+                Disbursement disbursement = disbursementService.getDisbursementById(disbursementId);
+                String filePath = uploadLocation + tenantCode + "/disbursement-documents/" + disbursement.getGrant().getId() + "/" + disbursementId + "/";
+                File dir = new File(filePath);
+                dir.mkdirs();
+                List<DisbursementDocument> attachments = new ArrayList();
+                for (MultipartFile file : files) {
+                        try {
+                                String fileName = file.getOriginalFilename();
+
+                                File fileToCreate = new File(dir, fileName);
+                                FileOutputStream fos = new FileOutputStream(fileToCreate);
+                                fos.write(file.getBytes());
+                                fos.close();
+                        } catch (IOException e) {
+                                e.printStackTrace();
+                        }
+                        DisbursementDocument attachment = new DisbursementDocument();
+                        attachment.setExtension(FilenameUtils.getExtension(file.getOriginalFilename()));
+                        attachment.setName(file.getOriginalFilename()
+                                .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
+                        attachment.setLocation(filePath + file.getOriginalFilename());
+                        attachment.setUploadedOn(new Date());
+                        attachment.setUploadedBy(userId);
+                        attachment.setDisbursementId(disbursementId);
+                        attachment = disbursementService.saveDisbursementDocument(attachment);
+                        attachments.add(attachment);
+                }
+
+                //updateDisbursementDocuments(disbursementId,tenantCode,userId);
+
+                return attachments;
+        }
+
+        @PostMapping(value = "/{disbursementId}/documents/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+        public byte[] downloadProjectDocuments(@PathVariable("userId") Long userId, @PathVariable("disbursementId") Long disbursementId,
+                                               @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest,
+                                               HttpServletResponse response) throws IOException {
+
+                ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
+                // setting headers
+                response.setContentType("application/zip");
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
+
+                // creating byteArray stream, make it bufforable and passing this buffor to
+                // ZipOutputStream
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+                ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+
+                // simple file list, just for tests
+
+                ArrayList<File> files = new ArrayList<>();
+                //files.add(new File("README.md"));
+
+                // packing files
+                for (Long attachmentId : downloadRequest.getAttachmentIds()) {
+                        DisbursementDocument attachment = disbursementService.getDisbursementDocumentById(attachmentId);
+
+                        File file = resourceLoader.getResource("file:" + attachment.getLocation()).getFile();
+                        // new zip entry and copying inputstream with file to zipOutputStream, after all
+                        // closing streams
+                        zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+                        FileInputStream fileInputStream = new FileInputStream(file);
+
+                        IOUtils.copy(fileInputStream, zipOutputStream);
+
+                        fileInputStream.close();
+                        zipOutputStream.closeEntry();
+                }
+
+                if (zipOutputStream != null) {
+                        zipOutputStream.finish();
+                        zipOutputStream.flush();
+                        IOUtils.closeQuietly(zipOutputStream);
+                }
+                IOUtils.closeQuietly(bufferedOutputStream);
+                IOUtils.closeQuietly(byteArrayOutputStream);
+                return byteArrayOutputStream.toByteArray();
+        }
+
+        @DeleteMapping(value = "/{disbursementId}/document/{documentId}")
+        public void deleteDisbursementDocuments(@PathVariable("userId") Long userId, @PathVariable("disbursementId") Long disbursementId,
+                                             @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("documentId") Long attachmentId) {
+
+                DisbursementDocument doc = disbursementService.getDisbursementDocumentById(attachmentId);
+                File file = new File(doc.getLocation());
+                disbursementService.deleteDisbursementDocument(doc);
+                file.delete();
+
+                //updateProjectDocuments(grantId,tenantCode,userId);
+
         }
 }

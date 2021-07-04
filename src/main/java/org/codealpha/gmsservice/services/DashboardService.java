@@ -353,8 +353,16 @@ public class DashboardService {
         return granterCountAndAmountTotalRepository.getSummaryForGranter(granterId);
     }
 
+    public GranterCountAndAmountTotal getMySummaryForGranter(Long granterId) {
+        return granterCountAndAmountTotalRepository.getMySummaryForGranter(granterId);
+    }
+
     public GranterGrantee getGranteesSummaryForGranter(Long granterId) {
         return granterGranteeRepository.getGranteeSummaryForGranter(granterId);
+    }
+
+    public GranterGrantee getMyGranteesSummaryForGranter(Long userId,String status) {
+        return granterGranteeRepository.getMyGranteeSummaryForGranter(userId,status);
     }
 
     public GranterActiveUser getActiveUserSummaryForGranter(Long granterId) {

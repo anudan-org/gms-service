@@ -58,6 +58,8 @@ public class DisbursementService {
     private UserRoleService userRoleService;
     @Autowired
     private OrgTagService orgTagService;
+    @Autowired
+    private DisbursementDocumentRepository disbursementDocumentRepository;
 
     public Disbursement saveDisbursement(Disbursement disbursement) {
         return disbursementRepository.save(disbursement);
@@ -407,5 +409,17 @@ public class DisbursementService {
 
     public List<DisabledUsersEntity> getDisbursementsWithDisabledUsers(){
         return disabledUsersEntityRepository.getDisbursements();
+    }
+
+    public DisbursementDocument saveDisbursementDocument(DisbursementDocument attachment) {
+        return disbursementDocumentRepository.save(attachment);
+    }
+
+    public DisbursementDocument getDisbursementDocumentById(Long attachmentId) {
+        return disbursementDocumentRepository.findById(attachmentId).get();
+    }
+
+    public void deleteDisbursementDocument(DisbursementDocument doc) {
+        disbursementDocumentRepository.delete(doc);
     }
 }
