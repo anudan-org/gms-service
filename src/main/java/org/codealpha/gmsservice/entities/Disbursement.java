@@ -58,6 +58,8 @@ public class Disbursement {
     private Long reportId;
     @Column
     private boolean disabledByAmendment;
+    @Transient
+    private List<DisbursementDocument> disbursementDocuments;
 
     public Long getId() {
         return id;
@@ -251,4 +253,11 @@ public class Disbursement {
         this.disabledByAmendment = disabledByAmendment;
     }
 
+    public List<DisbursementDocument> getDisbursementDocuments() {
+        return disbursementDocuments;
+    }
+
+    public void setDisbursementDocuments(List<DisbursementDocument> disbursementDocuments) {
+        this.disbursementDocuments = disbursementDocuments;
+    }
 }
