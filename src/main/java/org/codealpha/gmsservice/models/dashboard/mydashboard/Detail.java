@@ -1,20 +1,20 @@
 
 package org.codealpha.gmsservice.models.dashboard.mydashboard;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import javax.annotation.Generated;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.codealpha.gmsservice.models.dashboard.mydashboard.DueOverdueSummary;
-import org.codealpha.gmsservice.models.dashboard.mydashboard.Summary__1;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "name",
-    "summary",
-    "DueOverdueSummary",
-    "ApprovedReportsSummary"
+    "summary"
 })
 @Generated("jsonschema2pojo")
 public class Detail {
@@ -23,10 +23,8 @@ public class Detail {
     private String name;
     @JsonProperty("summary")
     private Summary__1 summary;
-    @JsonProperty("DueOverdueSummary")
-    private List<DueOverdueSummary> dueOverdueSummary = null;
-    @JsonProperty("ApprovedReportsSummary")
-    private List<ApprovedReportsSummary> approvedReportsSummary = null;
+    @JsonIgnore
+    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("name")
     public String getName() {
@@ -48,24 +46,14 @@ public class Detail {
         this.summary = summary;
     }
 
-    @JsonProperty("DueOverdueSummary")
-    public List<DueOverdueSummary> getDueOverdueSummary() {
-        return dueOverdueSummary;
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
     }
 
-    @JsonProperty("DueOverdueSummary")
-    public void setDueOverdueSummary(List<DueOverdueSummary> dueOverdueSummary) {
-        this.dueOverdueSummary = dueOverdueSummary;
-    }
-
-    @JsonProperty("ApprovedReportsSummary")
-    public List<ApprovedReportsSummary> getApprovedReportsSummary() {
-        return approvedReportsSummary;
-    }
-
-    @JsonProperty("ApprovedReportsSummary")
-    public void setApprovedReportsSummary(List<ApprovedReportsSummary> approvedReportsSummary) {
-        this.approvedReportsSummary = approvedReportsSummary;
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 
 }

@@ -1,7 +1,6 @@
 package org.codealpha.gmsservice.controllers;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
@@ -11,24 +10,23 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
-import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.entities.dashboard.*;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.models.dashboard.*;
-import org.codealpha.gmsservice.models.dashboard.mydashboard.MyCategory;
+import org.codealpha.gmsservice.models.dashboard.Detail;
+import org.codealpha.gmsservice.models.dashboard.Filter;
+import org.codealpha.gmsservice.models.dashboard.Summary;
+import org.codealpha.gmsservice.models.dashboard.mydashboard.*;
+import org.codealpha.gmsservice.models.dashboard.mydashboard.Disbursement;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.DashboardValidator;
-import org.hibernate.jdbc.Work;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -366,7 +364,7 @@ public class UserController {
     public ResponseEntity<Category> getMyDashboardSummary(@RequestHeader("X-TENANT-CODE") String tenantCode,
                                                        @PathVariable("userId") Long userId) {
 
-        String data = "{ \"name\": \"My Dashboard\", \"summary\": { \"ActionsPending\": { \"Grants\": 3, \"Reports\": 4, \"DisbursementApprovals\": 5 }, \"UpcomingGrants\": { \"DraftGrants\": 3, \"Grantsinmyworkflow\": 4, \"GrantAmount\": 5 } }, \"filters\": [ { \"name\": \"Active Grants\", \"totalGrants\": 12, \"granteeOrgs\": 8, \"grantswithnoapprovedreports\": 4, \"grantswithnokpis\": 12, \"period\": \"2019-2024\", \"disbursedAmount\": 2000000, \"committedAmount\": 800000, \"details\": [ { \"name\": \"Disbursements\", \"summary\": { \"disbursement\": [ { \"name\": \"2019 - 2020\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"142.03\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"1841.22\", \"count\": 25 } ] }, { \"name\": \"2020 - 2021\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"348.28\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"10264.48\", \"count\": 30 } ] }, { \"name\": \"2021 - 2022\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"0.40\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"496.10\", \"count\": 4 } ] } ] } }, { \"name\": \"Reports\", \"DueOverdueSummary\": [ { \"name\": \"Due\", \"value\": 12 }, { \"name\": \"Overdue\", \"value\": 15 } ], \"ApprovedReportsSummary\": [ { \"name\": \"My approved reports on schedule\", \"value\": 10 }, { \"name\": \"Reports approved after their due dates\", \"value\": 12 } ] } ] }, { \"name\": \"Closed Grants\", \"totalGrants\": 5, \"granteeOrgs\": 3, \"grantswithnoapprovedreports\": 10, \"grantswithnokpis\": 12, \"period\": \"2019-2024\", \"disbursedAmount\": 1000000, \"committedAmount\": 2000000, \"details\": [ { \"name\": \"Disbursements\", \"summary\": { \"disbursement\": [ { \"name\": \"2019 - 2020\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"142.03\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"1841.22\", \"count\": 25 } ] }, { \"name\": \"2020 - 2021\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"348.28\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"10264.48\", \"count\": 30 } ] }, { \"name\": \"2021 - 2022\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"0.40\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"496.10\", \"count\": 4 } ] } ] } }, { \"name\": \"Reports\", \"DueOverdueSummary\": [ { \"name\": \"Due\", \"value\": 4 }, { \"name\": \"Overdue\", \"value\": 1 } ], \"ApprovedReportsSummary\": [ { \"name\": \"My approved reports on schedule\", \"value\": 15 }, { \"name\": \"Reports approved after their due dates\", \"value\": 2 } ] } ] } ] }";
+        String data = "{ \"name\": \"My Dashboard\", \"summary\": { \"ActionsPending\": { \"Grants\": 3, \"Reports\": 4, \"DisbursementApprovals\": 5 }, \"UpcomingGrants\": { \"DraftGrants\": 3, \"Grantsinmyworkflow\": 4, \"GrantAmount\": 5 } }, \"filters\": [ { \"name\": \"Active Grants\", \"totalGrants\": 12, \"granteeOrgs\": 8, \"grantswithnoapprovedreports\": 4, \"grantswithnokpis\": 12, \"period\": \"2019-2024\", \"disbursedAmount\": 2000000, \"committedAmount\": 800000, \"details\": [ { \"name\": \"Disbursements\", \"summary\": { \"disbursement\": [ { \"name\": \"2019 - 2020\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"142.03\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"1841.22\", \"count\": 25 } ] }, { \"name\": \"2020 - 2021\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"348.28\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"10264.48\", \"count\": 30 } ] }, { \"name\": \"2021 - 2022\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"0.40\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"496.10\", \"count\": 4 } ] } ] } }, { \"name\": \"Reports\", \"summary\": { \"summary\": [ { \"name\": \"Due\", \"value\": 30 }, { \"name\": \"Overdue\", \"value\": 212 } ], \"statusSummary\": [ { \"name\": \"My approved reports on schedule\", \"value\": 10 }, { \"name\": \"Reports approved after their due dates\", \"value\": 12 } ] } } ] }, { \"name\": \"Closed Grants\", \"totalGrants\": 5, \"granteeOrgs\": 3, \"grantswithnoapprovedreports\": 4, \"grantswithnokpis\": 4, \"period\": \"2019-2024\", \"disbursedAmount\": 4000000, \"committedAmount\": 3500000, \"details\": [ { \"name\": \"Disbursements\", \"summary\": { \"disbursement\": [ { \"name\": \"2019 - 2020\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"142.03\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"1841.22\", \"count\": 25 } ] }, { \"name\": \"2020 - 2021\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"348.28\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"10264.48\", \"count\": 30 } ] }, { \"name\": \"2021 - 2022\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"0.40\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"496.10\", \"count\": 4 } ] } ] } }, { \"name\": \"Reports\", \"summary\": { \"summary\": [ { \"name\": \"Due\", \"value\": 10 }, { \"name\": \"Overdue\", \"value\": 34 } ], \"statusSummary\": [ { \"name\": \"My approved reports on schedule\", \"value\": 4 }, { \"name\": \"Reports approved after their due dates\", \"value\": 3 } ] } } ] } ] }";
         ObjectMapper mapper = new ObjectMapper();
         MyCategory category = null;
         try {
@@ -374,7 +372,71 @@ public class UserController {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        org.codealpha.gmsservice.models.dashboard.mydashboard.Summary summary = new org.codealpha.gmsservice.models.dashboard.mydashboard.Summary();
+
+        summary.setActionsPending(getActionsPending());
+        summary.setUpcomingGrants(getUpcomingGrants());
+
+        List<org.codealpha.gmsservice.models.dashboard.mydashboard.Filter> filters = new ArrayList<>();
+        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter activeGrantFilter = getFilter("Active");
+        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter closedGrantFilter = getFilter("Closed");
+        filters.add(activeGrantFilter);
+        filters.add(closedGrantFilter);
+
+        //category.setSummary(summary);
+        //category.setFilters(filters);
         return new ResponseEntity(category,HttpStatus.OK);
+    }
+
+    private org.codealpha.gmsservice.models.dashboard.mydashboard.Filter getFilter(String status) {
+        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter activeGrantFilter = new org.codealpha.gmsservice.models.dashboard.mydashboard.Filter();
+        //Populating active filter
+        activeGrantFilter.setCommittedAmount(0l);
+        activeGrantFilter.setDetails(getDetails());
+        activeGrantFilter.setDisbursedAmount(0l);
+        activeGrantFilter.setGranteeOrgs(0l);
+        activeGrantFilter.setGrantswithnoapprovedreports(0l);
+        activeGrantFilter.setGrantswithnokpis(0l);
+        activeGrantFilter.setName("Active Grants");
+        activeGrantFilter.setPeriod("2014 - 2025");
+        activeGrantFilter.setTotalGrants(0l);
+        return activeGrantFilter;
+    }
+
+    private List<org.codealpha.gmsservice.models.dashboard.mydashboard.Detail> getDetails() {
+        List<org.codealpha.gmsservice.models.dashboard.mydashboard.Detail> details = new ArrayList<>();
+        org.codealpha.gmsservice.models.dashboard.mydashboard.Detail detail = new org.codealpha.gmsservice.models.dashboard.mydashboard.Detail();
+        detail.setName("Disbursements");
+        Summary__1 summary__1 = new Summary__1();
+        List<Disbursement> disbursementList = new ArrayList<>();
+        Disbursement disbursement = new Disbursement();
+        disbursement.setName("2019 - 2020");
+        List<Value> values = new ArrayList<>();
+        Value value = new Value();
+        value.setCount(0l);
+        value.setName("Disbursed");
+        value.setValue("0");
+        values.add(value);
+        disbursement.setValues(values);
+        disbursementList.add(disbursement);
+        summary__1.setDisbursement(disbursementList);
+        Summary__2 summary__2 = new Summary__2();
+        List<Summary__2> summary__2s = new ArrayList<>();
+        summary__2s.add(summary__2);
+        summary__1.setSummary(summary__2s);
+        detail.setSummary(summary__1);
+
+        details.add(detail);
+        return details;
+    }
+
+    private UpcomingGrants getUpcomingGrants() {
+        return new UpcomingGrants(0l, 0l, 0l);
+    }
+
+    private ActionsPending getActionsPending() {
+        return new ActionsPending(0l, 0l, 0l);
     }
 
     private Filter getFilterForGrantsByStatus(Organization tenantOrg, String status) {

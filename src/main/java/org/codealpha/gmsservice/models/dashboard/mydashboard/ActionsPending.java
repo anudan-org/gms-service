@@ -1,7 +1,12 @@
 
 package org.codealpha.gmsservice.models.dashboard.mydashboard;
 
+import java.util.HashMap;
+import java.util.Map;
 import javax.annotation.Generated;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -21,6 +26,17 @@ public class ActionsPending {
     private Long reports;
     @JsonProperty("DisbursementApprovals")
     private Long disbursementApprovals;
+    @JsonIgnore
+    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+
+    public ActionsPending() {
+    }
+
+    public ActionsPending(Long grants, Long reports, Long disbursementApprovals) {
+        this.grants = grants;
+        this.reports = reports;
+        this.disbursementApprovals = disbursementApprovals;
+    }
 
     @JsonProperty("Grants")
     public Long getGrants() {
@@ -50,6 +66,16 @@ public class ActionsPending {
     @JsonProperty("DisbursementApprovals")
     public void setDisbursementApprovals(Long disbursementApprovals) {
         this.disbursementApprovals = disbursementApprovals;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 
 }
