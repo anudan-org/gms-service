@@ -1,12 +1,16 @@
 
 package org.codealpha.gmsservice.models.dashboard.mydashboard;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Generated;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.codealpha.gmsservice.models.dashboard.mydashboard.Value;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
@@ -20,6 +24,16 @@ public class Disbursement {
     private String name;
     @JsonProperty("values")
     private List<Value> values = null;
+    @JsonIgnore
+    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+
+    public Disbursement() {
+    }
+
+    public Disbursement(String name, List<Value> values) {
+        this.name = name;
+        this.values = values;
+    }
 
     @JsonProperty("name")
     public String getName() {
@@ -39,6 +53,16 @@ public class Disbursement {
     @JsonProperty("values")
     public void setValues(List<Value> values) {
         this.values = values;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 
 }
