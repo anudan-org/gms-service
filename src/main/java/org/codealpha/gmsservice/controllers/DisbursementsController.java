@@ -8,10 +8,16 @@ import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,6 +47,7 @@ import java.util.zip.ZipOutputStream;
 @RequestMapping("/user/{userId}/disbursements")
 public class DisbursementsController {
 
+        private static Logger logger = LoggerFactory.getLogger(DisbursementsController.class);
         @Autowired
         private GrantService grantService;
         @Autowired
@@ -844,5 +851,31 @@ public class DisbursementsController {
 
                 //updateProjectDocuments(grantId,tenantCode,userId);
 
+        }
+
+        @GetMapping("/{disbursementId}/file/{fileId}")
+        @ApiOperation(value = "Get file for download")
+        public ResponseEntity<Resource> getFileForDownload(HttpServletResponse servletResponse,
+                                                           @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("disbursementId") Long disbursementId,
+                                                           @PathVariable("fileId") Long fileId) {
+
+                DisbursementDocument attachment = disbursementService.getDisbursementDocumentById(fileId);
+                String filePath = attachment.getLocation();
+
+                try {
+                        File file = resourceLoader.getResource("file:" + filePath).getFile();
+                        InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
+
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.add(HttpHeaders.CONTENT_DISPOSITION,
+                                "attachment; filename=" + attachment.getName());
+                        servletResponse.setHeader("filename", attachment.getName() );
+                        return ResponseEntity.ok().headers(headers).contentLength(file.length())
+                                .contentType(MediaType.parseMediaType("application/octet-stream")).body(resource);
+                        // StreamUtils.copy(file.getInputStream(), servletResponse.getOutputStream());
+                } catch (IOException ex) {
+                        logger.error(ex.getMessage(), ex);
+                }
+                return null;
         }
 }
