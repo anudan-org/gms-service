@@ -809,7 +809,7 @@ public class GrantService {
         // Set Minimum End Date for Amendment grant
         if (grant.getOrigGrantId() != null) {
             List<Report> existingReports = reportService.getReportsForGrant(getById(grant.getOrigGrantId()));
-            if (existingReports != null && existingReports.size() > 0) {
+                if (existingReports != null && existingReports.size() > 0) {
                 //existingReports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
                 existingReports.removeIf(r -> r.getEndDate()==null);
                 if (existingReports != null && existingReports.size() > 0) {
@@ -818,6 +818,8 @@ public class GrantService {
                     existingReports.sort(endDateComparator);
                     Report lastReport = existingReports.get(existingReports.size() - 1);
                     grant.setMinEndEndate(lastReport.getEndDate());
+                }else{
+                    grant.setMinEndEndate(grant.getStartDate());
                 }
             }
 
@@ -833,6 +835,8 @@ public class GrantService {
                     if (grant.getMinEndEndate() != null && new DateTime(lastDisbursement.getMovedOn())
                             .isAfter(new DateTime(grant.getMinEndEndate()))) {
                         grant.setMinEndEndate(lastDisbursement.getMovedOn());
+                    }else{
+                        grant.setMinEndEndate(grant.getStartDate());
                     }
 
                 }

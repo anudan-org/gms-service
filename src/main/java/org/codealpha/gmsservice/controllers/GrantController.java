@@ -1036,6 +1036,8 @@ public class GrantController {
                     existingReports.sort(endDateComparator);
                     Report lastReport = existingReports.get(existingReports.size() - 1);
                     grant.setMinEndEndate(lastReport.getEndDate());
+                }else{
+                    grant.setMinEndEndate(grant.getStartDate());
                 }
             }
         }
@@ -1318,7 +1320,7 @@ public class GrantController {
                 existingDisbursements.stream().forEach(r -> {
                     if(!r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
                         r.setGrant(finalGrant); //Switch over to new grant happening here
-                        //r.setDisabledByAmendment(true);
+                        r.setDisabledByAmendment(true);
                         disbursementService.saveDisbursement(r);
                     }
                 });
