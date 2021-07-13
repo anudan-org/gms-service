@@ -610,7 +610,7 @@ public class ScheduledJobs {
                         if (usersToNotify != null && usersToNotify.size() > 0) {
                             for (DisbursementAssignment disbursementAssignment : usersToNotify) {
                                 Disbursement disbursement = disbursementService
-                                        .getDisbursementById(disbursementAssignment.getOwner());
+                                        .getDisbursementById(disbursementAssignment.getDisbursementId());
 
                                 List<DisbursementAssignment> disbursementAssignments = disbursementService
                                         .getDisbursementAssignments(disbursement);
