@@ -554,10 +554,6 @@ public class ScheduledJobs {
                                 List<DisbursementAssignment> disbursementAssignments = disbursementService
                                         .getDisbursementAssignments(disbursement);
 
-                                /*
-                                 * disbursementAssignments.removeIf(u -> u.getOwner() .longValue() ==
-                                 * disbursementtAssignment.getOwner().longValue());
-                                 */
                                 String[] ccList = new String[disbursementAssignments.size()];
 
                                 if (disbursementAssignments != null && disbursementAssignments.size() > 0) {
@@ -640,8 +636,8 @@ public class ScheduledJobs {
                                         User user = userService.getUserById(disbursementAssignment.getOwner());
                                         String[] messageMetadata = disbursementService.buildEmailNotificationContent(
                                                 disbursement, user, user.getFirstName() + " " + user.getLastName(), "",
-                                                null, taskConfiguration.getSubjectGrant(),
-                                                taskConfiguration.getMessageGrant(), "", "", "", "", "", "", "", "", "",
+                                                null, taskConfiguration.getSubjectDisbursement(),
+                                                taskConfiguration.getMessageDisbursement(), "", "", "", "", "", "", "", "", "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
                                                 null, minuetsLapsed / (24 * 60), null, null);
