@@ -43,4 +43,9 @@ public interface DisbursementRepository extends CrudRepository<Disbursement, Lon
 
         @Query(value = "select * from disbursements where grant_id=?1", nativeQuery = true)
         List<Disbursement> getAllDisbursementsForGrant(Long grantId);
+
+        @Query(value = "select count(*) from disbursements a\n" +
+                "inner join disbursement_assignments b on b.disbursement_id=a.id and b.state_id=a.status_id\n" +
+                "where b.owner=?1 group by b.owner",nativeQuery = true)
+        Long getPendingActionDisbursements(Long userId);
 }

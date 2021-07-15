@@ -76,4 +76,10 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
     @Query(value = "select  A.* from reports A inner join grants Z on Z.id=A.grant_id inner join report_assignments B on B.report_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.anchor=true and B.assignment = ?1) or (B.assignment=?1 and B.state_id=A.status_id) or (C.internal_status='DRAFT' and (select count(*) from report_history where id=A.id)>0 ) ) and Z.grantor_org_id=?2 and Z.deleted=false and (C.internal_status !='ACTIVE' and C.internal_status !='REVIEW' and C.internal_status !='CLOSED') and A.deleted=false order by A.grant_id,A.end_date asc", nativeQuery = true)
     List<Report> findUpcomingFutureAdminReports(Long userId, Long id);
 
+    @Query(value = "select count(distinct(a.id)) from reports a \n" +
+            "inner join report_assignments b on b.report_id=a.id and b.state_id=a.status_id \n" +
+            "inner join grants c on c.id=a.grant_id\n" +
+            "where b.assignment=?1 and c.deleted=false group by b.assignment ",nativeQuery = true)
+    Long getActionDueReportsForUser(Long userId);
+
 }

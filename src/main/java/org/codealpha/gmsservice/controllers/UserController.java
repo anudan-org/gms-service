@@ -13,6 +13,7 @@ import javax.transaction.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
@@ -62,6 +63,8 @@ public class UserController {
     private GranteeService granteeService;
     @Autowired
     private GranterService granterService;
+    @Autowired
+    private DisbursementService disbursementService;
     @Autowired
     private RoleService roleService;
     @Autowired
@@ -375,39 +378,73 @@ public class UserController {
 
         org.codealpha.gmsservice.models.dashboard.mydashboard.Summary summary = new org.codealpha.gmsservice.models.dashboard.mydashboard.Summary();
 
-        summary.setActionsPending(getActionsPending());
-        summary.setUpcomingGrants(getUpcomingGrants());
+        summary.setActionsPending(getActionsPending(userId));
+        summary.setUpcomingGrants(getUpcomingGrants(userId));
 
         List<org.codealpha.gmsservice.models.dashboard.mydashboard.Filter> filters = new ArrayList<>();
-        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter activeGrantFilter = getFilter("Active");
-        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter closedGrantFilter = getFilter("Closed");
+        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter activeGrantFilter = getFilter("ACTIVE",userId);
+        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter closedGrantFilter = getFilter("CLOSED",userId);
         filters.add(activeGrantFilter);
         filters.add(closedGrantFilter);
 
-        //category.setSummary(summary);
-        //category.setFilters(filters);
+        category.setSummary(summary);
+        category.setFilters(filters);
         return new ResponseEntity(category,HttpStatus.OK);
     }
 
-    private org.codealpha.gmsservice.models.dashboard.mydashboard.Filter getFilter(String status) {
-        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter activeGrantFilter = new org.codealpha.gmsservice.models.dashboard.mydashboard.Filter();
+    private org.codealpha.gmsservice.models.dashboard.mydashboard.Filter getFilter(String status,Long userId) {
+        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter grantFilter = new org.codealpha.gmsservice.models.dashboard.mydashboard.Filter();
         //Populating active filter
-        activeGrantFilter.setCommittedAmount(0l);
-        activeGrantFilter.setDetails(getDetails());
-        activeGrantFilter.setDisbursedAmount(0l);
-        activeGrantFilter.setGranteeOrgs(0l);
-        activeGrantFilter.setGrantswithnoapprovedreports(0l);
-        activeGrantFilter.setGrantswithnokpis(0l);
-        activeGrantFilter.setName("Active Grants");
-        activeGrantFilter.setPeriod("2014 - 2025");
-        activeGrantFilter.setTotalGrants(0l);
-        return activeGrantFilter;
+        Long committedAmnt = grantService.getCommittedAmountByUserAndStatus(userId,status);
+        grantFilter.setCommittedAmount(committedAmnt==null?0:committedAmnt);
+        grantFilter.setDetails(getDetails(userId,status));
+        Long disbursedAmt = grantService.getDisbursedAmountByUserAndStatus(userId,status);
+        grantFilter.setDisbursedAmount(disbursedAmt==null?0:disbursedAmt);
+        grantFilter.setGranteeOrgs(grantService.getGranteeOrgsCountByUserAndStatus(userId,status));
+        grantFilter.setGrantswithnoapprovedreports(grantService.getGrantsWithNoApprovedReportsByUserAndStatus(userId,status));
+        Long noKpis = grantService.getGrantsWithNoAKPIsByUserAndStatus(userId,status);
+        grantFilter.setGrantswithnokpis(noKpis==null?0:noKpis);
+        grantFilter.setName(org.apache.commons.text.WordUtils.capitalizeFully(status+" Grants"));
+        GranterGrantSummaryCommitted grantSummaryCommitted =  dashboardService.getDisbursementPeriodsForUserAndStatus(userId,status);
+        if(grantSummaryCommitted!=null){
+            SimpleDateFormat sd = new SimpleDateFormat("yyyy");
+            grantFilter.setPeriod(sd.format(grantSummaryCommitted.getPeriodStart()) + "-"
+                    + sd.format(grantSummaryCommitted.getPeriodEnd()));
+        }
+
+        grantFilter.setTotalGrants(grantService.getGrantsTotalForUserByStatus(userId,status));
+        return grantFilter;
     }
 
-    private List<org.codealpha.gmsservice.models.dashboard.mydashboard.Detail> getDetails() {
+    private List<org.codealpha.gmsservice.models.dashboard.mydashboard.Detail> getDetails(Long userId,String status) {
         List<org.codealpha.gmsservice.models.dashboard.mydashboard.Detail> details = new ArrayList<>();
         org.codealpha.gmsservice.models.dashboard.mydashboard.Detail detail = new org.codealpha.gmsservice.models.dashboard.mydashboard.Detail();
+        Map<Integer, String> periodsMap = dashboardService
+                .getGrantsCommittedPeriodsForUserAndStatus(userService.getUserById(userId), status);
+
+        List<String> periods = periodsMap.entrySet().stream().map(p -> new String(p.getValue()))
+                .collect(Collectors.toList());
+        String[] strings = {"Committed", "Disbursed"};
+
+        List<DetailedSummary> disbursalSummaryList = new ArrayList<>();
+        for (Integer period : periodsMap.keySet()) {
+            Double[] disbursalTotalAndCount = dashboardService.getDisbursedAmountForUserAndPeriodAndStatus(period,
+                    userService.getUserById(userId), status);
+            Long[] committedTotalAndCount = dashboardService.getCommittedAmountForUserAndPeriodAndStatus(period,
+                    userService.getUserById(userId), status);
+            disbursalSummaryList.add(new DisbursalSummary(periodsMap.get(period), new DisbursementData[]{
+                    new DisbursementData("Disbursed",
+                            String.valueOf(new BigDecimal(disbursalTotalAndCount[0] / 100000.00).setScale(2,
+                                    RoundingMode.HALF_UP)),
+                            0l),
+                    new DisbursementData("Committed",
+                            String.valueOf(new BigDecimal(Double.toString(committedTotalAndCount[0] / 100000.00))
+                                    .setScale(2, RoundingMode.HALF_UP)),
+                            committedTotalAndCount[1])}));
+        }
+
         detail.setName("Disbursements");
+
         Summary__1 summary__1 = new Summary__1();
         List<Disbursement> disbursementList = new ArrayList<>();
         Disbursement disbursement = new Disbursement();
@@ -431,12 +468,41 @@ public class UserController {
         return details;
     }
 
-    private UpcomingGrants getUpcomingGrants() {
-        return new UpcomingGrants(0l, 0l, 0l);
+    private UpcomingGrants getUpcomingGrants(Long userId) {
+        Long upcomingDibursementAmount = getUpcomingGrantsDisbursementAmount(userId);
+        return new UpcomingGrants(getUpComingDraftGrants(userId), getGrantsInWorkflow(userId), upcomingDibursementAmount==null?0:upcomingDibursementAmount);
     }
 
-    private ActionsPending getActionsPending() {
-        return new ActionsPending(0l, 0l, 0l);
+    private Long getUpcomingGrantsDisbursementAmount(Long userId) {
+        return grantService.getUpcomingGrantsDisbursementAmount(userId);
+    }
+
+    private Long getGrantsInWorkflow(Long userId) {
+        return grantService.getGrantsInWorkflow(userId);
+    }
+
+    private Long getUpComingDraftGrants(Long userId) {
+        return grantService.getUpComingDraftGrants(userId);
+    }
+
+    private ActionsPending getActionsPending(Long userId) {
+        Long pendingDisbursement = getPendingActionDisbursements(userId);
+        Long pendingGrants = getPendingActionGrants(userId);
+        Long pendingReports = getPendingActionReports(userId);
+        return new ActionsPending(pendingGrants==null?0:pendingGrants, pendingReports==null?0:pendingReports,pendingDisbursement==null?0:pendingDisbursement );
+    }
+
+    private Long getPendingActionDisbursements(Long userId) {
+        return disbursementService.getPendingActionDisbursements(userId);
+    }
+
+    private Long getPendingActionReports(Long userId) {
+        return grantService.getActionDueReportsForUser(userId);
+    }
+
+    private Long getPendingActionGrants(Long userId) {
+
+        return grantService.getActionDueGrantsForUser(userId);
     }
 
     private Filter getFilterForGrantsByStatus(Organization tenantOrg, String status) {
