@@ -518,6 +518,72 @@ public class DashboardService {
         return periods;
     }
 
+    public Map<Integer, String> getGrantsCommittedPeriodsForUserAndStatus(User user, String status) {
+
+        List<GranterGrantSummaryDisbursed> disbursedList = null;
+        if (status.equalsIgnoreCase("ACTIVE")) {
+            disbursedList = granterActiveGrantSummaryDisbursedRepository
+                    .getActiveGrantCommittedSummaryForUser(user.getId());
+        } else if (status.equalsIgnoreCase("CLOSED")) {
+            disbursedList = granterActiveGrantSummaryDisbursedRepository
+                    .getClosedGrantCommittedSummaryForUser(user.getId());
+        }
+        Map<Integer, String> periods = new HashMap<>();
+        if (disbursedList != null && disbursedList.size() > 0) {
+            for (GranterGrantSummaryDisbursed granterGrantSummaryDisbursed : disbursedList) {
+                DateTime grantDate = new DateTime(granterGrantSummaryDisbursed.getStartDate(),
+                        DateTimeZone.forID(timezone));
+                DateTime calendarYearStart = new DateTime(DateTimeZone.forID(timezone)).withYear(grantDate.getYear())
+                        .withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
+                String period = null;
+                if (grantDate.isAfter(calendarYearStart)) {
+                    period = String.valueOf(grantDate.getYear()) + " - " + String.valueOf(grantDate.getYear() + 1);
+                    periods.put(grantDate.getYear(), period);
+                } else {
+                    period = String.valueOf(grantDate.getYear() - 1) + " - " + String.valueOf(grantDate.getYear());
+                    periods.put(grantDate.getYear() - 1, period);
+                }
+
+                //////
+                List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
+                        user.getOrganization().getId());
+
+                List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
+                        .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
+                List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                        .collect(Collectors.toList());
+                List<Disbursement> allClosedDisbursements = new ArrayList<>();
+                List<Disbursement> closedDisbursements = disbursementRepository
+                        .getDisbursementByGrantAndStatuses(granterGrantSummaryDisbursed.getGrantId(), closedStatusIds);
+                allClosedDisbursements.addAll(closedDisbursements);
+
+                for (Disbursement cd : allClosedDisbursements) {
+                    List<ActualDisbursement> actualDisbursements = actualDisbursementRepository
+                            .findByDisbursementId(cd.getId());
+
+                    for(ActualDisbursement ad : actualDisbursements){
+                        DateTime actualDisbursementDate = new DateTime(ad.getDisbursementDate(),
+                                DateTimeZone.forID(timezone));
+                        DateTime calendarYearStart1 = new DateTime(DateTimeZone.forID(timezone)).withYear(actualDisbursementDate.getYear())
+                                .withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
+                        String period1 = null;
+                        if (actualDisbursementDate.isAfter(calendarYearStart1)) {
+                            period1 = String.valueOf(actualDisbursementDate.getYear()) + " - " + String.valueOf(actualDisbursementDate.getYear() + 1);
+                            periods.put(actualDisbursementDate.getYear(), period1);
+                        } else {
+                            period1 = String.valueOf(actualDisbursementDate.getYear() - 1) + " - " + String.valueOf(actualDisbursementDate.getYear());
+                            periods.put(actualDisbursementDate.getYear() - 1, period1);
+                        }
+                    }
+                }
+                ///
+            }
+        }
+        return periods;
+    }
+
+
+
     public Double[] getDisbursedAmountForGranterAndPeriodAndStatus(Integer period, Long granterId, String status) {
 
         Double total = 0d;
@@ -531,6 +597,60 @@ public class DashboardService {
                 .collect(Collectors.toList());
 
         List<Grant> grantsByStatus = grantRepository.findGrantsByStatus(granterId,status);
+        if (grantsByStatus != null && !grantsByStatus.isEmpty()) {
+            List<Disbursement> allClosedDisbursements = new ArrayList<>();
+
+            for (Grant ag : grantsByStatus) {
+                List<Disbursement> closedDisbursements = disbursementRepository
+                        .getDisbursementByGrantAndStatuses(ag.getId(), closedStatusIds);
+                allClosedDisbursements.addAll(closedDisbursements);
+            }
+
+            List<ActualDisbursement> allActualDisbursements = new ArrayList();
+            for (Disbursement cd : allClosedDisbursements) {
+                List<ActualDisbursement> actualDisbursements = actualDisbursementRepository
+                        .findByDisbursementId(cd.getId());
+                if (actualDisbursements != null) {
+                    allActualDisbursements.addAll(actualDisbursements);
+                }
+            }
+
+            for (ActualDisbursement ad : allActualDisbursements) {
+                SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy");
+                DateTime disbursementDate = new DateTime(ad.getDisbursementDate(), DateTimeZone.forID(timezone));
+                Double disbursementAmt = ad.getActualAmount();
+                DateTime calendarYearStart = new DateTime(DateTimeZone.forID(timezone))
+                        .withYear(disbursementDate.getYear()).withMonthOfYear(Month.MARCH.getValue())
+                        .withDayOfMonth(31);
+
+                int disbursementYear = 0;
+                if (disbursementDate.isAfter(calendarYearStart)) {
+                    disbursementYear = disbursementDate.getYear();
+                } else {
+                    disbursementYear = disbursementDate.getYear() - 1;
+                }
+                if (period == disbursementYear) {
+                    total += disbursementAmt == null ? 0 : disbursementAmt;
+                }
+            }
+
+        }
+        return new Double[] { total };
+    }
+
+    public Double[] getDisbursedAmountForUserAndPeriodAndStatus(Integer period, User user, String status) {
+
+        Double total = 0d;
+
+        List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
+                user.getOrganization().getId());
+
+        List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
+        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                .collect(Collectors.toList());
+
+        List<Grant> grantsByStatus = grantRepository.findGrantsByStatusForUser(user.getId(),status);
         if (grantsByStatus != null && !grantsByStatus.isEmpty()) {
             List<Disbursement> allClosedDisbursements = new ArrayList<>();
 
@@ -609,4 +729,44 @@ public class DashboardService {
         return new Long[] { total, Long.valueOf(countMap.size()) };
     }
 
+    public Long[] getCommittedAmountForUserAndPeriodAndStatus(Integer period, User user, String status) {
+        List<GranterGrantSummaryDisbursed> disbursedList = null;
+        if (status.equalsIgnoreCase("ACTIVE")) {
+            disbursedList = granterActiveGrantSummaryDisbursedRepository
+                    .getActiveGrantCommittedSummaryForUser(user.getId());
+        } else if (status.equalsIgnoreCase("CLOSED")) {
+            disbursedList = granterActiveGrantSummaryDisbursedRepository
+                    .getClosedGrantCommittedSummaryForUser(user.getId());
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        Long total = 0l;
+        Map<Long, String> countMap = new HashMap<>();
+        if (disbursedList != null && disbursedList.size() > 0) {
+            for (GranterGrantSummaryDisbursed granterGrantSummaryDisbursed : disbursedList) {
+
+                DateTime committedDate = new DateTime(granterGrantSummaryDisbursed.getStartDate(),
+                        DateTimeZone.forID(timezone));
+                Long disbursementAmt = Long.valueOf(granterGrantSummaryDisbursed.getGrantAmount());
+                DateTime calendarYearStart = new DateTime(DateTimeZone.forID(timezone))
+                        .withYear(committedDate.getYear()).withMonthOfYear(Month.MARCH.getValue()).withDayOfMonth(31);
+
+                int disbursementYear = 0;
+                if (committedDate.isAfter(calendarYearStart)) {
+                    disbursementYear = committedDate.getYear();
+                } else {
+                    disbursementYear = committedDate.getYear() - 1;
+                }
+                if (period == disbursementYear) {
+                    total += disbursementAmt;
+                    countMap.put(granterGrantSummaryDisbursed.getGrantId(), "");
+                }
+            }
+        }
+        return new Long[] { total, Long.valueOf(countMap.size()) };
+    }
+
+    public GranterGrantSummaryCommitted getDisbursementPeriodsForUserAndStatus(Long userId, String status) {
+        return granterActiveGrantSummaryCommittedRepository.getDisbursementPeriodsForUserAndStatus(userId,status);
+    }
 }

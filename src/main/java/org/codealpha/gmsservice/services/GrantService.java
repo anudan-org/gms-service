@@ -13,6 +13,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.KpiType;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.entities.dashboard.GranterGrantSummaryCommitted;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
 import org.joda.time.DateTime;
@@ -125,6 +126,8 @@ public class GrantService {
     private DataExportSummaryRepository dataExportSummaryRepository;
     @Value("${spring.timezone}")
     private String timezone;
+    @Autowired
+    private ReportRepository reportRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -1012,4 +1015,47 @@ public class GrantService {
     }
 
 
+    public Long getActionDueGrantsForUser(Long userId) {
+        return grantRepository.getActionDueGrantsForUser(userId);
+    }
+
+    public Long getActionDueReportsForUser(Long userId) {
+        return reportRepository.getActionDueReportsForUser(userId);
+    }
+
+    public Long getUpComingDraftGrants(Long userId) {
+        return grantRepository.getUpComingDraftGrants(userId);
+    }
+
+    public Long getGrantsInWorkflow(Long userId) {
+        return grantRepository.getGrantsInWorkflow(userId);
+    }
+
+    public Long getUpcomingGrantsDisbursementAmount(Long userId) {
+        return grantRepository.getUpcomingGrantsDisbursementAmount(userId);
+    }
+
+    public Long getGrantsTotalForUserByStatus(Long userId,String status) {
+        return grantRepository.getGrantsTotalForUserByStatus(userId,status);
+    }
+
+    public Long getCommittedAmountByUserAndStatus(Long userId, String status) {
+        return grantRepository.getCommittedAmountByUserAndStatus(userId,status);
+    }
+
+    public Long getDisbursedAmountByUserAndStatus(Long userId, String status) {
+        return grantRepository.getDisbursedAmountByUserAndStatus(userId,status);
+    }
+
+    public Long getGranteeOrgsCountByUserAndStatus(Long userId, String status) {
+        return grantRepository.getGranteeOrgsCountByUserAndStatus(userId,status);
+    }
+
+    public Long getGrantsWithNoApprovedReportsByUserAndStatus(Long userId, String status) {
+        return grantRepository.getGrantsWithNoApprovedReportsByUserAndStatus(userId,status);
+    }
+
+    public Long getGrantsWithNoAKPIsByUserAndStatus(Long userId, String status) {
+        return grantRepository.getGrantsWithNoAKPIsByUserAndStatus(userId,status);
+    }
 }

@@ -420,4 +420,8 @@ public class DisbursementService {
     public void deleteDisbursementDocument(DisbursementDocument doc) {
         disbursementDocumentRepository.delete(doc);
     }
+
+    public Long getPendingActionDisbursements(Long userId) {
+        return disbursementRepository.getPendingActionDisbursements(userId);
+    }
 }
