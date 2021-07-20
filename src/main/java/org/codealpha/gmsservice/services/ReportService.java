@@ -944,4 +944,12 @@ public class ReportService {
     public List<DisabledUsersEntity> getReportsWithDisabledUsers(){
         return disabledUsersEntityRepository.getReports();
     }
+
+    public Long approvedReportsNotInTimeForUser(Long userId){
+        return  reportRepository.approvedReportsNotInTimeForUser(userId);
+    }
+
+    public Long approvedReportsInTimeForUser(Long userId){
+        return  reportRepository.approvedReportsInTimeForUser(userId);
+    }
 }

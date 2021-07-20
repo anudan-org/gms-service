@@ -23,14 +23,14 @@ public class Disbursement {
     @JsonProperty("name")
     private String name;
     @JsonProperty("values")
-    private List<Value> values = null;
+    private Value[] values = null;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     public Disbursement() {
     }
 
-    public Disbursement(String name, List<Value> values) {
+    public Disbursement(String name, Value[] values) {
         this.name = name;
         this.values = values;
     }
@@ -46,12 +46,12 @@ public class Disbursement {
     }
 
     @JsonProperty("values")
-    public List<Value> getValues() {
+    public Value[] getValues() {
         return values;
     }
 
     @JsonProperty("values")
-    public void setValues(List<Value> values) {
+    public void setValues(Value[] values) {
         this.values = values;
     }
 

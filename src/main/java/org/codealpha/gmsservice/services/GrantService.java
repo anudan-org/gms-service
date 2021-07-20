@@ -1058,4 +1058,8 @@ public class GrantService {
     public Long getGrantsWithNoAKPIsByUserAndStatus(Long userId, String status) {
         return grantRepository.getGrantsWithNoAKPIsByUserAndStatus(userId,status);
     }
+
+    public boolean isUserPartOfActiveWorkflow(Long userId){
+        return grantRepository.isUserPartOfActiveWorkflow(userId);
+    }
 }

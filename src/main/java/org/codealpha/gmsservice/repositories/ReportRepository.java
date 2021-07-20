@@ -82,4 +82,24 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
             "where b.assignment=?1 and c.deleted=false group by b.assignment ",nativeQuery = true)
     Long getActionDueReportsForUser(Long userId);
 
+    @Query(value = "select count(distinct(d.id)) from grants a\n" +
+            "inner join grant_assignments b on b.state_id=a.grant_status_id and b.grant_id=a.id\n" +
+            "inner join workflow_statuses c on c.id=a.grant_status_id\n" +
+            "inner join reports d on d.grant_id=a.id\n" +
+            "inner join workflow_statuses e on e.id=d.status_id\n" +
+            "inner join report_snapshot f on f.report_id=d.id and f.to_state_id=d.status_id\n" +
+            "where c.internal_status='ACTIVE' and e.internal_status='CLOSED' and b.assignments=?1\n" +
+            "and f.moved_on>d.due_date",nativeQuery = true)
+    Long approvedReportsNotInTimeForUser(Long userId);
+
+    @Query(value = "select count(distinct(d.id)) from grants a\n" +
+            "inner join grant_assignments b on b.state_id=a.grant_status_id and b.grant_id=a.id\n" +
+            "inner join workflow_statuses c on c.id=a.grant_status_id\n" +
+            "inner join reports d on d.grant_id=a.id\n" +
+            "inner join workflow_statuses e on e.id=d.status_id\n" +
+            "inner join report_snapshot f on f.report_id=d.id and f.to_state_id=d.status_id\n" +
+            "where c.internal_status='ACTIVE' and e.internal_status='CLOSED' and b.assignments=?1\n" +
+            "and f.moved_on<=d.due_date",nativeQuery = true)
+    Long approvedReportsInTimeForUser(Long userId);
+
 }
