@@ -952,4 +952,12 @@ public class ReportService {
     public Long approvedReportsInTimeForUser(Long userId){
         return  reportRepository.approvedReportsInTimeForUser(userId);
     }
+
+    public Long getUpComingDraftReports(Long userId) {
+        return reportRepository.getUpComingDraftReports(userId);
+    }
+
+    public Long getReportsInWorkflow(Long userId) {
+        return reportRepository.getReportsInWorkflow(userId);
+    }
 }

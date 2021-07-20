@@ -102,4 +102,29 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
             "and f.moved_on<=d.due_date",nativeQuery = true)
     Long approvedReportsInTimeForUser(Long userId);
 
+    @Query(value = "select count(distinct(a.id)) from reports a \n" +
+            "inner join report_assignments b on b.report_id=a.id and b.state_id=a.status_id \n" +
+            "inner join workflow_statuses c on c.id=a.status_id \n" +
+            "inner join grants d on d.id=a.grant_id\n" +
+            "where b.assignment=?1 and c.internal_status='DRAFT' and d.deleted=false and a.deleted=false",nativeQuery = true)
+    Long getUpComingDraftReports(Long userId);
+
+    @Query(value = "select count(distinct(a.id)) \n" +
+            "from reports a \n" +
+            "inner join report_assignments b on b.report_id=a.id \n" +
+            "inner join workflow_statuses c on c.id=a.status_id \n" +
+            "inner join grants d on d.id=a.grant_id\n" +
+            "where b.assignment=?1 and c.internal_status='REVIEW' and a.deleted=false and d.deleted=false",nativeQuery = true)
+    Long getReportsInWorkflow(Long userId);
+
+    @Query(value = "select (committed - disbursed) as pending_commitments from (select distinct b.assignment id,sum(d.amount) as committed,sum(f.actual_amount) disbursed\n" +
+            "from reports a \n" +
+            "inner join report_assignments b on b.report_id=a.id \n" +
+            "inner join workflow_statuses c on c.id=a.status_id \n" +
+            "inner join grants d on d.id=a.grant_id\n" +
+            "inner join disbursements e on e.grant_id=d.id\n" +
+            "inner join actual_disbursements f on f.disbursement_id=e.id\n" +
+            "where b.assignment=?1 and c.internal_status='REVIEW' and a.deleted=false and d.deleted=false\n" +
+            "group by b.assignment) X",nativeQuery = true)
+    Long getUpcomingReportsDisbursementAmount(Long userId);
 }

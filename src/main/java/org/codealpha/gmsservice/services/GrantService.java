@@ -1062,4 +1062,8 @@ public class GrantService {
     public boolean isUserPartOfActiveWorkflow(Long userId){
         return grantRepository.isUserPartOfActiveWorkflow(userId);
     }
+
+    public Long getUpcomingReportsDisbursementAmount(Long userId) {
+        return reportRepository.getUpcomingReportsDisbursementAmount(userId);
+    }
 }

@@ -381,12 +381,18 @@ public class UserController {
 
         summary.setActionsPending(getActionsPending(userId));
         summary.setUpcomingGrants(getUpcomingGrants(userId));
+        summary.setUpcomingReports(getUpcomingReports(userId));
+        summary.setUpcomingDisbursements(getUpcomingDisbursements(userId));
 
         List<org.codealpha.gmsservice.models.dashboard.mydashboard.Filter> filters = new ArrayList<>();
         org.codealpha.gmsservice.models.dashboard.mydashboard.Filter activeGrantFilter = getFilter("ACTIVE",userId);
         org.codealpha.gmsservice.models.dashboard.mydashboard.Filter closedGrantFilter = getFilter("CLOSED",userId);
-        filters.add(activeGrantFilter);
-        filters.add(closedGrantFilter);
+        if(activeGrantFilter.getTotalGrants()>0) {
+            filters.add(activeGrantFilter);
+        }
+        if(closedGrantFilter.getTotalGrants()>0){
+             filters.add(closedGrantFilter);
+        }
 
         category.setSummary(summary);
         category.setFilters(filters);
@@ -482,8 +488,8 @@ public class UserController {
 
 
         List<StatusSummary> statusSummaryList = new ArrayList<>();
-        statusSummaryList.add(new StatusSummary("My approved reports on schedule",reportService.approvedReportsInTimeForUser(userId)));
-        statusSummaryList.add(new StatusSummary("Reports approved after their due dates",reportService.approvedReportsNotInTimeForUser(userId)));
+        statusSummaryList.add(new StatusSummary("On schedule",reportService.approvedReportsInTimeForUser(userId)));
+        statusSummaryList.add(new StatusSummary("After due date",reportService.approvedReportsNotInTimeForUser(userId)));
         summary__reports.setStatusSummary(statusSummaryList);
 
         org.codealpha.gmsservice.models.dashboard.mydashboard.Detail reportSummaryDetail = new org.codealpha.gmsservice.models.dashboard.mydashboard.Detail();
@@ -499,16 +505,50 @@ public class UserController {
         return new UpcomingGrants(getUpComingDraftGrants(userId), getGrantsInWorkflow(userId), upcomingDibursementAmount==null?0:upcomingDibursementAmount);
     }
 
+    private UpcomingReports getUpcomingReports(Long userId) {
+        Long upcomingDibursementAmount = getUpcomingReportsDisbursementAmount(userId);
+        return new UpcomingReports(getUpComingDraftReports(userId), getReportsInWorkflow(userId), upcomingDibursementAmount==null?0:upcomingDibursementAmount);
+    }
+
+    private UpcomingDisbursements getUpcomingDisbursements(Long userId) {
+        Long upcomingDibursementAmount = getUpcomingDisbursementsDisbursementAmount(userId);
+        return new UpcomingDisbursements(getUpComingDraftDisbursements(userId), getDisbursementsInWorkflow(userId), upcomingDibursementAmount==null?0:upcomingDibursementAmount);
+    }
+
     private Long getUpcomingGrantsDisbursementAmount(Long userId) {
         return grantService.getUpcomingGrantsDisbursementAmount(userId);
+    }
+
+    private Long getUpcomingReportsDisbursementAmount(Long userId) {
+        return grantService.getUpcomingReportsDisbursementAmount(userId);
+    }
+
+    private Long getUpcomingDisbursementsDisbursementAmount(Long userId) {
+        return disbursementService.getUpcomingDisbursementsDisbursementAmount(userId);
     }
 
     private Long getGrantsInWorkflow(Long userId) {
         return grantService.getGrantsInWorkflow(userId);
     }
 
+    private Long getReportsInWorkflow(Long userId) {
+        return reportService.getReportsInWorkflow(userId);
+    }
+
+    private Long getDisbursementsInWorkflow(Long userId) {
+        return disbursementService.getDisbursementsInWorkflow(userId);
+    }
+
     private Long getUpComingDraftGrants(Long userId) {
         return grantService.getUpComingDraftGrants(userId);
+    }
+
+    private Long getUpComingDraftReports(Long userId) {
+        return reportService.getUpComingDraftReports(userId);
+    }
+
+    private Long getUpComingDraftDisbursements(Long userId) {
+        return disbursementService.getUpComingDraftDisbursements(userId);
     }
 
     private ActionsPending getActionsPending(Long userId) {
@@ -551,7 +591,7 @@ public class UserController {
         List<DetailedSummary> reportSummaryList = new ArrayList<>();
         List<DetailedSummary> reportStatusSummaryList = new ArrayList<>();
         if (status.equalsIgnoreCase("ACTIVE")) {
-            reportStatuses = dashboardService.getReportStatusSummaryForUserAndStatus(tenantOrg.getId(), status);
+            reportStatuses = dashboardService.getReportStatusSummaryForGranterAndStatus(tenantOrg.getId(), status);
             if (reportStatuses != null && reportStatuses.size() > 0) {
                 for (GranterReportStatus reportStatus : reportStatuses) {
                     reportSummaryList
