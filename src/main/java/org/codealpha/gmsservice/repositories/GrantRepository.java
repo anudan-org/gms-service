@@ -110,24 +110,26 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
     Long getUpComingDraftGrants(Long userId);
 
     @Query(value = "select count(*) from (select distinct a.id,c.internal_status\n" +
-            "            from grants a \n" +
-            "            inner join grant_assignments b on b.grant_id=a.id\n" +
-            "            inner join workflow_statuses c on c.id=a.grant_status_id \n" +
-            "            where b.assignments=?1 and (\n" +
-            "            (b.assignments=?1) or\n" +
-            "            (c.internal_status='DRAFT' and (select count(*) from grant_history where id=a.id)>0) \n" +
-            "            )\n" +
-            "            and a.deleted=false) X where X.internal_status not in ('ACTIVE','CLOSED')",nativeQuery = true)
+            "                        from grants a \n" +
+            "                        inner join grant_assignments b on b.grant_id=a.id\n" +
+            "                        inner join workflow_statuses c on c.id=a.grant_status_id \n" +
+            "                        where (\n" +
+            "\t\t\t\t\t\t(b.assignments=?1 and c.internal_status='DRAFT' and b.state_id=a.grant_status_id) or\n" +
+            "                        (b.assignments=?1 and c.internal_status!='DRAFT') or\n" +
+            "                        (c.internal_status='DRAFT' and (select count(*) from grant_history where id=a.id)>0) \n" +
+            "                        )\n" +
+            "                        and a.deleted=false) X where X.internal_status not in ('ACTIVE','CLOSED')",nativeQuery = true)
     Long getGrantsInWorkflow(Long userId);
 
     @Query(value = "select sum(amount) from (select distinct b.assignments,a.amount,c.internal_status  \n" +
-            "            from grants a \n" +
-            "            inner join grant_assignments b on b.grant_id=a.id \n" +
-            "            inner join workflow_statuses c on c.id=a.grant_status_id \n" +
-            "            where b.assignments=?1 and (\n" +
-            "            (b.assignments=?1) or\n" +
-            "            (c.internal_status='DRAFT' and (select count(*) from grant_history where id=a.id)>0))\n" +
-            "            and a.deleted=false) X where X.internal_status not in ('CLOSED','ACTIVE') group by X.assignments",nativeQuery = true)
+            "                        from grants a \n" +
+            "                        inner join grant_assignments b on b.grant_id=a.id \n" +
+            "                        inner join workflow_statuses c on c.id=a.grant_status_id \n" +
+            "                        where b.assignments=?1 and (\n" +
+            "                        (b.assignments=?1 and c.internal_status='DRAFT' and b.state_id=a.grant_status_id) or\n" +
+            "                        (b.assignments=?1 and c.internal_status!='DRAFT') or\n" +
+            "                        (c.internal_status='DRAFT' and (select count(*) from grant_history where id=a.id)>0) )\n" +
+            "                        and a.deleted=false) X where X.internal_status not in ('CLOSED','ACTIVE') group by X.assignments",nativeQuery = true)
     Long getUpcomingGrantsDisbursementAmount(Long userId);
 
     @Query(value = "select count(distinct(a.id)) from grants a inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id inner join workflow_statuses c on c.id=a.grant_status_id where b.assignments=?1 and (c.internal_status=?2) and a.deleted=false",nativeQuery = true)
