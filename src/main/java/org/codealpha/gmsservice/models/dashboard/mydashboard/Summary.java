@@ -23,6 +23,10 @@ public class Summary {
     private ActionsPending actionsPending;
     @JsonProperty("UpcomingGrants")
     private UpcomingGrants upcomingGrants;
+    @JsonProperty("UpcomingReports")
+    private UpcomingReports upcomingReports;
+    @JsonProperty("upcomingDisbursements")
+    private UpcomingDisbursements upcomingDisbursements;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
@@ -56,4 +60,19 @@ public class Summary {
         this.additionalProperties.put(name, value);
     }
 
+    public UpcomingReports getUpcomingReports() {
+        return upcomingReports;
+    }
+
+    public void setUpcomingReports(UpcomingReports upcomingReports) {
+        this.upcomingReports = upcomingReports;
+    }
+
+    public UpcomingDisbursements getUpcomingDisbursements() {
+        return upcomingDisbursements;
+    }
+
+    public void setUpcomingDisbursements(UpcomingDisbursements upcomingDisbursements) {
+        this.upcomingDisbursements = upcomingDisbursements;
+    }
 }

@@ -27,6 +27,8 @@ public class MyCategory {
     private Summary summary;
     @JsonProperty("filters")
     private List<Filter> filters = null;
+    @JsonProperty("canshowdashboard")
+    private boolean canShowDashboard = true;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
@@ -70,4 +72,11 @@ public class MyCategory {
         this.additionalProperties.put(name, value);
     }
 
+    public boolean isCanShowDashboard() {
+        return canShowDashboard;
+    }
+
+    public void setCanShowDashboard(boolean canShowDashboard) {
+        this.canShowDashboard = canShowDashboard;
+    }
 }

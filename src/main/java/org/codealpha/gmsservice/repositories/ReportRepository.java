@@ -76,10 +76,64 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
     @Query(value = "select  A.* from reports A inner join grants Z on Z.id=A.grant_id inner join report_assignments B on B.report_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.anchor=true and B.assignment = ?1) or (B.assignment=?1 and B.state_id=A.status_id) or (C.internal_status='DRAFT' and (select count(*) from report_history where id=A.id)>0 ) ) and Z.grantor_org_id=?2 and Z.deleted=false and (C.internal_status !='ACTIVE' and C.internal_status !='REVIEW' and C.internal_status !='CLOSED') and A.deleted=false order by A.grant_id,A.end_date asc", nativeQuery = true)
     List<Report> findUpcomingFutureAdminReports(Long userId, Long id);
 
-    @Query(value = "select count(distinct(a.id)) from reports a \n" +
-            "inner join report_assignments b on b.report_id=a.id and b.state_id=a.status_id \n" +
-            "inner join grants c on c.id=a.grant_id\n" +
-            "where b.assignment=?1 and c.deleted=false group by b.assignment ",nativeQuery = true)
+    @Query(value = "select count(distinct(a.id)) from reports a\n" +
+            "            inner join report_assignments b on b.report_id=a.id and b.state_id=a.status_id\n" +
+            "            inner join grants c on c.id=a.grant_id\n" +
+            "            where b.assignment=?1 \n" +
+            "\t\t\tand (a.end_date between now() and (now()+ INTERVAL '15 day') \n" +
+            "\t\t\t\tor a.due_date<now()\n" +
+            "\t\t\t\tor (select count(*) from report_history where id=a.id )>0)\n" +
+            "\t\t\tand c.deleted=false group by b.assignment",nativeQuery = true)
     Long getActionDueReportsForUser(Long userId);
 
+    @Query(value = "select count(distinct(d.id)) from grants a\n" +
+            "            inner join grant_assignments b on b.state_id=a.grant_status_id and b.grant_id=a.id\n" +
+            "            inner join workflow_statuses c on c.id=a.grant_status_id\n" +
+            "            inner join reports d on d.grant_id=a.id\n" +
+            "            inner join workflow_statuses e on e.id=d.status_id\n" +
+            "            inner join report_snapshot f on f.report_id=d.id and f.to_state_id=d.status_id\n" +
+            "            where c.internal_status='ACTIVE' and e.internal_status='CLOSED' and b.assignments=?1\n" +
+            "            and f.moved_on>d.due_date and a.deleted=false and d.deleted=false",nativeQuery = true)
+    Long approvedReportsNotInTimeForUser(Long userId);
+
+    @Query(value = "select count(distinct(d.id)) from grants a\n" +
+            "inner join grant_assignments b on b.state_id=a.grant_status_id and b.grant_id=a.id\n" +
+            "inner join workflow_statuses c on c.id=a.grant_status_id\n" +
+            "inner join reports d on d.grant_id=a.id\n" +
+            "inner join workflow_statuses e on e.id=d.status_id\n" +
+            "inner join report_snapshot f on f.report_id=d.id and f.to_state_id=d.status_id\n" +
+            "where c.internal_status='ACTIVE' and e.internal_status='CLOSED' and b.assignments=?1\n" +
+            "and f.moved_on<=d.due_date and a.deleted=false",nativeQuery = true)
+    Long approvedReportsInTimeForUser(Long userId);
+
+    @Query(value = "select count(distinct(a.id)) from reports a \n" +
+            "inner join report_assignments b on b.report_id=a.id and b.state_id=a.status_id \n" +
+            "inner join workflow_statuses c on c.id=a.status_id \n" +
+            "inner join grants d on d.id=a.grant_id\n" +
+            "where b.assignment=?1 and c.internal_status='DRAFT' and d.deleted=false and a.deleted=false",nativeQuery = true)
+    Long getUpComingDraftReports(Long userId);
+
+    @Query(value = "select count(distinct(a.id)) \n" +
+            "            from reports a \n" +
+            "            inner join report_assignments b on b.report_id=a.id \n" +
+            "            inner join workflow_statuses c on c.id=a.status_id \n" +
+            "            inner join grants d on d.id=a.grant_id\n" +
+            "            where b.assignment=?1 and (\n" +
+            "\t\t\t\t\t\t\t((select count(*) from report_history where id=A.id)>0 and ?1 = any (array(select assignment from report_assignments where report_id=A.id))) or \n" +
+            "\t\t\t\t\t\t\t(C.internal_status='REVIEW' and ?1 = any( array(select assignment from report_assignments where report_id=A.id)))\n" +
+            "\t\t\t\t\t\t) and a.deleted=false and d.deleted=false",nativeQuery = true)
+    Long getReportsInWorkflow(Long userId);
+
+    @Query(value = "select (sum(committed) - sum(disbursed)) as pending_commitments from (\n" +
+            "\t\t\tselect distinct b.assignment,d.amount as committed,disbursed_amount_for_grant(d.id) disbursed\n" +
+            "\t\t\t\t\t\tfrom reports a \n" +
+            "\t\t\t\t\t\tinner join report_assignments b on b.report_id=a.id \n" +
+            "\t\t\t\t\t\tinner join workflow_statuses c on c.id=a.status_id\n" +
+            "\t\t\t\t\t\tinner join grants d on d.id=a.grant_id\n" +
+            "\t\t\t\t\t\twhere b.assignment=?1 and (\n" +
+            "((select count(*) from report_history where id=A.id)>0 and ?1 = any (array(select assignment from report_assignments where report_id=A.id)) and C.internal_status not in ('ACTIVE','CLOSED')) or \n" +
+            "(C.internal_status not in ('ACTIVE','CLOSED') and ?1 = b.assignment and b.state_id=a.status_id)\n" +
+            ")  and a.deleted=false and d.deleted=false  \n" +
+            "\t\t\t) X group by X.assignment",nativeQuery = true)
+    Long getUpcomingReportsDisbursementAmount(Long userId);
 }

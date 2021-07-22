@@ -2200,6 +2200,7 @@ public class ReportController {
                     final Ordering<String> colorOrdering = Ordering.explicit(order);
                     Comparator<SectionAttributesVO> attrComparator = Comparator
                             .comparing(c -> order.indexOf(c.getFrequency().toUpperCase()));
+                    sec.getAttributes().removeIf(attr -> attr.getFrequency()==null);
                     sec.getAttributes().sort(attrComparator);
 
                     sec.getAttributes().forEach(attr -> {

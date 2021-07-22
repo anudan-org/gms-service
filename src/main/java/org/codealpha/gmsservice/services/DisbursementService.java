@@ -424,4 +424,16 @@ public class DisbursementService {
     public Long getPendingActionDisbursements(Long userId) {
         return disbursementRepository.getPendingActionDisbursements(userId);
     }
+
+    public Long getUpComingDraftDisbursements(Long userId) {
+        return disbursementRepository.getUpComingDraftDisbursements(userId);
+    }
+
+    public Long getDisbursementsInWorkflow(Long userId) {
+        return disbursementRepository.getDisbursementsInWorkflow(userId);
+    }
+
+    public Long getUpcomingDisbursementsDisbursementAmount(Long userId) {
+        return disbursementRepository.getUpcomingDisbursementsDisbursementAmount(userId);
+    }
 }

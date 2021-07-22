@@ -369,23 +369,30 @@ public class UserController {
 
         String data = "{ \"name\": \"My Dashboard\", \"summary\": { \"ActionsPending\": { \"Grants\": 3, \"Reports\": 4, \"DisbursementApprovals\": 5 }, \"UpcomingGrants\": { \"DraftGrants\": 3, \"Grantsinmyworkflow\": 4, \"GrantAmount\": 5 } }, \"filters\": [ { \"name\": \"Active Grants\", \"totalGrants\": 12, \"granteeOrgs\": 8, \"grantswithnoapprovedreports\": 4, \"grantswithnokpis\": 12, \"period\": \"2019-2024\", \"disbursedAmount\": 2000000, \"committedAmount\": 800000, \"details\": [ { \"name\": \"Disbursements\", \"summary\": { \"disbursement\": [ { \"name\": \"2019 - 2020\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"142.03\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"1841.22\", \"count\": 25 } ] }, { \"name\": \"2020 - 2021\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"348.28\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"10264.48\", \"count\": 30 } ] }, { \"name\": \"2021 - 2022\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"0.40\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"496.10\", \"count\": 4 } ] } ] } }, { \"name\": \"Reports\", \"summary\": { \"summary\": [ { \"name\": \"Due\", \"value\": 30 }, { \"name\": \"Overdue\", \"value\": 212 } ], \"statusSummary\": [ { \"name\": \"My approved reports on schedule\", \"value\": 10 }, { \"name\": \"Reports approved after their due dates\", \"value\": 12 } ] } } ] }, { \"name\": \"Closed Grants\", \"totalGrants\": 5, \"granteeOrgs\": 3, \"grantswithnoapprovedreports\": 4, \"grantswithnokpis\": 4, \"period\": \"2019-2024\", \"disbursedAmount\": 4000000, \"committedAmount\": 3500000, \"details\": [ { \"name\": \"Disbursements\", \"summary\": { \"disbursement\": [ { \"name\": \"2019 - 2020\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"142.03\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"1841.22\", \"count\": 25 } ] }, { \"name\": \"2020 - 2021\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"348.28\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"10264.48\", \"count\": 30 } ] }, { \"name\": \"2021 - 2022\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"0.40\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"496.10\", \"count\": 4 } ] } ] } }, { \"name\": \"Reports\", \"summary\": { \"summary\": [ { \"name\": \"Due\", \"value\": 10 }, { \"name\": \"Overdue\", \"value\": 34 } ], \"statusSummary\": [ { \"name\": \"My approved reports on schedule\", \"value\": 4 }, { \"name\": \"Reports approved after their due dates\", \"value\": 3 } ] } } ] } ] }";
         ObjectMapper mapper = new ObjectMapper();
-        MyCategory category = null;
-        try {
+        MyCategory category = new MyCategory();
+        category.setCanShowDashboard(grantService.isUserPartOfActiveWorkflow(userId));
+        /*try {
             category = mapper.readValue(data,MyCategory.class);
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
 
         org.codealpha.gmsservice.models.dashboard.mydashboard.Summary summary = new org.codealpha.gmsservice.models.dashboard.mydashboard.Summary();
 
         summary.setActionsPending(getActionsPending(userId));
         summary.setUpcomingGrants(getUpcomingGrants(userId));
+        summary.setUpcomingReports(getUpcomingReports(userId));
+        summary.setUpcomingDisbursements(getUpcomingDisbursements(userId));
 
         List<org.codealpha.gmsservice.models.dashboard.mydashboard.Filter> filters = new ArrayList<>();
         org.codealpha.gmsservice.models.dashboard.mydashboard.Filter activeGrantFilter = getFilter("ACTIVE",userId);
         org.codealpha.gmsservice.models.dashboard.mydashboard.Filter closedGrantFilter = getFilter("CLOSED",userId);
-        filters.add(activeGrantFilter);
-        filters.add(closedGrantFilter);
+        if(activeGrantFilter.getTotalGrants()>0) {
+            filters.add(activeGrantFilter);
+        }
+        if(closedGrantFilter.getTotalGrants()>0){
+             filters.add(closedGrantFilter);
+        }
 
         category.setSummary(summary);
         category.setFilters(filters);
@@ -418,7 +425,7 @@ public class UserController {
 
     private List<org.codealpha.gmsservice.models.dashboard.mydashboard.Detail> getDetails(Long userId,String status) {
         List<org.codealpha.gmsservice.models.dashboard.mydashboard.Detail> details = new ArrayList<>();
-        org.codealpha.gmsservice.models.dashboard.mydashboard.Detail detail = new org.codealpha.gmsservice.models.dashboard.mydashboard.Detail();
+
         Map<Integer, String> periodsMap = dashboardService
                 .getGrantsCommittedPeriodsForUserAndStatus(userService.getUserById(userId), status);
 
@@ -426,45 +433,70 @@ public class UserController {
                 .collect(Collectors.toList());
         String[] strings = {"Committed", "Disbursed"};
 
-        List<DetailedSummary> disbursalSummaryList = new ArrayList<>();
+        List<Disbursement> disbursalSummaryList = new ArrayList<>();
         for (Integer period : periodsMap.keySet()) {
             Double[] disbursalTotalAndCount = dashboardService.getDisbursedAmountForUserAndPeriodAndStatus(period,
                     userService.getUserById(userId), status);
             Long[] committedTotalAndCount = dashboardService.getCommittedAmountForUserAndPeriodAndStatus(period,
                     userService.getUserById(userId), status);
-            disbursalSummaryList.add(new DisbursalSummary(periodsMap.get(period), new DisbursementData[]{
-                    new DisbursementData("Disbursed",
+            disbursalSummaryList.add(new Disbursement(periodsMap.get(period), new Value[]{
+                    new Value("Disbursed",
                             String.valueOf(new BigDecimal(disbursalTotalAndCount[0] / 100000.00).setScale(2,
-                                    RoundingMode.HALF_UP)),
-                            0l),
-                    new DisbursementData("Committed",
+                                    RoundingMode.HALF_UP))),
+                    new Value("Committed",
                             String.valueOf(new BigDecimal(Double.toString(committedTotalAndCount[0] / 100000.00))
-                                    .setScale(2, RoundingMode.HALF_UP)),
-                            committedTotalAndCount[1])}));
+                                    .setScale(2, RoundingMode.HALF_UP)))}));
         }
 
-        detail.setName("Disbursements");
-
         Summary__1 summary__1 = new Summary__1();
-        List<Disbursement> disbursementList = new ArrayList<>();
-        Disbursement disbursement = new Disbursement();
-        disbursement.setName("2019 - 2020");
-        List<Value> values = new ArrayList<>();
-        Value value = new Value();
-        value.setCount(0l);
-        value.setName("Disbursed");
-        value.setValue("0");
-        values.add(value);
-        disbursement.setValues(values);
-        disbursementList.add(disbursement);
-        summary__1.setDisbursement(disbursementList);
-        Summary__2 summary__2 = new Summary__2();
-        List<Summary__2> summary__2s = new ArrayList<>();
-        summary__2s.add(summary__2);
-        summary__1.setSummary(summary__2s);
+        summary__1.setDisbursement(disbursalSummaryList);
+        org.codealpha.gmsservice.models.dashboard.mydashboard.Detail detail = new org.codealpha.gmsservice.models.dashboard.mydashboard.Detail();
+        detail.setName("Disbursements");
         detail.setSummary(summary__1);
-
         details.add(detail);
+
+        //report status
+        List<GranterReportStatus> reportStatuses = new ArrayList<>();
+        List<Summary__2> reportSummaryList = new ArrayList<>();
+        reportStatuses = dashboardService.getReportStatusSummaryForUserAndStatus(userId, status);
+        if (reportStatuses != null && reportStatuses.size() > 0) {
+            for (GranterReportStatus reportStatus : reportStatuses) {
+                reportSummaryList
+                        .add(new Summary__2(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
+            }
+
+            if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny()
+                    .isPresent()) {
+                reportSummaryList.add(new Summary__2("Due", Long.valueOf(0)));
+            }
+
+            if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny()
+                    .isPresent()) {
+                reportSummaryList.add(new Summary__2("Overdue", Long.valueOf(0)));
+            }
+        }
+
+        List<String> dueOverdueOrder = Arrays.asList(new String[]{"Due","Overdue"});
+        reportSummaryList.sort(Comparator.comparing(c -> {
+            return dueOverdueOrder.indexOf(c.getName());
+        }));
+
+        Summary__1 summary__reports = new Summary__1();
+        summary__reports.setSummary(reportSummaryList);
+
+
+
+
+        List<StatusSummary> statusSummaryList = new ArrayList<>();
+        statusSummaryList.add(new StatusSummary("On schedule",reportService.approvedReportsInTimeForUser(userId)));
+        statusSummaryList.add(new StatusSummary("After due date",reportService.approvedReportsNotInTimeForUser(userId)));
+        summary__reports.setStatusSummary(statusSummaryList);
+
+        org.codealpha.gmsservice.models.dashboard.mydashboard.Detail reportSummaryDetail = new org.codealpha.gmsservice.models.dashboard.mydashboard.Detail();
+        reportSummaryDetail.setName("Reports");
+        reportSummaryDetail.setSummary(summary__reports);
+        details.add(reportSummaryDetail);
+
         return details;
     }
 
@@ -473,16 +505,50 @@ public class UserController {
         return new UpcomingGrants(getUpComingDraftGrants(userId), getGrantsInWorkflow(userId), upcomingDibursementAmount==null?0:upcomingDibursementAmount);
     }
 
+    private UpcomingReports getUpcomingReports(Long userId) {
+        Long upcomingDibursementAmount = getUpcomingReportsDisbursementAmount(userId);
+        return new UpcomingReports(getUpComingDraftReports(userId), getReportsInWorkflow(userId), upcomingDibursementAmount==null?0:upcomingDibursementAmount);
+    }
+
+    private UpcomingDisbursements getUpcomingDisbursements(Long userId) {
+        Long upcomingDibursementAmount = getUpcomingDisbursementsDisbursementAmount(userId);
+        return new UpcomingDisbursements(getUpComingDraftDisbursements(userId), getDisbursementsInWorkflow(userId), upcomingDibursementAmount==null?0:upcomingDibursementAmount);
+    }
+
     private Long getUpcomingGrantsDisbursementAmount(Long userId) {
         return grantService.getUpcomingGrantsDisbursementAmount(userId);
+    }
+
+    private Long getUpcomingReportsDisbursementAmount(Long userId) {
+        return grantService.getUpcomingReportsDisbursementAmount(userId);
+    }
+
+    private Long getUpcomingDisbursementsDisbursementAmount(Long userId) {
+        return disbursementService.getUpcomingDisbursementsDisbursementAmount(userId);
     }
 
     private Long getGrantsInWorkflow(Long userId) {
         return grantService.getGrantsInWorkflow(userId);
     }
 
+    private Long getReportsInWorkflow(Long userId) {
+        return reportService.getReportsInWorkflow(userId);
+    }
+
+    private Long getDisbursementsInWorkflow(Long userId) {
+        return disbursementService.getDisbursementsInWorkflow(userId);
+    }
+
     private Long getUpComingDraftGrants(Long userId) {
         return grantService.getUpComingDraftGrants(userId);
+    }
+
+    private Long getUpComingDraftReports(Long userId) {
+        return reportService.getUpComingDraftReports(userId);
+    }
+
+    private Long getUpComingDraftDisbursements(Long userId) {
+        return disbursementService.getUpComingDraftDisbursements(userId);
     }
 
     private ActionsPending getActionsPending(Long userId) {

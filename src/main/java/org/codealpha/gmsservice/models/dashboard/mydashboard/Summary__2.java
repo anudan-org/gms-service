@@ -26,6 +26,11 @@ public class Summary__2 {
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
+    public Summary__2(String name, Long value) {
+        this.name = name;
+        this.value = value;
+    }
+
     @JsonProperty("name")
     public String getName() {
         return name;

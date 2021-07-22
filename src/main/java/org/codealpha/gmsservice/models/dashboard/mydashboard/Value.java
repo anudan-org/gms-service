@@ -29,6 +29,11 @@ public class Value {
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
+    public Value(String name, String value) {
+        this.name = name;
+        this.value = value;
+    }
+
     @JsonProperty("name")
     public String getName() {
         return name;
