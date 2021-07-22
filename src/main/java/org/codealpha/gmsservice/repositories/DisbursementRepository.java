@@ -58,26 +58,25 @@ public interface DisbursementRepository extends CrudRepository<Disbursement, Lon
     Long getUpComingDraftDisbursements(Long userId);
 
     @Query(value = "select count(distinct(a.id)) \n" +
-            "from disbursements a \n" +
-            "inner join disbursement_assignments b on b.disbursement_id=a.id \n" +
-            "inner join workflow_statuses c on c.id=a.status_id \n" +
-            "inner join grants d on d.id=a.grant_id\n" +
-            "where b.owner=?1 and (\n" +
-            "\t(B.owner=?1 and B.state_id=A.status_id) or\n" +
-            "\t(c.internal_status='DRAFT' and (select count(*) from disbursement_history where id=a.id)>0 and ?1 = any (array(select owner from disbursement_assignments where disbursement_id=a.id))) or\n" +
-            "\t(C.internal_status!='CLOSED' and ?1 = any( array(select owner from disbursement_assignments where disbursement_id=A.id)))\n" +
-            ") and d.deleted=false", nativeQuery = true)
+            "            from disbursements a \n" +
+            "            inner join disbursement_assignments b on b.disbursement_id=a.id \n" +
+            "            inner join workflow_statuses c on c.id=a.status_id \n" +
+            "            inner join grants d on d.id=a.grant_id\n" +
+            "            where b.owner=?1 and (\n" +
+            "            (c.internal_status='DRAFT' and (select count(*) from disbursement_history where id=a.id)>0 and ?1 = any (array(select owner from disbursement_assignments where disbursement_id=a.id))) or\n" +
+            "            (C.internal_status!='CLOSED' and (select count(*) from disbursement_history where id=a.id)>0 and ?1 = any( array(select owner from disbursement_assignments where disbursement_id=A.id)))\n" +
+            "            ) and d.deleted=false", nativeQuery = true)
     Long getDisbursementsInWorkflow(Long userId);
 
     @Query(value = "select sum(requested_amount) from (\n" +
-            "\tselect distinct d.id,b.owner,a.requested_amount\n" +
-            "                       from disbursements a \n" +
-            "                      inner join disbursement_assignments b on b.disbursement_id=a.id \n" +
-            "                      inner join workflow_statuses c on c.id=a.status_id \n" +
-            "                      inner join grants d on d.id=a.grant_id\n" +
-            "                      where b.owner=?1 and ( (b.owner=?1 and b.state_id=a.status_id) or\n" +
-            "\t(c.internal_status='DRAFT' and (select count(*) from disbursement_history where id=a.id)>0) or\n" +
-            "\tc.internal_status!='CLOSED') and d.deleted=false) X group by X.owner",nativeQuery = true)
+            "            select distinct d.id,b.owner,a.requested_amount\n" +
+            "                                   from disbursements a \n" +
+            "                                  inner join disbursement_assignments b on b.disbursement_id=a.id \n" +
+            "                                  inner join workflow_statuses c on c.id=a.status_id \n" +
+            "                                  inner join grants d on d.id=a.grant_id\n" +
+            "                                  where b.owner=?1 and ( (b.owner=?1 and b.state_id=a.status_id) or\n" +
+            "            (c.internal_status='DRAFT' and (select count(*) from disbursement_history where id=a.id)>0) or\n" +
+            "            c.internal_status!='CLOSED' and (select count(*) from disbursement_history where id=a.id)>0) and d.deleted=false) X group by X.owner",nativeQuery = true)
     Long getUpcomingDisbursementsDisbursementAmount(Long userId);
 
 }

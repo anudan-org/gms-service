@@ -125,15 +125,15 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
     Long getReportsInWorkflow(Long userId);
 
     @Query(value = "select (sum(committed) - sum(disbursed)) as pending_commitments from (\n" +
-            "            select distinct b.assignment,d.amount as committed,disbursed_amount_for_grant(d.id) disbursed\n" +
-            "                        from reports a \n" +
-            "                        inner join report_assignments b on b.report_id=a.id \n" +
-            "                        inner join workflow_statuses c on c.id=a.status_id\n" +
-            "                        inner join grants d on d.id=a.grant_id\n" +
-            "                        where b.assignment=?1 and (\n" +
-            "\t\t\t\t\t\t\t((select count(*) from report_history where id=A.id)>0 and ?1 = any (array(select assignment from report_assignments where report_id=A.id))) or \n" +
-            "\t\t\t\t\t\t\t(C.internal_status='REVIEW' and ?1 = any( array(select assignment from report_assignments where report_id=A.id)))\n" +
-            "\t\t\t\t\t\t)  and a.deleted=false and d.deleted=false  \t\n" +
-            "            ) X group by X.assignment",nativeQuery = true)
+            "\t\t\tselect distinct b.assignment,d.amount as committed,disbursed_amount_for_grant(d.id) disbursed\n" +
+            "\t\t\t\t\t\tfrom reports a \n" +
+            "\t\t\t\t\t\tinner join report_assignments b on b.report_id=a.id \n" +
+            "\t\t\t\t\t\tinner join workflow_statuses c on c.id=a.status_id\n" +
+            "\t\t\t\t\t\tinner join grants d on d.id=a.grant_id\n" +
+            "\t\t\t\t\t\twhere b.assignment=?1 and (\n" +
+            "((select count(*) from report_history where id=A.id)>0 and ?1 = any (array(select assignment from report_assignments where report_id=A.id)) and C.internal_status not in ('ACTIVE','CLOSED')) or \n" +
+            "(C.internal_status not in ('ACTIVE','CLOSED') and ?1 = b.assignment and b.state_id=a.status_id)\n" +
+            ")  and a.deleted=false and d.deleted=false  \n" +
+            "\t\t\t) X group by X.assignment",nativeQuery = true)
     Long getUpcomingReportsDisbursementAmount(Long userId);
 }
