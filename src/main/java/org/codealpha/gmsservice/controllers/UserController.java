@@ -815,29 +815,54 @@ public class UserController {
 
     @GetMapping("/{userId}/dashboard/mysummary/pendinggrants")
     public List<Grant> getPendingDetailedGrantsForUser(@PathVariable("userId")Long userId){
-        return grantService.getDetailedActionDueGrantsForUser(userId);
+        List<Grant> grants = grantService.getDetailedActionDueGrantsForUser(userId);
+        for(Grant grant : grants){
+            grant = grantService._grantToReturn(userId,grant);
+        }
+
+        return grants;
     }
     @GetMapping("/{userId}/dashboard/mysummary/pendingreports")
     public List<Report> getPendingDetailedReportForUser(@PathVariable("userId")Long userId){
-        return grantService.getDetailedActionDueReportsForUser(userId);
+        List<Report> reports = grantService.getDetailedActionDueReportsForUser(userId);
+        for(Report report:reports){
+            report = reportService._ReportToReturn(report,userId);
+        }
+        return reports;
     }
     @GetMapping("/{userId}/dashboard/mysummary/pendingdisbursements")
     public List<org.codealpha.gmsservice.entities.Disbursement> getPendingDetaileddisbursementsForUser(@PathVariable("userId")Long userId){
-        return disbursementService.getDetailedPendingActionDisbursements(userId);
+        List<org.codealpha.gmsservice.entities.Disbursement> disbursements=  disbursementService.getDetailedPendingActionDisbursements(userId);
+        for(org.codealpha.gmsservice.entities.Disbursement disbursement: disbursements){
+            disbursement = disbursementService.disbursementToReturn(disbursement,userId);
+        }
+        return disbursements;
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftgrants")
     public List<Grant> getUpcomingDetailedGrantsForUser(@PathVariable("userId")Long userId){
-        return grantService.getDetailedUpComingDraftGrants(userId);
+        List<Grant> grants =  grantService.getDetailedUpComingDraftGrants(userId);
+        for(Grant grant : grants){
+            grant = grantService._grantToReturn(userId,grant);
+        }
+        return grants;
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftreports")
     public List<Report> getUpcomingDetailedReportsForUser(@PathVariable("userId")Long userId){
-        return reportService.getDetailedUpComingDraftReports(userId);
+        List<Report> reports = reportService.getDetailedUpComingDraftReports(userId);
+        for(Report report:reports){
+            report = reportService._ReportToReturn(report,userId);
+        }
+        return reports;
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftdisbursements")
     public List<org.codealpha.gmsservice.entities.Disbursement> getUpcomingDetailedDisbursementsForUser(@PathVariable("userId")Long userId){
-        return disbursementService.getDetailedUpComingDraftDisbursements(userId);
+        List<org.codealpha.gmsservice.entities.Disbursement> disbursements=  disbursementService.getDetailedUpComingDraftDisbursements(userId);
+        for(org.codealpha.gmsservice.entities.Disbursement disbursement: disbursements){
+            disbursement = disbursementService.disbursementToReturn(disbursement,userId);
+        }
+        return disbursements;
     }
 }

@@ -7,16 +7,17 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.controllers.ReportController;
 import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.models.ColumnData;
-import org.codealpha.gmsservice.models.ReportAssignmentsVO;
-import org.codealpha.gmsservice.models.SecureReportEntity;
-import org.codealpha.gmsservice.models.TableData;
+import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
@@ -32,6 +33,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -90,6 +92,18 @@ public class ReportService {
     private EntityManager entityManager;
     @Autowired
     private GrantTypeWorkflowMappingService grantTypeWorkflowMappingService;
+    @Value("${spring.timezone}")
+    private String timezone;
+    @Autowired
+    private WorkflowStatusService workflowStatusService;
+    @Autowired
+    private GrantService grantService;
+    @Autowired
+    private DisbursementService disbursementService;
+    @Autowired
+    private WorkflowPermissionService workflowPermissionService;
+    @Autowired
+    private AppConfigService appConfigService;
 
     public Report saveReport(Report report) {
         return reportRepository.save(report);
@@ -963,5 +977,343 @@ public class ReportService {
 
     public Long getReportsInWorkflow(Long userId) {
         return reportRepository.getReportsInWorkflow(userId);
+    }
+
+    public Report _ReportToReturn(Report report, Long userId) {
+
+        report.setStringAttributes(getReportStringAttributesForReport(report));
+
+        List<ReportAssignmentsVO> workflowAssignments = new ArrayList<>();
+        for (ReportAssignment assignment : getAssignmentsForReport(report)) {
+            ReportAssignmentsVO assignmentsVO = new ReportAssignmentsVO();
+            assignmentsVO.setId(assignment.getId());
+            assignmentsVO.setAnchor(assignment.isAnchor());
+            assignmentsVO.setAssignmentId(assignment.getAssignment());
+            if (assignment.getAssignment() != null && assignment.getAssignment() > 0) {
+                assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignment()));
+            }
+            assignmentsVO.setReportId(assignment.getReportId());
+            assignmentsVO.setStateId(assignment.getStateId());
+            assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
+
+            setAssignmentHistory(assignmentsVO);
+
+            workflowAssignments.add(assignmentsVO);
+        }
+        report.setWorkflowAssignments(workflowAssignments);
+        List<ReportAssignment> reportAssignments = determineCanManage(report, userId);
+
+        if (userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+            report.setForGranteeUse(true);
+        } else {
+            report.setForGranteeUse(false);
+        }
+        if (reportAssignments != null) {
+            for (ReportAssignment assignment : reportAssignments) {
+                if (report.getCurrentAssignment() == null) {
+                    List<AssignedTo> assignedToList = new ArrayList<>();
+                    report.setCurrentAssignment(assignedToList);
+                }
+                AssignedTo newAssignedTo = new AssignedTo();
+                if (assignment.getAssignment() != null && assignment.getAssignment() > 0) {
+                    newAssignedTo.setUser(userService.getUserById(assignment.getAssignment()));
+                }
+                report.getCurrentAssignment().add(newAssignedTo);
+            }
+        }
+
+        ReportVO reportVO = new ReportVO().build(report, getReportSections(report), userService,
+                this);
+        report.setReportDetails(reportVO.getReportDetails());
+
+        showDisbursementsForReport(report,userService.getUserById(userId));
+
+        report.setNoteAddedBy(reportVO.getNoteAddedBy());
+        report.setNoteAddedByUser(reportVO.getNoteAddedByUser());
+
+        report.getWorkflowAssignments().sort((a, b) -> a.getId().compareTo(b.getId()));
+        report.getReportDetails().getSections()
+                .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+        for (SectionVO section : report.getReportDetails().getSections()) {
+            if (section.getAttributes() != null) {
+                section.getAttributes().sort(
+                        (a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+            }
+        }
+
+        report.setGranteeUsers(userService.getAllGranteeUsers(report.getGrant().getOrganization()));
+
+        GrantVO grantVO = new GrantVO().build(report.getGrant(), grantService.getGrantSections(report.getGrant()),
+                workflowPermissionService, userService.getUserById(userId),
+                appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
+                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
+                userService);
+
+        ObjectMapper mapper = new ObjectMapper();
+        report.getGrant().setGrantDetails(grantVO.getGrantDetails());
+
+        List<Report> approvedReports = null;
+        List<TableData> approvedDisbursements = new ArrayList<>();
+        AtomicInteger installmentNumber = new AtomicInteger();
+
+        report.getGrant().setApprovedReportsDisbursements(approvedDisbursements);
+
+        report.getReportDetails().getSections().forEach(sec -> {
+            if (sec.getAttributes() != null) {
+                sec.getAttributes().forEach(attr -> {
+                    if (attr.getFieldType().equalsIgnoreCase("disbursement") && attr.getFieldTableValue() != null) {
+                        for (TableData data : attr.getFieldTableValue()) {
+                            installmentNumber.getAndIncrement();
+                            data.setName(String.valueOf(installmentNumber.get()));
+                        }
+
+                        try {
+                            attr.setFieldValue(mapper.writeValueAsString(attr.getFieldTableValue()));
+                        } catch (JsonProcessingException e) {
+                            logger.error(e.getMessage(), e);
+                        }
+
+                    }
+                });
+            }
+        });
+        report.setSecurityCode(buildHashCode(report));
+        report.setFlowAuthorities(getFlowAuthority(report, userId));
+
+        List<GrantTag> grantTags = grantService.getTagsForGrant(report.getGrant().getId());
+
+        report.getGrant().setGrantTags(grantTags);
+        return report;
+    }
+
+    private List<ReportAssignment> determineCanManage(Report report, Long userId) {
+        List<ReportAssignment> reportAssignments = getAssignmentsForReport(report);
+        if ((reportAssignments.stream()
+                .filter(ass -> (ass.getAssignment() == null ? 0L : ass.getAssignment().longValue()) == userId
+                        .longValue() && ass.getStateId().longValue() == report.getStatus().getId().longValue())
+                .findAny().isPresent())
+                || (report.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE") && userService.getUserById(userId)
+                .getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"))) {
+            report.setCanManage(true);
+        } else {
+            report.setCanManage(false);
+        }
+
+        return reportAssignments;
+    }
+
+    private void showDisbursementsForReport(Report report, User currentUser) {
+        List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
+                report.getGrant().getGrantorOrganization().getId());
+
+        List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
+        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                .collect(Collectors.toList());
+
+        List<WorkflowStatus> draftStatuses = workflowStatuses.stream()
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")).collect(Collectors.toList());
+        List<Long> draftStatusIds = draftStatuses.stream().mapToLong(s -> s.getId()).boxed()
+                .collect(Collectors.toList());
+
+        List<ActualDisbursement> finalActualDisbursements = new ArrayList();
+        report.getReportDetails().getSections().forEach(s -> {
+            if (s.getAttributes() != null && s.getAttributes().size() > 0) {
+                s.getAttributes().forEach(a -> {
+                    if (a.getFieldType().equalsIgnoreCase("disbursement")) {
+                        List<Disbursement> closedDisbursements = getDisbursementsByStatusIds(report.getGrant(),closedStatusIds); //disbursementService
+                        //getDibursementsForGrantByStatuses(report.getGrant().getId(), closedStatusIds);
+                        List<Disbursement> draftDisbursements = getDisbursementsByStatusIds(report.getGrant(), draftStatusIds);
+                        if (!report.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
+                            List<TableData> tableDataList = new ArrayList<>();
+                            if (closedDisbursements != null) {
+                                closedDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
+                                AtomicInteger index = new AtomicInteger(1);
+                                closedDisbursements.forEach(cd -> {
+                                    List<ActualDisbursement> ads = disbursementService
+                                            .getActualDisbursementsForDisbursement(cd);
+                                    if (ads != null && ads.size() > 0) {
+                                        finalActualDisbursements.addAll(ads);
+                                    }
+
+                                });
+                            }
+
+
+                            if (draftDisbursements != null && draftDisbursements.size() > 0) {
+                                if (!currentUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
+                                    draftDisbursements.removeIf(dd -> ((dd.getReportId() != null
+                                            && dd.getReportId().longValue() != report.getId().longValue()  && dd.isGranteeEntry()) || (dd.getReportId() != null
+                                            && dd.getReportId().longValue() == report.getId().longValue()  && dd.isGranteeEntry() && report.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"))));
+                                }
+                                if (draftDisbursements != null) {
+                                    draftDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
+                                    AtomicInteger index = new AtomicInteger(1);
+                                    draftDisbursements.forEach(cd -> {
+                                        List<ActualDisbursement> ads = disbursementService
+                                                .getActualDisbursementsForDisbursement(cd);
+                                        if (ads != null && ads.size() > 0) {
+                                            finalActualDisbursements.addAll(ads);
+                                        }
+
+                                    });
+                                }
+                            }
+
+
+
+                            finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getId));
+                            if (finalActualDisbursements.size() > 0) {
+                                AtomicInteger index = new AtomicInteger(1);
+                                finalActualDisbursements.forEach(ad -> {
+                                    TableData td = new TableData();
+                                    ColumnData[] colDataList = new ColumnData[4];
+                                    td.setName(String.valueOf(index.getAndIncrement()));
+                                    td.setHeader("#");
+                                    td.setStatus(ad.getStatus());
+                                    td.setSaved(ad.getSaved());
+                                    td.setActualDisbursementId(ad.getId());
+                                    td.setDisbursementId(ad.getDisbursementId());
+                                    Long repId = disbursementService.getDisbursementById(ad.getDisbursementId()).getReportId();
+                                    td.setReportId(repId);
+                                    if (disbursementService.getDisbursementById(ad.getDisbursementId())
+                                            .isGranteeEntry()) {
+                                        td.setEnteredByGrantee(true);
+                                    }
+                                    /*if(!currentUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && td.isEnteredByGrantee() && report.getId().longValue()!=repId.longValue() && !disbursementService.getDisbursementById(ad.getDisbursementId()).getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")){
+                                        td.setShowForGrantee(false);
+                                    }*/
+
+                                    if(currentUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE") && td.isEnteredByGrantee() && report.getId().longValue()!=repId.longValue() && !disbursementService.getDisbursementById(ad.getDisbursementId()).getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")){
+                                        td.setShowForGrantee(false);
+                                    }
+
+
+                                    ColumnData cdDate = new ColumnData();
+                                    cdDate.setDataType("date");
+                                    cdDate.setName("Disbursement Date");
+                                    cdDate.setValue(ad.getDisbursementDate() != null
+                                            ? new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate())
+                                            : null);
+
+                                    ColumnData cdDA = new ColumnData();
+                                    cdDA.setDataType("currency");
+                                    cdDA.setName("Actual Disbursement");
+                                    cdDA.setValue(
+                                            ad.getActualAmount() != null ? String.valueOf(ad.getActualAmount()) : null);
+
+                                    ColumnData cdFOS = new ColumnData();
+                                    cdFOS.setDataType("currency");
+                                    cdFOS.setName("Funds from Other Sources");
+                                    cdFOS.setValue(
+                                            ad.getOtherSources() != null ? String.valueOf(ad.getOtherSources()) : null);
+
+                                    ColumnData cdN = new ColumnData();
+                                    cdN.setName("Notes");
+                                    cdN.setValue(ad.getNote());
+
+                                    colDataList[0] = cdDate;
+                                    colDataList[1] = cdDA;
+                                    colDataList[2] = cdFOS;
+                                    colDataList[3] = cdN;
+                                    td.setColumns(colDataList);
+                                    tableDataList.add(td);
+                                });
+                                a.setFieldTableValue(tableDataList);
+                                try {
+                                    a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
+                                } catch (IOException e) {
+                                    logger.error(e.getMessage(), e);
+                                }
+                            }
+                        } else {
+                            List<TableData> tableDataList = new ArrayList<>();
+
+                            if (closedDisbursements != null) {
+                                AtomicInteger index = new AtomicInteger(1);
+                                closedDisbursements.removeIf(
+                                        cd -> new DateTime(cd.getMovedOn(), DateTimeZone.forID(timezone)).isAfter(
+                                                new DateTime(report.getMovedOn(), DateTimeZone.forID(timezone))));
+                                if (closedDisbursements != null) {
+                                    closedDisbursements.forEach(cd -> {
+
+                                        List<ActualDisbursement> ads = disbursementService
+                                                .getActualDisbursementsForDisbursement(cd);
+                                        if (ads != null && ads.size() > 0) {
+                                            finalActualDisbursements.addAll(ads);
+                                        }
+                                    });
+                                }
+                            }
+
+                            finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
+                            if (finalActualDisbursements.size() > 0) {
+                                AtomicInteger index = new AtomicInteger(1);
+                                finalActualDisbursements.forEach(ad -> {
+                                    TableData td = new TableData();
+                                    ColumnData[] colDataList = new ColumnData[4];
+                                    td.setName(String.valueOf(index.getAndIncrement()));
+                                    td.setHeader("#");
+                                    td.setStatus(ad.getStatus());
+                                    td.setSaved(ad.getStatus());
+                                    td.setActualDisbursementId(ad.getId());
+                                    td.setDisbursementId(ad.getDisbursementId());
+                                    td.setReportId(disbursementService.getDisbursementById(ad.getDisbursementId()).getReportId());
+                                    if (disbursementService.getDisbursementById(ad.getDisbursementId())
+                                            .isGranteeEntry()) {
+                                        td.setEnteredByGrantee(true);
+                                    }
+                                    ColumnData cdDate = new ColumnData();
+                                    cdDate.setDataType("date");
+                                    cdDate.setName("Disbursement Date");
+                                    cdDate.setValue(ad.getDisbursementDate() != null
+                                            ? new SimpleDateFormat("dd-MMM-yyyy").format(ad.getDisbursementDate())
+                                            : null);
+
+                                    ColumnData cdDA = new ColumnData();
+                                    cdDA.setDataType("currency");
+                                    cdDA.setName("Actual Disbursement");
+                                    cdDA.setValue(String.valueOf(ad.getActualAmount()));
+
+                                    ColumnData cdFOS = new ColumnData();
+                                    cdFOS.setDataType("currency");
+                                    cdFOS.setName("Funds from Other Sources");
+                                    cdFOS.setValue(String.valueOf(ad.getOtherSources()));
+
+                                    ColumnData cdN = new ColumnData();
+                                    cdN.setName("Notes");
+                                    cdN.setValue(ad.getNote());
+
+                                    colDataList[0] = cdDate;
+                                    colDataList[1] = cdDA;
+                                    colDataList[2] = cdFOS;
+                                    colDataList[3] = cdN;
+                                    td.setColumns(colDataList);
+                                    tableDataList.add(td);
+                                });
+                                a.setFieldTableValue(tableDataList);
+                                try {
+                                    a.setFieldValue(new ObjectMapper().writeValueAsString(tableDataList));
+                                } catch (IOException e) {
+                                    logger.error(e.getMessage(), e);
+                                }
+                            }
+                        }
+
+                    }
+                });
+            }
+        });
+
+    }
+
+    private List<Disbursement> getDisbursementsByStatusIds(Grant grant, List<Long> statusIds) {
+        List<Disbursement> closedDisbursements = new ArrayList<>();
+
+        closedDisbursements = disbursementService.getDibursementsForGrantByStatuses(grant.getId(), statusIds);
+        if(grant.getOrigGrantId()!=null){
+            closedDisbursements.addAll(getDisbursementsByStatusIds(grantService.getById(grant.getOrigGrantId()),statusIds));
+        }
+        return closedDisbursements;
     }
 }
