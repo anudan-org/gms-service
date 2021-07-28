@@ -1019,12 +1019,24 @@ public class GrantService {
         return grantRepository.getActionDueGrantsForUser(userId);
     }
 
+    public List<Grant> getDetailedActionDueGrantsForUser(Long userId) {
+        return grantRepository.getDetailedActionDueGrantsForUser(userId);
+    }
+
     public Long getActionDueReportsForUser(Long userId) {
         return reportRepository.getActionDueReportsForUser(userId);
     }
 
+    public List<Report> getDetailedActionDueReportsForUser(Long userId) {
+        return reportRepository.getDetailedActionDueReportsForUser(userId);
+    }
+
     public Long getUpComingDraftGrants(Long userId) {
         return grantRepository.getUpComingDraftGrants(userId);
+    }
+
+    public List<Grant> getDetailedUpComingDraftGrants(Long userId) {
+        return grantRepository.getDetailedUpComingDraftGrants(userId);
     }
 
     public Long getGrantsInWorkflow(Long userId) {

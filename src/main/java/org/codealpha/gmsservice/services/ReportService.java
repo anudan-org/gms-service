@@ -957,6 +957,10 @@ public class ReportService {
         return reportRepository.getUpComingDraftReports(userId);
     }
 
+    public List<Report> getDetailedUpComingDraftReports(Long userId) {
+        return reportRepository.getDetailedUpComingDraftReports(userId);
+    }
+
     public Long getReportsInWorkflow(Long userId) {
         return reportRepository.getReportsInWorkflow(userId);
     }

@@ -812,4 +812,32 @@ public class UserController {
         }
         return new ResponseEntity(user, HttpStatus.OK);
     }
+
+    @GetMapping("/{userId}/dashboard/mysummary/pendinggrants")
+    public List<Grant> getPendingDetailedGrantsForUser(@PathVariable("userId")Long userId){
+        return grantService.getDetailedActionDueGrantsForUser(userId);
+    }
+    @GetMapping("/{userId}/dashboard/mysummary/pendingreports")
+    public List<Report> getPendingDetailedReportForUser(@PathVariable("userId")Long userId){
+        return grantService.getDetailedActionDueReportsForUser(userId);
+    }
+    @GetMapping("/{userId}/dashboard/mysummary/pendingdisbursements")
+    public List<org.codealpha.gmsservice.entities.Disbursement> getPendingDetaileddisbursementsForUser(@PathVariable("userId")Long userId){
+        return disbursementService.getDetailedPendingActionDisbursements(userId);
+    }
+
+    @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftgrants")
+    public List<Grant> getUpcomingDetailedGrantsForUser(@PathVariable("userId")Long userId){
+        return grantService.getDetailedUpComingDraftGrants(userId);
+    }
+
+    @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftreports")
+    public List<Report> getUpcomingDetailedReportsForUser(@PathVariable("userId")Long userId){
+        return reportService.getDetailedUpComingDraftReports(userId);
+    }
+
+    @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftdisbursements")
+    public List<org.codealpha.gmsservice.entities.Disbursement> getUpcomingDetailedDisbursementsForUser(@PathVariable("userId")Long userId){
+        return disbursementService.getDetailedUpComingDraftDisbursements(userId);
+    }
 }
