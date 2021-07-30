@@ -86,6 +86,16 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
             "\t\t\tand c.deleted=false group by b.assignment",nativeQuery = true)
     Long getActionDueReportsForUser(Long userId);
 
+    @Query(value = "select distinct a.* from reports a\n" +
+            "inner join report_assignments b on b.report_id=a.id and b.state_id=a.status_id\n" +
+            "inner join grants c on c.id=a.grant_id\n" +
+            "where b.assignment=?1\n" +
+            "and (a.end_date between now() and (now()+ INTERVAL '15 day') \n" +
+            "or a.due_date<now()\n" +
+            "or (select count(*) from report_history where id=a.id )>0)\n" +
+            "and c.deleted=false",nativeQuery = true)
+    List<Report> getDetailedActionDueReportsForUser(Long userId);
+
     @Query(value = "select count(distinct(d.id)) from grants a\n" +
             "            inner join grant_assignments b on b.state_id=a.grant_status_id and b.grant_id=a.id\n" +
             "            inner join workflow_statuses c on c.id=a.grant_status_id\n" +
@@ -112,6 +122,15 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
             "inner join grants d on d.id=a.grant_id\n" +
             "where b.assignment=?1 and c.internal_status='DRAFT' and d.deleted=false and a.deleted=false",nativeQuery = true)
     Long getUpComingDraftReports(Long userId);
+
+    @Query(value = "select distinct a.* from reports a \n" +
+            "inner join report_assignments b on b.report_id=a.id and b.state_id=a.status_id \n" +
+            "inner join workflow_statuses c on c.id=a.status_id \n" +
+            "inner join grants d on d.id=a.grant_id\n" +
+            "where b.assignment=?1 \n" +
+            "and c.internal_status='DRAFT' \n" +
+            "and d.deleted=false and a.deleted=false",nativeQuery = true)
+    List<Report> getDetailedUpComingDraftReports(Long userId);
 
     @Query(value = "select count(distinct(a.id)) \n" +
             "            from reports a \n" +

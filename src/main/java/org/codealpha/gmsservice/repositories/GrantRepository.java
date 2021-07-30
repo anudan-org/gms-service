@@ -106,8 +106,25 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
             "a.deleted=false",nativeQuery = true)
     Long getActionDueGrantsForUser(Long userId);
 
+    @Query(value="select distinct a.* from grants a\n" +
+            "inner join grant_assignments b on b.state_id=a.grant_status_id and b.grant_id=a.id\n" +
+            "inner join workflow_statuses c on c.id=grant_status_id\n" +
+            "where b.assignments=?1 and \n" +
+            "(c.internal_status!='ACTIVE' and c.internal_status!='CLOSED') and\n" +
+            "a.deleted=false",nativeQuery = true)
+    List<Grant> getDetailedActionDueGrantsForUser(Long userId);
+
     @Query(value = "select count(distinct(a.id)) from grants a inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id inner join workflow_statuses c on c.id=a.grant_status_id where b.assignments=?1 and c.internal_status='DRAFT' and a.deleted=false",nativeQuery = true)
     Long getUpComingDraftGrants(Long userId);
+
+    @Query(value = "select distinct a.*\n" +
+            "from grants a \n" +
+            "inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id \n" +
+            "inner join workflow_statuses c on c.id=a.grant_status_id \n" +
+            "where b.assignments=?1\n" +
+            "and c.internal_status='DRAFT' \n" +
+            "and a.deleted=false",nativeQuery = true)
+    List<Grant> getDetailedUpComingDraftGrants(Long userId);
 
     @Query(value = "select count(*) from (select distinct a.id,c.internal_status\n" +
             "                                    from grants a \n" +

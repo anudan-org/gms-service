@@ -50,12 +50,25 @@ public interface DisbursementRepository extends CrudRepository<Disbursement, Lon
             "            where b.owner=?1 and c.deleted=false group by b.owner", nativeQuery = true)
     Long getPendingActionDisbursements(Long userId);
 
+    @Query(value = "select distinct a.* from disbursements a\n" +
+            "inner join disbursement_assignments b on b.disbursement_id=a.id and b.state_id=a.status_id\n" +
+            "inner join grants c on c.id=a.grant_id\n" +
+            "where b.owner=?1 and c.deleted=false ", nativeQuery = true)
+    List<Disbursement> getDetailedPendingActionDisbursements(Long userId);
+
     @Query(value = "select count(distinct(a.id)) from disbursements a \n" +
             "            inner join disbursement_assignments b on b.disbursement_id=a.id and b.state_id=a.status_id \n" +
             "            inner join workflow_statuses c on c.id=a.status_id \n" +
             "            inner join grants d on d.id=a.grant_id\n" +
             "            where b.owner=?1 and c.internal_status='DRAFT' and d.deleted=false", nativeQuery = true)
     Long getUpComingDraftDisbursements(Long userId);
+
+    @Query(value = "select distinct a.* from disbursements a \n" +
+            "inner join disbursement_assignments b on b.disbursement_id=a.id and b.state_id=a.status_id \n" +
+            "inner join workflow_statuses c on c.id=a.status_id \n" +
+            "inner join grants d on d.id=a.grant_id\n" +
+            "where b.owner=?1 and c.internal_status='DRAFT' and d.deleted=false", nativeQuery = true)
+    List<Disbursement> getDetailedUpComingDraftDisbursements(Long userId);
 
     @Query(value = "select count(distinct(a.id)) \n" +
             "            from disbursements a \n" +
