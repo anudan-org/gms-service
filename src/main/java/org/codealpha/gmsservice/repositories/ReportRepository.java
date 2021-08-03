@@ -83,7 +83,7 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
             "\t\t\tand (a.end_date between now() and (now()+ INTERVAL '15 day') \n" +
             "\t\t\t\tor a.due_date<now()\n" +
             "\t\t\t\tor (select count(*) from report_history where id=a.id )>0)\n" +
-            "\t\t\tand c.deleted=false group by b.assignment",nativeQuery = true)
+            "\t\t\tand c.deleted=false and a.deleted=false group by b.assignment",nativeQuery = true)
     Long getActionDueReportsForUser(Long userId);
 
     @Query(value = "select distinct a.* from reports a\n" +
@@ -93,7 +93,7 @@ public interface ReportRepository extends CrudRepository<Report, Long> {
             "and (a.end_date between now() and (now()+ INTERVAL '15 day') \n" +
             "or a.due_date<now()\n" +
             "or (select count(*) from report_history where id=a.id )>0)\n" +
-            "and c.deleted=false",nativeQuery = true)
+            "and c.deleted=false and a.deleted=false",nativeQuery = true)
     List<Report> getDetailedActionDueReportsForUser(Long userId);
 
     @Query(value = "select count(distinct(d.id)) from grants a\n" +
