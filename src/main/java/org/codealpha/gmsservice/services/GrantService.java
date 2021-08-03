@@ -1078,4 +1078,8 @@ public class GrantService {
     public Long getUpcomingReportsDisbursementAmount(Long userId) {
         return reportRepository.getUpcomingReportsDisbursementAmount(userId);
     }
+
+    public List<Grant> getgrantsByStatusForUser(Long userId, String status) {
+        return grantRepository.getgrantsByStatusForUser(userId,status);
+    }
 }
