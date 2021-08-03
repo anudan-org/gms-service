@@ -848,6 +848,15 @@ public class UserController {
         return grants;
     }
 
+    @GetMapping("/{userId}/dashboard/mysummary/grants/{status}")
+    public List<Grant> getGrantsForUserByStatus(@PathVariable("userId")Long userId,@PathVariable("status")String status){
+        List<Grant> grants =  grantService.getgrantsByStatusForUser(userId,status.toUpperCase());
+        for(Grant grant : grants){
+            grant = grantService._grantToReturn(userId,grant);
+        }
+        return grants;
+    }
+
     @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftreports")
     public List<Report> getUpcomingDetailedReportsForUser(@PathVariable("userId")Long userId){
         List<Report> reports = reportService.getDetailedUpComingDraftReports(userId);
@@ -865,4 +874,6 @@ public class UserController {
         }
         return disbursements;
     }
+
+
 }

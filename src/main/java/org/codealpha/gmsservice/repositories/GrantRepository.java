@@ -184,4 +184,11 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
             "inner join disbursement_assignments b on b.disbursement_id=c.id\n" +
             "where b.owner=?1 and a.deleted=false)\n",nativeQuery = true)
     boolean isUserPartOfActiveWorkflow(Long userid);
+
+    @Query(value = "select * from grants a\n" +
+            "inner join grant_assignments b on b.grant_id=a.id and a.grant_status_id=b.state_id\n" +
+            "inner join workflow_statuses d on d.id=a.grant_status_id\n" +
+            "where a.deleted=false and b.assignments=?1 and d.internal_status=?2",nativeQuery = true)
+    List<Grant> getgrantsByStatusForUser(Long userId, String status);
+
 }
