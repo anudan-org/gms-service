@@ -60,6 +60,26 @@ public class Disbursement {
     private boolean disabledByAmendment;
     @Transient
     private List<DisbursementDocument> disbursementDocuments;
+    @Column
+    private String ownerName;
+    @Column
+    private Integer ownerId;
+
+    public String getOwnerName() {
+        return ownerName;
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
+    }
+
+    public Integer getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Integer ownerId) {
+        this.ownerId = ownerId;
+    }
 
     public Long getId() {
         return id;

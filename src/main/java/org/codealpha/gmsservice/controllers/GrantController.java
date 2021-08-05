@@ -255,7 +255,7 @@ public class GrantController {
         // List<WorkflowStatus> statuses =
         // workflowStatusService.getTenantWorkflowStatuses("GRANT", granterOrg.getId());
         for (WorkflowStatus status : statuses) {
-            if (!status.getTerminal()) {
+
                 assignment = new GrantAssignments();
                 if (status.isInitial()) {
                     assignment.setAnchor(true);
@@ -266,7 +266,7 @@ public class GrantController {
                 assignment.setGrant(grant);
                 assignment.setStateId(status.getId());
                 grantService.saveAssignmentForGrant(assignment);
-            }
+
         }
     }
 
@@ -2637,6 +2637,16 @@ public class GrantController {
                 }
             }
             grantService.saveAssignmentForGrant(assignment);
+            if(workflowStatusService.findById(assignment.getStateId()).getInternalStatus().equalsIgnoreCase("ACTIVE")){
+                WorkflowStatus closedStatus = workflowStatusService.findByWorkflow(workflowStatusService.findById(assignment.getStateId()).getWorkflow()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get();
+                GrantAssignments closedAssignmentEntry = grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getStateId().longValue()== closedStatus.getId().longValue()).findFirst().get();
+                if(closedAssignmentEntry!=null){
+                    closedAssignmentEntry.setAssignments(assignment.getAssignments());
+                    closedAssignmentEntry.setUpdatedBy(userId);
+                    closedAssignmentEntry.setAssignedOn(DateTime.now().toDate());
+                    grantService.saveAssignmentForGrant(closedAssignmentEntry);
+                }
+            }
         }
 
         if (currentAssignments.size() > 0) {

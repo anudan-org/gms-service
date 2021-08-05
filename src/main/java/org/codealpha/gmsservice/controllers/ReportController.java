@@ -239,6 +239,22 @@ public class ReportController {
                 }
             }
         }
+        for(ReportCard report:reports){
+            List<ReportAssignment> assignments = reportService.getAssignmentsForReportById(report.getId());
+            List<ReportAssignmentsVO> assignmentsVOs = new ArrayList<>();
+            for(ReportAssignment assignment : assignments){
+                ReportAssignmentsVO assignmentsVO = new ReportAssignmentsVO();
+                assignmentsVO.setAssignmentId(assignment.getAssignment());
+                assignmentsVO.setAnchor(assignment.isAnchor());
+                if(assignment.getAssignment()!=null) {
+                    assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignment()));
+                }
+                assignmentsVO.setReportId(assignment.getReportId());
+                assignmentsVO.setStateId(assignment.getStateId());
+                assignmentsVOs.add(assignmentsVO);
+            }
+            report.setWorkflowAssignments(assignmentsVOs);
+        }
         return reports;
     }
 
@@ -2013,7 +2029,7 @@ public class ReportController {
             }
         }
         for (WorkflowStatus status : statuses) {
-            if (!status.getTerminal()) {
+
                 assignment = new ReportAssignment();
                 if (status.isInitial()) {
                     assignment.setAnchor(true);
@@ -2023,8 +2039,14 @@ public class ReportController {
                 }
                 assignment.setReportId(report.getId());
                 assignment.setStateId(status.getId());
+
+                if(status.getTerminal()){
+                    final Report finalReport = report;
+                    GrantAssignments activeStateOwner =  grantService.getGrantWorkflowAssignments(report.getGrant()).stream().filter(ass -> ass.getStateId().longValue()==finalReport.getGrant().getGrantStatus().getId().longValue()).findFirst().get();
+                    assignment.setAssignment(activeStateOwner.getAssignments());
+                }
                 reportService.saveAssignmentForReport(assignment);
-            }
+
         }
 
         List<GranterReportSection> granterReportSections = reportTemplate.getSections();

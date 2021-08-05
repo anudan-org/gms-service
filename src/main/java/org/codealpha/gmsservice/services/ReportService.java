@@ -146,7 +146,7 @@ public class ReportService {
         }
         List<ReportAssignment> assignments = new ArrayList<>();
         for (WorkflowStatus status : statuses) {
-            if (!status.getTerminal()) {
+
                 assignment = new ReportAssignment();
                 if (status.isInitial()) {
                     assignment.setAnchor(true);
@@ -156,9 +156,12 @@ public class ReportService {
                 }
                 assignment.setReportId(report.getId());
                 assignment.setStateId(status.getId());
+                if(status.getTerminal()){
+                    assignment.setAssignment(anchorAssignment != null ? anchorAssignment.getAssignments() : null);
+                }
                 assignment = _saveAssignmentForReport(assignment);
                 assignments.add(assignment);
-            }
+
         }
 
         return assignments;
@@ -195,6 +198,10 @@ public class ReportService {
 
     public List<ReportAssignment> getAssignmentsForReport(Report report) {
         return reportAssignmentRepository.findByReportId(report.getId());
+    }
+
+    public List<ReportAssignment> getAssignmentsForReportById(Long reportId) {
+        return reportAssignmentRepository.findByReportId(reportId);
     }
 
     public List<Report> getAllAssignedReportsForGranteeUser(Long userId, Long granteeOrgId, String status) {
