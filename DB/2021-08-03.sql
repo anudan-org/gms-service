@@ -75,4 +75,4 @@ inner join workflow_statuses b on b.id=a.state_id
 where b.internal_status='ACTIVE'
 order by a.grant_id );
 
-alter table disbursements add column owner_id int(11), add column owner_name varchar(255);
+alter table disbursements add column owner_id integer, add column owner_name varchar(255);
