@@ -1,5 +1,8 @@
 package org.codealpha.gmsservice.controllers;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -43,6 +46,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 
@@ -89,6 +93,8 @@ public class UserController {
     private GrantTypeWorkflowMappingService grantTypeWorkflowMappingService;
     @Autowired
     private GrantTypeService grantTypeService;
+    @org.springframework.beans.factory.annotation.Value("${spring.upload-file-location}")
+    private String uploadLocation;
 
     @GetMapping(value = "/{userId}")
     public User get(@PathVariable(name = "userId") Long id, @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -144,6 +150,31 @@ public class UserController {
         return newUser;
     }
 
+    @PostMapping(value = "/{userId}/profile",consumes = {"multipart/form-data" })
+    public void setUserProfilePic(@PathVariable("userId")Long userId,
+                                  @RequestParam("file") MultipartFile[] files,
+                                  @RequestHeader("X-TENANT-CODE") String tenantCode){
+        String filePath = uploadLocation + tenantCode + "/users/" + userId;
+        File dir = new File(filePath);
+        dir.mkdirs();
+        String fileName = files[0].getOriginalFilename();
+        File fileToCreate = new File(dir, fileName);
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(fileToCreate);
+            fos.write(files[0].getBytes());
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        User user = userService.getUserById(userId);
+        user.setUserProfile(fileToCreate.getAbsolutePath());
+        userService.save(user);
+    }
+
     @PutMapping(value = "/{userId}", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public User update(@ApiParam(name = "user", value = "User details") @RequestBody UserVO user,
                        @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId,
@@ -166,10 +197,11 @@ public class UserController {
 
         userOrg = organizationService.save(userOrg);
         savedUser.setOrganization(userOrg);
-        savedUser.setUserProfile(user.getUserProfile());
+        //savedUser.setUserProfile(user.getUserProfile());
         savedUser = userService.save(savedUser);
         return savedUser;
     }
+
 
     @PostMapping("/activation")
     public HttpStatus verifyUser(@RequestParam("emailId") String email, @RequestParam("code") String code) {
