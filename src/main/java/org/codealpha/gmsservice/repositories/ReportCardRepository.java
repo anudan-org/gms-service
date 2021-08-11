@@ -46,7 +46,7 @@ public interface ReportCardRepository extends CrudRepository<ReportCard, Long> {
     @Query(value = "select A.*,true as can_manage,get_owner_report_name(A.id) owner_name,get_owner_report(A.id) owner_id  from reports A where status_id=?1 and grant_id=?2",nativeQuery = true)
     public List<ReportCard> findByStatusAndGrant(Long statusId, Long grantId);
 
-    @Query(value="select A.*,true as can_manage,get_owner_report_name(A.id) owner_name,get_owner_report(A.id) owner_id  from reports A where grant_id=? and deleted=false",nativeQuery = true)
+    @Query(value="select A.*,true can_manage,get_owner_report_name(A.id) owner_name,get_owner_report(A.id) owner_id  from reports A where grant_id=?1 and deleted=false",nativeQuery = true)
     List<ReportCard> getReportsByGrant(Long grantId);
 
     @Query(value = "select  A.*,case when (select assignment from report_assignments x where x.state_id=A.status_id and x.report_id=A.id)=?1 then true else false end can_manage,get_owner_report_name(A.id) owner_name,get_owner_report(A.id) owner_id  from reports A inner join grants Z on Z.id=A.grant_id inner join report_assignments B on B.report_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.anchor=true and B.assignment = ?1) or (B.assignment=?1 and B.state_id=A.status_id) or (C.internal_status='DRAFT' and (select count(*) from report_history where id=A.id)>0 and ?1 = any (array(select assignment from report_assignments where report_id=A.id))) or (C.internal_status='REVIEW' and ?1 = any( array(select assignment from report_assignments where report_id=A.id))) or (C.internal_status='ACTIVE' or C.internal_status='CLOSED' ) ) and Z.grantor_org_id=?2 and Z.deleted=false and (C.internal_status !='ACTIVE' and C.internal_status !='REVIEW' and C.internal_status !='CLOSED')  and A.deleted=false order by A.grant_id,A.end_date asc", nativeQuery = true)
@@ -73,4 +73,9 @@ public interface ReportCardRepository extends CrudRepository<ReportCard, Long> {
             "and c.internal_status='DRAFT' \n" +
             "and d.deleted=false and a.deleted=false",nativeQuery = true)
     List<ReportCard> getDetailedUpComingDraftReports(Long userId);
+
+    @Query(value = "select distinct A.*,case when (select assignment from report_assignments x where x.state_id=A.status_id and x.report_id=A.id)=?1 then true else false end can_manage,get_owner_report_name(A.id) owner_name,get_owner_report(A.id) owner_id from reports A inner join grants Z on Z.id=A.grant_id inner join report_assignments B on B.report_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.anchor=true and B.assignment = ?1) or (B.assignment=?1 and B.state_id=A.status_id) or (C.internal_status='DRAFT' and (select count(*) from report_history where id=A.id)>0 and ?1 = any (array(select assignment from report_assignments where report_id=A.id))) or (C.internal_status='REVIEW' and ?1 = any( array(select assignment from report_assignments where report_id=A.id))) or (C.internal_status='ACTIVE' or C.internal_status='CLOSED' ) ) and Z.grantor_org_id=?2 and Z.deleted=false and A.end_date > ?3 and (C.internal_status !='ACTIVE' and C.internal_status !='REVIEW' and C.internal_status !='CLOSED') and A.grant_id=?4 and A.deleted=false order by A.due_date desc", nativeQuery = true)
+    List<ReportCard> futureReportsToSubmitForGranterUserByDateRangeAndGrant(Long id, Long granterOrgId, Date end,
+                                                                            Long grantId);
+
 }

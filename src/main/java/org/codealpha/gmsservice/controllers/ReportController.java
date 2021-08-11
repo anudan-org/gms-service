@@ -270,31 +270,27 @@ public class ReportController {
     }
 
     @GetMapping("/{reportId}/{grantId}")
-    public List<Report> getFutureReports(@PathVariable("userId") Long userId,
+    public List<ReportCard> getFutureReports(@PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("reportId") Long reportId,
             @PathVariable("grantId") Long grantId,@RequestParam(value = "type",required = false)String forType) {
         User user = userService.getUserById(userId);
 
-        List<Report> reports = null;
+        List<ReportCard> reports = null;
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
             Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
             Date start = DateTime.now().withTimeAtStartOfDay().toDate();
             Date end = new DateTime(start, DateTimeZone.forID(timezone)).plusDays(30).withTime(23, 59, 59, 999)
                     .toDate();
             if(forType.equalsIgnoreCase("upcoming")) {
-                reports = reportService.getFutureReportForGranterUserByDateRangeAndGrant(userId, org.getId(), end, grantId);
+                reports = reportService.futureReportForGranterUserByDateRangeAndGrant(userId, org.getId(), end, grantId);
             }else if(forType.equalsIgnoreCase("all")) {
-                reports = reportService.getReportsForGrant(grantService.getById(grantId));
+                reports = reportService.getReportCardsForGrant(grantService.getById(grantId));
             }
         }
 
         reports.removeIf(r -> r.getId().longValue() == reportId.longValue());
 
-        for (Report report : reports) {
 
-            report = _ReportToReturn(report, userId);
-
-        }
         return reports;
     }
 

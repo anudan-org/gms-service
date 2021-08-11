@@ -255,6 +255,13 @@ public class ReportService {
                 grantId);
     }
 
+    public List<ReportCard> futureReportForGranterUserByDateRangeAndGrant(Long userId, Long granterOrgId, Date end,
+                                                                         Long grantId) {
+
+        return reportCardRepository.futureReportsToSubmitForGranterUserByDateRangeAndGrant(userId, granterOrgId, end,
+                grantId);
+    }
+
     public List<ReportCard> getFutureReportCardsForGranterUserByDateRangeAndGrant(Long userId, Long granterOrgId, Date end,
                                                                          Long grantId) {
 

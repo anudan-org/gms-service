@@ -2612,14 +2612,36 @@ public class GrantController {
             //Change the reports anchor to the new Grant Active State Owner
             if(grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE") && assignmentsVO.getStateId()==grant.getGrantStatus().getId()){
                 List<Report> reports = reportService.getReportsForGrant(grant);
-                reports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+                //reports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+
                 for(Report report : reports){
+                    WorkflowStatus closedStatusForReport = workflowStatusService.findByWorkflow(report.getStatus().getWorkflow()).stream().filter(st -> st.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get();
+
                     List<ReportAssignment> reportAssignments = reportService.getAssignmentsForReport(report);
-                    reportAssignments.removeIf(ass -> !ass.isAnchor());
-                    for(ReportAssignment rAssignment: reportAssignments){
+                    List<ReportAssignment> tmpAssignments = new ArrayList<>();
+                    for(ReportAssignment rAssignment: reportAssignments) {
+                        if(rAssignment.isAnchor() || rAssignment.getStateId().longValue()==closedStatusForReport.getId().longValue()  ){
+                            tmpAssignments.add(rAssignment);
+                        }
+                    }
+                    /*reportAssignments.removeIf(ass -> !ass.isAnchor());*/
+                    for(ReportAssignment rAssignment: tmpAssignments){
                         rAssignment.setAssignment(assignmentsVO.getAssignments());
                         reportService.saveAssignmentForReport(rAssignment);
                     }
+                }
+
+                List<Disbursement> disbursements = disbursementService.getAllDisbursementsForGrant(grant.getId());
+                for(Disbursement disbursement : disbursements){
+                    WorkflowStatus closedStatusForDisbursement = workflowStatusService.findByWorkflow(disbursement.getStatus().getWorkflow()).stream().filter(st -> st.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get();
+
+                    List<DisbursementAssignment> disbursementAssignments = disbursementService.getDisbursementAssignments(disbursement);
+                    disbursementAssignments.removeIf(d -> d.getStateId().longValue()!=closedStatusForDisbursement.getId().longValue());
+                    for(DisbursementAssignment disbursementAssignment: disbursementAssignments){
+                        disbursementAssignment.setOwner(assignmentsVO.getAssignments());
+                        disbursementService.saveAssignmentForDisbursement(disbursementAssignment);
+                    }
+
                 }
             }
 
