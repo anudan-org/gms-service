@@ -55,4 +55,22 @@ public interface ReportCardRepository extends CrudRepository<ReportCard, Long> {
     @Query(value = "select  A.*,case when (select assignment from report_assignments x where x.state_id=A.status_id and x.report_id=A.id)=?1 then true else false end can_manage,get_owner_report_name(A.id) owner_name,get_owner_report(A.id) owner_id  from reports A inner join grants Z on Z.id=A.grant_id inner join report_assignments B on B.report_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.anchor=true and B.assignment = ?1) or (B.assignment=?1 and B.state_id=A.status_id) or (C.internal_status='DRAFT' and (select count(*) from report_history where id=A.id)>0 ) ) and Z.grantor_org_id=?2 and Z.deleted=false and (C.internal_status !='ACTIVE' and C.internal_status !='REVIEW' and C.internal_status !='CLOSED') and A.deleted=false order by A.grant_id,A.end_date asc", nativeQuery = true)
     List<ReportCard> findUpcomingFutureAdminReports(Long userId, Long id);
 
+    @Query(value = "select distinct a.* ,case when (select assignment from report_assignments x where x.state_id=a.status_id and x.report_id=a.id)=?1 then true else false end can_manage,get_owner_report_name(a.id) owner_name,get_owner_report(a.id) owner_id from reports a\n" +
+            "inner join report_assignments b on b.report_id=a.id and b.state_id=a.status_id\n" +
+            "inner join grants c on c.id=a.grant_id\n" +
+            "where b.assignment=?1\n" +
+            "and (a.end_date between now() and (now()+ INTERVAL '15 day') \n" +
+            "or a.due_date<now()\n" +
+            "or (select count(*) from report_history where id=a.id )>0)\n" +
+            "and c.deleted=false and a.deleted=false",nativeQuery = true)
+    List<ReportCard> getDetailedActionDueReportsForUser(Long userId);
+
+    @Query(value = "select distinct a.*,case when (select assignment from report_assignments x where x.state_id=a.status_id and x.report_id=a.id)=?1 then true else false end can_manage,get_owner_report_name(a.id) owner_name,get_owner_report(a.id) owner_id from reports a \n" +
+            "inner join report_assignments b on b.report_id=a.id and b.state_id=a.status_id \n" +
+            "inner join workflow_statuses c on c.id=a.status_id \n" +
+            "inner join grants d on d.id=a.grant_id\n" +
+            "where b.assignment=?1 \n" +
+            "and c.internal_status='DRAFT' \n" +
+            "and d.deleted=false and a.deleted=false",nativeQuery = true)
+    List<ReportCard> getDetailedUpComingDraftReports(Long userId);
 }

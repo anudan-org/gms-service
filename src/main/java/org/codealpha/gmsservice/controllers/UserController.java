@@ -846,20 +846,15 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/pendinggrants")
-    public List<Grant> getPendingDetailedGrantsForUser(@PathVariable("userId")Long userId){
-        List<Grant> grants = grantService.getDetailedActionDueGrantsForUser(userId);
-        for(Grant grant : grants){
-            grant = grantService._grantToReturn(userId,grant);
-        }
+    public List<GrantCard> getPendingDetailedGrantsForUser(@PathVariable("userId")Long userId){
+        List<GrantCard> grants = grantService.getDetailedActionDueGrantsForUser(userId);
 
         return grants;
     }
     @GetMapping("/{userId}/dashboard/mysummary/pendingreports")
-    public List<Report> getPendingDetailedReportForUser(@PathVariable("userId")Long userId){
-        List<Report> reports = grantService.getDetailedActionDueReportsForUser(userId);
-        for(Report report:reports){
-            report = reportService._ReportToReturn(report,userId);
-        }
+    public List<ReportCard> getPendingDetailedReportForUser(@PathVariable("userId")Long userId){
+        List<ReportCard> reports = grantService.getDetailedActionDueReportsForUser(userId);
+
         return reports;
     }
     @GetMapping("/{userId}/dashboard/mysummary/pendingdisbursements")
@@ -872,11 +867,9 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftgrants")
-    public List<Grant> getUpcomingDetailedGrantsForUser(@PathVariable("userId")Long userId){
-        List<Grant> grants =  grantService.getDetailedUpComingDraftGrants(userId);
-        for(Grant grant : grants){
-            grant = grantService._grantToReturn(userId,grant);
-        }
+    public List<GrantCard> getUpcomingDetailedGrantsForUser(@PathVariable("userId")Long userId){
+        List<GrantCard> grants =  grantService.getDetailedUpComingDraftGrants(userId);
+
         return grants;
     }
 
@@ -890,11 +883,9 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftreports")
-    public List<Report> getUpcomingDetailedReportsForUser(@PathVariable("userId")Long userId){
-        List<Report> reports = reportService.getDetailedUpComingDraftReports(userId);
-        for(Report report:reports){
-            report = reportService._ReportToReturn(report,userId);
-        }
+    public List<ReportCard> getUpcomingDetailedReportsForUser(@PathVariable("userId")Long userId){
+        List<ReportCard> reports = reportService.getDetailedUpComingDraftReports(userId);
+
         return reports;
     }
 

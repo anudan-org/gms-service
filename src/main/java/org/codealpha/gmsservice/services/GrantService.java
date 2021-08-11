@@ -128,6 +128,8 @@ public class GrantService {
     private String timezone;
     @Autowired
     private ReportRepository reportRepository;
+    @Autowired
+    private ReportCardRepository reportCardRepository;
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -1019,24 +1021,24 @@ public class GrantService {
         return grantRepository.getActionDueGrantsForUser(userId);
     }
 
-    public List<Grant> getDetailedActionDueGrantsForUser(Long userId) {
-        return grantRepository.getDetailedActionDueGrantsForUser(userId);
+    public List<GrantCard> getDetailedActionDueGrantsForUser(Long userId) {
+        return grantCardRepository.getDetailedActionDueGrantsForUser(userId);
     }
 
     public Long getActionDueReportsForUser(Long userId) {
         return reportRepository.getActionDueReportsForUser(userId);
     }
 
-    public List<Report> getDetailedActionDueReportsForUser(Long userId) {
-        return reportRepository.getDetailedActionDueReportsForUser(userId);
+    public List<ReportCard> getDetailedActionDueReportsForUser(Long userId) {
+        return reportCardRepository.getDetailedActionDueReportsForUser(userId);
     }
 
     public Long getUpComingDraftGrants(Long userId) {
         return grantRepository.getUpComingDraftGrants(userId);
     }
 
-    public List<Grant> getDetailedUpComingDraftGrants(Long userId) {
-        return grantRepository.getDetailedUpComingDraftGrants(userId);
+    public List<GrantCard> getDetailedUpComingDraftGrants(Long userId) {
+        return grantCardRepository.getDetailedUpComingDraftGrants(userId);
     }
 
     public Long getGrantsInWorkflow(Long userId) {

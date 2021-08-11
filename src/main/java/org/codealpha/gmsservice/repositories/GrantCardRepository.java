@@ -80,4 +80,21 @@ public interface GrantCardRepository extends CrudRepository<GrantCard, Long> {
 
     @Query(value = "select g.*,(select assignments from grant_assignments where grant_id=g.id and state_id=g.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count,get_owner_grant(A.id) owner_id,get_owner_grant_name(A.id) owner_name from grants g where g.id=?1",nativeQuery = true)
     GrantCard getById(Long id);
+
+    @Query(value="select distinct a.*,(select assignments from grant_assignments where grant_id=a.id and state_id=a.grant_status_id) current_assignment,approved_reports_for_grant(a.id) approved_reports_for_grant, disbursed_amount_for_grant(a.id) approved_disbursements_total, project_documents_for_grant(a.id) project_documents_count,get_owner_grant(a.id) owner_id,get_owner_grant_name(a.id) owner_name from grants a\n" +
+            "inner join grant_assignments b on b.state_id=a.grant_status_id and b.grant_id=a.id\n" +
+            "inner join workflow_statuses c on c.id=grant_status_id\n" +
+            "where b.assignments=?1 and \n" +
+            "(c.internal_status!='ACTIVE' and c.internal_status!='CLOSED') and\n" +
+            "a.deleted=false",nativeQuery = true)
+    List<GrantCard> getDetailedActionDueGrantsForUser(Long userId);
+
+    @Query(value = "select distinct a.*,(select assignments from grant_assignments where grant_id=a.id and state_id=a.grant_status_id) current_assignment,approved_reports_for_grant(a.id) approved_reports_for_grant, disbursed_amount_for_grant(a.id) approved_disbursements_total, project_documents_for_grant(a.id) project_documents_count,get_owner_grant(a.id) owner_id,get_owner_grant_name(a.id) owner_name\n" +
+            "from grants a \n" +
+            "inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id \n" +
+            "inner join workflow_statuses c on c.id=a.grant_status_id \n" +
+            "where b.assignments=?1\n" +
+            "and c.internal_status='DRAFT' \n" +
+            "and a.deleted=false",nativeQuery = true)
+    List<GrantCard> getDetailedUpComingDraftGrants(Long userId);
 }
