@@ -64,13 +64,20 @@ public class PublicController {
 
         User user = userService.getUserById(userId);
 
-        Resource image = resourceLoader.getResource("file:" + user.getUserProfile());
-        String extension = user.getUserProfile().substring(user.getUserProfile().lastIndexOf(".")+1);
-        if(user.getUserProfile()!=null && extension.equalsIgnoreCase("png")) {
+        Resource image = null;
+        if(user.getUserProfile()==null){
+            image = resourceLoader.getResource("classpath:static/images/avatar.png");
             servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
-        }else if(user.getUserProfile()!=null && (extension.equalsIgnoreCase("jpg") || extension.equalsIgnoreCase("jpeg"))) {
-            servletResponse.setContentType(MediaType.IMAGE_JPEG_VALUE);
+        }else{
+            image = resourceLoader.getResource("file:" + user.getUserProfile());
+            String extension = user.getUserProfile().substring(user.getUserProfile().lastIndexOf(".")+1);
+            if(user.getUserProfile()!=null && extension.equalsIgnoreCase("png")) {
+                servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
+            }else if(user.getUserProfile()!=null && (extension.equalsIgnoreCase("jpg") || extension.equalsIgnoreCase("jpeg"))) {
+                servletResponse.setContentType(MediaType.IMAGE_JPEG_VALUE);
+            }
         }
+
         try {
             StreamUtils.copy(image.getInputStream(), servletResponse.getOutputStream());
 
