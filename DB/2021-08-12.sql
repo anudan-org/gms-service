@@ -1,0 +1,1 @@
+alter table organizations add column description text, add column website varchar(1000),add column twitter varchar(1000),add column facebook varchar(1000), add column linkedin varchar(1000), add column instagram varchar(1000);

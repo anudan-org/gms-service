@@ -51,6 +51,19 @@ public abstract class Organization {
 	@Column(name = "organization_type",insertable = false,updatable = false)
 	private String organizationType;
 
+	@Column
+	private String description;
+	@Column
+	private String website;
+	@Column
+	private String twitter;
+	@Column
+	private String facebook;
+	@Column
+	private String linkedin;
+	@Column
+	private String instagram;
+
 
 	public Organization() {
 	}
@@ -124,4 +137,51 @@ public abstract class Organization {
 		return this.getClass().getAnnotation(DiscriminatorValue.class).value();
 	}
 
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getWebsite() {
+		return website;
+	}
+
+	public void setWebsite(String website) {
+		this.website = website;
+	}
+
+	public String getTwitter() {
+		return twitter;
+	}
+
+	public void setTwitter(String twitter) {
+		this.twitter = twitter;
+	}
+
+	public String getFacebook() {
+		return facebook;
+	}
+
+	public void setFacebook(String facebook) {
+		this.facebook = facebook;
+	}
+
+	public String getLinkedin() {
+		return linkedin;
+	}
+
+	public void setLinkedin(String linkedin) {
+		this.linkedin = linkedin;
+	}
+
+	public String getInstagram() {
+		return instagram;
+	}
+
+	public void setInstagram(String instagram) {
+		this.instagram = instagram;
+	}
 }
