@@ -58,6 +58,25 @@ public class PublicController {
         }
     }
 
+    @GetMapping("/images/{tenant}/{granteeOrgId}/logo")
+    @ApiOperation(value = "Get grantee logo image for <img> tag 'src' property")
+    public void getGranteeLogoImage(HttpServletResponse servletResponse, @PathVariable("granteeOrgId") Long granteeOrgId,@PathVariable("tenant") String tenant) {
+
+        Resource image = resourceLoader.getResource("file:" + uploadLocation + "/GRANTEES/" + granteeOrgId + "/logo/logo.png");
+
+        if(!image.exists()){
+            image = resourceLoader.getResource("classpath:static/images/orglogo.png");
+        }
+        servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
+        servletResponse.setHeader("org-name",organizationService.findOrganizationByTenantCode(tenant).getName());
+        try {
+            StreamUtils.copy(image.getInputStream(), servletResponse.getOutputStream());
+
+        } catch (IOException ex) {
+            logger.error(ex.getMessage(), ex);
+        }
+    }
+
     @GetMapping("/images/profile/{userId}")
     public void getUserProfile(HttpServletResponse servletResponse,
                                @PathVariable("userId")Long userId) {

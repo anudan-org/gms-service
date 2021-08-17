@@ -71,4 +71,26 @@ public class OrganizationController {
 		}
 
 	}
+
+	@PostMapping(value="/{orgId}/logo",consumes = {"multipart/form-data" })
+	public void saveGranteeOrganizationLogo(@RequestParam("file") MultipartFile image,@PathVariable("orgId")Long granteeOrgId,
+									 @RequestHeader("X-TENANT-CODE") String tenantCode){
+		String filePath = uploadLocation + "GRANTEES/"+granteeOrgId + "/logo/";
+		File dir = new File(filePath);
+		dir.mkdirs();
+
+		File fileToCreate = new File(dir, "logo.png");
+
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(fileToCreate);
+			fos.write(image.getBytes());
+			fos.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
 }
