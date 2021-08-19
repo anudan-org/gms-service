@@ -776,6 +776,7 @@ public class UserController {
         categoryFilter.setCommittedAmount(Long.valueOf(activeGrantSummaryCommitted.getCommittedAmount()));
         categoryFilter.setDisbursedAmount(disbursedAmount.longValue());
         List<GranterReportStatus> reportStatuses = null;
+        List<GranteeReportStatus> reportAprrovedStatuses = null;
         List<DetailedSummary> reportSummaryList = new ArrayList<>();
         List<DetailedSummary> reportStatusSummaryList = new ArrayList<>();
         if (status.equalsIgnoreCase("ACTIVE")) {
@@ -807,6 +808,13 @@ public class UserController {
                 return dueOverdueOrder.indexOf(c.getName());
             }));
 
+            reportAprrovedStatuses = dashboardService.getReportApprovedStatusSummaryForGranteeAndStatusByGranter(granteeOrg.getId(), status);
+            if (reportAprrovedStatuses != null && reportAprrovedStatuses.size() > 0) {
+                for (GranteeReportStatus reportStatus : reportAprrovedStatuses) {
+                    reportStatusSummaryList
+                            .add(new ReportSummary(reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount())));
+                }
+            }
 
 
         } else if (status.equalsIgnoreCase("CLOSED")) {
@@ -832,6 +840,14 @@ public class UserController {
                         .isPresent()) {
                     reportSummaryList.add(new ReportSummary("Submitted", Long.valueOf(0)));
                 }
+
+                reportAprrovedStatuses = dashboardService.getReportApprovedStatusSummaryForGranteeAndStatusByGranter(granteeOrg.getId(), status);
+                if (reportAprrovedStatuses != null && reportAprrovedStatuses.size() > 0) {
+                    for (GranteeReportStatus reportStatus : reportAprrovedStatuses) {
+                        reportStatusSummaryList
+                                .add(new ReportSummary(reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount())));
+                    }
+                }
             }
         }
 
@@ -842,6 +858,7 @@ public class UserController {
         Map<String, List<DetailedSummary>> reportSummaryMap = new HashMap<>();
         Map<String, List<DetailedSummary>> disbursementSummaryMap = new HashMap<>();
         reportSummaryMap.put("summary", reportSummaryList);
+        reportSummaryMap.put("approvedSummary", reportStatusSummaryList);
         filterDetails.add(new Detail("Reports", reportSummaryMap));
 
         categoryFilter.setDetails(filterDetails);

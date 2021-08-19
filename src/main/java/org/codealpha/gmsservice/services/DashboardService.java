@@ -90,6 +90,8 @@ public class DashboardService {
 
     @Value("${spring.timezone}")
     private String timezone;
+    @Autowired
+    private GranteeReportStatusRepository granteeReportStatusRepository;
 
     List<Tenant> tenants;
 
@@ -833,5 +835,9 @@ public class DashboardService {
 
     public GranterGrantSummaryCommitted getDisbursementPeriodsForUserAndStatus(Long userId, String status) {
         return granterActiveGrantSummaryCommittedRepository.getDisbursementPeriodsForUserAndStatus(userId,status);
+    }
+
+    public List<GranteeReportStatus> getReportApprovedStatusSummaryForGranteeAndStatusByGranter(Long id, String status) {
+        return granteeReportStatusRepository.getReportApprovedStatusSummaryForGranteeAndStatusByGranter(id,status);
     }
 }
