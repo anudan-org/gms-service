@@ -94,4 +94,16 @@ public interface DisbursementRepository extends CrudRepository<Disbursement, Lon
 
     @Query(value = "select A.id, A.requested_amount, A.reason, A.requested_on, A.requested_by, A.status_id, A.grant_id, A.note, A.note_added, A.note_added_by, A.created_at, A.created_by, A.updated_at, A.updated_by, A.moved_on, A.grantee_entry, A.other_sources, A.report_id, A.disabled_by_amendment,get_owner_disbursement_name(a.id) owner_name,get_owner_disbursement(a.id) owner_id from disbursements A where id = ?1",nativeQuery = true)
     Disbursement findByDisbursementId(Long id);
+
+
+    @Query(value="select a.id, requested_amount, reason, \n" +
+            "requested_on, requested_by, status_id, grant_id, \n" +
+            "note, note_added, note_added_by, a.created_at, a.created_by, \n" +
+            "a.updated_at, a.updated_by, moved_on, grantee_entry, \n" +
+            "other_sources, report_id, disabled_by_amendment,\n" +
+            "get_owner_disbursement_name(a.id) owner_name,\n" +
+            "get_owner_disbursement(a.id) owner_id from \n" +
+            "disbursements a\n" +
+            "inner join workflow_statuses b on b.id=a.status_id where grant_id=?1 and b.internal_status='CLOSED'",nativeQuery = true)
+    List<Disbursement> getClosedDisbursementByGrantAndStatusesForGrantee(Long id);
 }

@@ -395,6 +395,34 @@ public class UserController {
         return new ResponseEntity(dashboardCategory, HttpStatus.OK);
     }
 
+    @GetMapping("/{userId}/dashboard/summary/grantee/{granteeOrgId}")
+    public ResponseEntity<Category> getGranteeDasboardSummary(@RequestHeader("X-TENANT-CODE") String tenantCode,
+                                                       @PathVariable("userId") Long userId,@PathVariable("granteeOrgId")Long granteeOrgId) {
+
+        Category dashboardCategory = null;
+        Organization granteeOrg = organizationService.get(granteeOrgId);
+
+
+        Summary categorySummary = new Summary(
+                0l,
+                0l,0l,0l);
+
+        List<Filter> categoryFilters = new ArrayList<>();
+
+        Filter activeFilter = getFilterForGranteeGrantsByStatus(granteeOrg, "ACTIVE");
+        if (activeFilter != null) {
+            categoryFilters.add(activeFilter);
+        }
+        Filter closedFilter = getFilterForGranteeGrantsByStatus(granteeOrg, "CLOSED");
+        if (closedFilter != null) {
+            categoryFilters.add(closedFilter);
+        }
+
+        dashboardCategory = new Category("CEO", categorySummary, categoryFilters);
+
+        return new ResponseEntity(dashboardCategory, HttpStatus.OK);
+    }
+
     @GetMapping("/{userId}/dashboard/mysummary")
     public ResponseEntity<Category> getMyDashboardSummary(@RequestHeader("X-TENANT-CODE") String tenantCode,
                                                        @PathVariable("userId") Long userId) {
@@ -725,6 +753,100 @@ public class UserController {
         categoryFilter.setDetails(filterDetails);
 
         List<String> detailsOrder = Arrays.asList(new String[]{"Disbursements","Reports"});
+        categoryFilter.getDetails().sort(Comparator.comparing(c->{
+            return detailsOrder.indexOf(c.getName());
+        }));
+        return categoryFilter;
+    }
+
+    private Filter getFilterForGranteeGrantsByStatus(Organization granteeOrg, String status) {
+        GranterGrantSummaryCommitted activeGrantSummaryCommitted = dashboardService
+                .getActiveGrantCommittedSummaryForGrantee(granteeOrg.getId(), status);
+        if (activeGrantSummaryCommitted == null) {
+            return null;
+        }
+        Double disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGrantee(granteeOrg.getId(), status);
+        Filter categoryFilter = new Filter();
+        categoryFilter.setName(WordUtils.capitalizeFully(status + " Grants"));
+        categoryFilter.setTotalGrants(Long.valueOf(activeGrantSummaryCommitted.getGrantCount()));
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy");
+        categoryFilter.setDonors(granteeService.getDonorsByState(granteeOrg.getId(),status));
+        categoryFilter.setPeriod(sd.format(activeGrantSummaryCommitted.getPeriodStart()) + "-"
+                + sd.format(activeGrantSummaryCommitted.getPeriodEnd()));
+        categoryFilter.setCommittedAmount(Long.valueOf(activeGrantSummaryCommitted.getCommittedAmount()));
+        categoryFilter.setDisbursedAmount(disbursedAmount.longValue());
+        List<GranterReportStatus> reportStatuses = null;
+        List<DetailedSummary> reportSummaryList = new ArrayList<>();
+        List<DetailedSummary> reportStatusSummaryList = new ArrayList<>();
+        if (status.equalsIgnoreCase("ACTIVE")) {
+            reportStatuses = dashboardService.getReportStatusSummaryForGranteeAndStatus(granteeOrg.getId(), status);
+            if (reportStatuses != null && reportStatuses.size() > 0) {
+                for (GranterReportStatus reportStatus : reportStatuses) {
+                    reportSummaryList
+                            .add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
+                }
+
+                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny()
+                        .isPresent()) {
+                    reportSummaryList.add(new ReportSummary("Due", Long.valueOf(0)));
+                }
+
+                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny()
+                        .isPresent()) {
+                    reportSummaryList.add(new ReportSummary("Overdue", Long.valueOf(0)));
+                }
+
+                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("submitted")).findAny()
+                        .isPresent()) {
+                    reportSummaryList.add(new ReportSummary("Submitted", Long.valueOf(0)));
+                }
+            }
+
+            List<String> dueOverdueOrder = Arrays.asList(new String[]{"Due","Overdue"});
+            reportSummaryList.sort(Comparator.comparing(c -> {
+                return dueOverdueOrder.indexOf(c.getName());
+            }));
+
+
+
+        } else if (status.equalsIgnoreCase("CLOSED")) {
+            reportStatuses = dashboardService.getReportStatusSummaryForGranteeAndStatus(granteeOrg.getId(),
+                    status);
+            if (reportStatuses != null && reportStatuses.size() > 0) {
+                for (GranterReportStatus reportStatus : reportStatuses) {
+                    reportSummaryList
+                            .add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
+                }
+
+                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny()
+                        .isPresent()) {
+                    reportSummaryList.add(new ReportSummary("Due", Long.valueOf(0)));
+                }
+
+                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny()
+                        .isPresent()) {
+                    reportSummaryList.add(new ReportSummary("Overdue", Long.valueOf(0)));
+                }
+
+                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("submitted")).findAny()
+                        .isPresent()) {
+                    reportSummaryList.add(new ReportSummary("Submitted", Long.valueOf(0)));
+                }
+            }
+        }
+
+
+
+
+        List<Detail> filterDetails = new ArrayList<>();
+        Map<String, List<DetailedSummary>> reportSummaryMap = new HashMap<>();
+        Map<String, List<DetailedSummary>> disbursementSummaryMap = new HashMap<>();
+        reportSummaryMap.put("summary", reportSummaryList);
+        filterDetails.add(new Detail("Reports", reportSummaryMap));
+
+        categoryFilter.setDetails(filterDetails);
+
+        List<String> detailsOrder = Arrays.asList(new String[]{"Reports"});
         categoryFilter.getDetails().sort(Comparator.comparing(c->{
             return detailsOrder.indexOf(c.getName());
         }));

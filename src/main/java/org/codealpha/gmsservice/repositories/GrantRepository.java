@@ -84,6 +84,14 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
     @Query(value = "select g.*,(select assignments from grant_assignments where grant_id=g.id and state_id=g.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants g inner join workflow_statuses w on w.id=g.grant_status_id where g.grantor_org_id=?1 and w.internal_status=?2 and g.deleted=false",nativeQuery = true)
     List<Grant> findGrantsByStatus(Long granterId,String status);
 
+    @Query(value = "select g.*,\n" +
+            "(select assignments from grant_assignments where grant_id=g.id and state_id=g.grant_status_id) current_assignment,\n" +
+            "0 approved_reports_for_grant, 0 approved_disbursements_total, \n" +
+            "0 project_documents_count from grants g \n" +
+            "inner join workflow_statuses w on w.id=g.grant_status_id \n" +
+            "where g.organization_id=?1 and w.internal_status=?2 and g.deleted=false",nativeQuery = true)
+    List<Grant> findGrantsByStatusForGrantee(Long granteeId,String status);
+
     @Query(value = "select g.*,(select assignments \n" +
             "\t\t\tfrom grant_assignments \n" +
             "\t\t\twhere grant_id=g.id and state_id=g.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count \n" +

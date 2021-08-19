@@ -55,4 +55,8 @@ public class GranteeService {
     return granteeRepository.save(org);
 
   }
+
+  public Long getDonorsByState(Long id, String status) {
+    return granteeRepository.getDonorsByStatus(id,status);
+  }
 }

@@ -36,6 +36,8 @@ public class Filter {
     private List<Detail> details = null;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    @JsonProperty("donors")
+    private Long donors;
 
     @JsonProperty("name")
     public String getName() {
@@ -107,4 +109,11 @@ public class Filter {
         this.additionalProperties.put(name, value);
     }
 
+    public Long getDonors() {
+        return donors;
+    }
+
+    public void setDonors(Long donors) {
+        this.donors = donors;
+    }
 }
