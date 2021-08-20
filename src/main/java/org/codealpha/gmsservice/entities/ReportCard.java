@@ -105,6 +105,27 @@ public class ReportCard {
     @Column
     private boolean deleted;
 
+    @Column
+    private String ownerName;
+    @Column
+    private String ownerId;
+
+    public String getOwnerName() {
+        return ownerName;
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
+    }
+
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
+    }
+
     public Long getId() {
         return id;
     }

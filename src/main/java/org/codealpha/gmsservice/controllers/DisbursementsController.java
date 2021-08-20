@@ -174,8 +174,7 @@ public class DisbursementsController {
                 disbursementToSave = disbursementService.saveDisbursement(disbursementToSave);
 
                 disbursementToSave = disbursementService.createAssignmentPlaceholders(disbursementToSave, userId);
-                // disbursementToSave =
-                // disbursementService.setWorkflowPermissions(disbursementToSave,userId);
+
 
                 return disbursementToSave;
         }

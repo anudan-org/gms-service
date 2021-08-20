@@ -6,9 +6,11 @@ import io.swagger.annotations.ApiParam;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Release;
+import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
 import org.codealpha.gmsservice.services.OrganizationService;
 import org.codealpha.gmsservice.services.ReleaseService;
+import org.codealpha.gmsservice.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +39,8 @@ public class PublicController {
     private OrganizationService organizationService;
     @Autowired
     private ReleaseService releaseService;
+    @Autowired
+    private UserService userService;
 
     @GetMapping("/images/{tenant}/logo")
     @ApiOperation(value = "Get tenant logo image for <img> tag 'src' property")
@@ -46,6 +50,53 @@ public class PublicController {
 
         servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
         servletResponse.setHeader("org-name",organizationService.findOrganizationByTenantCode(tenant).getName());
+        try {
+            StreamUtils.copy(image.getInputStream(), servletResponse.getOutputStream());
+
+        } catch (IOException ex) {
+            logger.error(ex.getMessage(), ex);
+        }
+    }
+
+    @GetMapping("/images/{tenant}/{granteeOrgId}/logo")
+    @ApiOperation(value = "Get grantee logo image for <img> tag 'src' property")
+    public void getGranteeLogoImage(HttpServletResponse servletResponse, @PathVariable("granteeOrgId") Long granteeOrgId,@PathVariable("tenant") String tenant) {
+
+        Resource image = resourceLoader.getResource("file:" + uploadLocation + "/GRANTEES/" + granteeOrgId + "/logo/logo.png");
+
+        if(!image.exists()){
+            image = resourceLoader.getResource("classpath:static/images/orglogo.png");
+        }
+        servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
+        servletResponse.setHeader("org-name",organizationService.findOrganizationByTenantCode(tenant).getName());
+        try {
+            StreamUtils.copy(image.getInputStream(), servletResponse.getOutputStream());
+
+        } catch (IOException ex) {
+            logger.error(ex.getMessage(), ex);
+        }
+    }
+
+    @GetMapping("/images/profile/{userId}")
+    public void getUserProfile(HttpServletResponse servletResponse,
+                               @PathVariable("userId")Long userId) {
+
+        User user = userService.getUserById(userId);
+
+        Resource image = null;
+        if(user.getUserProfile()==null){
+            image = resourceLoader.getResource("classpath:static/images/avatar.png");
+            servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
+        }else{
+            image = resourceLoader.getResource("file:" + user.getUserProfile());
+            String extension = user.getUserProfile().substring(user.getUserProfile().lastIndexOf(".")+1);
+            if(user.getUserProfile()!=null && extension.equalsIgnoreCase("png")) {
+                servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
+            }else if(user.getUserProfile()!=null && (extension.equalsIgnoreCase("jpg") || extension.equalsIgnoreCase("jpeg"))) {
+                servletResponse.setContentType(MediaType.IMAGE_JPEG_VALUE);
+            }
+        }
+
         try {
             StreamUtils.copy(image.getInputStream(), servletResponse.getOutputStream());
 

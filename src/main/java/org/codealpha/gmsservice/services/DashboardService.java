@@ -90,6 +90,8 @@ public class DashboardService {
 
     @Value("${spring.timezone}")
     private String timezone;
+    @Autowired
+    private GranteeReportStatusRepository granteeReportStatusRepository;
 
     List<Tenant> tenants;
 
@@ -341,6 +343,38 @@ public class DashboardService {
         return total;
     }
 
+    private Double getAllLinkedGrantsDisbursementsTotalForGrantee(Grant byId) {
+        List<Disbursement> approvedDisbursements = disbursementRepository
+                .getClosedDisbursementByGrantAndStatusesForGrantee(byId.getId());
+
+        List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
+        if (approvedDisbursements != null) {
+
+            for (Disbursement approved : approvedDisbursements) {
+                List<ActualDisbursement> approvedActuals = actualDisbursementRepository
+                        .findByDisbursementId(approved.getId());
+                if (approvedActuals.size() > 0) {
+                    approvedActualDisbursements.addAll(approvedActuals);
+                }
+            }
+        }
+        Double total = 0d;
+        if (approvedActualDisbursements.size() > 0) {
+
+            for (ActualDisbursement ad : approvedActualDisbursements) {
+                if (ad.getActualAmount() != null) {
+                    total += ad.getActualAmount();
+                }
+            }
+
+        }
+        if (byId.getOrigGrantId() != null) {
+            total += getAllLinkedGrantsDisbursementsTotalForGrantee(grantService.getById(byId.getOrigGrantId()));
+        }
+
+        return total;
+    }
+
     public List<Tenant> getTenants() {
         return tenants;
     }
@@ -350,6 +384,10 @@ public class DashboardService {
     }
 
     public GranterCountAndAmountTotal getSummaryForGranter(Long granterId) {
+        return granterCountAndAmountTotalRepository.getSummaryForGranter(granterId);
+    }
+
+    public GranterCountAndAmountTotal getSummaryForGrantee(Long granterId) {
         return granterCountAndAmountTotalRepository.getSummaryForGranter(granterId);
     }
 
@@ -371,6 +409,10 @@ public class DashboardService {
 
     public GranterGrantSummaryCommitted getActiveGrantCommittedSummaryForGranter(Long granterId, String status) {
         return granterActiveGrantSummaryCommittedRepository.getGrantCommittedSummaryForGranter(granterId, status);
+    }
+
+    public GranterGrantSummaryCommitted getActiveGrantCommittedSummaryForGrantee(Long granteeId, String status) {
+        return granterActiveGrantSummaryCommittedRepository.getGrantCommittedSummaryForGrantee(granteeId, status);
     }
 
     public Double getActiveGrantDisbursedAmountForGranter(Long granterId, String status) {
@@ -415,8 +457,25 @@ public class DashboardService {
         return disbursedAmount;
     }
 
+    public Double getActiveGrantDisbursedAmountForGrantee(Long granteeId, String status) {
+        Double disbursedAmount = 0d;
+
+        List<Grant> activeGrants = grantRepository.findGrantsByStatusForGrantee(granteeId,status);
+        if (activeGrants != null && !activeGrants.isEmpty()) {
+            for (Grant ag : activeGrants) {
+                disbursedAmount+= getAllLinkedGrantsDisbursementsTotalForGrantee(ag);
+            }
+        }
+
+        return disbursedAmount;
+    }
+
     public List<GranterReportStatus> getReportStatusSummaryForGranterAndStatus(Long granterId, String status) {
         return granterReportStatusRepository.getReportStatusesForGranter(granterId, status);
+    }
+
+    public List<GranterReportStatus> getReportStatusSummaryForGranteeAndStatus(Long granteeId, String status) {
+        return granterReportStatusRepository.getReportStatusesForGrantee(granteeId, status);
     }
 
     public List<GranterReportStatus> getReportStatusSummaryForUserAndStatus(Long userId, String status) {
@@ -776,5 +835,9 @@ public class DashboardService {
 
     public GranterGrantSummaryCommitted getDisbursementPeriodsForUserAndStatus(Long userId, String status) {
         return granterActiveGrantSummaryCommittedRepository.getDisbursementPeriodsForUserAndStatus(userId,status);
+    }
+
+    public List<GranteeReportStatus> getReportApprovedStatusSummaryForGranteeAndStatusByGranter(Long id, String status) {
+        return granteeReportStatusRepository.getReportApprovedStatusSummaryForGranteeAndStatusByGranter(id,status);
     }
 }

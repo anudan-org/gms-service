@@ -60,6 +60,8 @@ public class DisbursementService {
     private OrgTagService orgTagService;
     @Autowired
     private DisbursementDocumentRepository disbursementDocumentRepository;
+    @Autowired
+    private WorkflowStatusService workflowStatusService;
 
     public Disbursement saveDisbursement(Disbursement disbursement) {
         return disbursementRepository.save(disbursement);
@@ -67,7 +69,7 @@ public class DisbursementService {
 
     public Disbursement createAssignmentPlaceholders(Disbursement disbursementToSave, Long userId) {
         Workflow currentWorkflow = disbursementToSave.getStatus().getWorkflow();
-
+        final Disbursement finalDisbursement = disbursementToSave;
         List<WorkflowStatus> statuses = new ArrayList<>();
         List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionRepository
                 .findByWorkflow(currentWorkflow);
@@ -87,7 +89,7 @@ public class DisbursementService {
         List<DisbursementAssignment> assignmentList = new ArrayList<>();
         DisbursementAssignment assignment = null;
         for (WorkflowStatus status : statuses) {
-            if (!status.getTerminal()) {
+
                 assignment = new DisbursementAssignment();
                 if (status.isInitial()) {
                     assignment.setAnchor(true);
@@ -97,9 +99,13 @@ public class DisbursementService {
                 }
                 assignment.setDisbursementId(disbursementToSave.getId());
                 assignment.setStateId(status.getId());
-                assignment = disbursementAssignmentRepository.save(assignment);
-                assignmentList.add(assignment);
-            }
+
+                if(status.getTerminal()){
+                    GrantAssignments activeStateOwner =  grantService.getGrantWorkflowAssignments(disbursementToSave.getGrant()).stream().filter(ass -> ass.getStateId().longValue()==finalDisbursement.getGrant().getGrantStatus().getId().longValue()).findFirst().get();
+                    assignment.setOwner(activeStateOwner.getAssignments());
+                }
+            assignment = disbursementAssignmentRepository.save(assignment);
+            assignmentList.add(assignment);
         }
 
         disbursementToSave.setAssignments(assignmentList);
@@ -240,7 +246,7 @@ public class DisbursementService {
     }
 
     public Disbursement getDisbursementById(Long id) {
-        return disbursementRepository.findById(id).get();
+        return disbursementRepository.findByDisbursementId(id);
     }
 
     public List<DisbursementAssignment> getDisbursementAssignments(Disbursement disbursement) {

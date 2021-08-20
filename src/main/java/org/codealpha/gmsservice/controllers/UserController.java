@@ -1,5 +1,8 @@
 package org.codealpha.gmsservice.controllers;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -43,6 +46,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 
@@ -89,6 +93,8 @@ public class UserController {
     private GrantTypeWorkflowMappingService grantTypeWorkflowMappingService;
     @Autowired
     private GrantTypeService grantTypeService;
+    @org.springframework.beans.factory.annotation.Value("${spring.upload-file-location}")
+    private String uploadLocation;
 
     @GetMapping(value = "/{userId}")
     public User get(@PathVariable(name = "userId") Long id, @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -144,6 +150,31 @@ public class UserController {
         return newUser;
     }
 
+    @PostMapping(value = "/{userId}/profile",consumes = {"multipart/form-data" })
+    public void setUserProfilePic(@PathVariable("userId")Long userId,
+                                  @RequestParam("file") MultipartFile[] files,
+                                  @RequestHeader("X-TENANT-CODE") String tenantCode){
+        String filePath = uploadLocation + tenantCode + "/users/" + userId;
+        File dir = new File(filePath);
+        dir.mkdirs();
+        String fileName = files[0].getOriginalFilename();
+        File fileToCreate = new File(dir, fileName);
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(fileToCreate);
+            fos.write(files[0].getBytes());
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        User user = userService.getUserById(userId);
+        user.setUserProfile(fileToCreate.getAbsolutePath());
+        userService.save(user);
+    }
+
     @PutMapping(value = "/{userId}", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public User update(@ApiParam(name = "user", value = "User details") @RequestBody UserVO user,
                        @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId,
@@ -166,10 +197,11 @@ public class UserController {
 
         userOrg = organizationService.save(userOrg);
         savedUser.setOrganization(userOrg);
-        savedUser.setUserProfile(user.getUserProfile());
+        //savedUser.setUserProfile(user.getUserProfile());
         savedUser = userService.save(savedUser);
         return savedUser;
     }
+
 
     @PostMapping("/activation")
     public HttpStatus verifyUser(@RequestParam("emailId") String email, @RequestParam("code") String code) {
@@ -354,6 +386,34 @@ public class UserController {
             categoryFilters.add(activeFilter);
         }
         Filter closedFilter = getFilterForGrantsByStatus(tenantOrg, "CLOSED");
+        if (closedFilter != null) {
+            categoryFilters.add(closedFilter);
+        }
+
+        dashboardCategory = new Category("CEO", categorySummary, categoryFilters);
+
+        return new ResponseEntity(dashboardCategory, HttpStatus.OK);
+    }
+
+    @GetMapping("/{userId}/dashboard/summary/grantee/{granteeOrgId}")
+    public ResponseEntity<Category> getGranteeDasboardSummary(@RequestHeader("X-TENANT-CODE") String tenantCode,
+                                                       @PathVariable("userId") Long userId,@PathVariable("granteeOrgId")Long granteeOrgId) {
+
+        Category dashboardCategory = null;
+        Organization granteeOrg = organizationService.get(granteeOrgId);
+
+
+        Summary categorySummary = new Summary(
+                0l,
+                0l,0l,0l);
+
+        List<Filter> categoryFilters = new ArrayList<>();
+
+        Filter activeFilter = getFilterForGranteeGrantsByStatus(granteeOrg, "ACTIVE");
+        if (activeFilter != null) {
+            categoryFilters.add(activeFilter);
+        }
+        Filter closedFilter = getFilterForGranteeGrantsByStatus(granteeOrg, "CLOSED");
         if (closedFilter != null) {
             categoryFilters.add(closedFilter);
         }
@@ -699,6 +759,117 @@ public class UserController {
         return categoryFilter;
     }
 
+    private Filter getFilterForGranteeGrantsByStatus(Organization granteeOrg, String status) {
+        GranterGrantSummaryCommitted activeGrantSummaryCommitted = dashboardService
+                .getActiveGrantCommittedSummaryForGrantee(granteeOrg.getId(), status);
+        if (activeGrantSummaryCommitted == null) {
+            return null;
+        }
+        Double disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGrantee(granteeOrg.getId(), status);
+        Filter categoryFilter = new Filter();
+        categoryFilter.setName(WordUtils.capitalizeFully(status + " Grants"));
+        categoryFilter.setTotalGrants(Long.valueOf(activeGrantSummaryCommitted.getGrantCount()));
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy");
+        categoryFilter.setDonors(granteeService.getDonorsByState(granteeOrg.getId(),status));
+        categoryFilter.setPeriod(sd.format(activeGrantSummaryCommitted.getPeriodStart()) + "-"
+                + sd.format(activeGrantSummaryCommitted.getPeriodEnd()));
+        categoryFilter.setCommittedAmount(Long.valueOf(activeGrantSummaryCommitted.getCommittedAmount()));
+        categoryFilter.setDisbursedAmount(disbursedAmount.longValue());
+        List<GranterReportStatus> reportStatuses = null;
+        List<GranteeReportStatus> reportAprrovedStatuses = null;
+        List<DetailedSummary> reportSummaryList = new ArrayList<>();
+        List<DetailedSummary> reportStatusSummaryList = new ArrayList<>();
+        if (status.equalsIgnoreCase("ACTIVE")) {
+            reportStatuses = dashboardService.getReportStatusSummaryForGranteeAndStatus(granteeOrg.getId(), status);
+            if (reportStatuses != null && reportStatuses.size() > 0) {
+                for (GranterReportStatus reportStatus : reportStatuses) {
+                    reportSummaryList
+                            .add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
+                }
+
+                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny()
+                        .isPresent()) {
+                    reportSummaryList.add(new ReportSummary("Due", Long.valueOf(0)));
+                }
+
+                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny()
+                        .isPresent()) {
+                    reportSummaryList.add(new ReportSummary("Overdue", Long.valueOf(0)));
+                }
+
+                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("submitted")).findAny()
+                        .isPresent()) {
+                    reportSummaryList.add(new ReportSummary("Submitted", Long.valueOf(0)));
+                }
+            }
+
+            List<String> dueOverdueOrder = Arrays.asList(new String[]{"Due","Overdue"});
+            reportSummaryList.sort(Comparator.comparing(c -> {
+                return dueOverdueOrder.indexOf(c.getName());
+            }));
+
+            reportAprrovedStatuses = dashboardService.getReportApprovedStatusSummaryForGranteeAndStatusByGranter(granteeOrg.getId(), status);
+            if (reportAprrovedStatuses != null && reportAprrovedStatuses.size() > 0) {
+                for (GranteeReportStatus reportStatus : reportAprrovedStatuses) {
+                    reportStatusSummaryList
+                            .add(new ReportSummary(reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount())));
+                }
+            }
+
+
+        } else if (status.equalsIgnoreCase("CLOSED")) {
+            reportStatuses = dashboardService.getReportStatusSummaryForGranteeAndStatus(granteeOrg.getId(),
+                    status);
+            if (reportStatuses != null && reportStatuses.size() > 0) {
+                for (GranterReportStatus reportStatus : reportStatuses) {
+                    reportSummaryList
+                            .add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
+                }
+
+                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny()
+                        .isPresent()) {
+                    reportSummaryList.add(new ReportSummary("Due", Long.valueOf(0)));
+                }
+
+                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny()
+                        .isPresent()) {
+                    reportSummaryList.add(new ReportSummary("Overdue", Long.valueOf(0)));
+                }
+
+                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("submitted")).findAny()
+                        .isPresent()) {
+                    reportSummaryList.add(new ReportSummary("Submitted", Long.valueOf(0)));
+                }
+
+                reportAprrovedStatuses = dashboardService.getReportApprovedStatusSummaryForGranteeAndStatusByGranter(granteeOrg.getId(), status);
+                if (reportAprrovedStatuses != null && reportAprrovedStatuses.size() > 0) {
+                    for (GranteeReportStatus reportStatus : reportAprrovedStatuses) {
+                        reportStatusSummaryList
+                                .add(new ReportSummary(reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount())));
+                    }
+                }
+            }
+        }
+
+
+
+
+        List<Detail> filterDetails = new ArrayList<>();
+        Map<String, List<DetailedSummary>> reportSummaryMap = new HashMap<>();
+        Map<String, List<DetailedSummary>> disbursementSummaryMap = new HashMap<>();
+        reportSummaryMap.put("summary", reportSummaryList);
+        reportSummaryMap.put("approvedSummary", reportStatusSummaryList);
+        filterDetails.add(new Detail("Reports", reportSummaryMap));
+
+        categoryFilter.setDetails(filterDetails);
+
+        List<String> detailsOrder = Arrays.asList(new String[]{"Reports"});
+        categoryFilter.getDetails().sort(Comparator.comparing(c->{
+            return detailsOrder.indexOf(c.getName());
+        }));
+        return categoryFilter;
+    }
+
     private GranterReportSummaryStatus initNewGranterReportSummaryStatus(Organization tenantOrg,TransitionStatusOrder order) {
         GranterReportSummaryStatus reportStatus = new GranterReportSummaryStatus();
         reportStatus.setCount(0);
@@ -814,20 +985,15 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/pendinggrants")
-    public List<Grant> getPendingDetailedGrantsForUser(@PathVariable("userId")Long userId){
-        List<Grant> grants = grantService.getDetailedActionDueGrantsForUser(userId);
-        for(Grant grant : grants){
-            grant = grantService._grantToReturn(userId,grant);
-        }
+    public List<GrantCard> getPendingDetailedGrantsForUser(@PathVariable("userId")Long userId){
+        List<GrantCard> grants = grantService.getDetailedActionDueGrantsForUser(userId);
 
         return grants;
     }
     @GetMapping("/{userId}/dashboard/mysummary/pendingreports")
-    public List<Report> getPendingDetailedReportForUser(@PathVariable("userId")Long userId){
-        List<Report> reports = grantService.getDetailedActionDueReportsForUser(userId);
-        for(Report report:reports){
-            report = reportService._ReportToReturn(report,userId);
-        }
+    public List<ReportCard> getPendingDetailedReportForUser(@PathVariable("userId")Long userId){
+        List<ReportCard> reports = grantService.getDetailedActionDueReportsForUser(userId);
+
         return reports;
     }
     @GetMapping("/{userId}/dashboard/mysummary/pendingdisbursements")
@@ -840,11 +1006,9 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftgrants")
-    public List<Grant> getUpcomingDetailedGrantsForUser(@PathVariable("userId")Long userId){
-        List<Grant> grants =  grantService.getDetailedUpComingDraftGrants(userId);
-        for(Grant grant : grants){
-            grant = grantService._grantToReturn(userId,grant);
-        }
+    public List<GrantCard> getUpcomingDetailedGrantsForUser(@PathVariable("userId")Long userId){
+        List<GrantCard> grants =  grantService.getDetailedUpComingDraftGrants(userId);
+
         return grants;
     }
 
@@ -858,11 +1022,9 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftreports")
-    public List<Report> getUpcomingDetailedReportsForUser(@PathVariable("userId")Long userId){
-        List<Report> reports = reportService.getDetailedUpComingDraftReports(userId);
-        for(Report report:reports){
-            report = reportService._ReportToReturn(report,userId);
-        }
+    public List<ReportCard> getUpcomingDetailedReportsForUser(@PathVariable("userId")Long userId){
+        List<ReportCard> reports = reportService.getDetailedUpComingDraftReports(userId);
+
         return reports;
     }
 

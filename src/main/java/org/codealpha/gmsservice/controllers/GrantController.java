@@ -255,7 +255,7 @@ public class GrantController {
         // List<WorkflowStatus> statuses =
         // workflowStatusService.getTenantWorkflowStatuses("GRANT", granterOrg.getId());
         for (WorkflowStatus status : statuses) {
-            if (!status.getTerminal()) {
+
                 assignment = new GrantAssignments();
                 if (status.isInitial()) {
                     assignment.setAnchor(true);
@@ -266,7 +266,7 @@ public class GrantController {
                 assignment.setGrant(grant);
                 assignment.setStateId(status.getId());
                 grantService.saveAssignmentForGrant(assignment);
-            }
+
         }
     }
 
@@ -2612,14 +2612,36 @@ public class GrantController {
             //Change the reports anchor to the new Grant Active State Owner
             if(grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE") && assignmentsVO.getStateId()==grant.getGrantStatus().getId()){
                 List<Report> reports = reportService.getReportsForGrant(grant);
-                reports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+                //reports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED"));
+
                 for(Report report : reports){
+                    WorkflowStatus closedStatusForReport = workflowStatusService.findByWorkflow(report.getStatus().getWorkflow()).stream().filter(st -> st.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get();
+
                     List<ReportAssignment> reportAssignments = reportService.getAssignmentsForReport(report);
-                    reportAssignments.removeIf(ass -> !ass.isAnchor());
-                    for(ReportAssignment rAssignment: reportAssignments){
+                    List<ReportAssignment> tmpAssignments = new ArrayList<>();
+                    for(ReportAssignment rAssignment: reportAssignments) {
+                        if(rAssignment.isAnchor() || rAssignment.getStateId().longValue()==closedStatusForReport.getId().longValue()  ){
+                            tmpAssignments.add(rAssignment);
+                        }
+                    }
+                    /*reportAssignments.removeIf(ass -> !ass.isAnchor());*/
+                    for(ReportAssignment rAssignment: tmpAssignments){
                         rAssignment.setAssignment(assignmentsVO.getAssignments());
                         reportService.saveAssignmentForReport(rAssignment);
                     }
+                }
+
+                List<Disbursement> disbursements = disbursementService.getAllDisbursementsForGrant(grant.getId());
+                for(Disbursement disbursement : disbursements){
+                    WorkflowStatus closedStatusForDisbursement = workflowStatusService.findByWorkflow(disbursement.getStatus().getWorkflow()).stream().filter(st -> st.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get();
+
+                    List<DisbursementAssignment> disbursementAssignments = disbursementService.getDisbursementAssignments(disbursement);
+                    disbursementAssignments.removeIf(d -> d.getStateId().longValue()!=closedStatusForDisbursement.getId().longValue());
+                    for(DisbursementAssignment disbursementAssignment: disbursementAssignments){
+                        disbursementAssignment.setOwner(assignmentsVO.getAssignments());
+                        disbursementService.saveAssignmentForDisbursement(disbursementAssignment);
+                    }
+
                 }
             }
 
@@ -2637,6 +2659,16 @@ public class GrantController {
                 }
             }
             grantService.saveAssignmentForGrant(assignment);
+            if(workflowStatusService.findById(assignment.getStateId()).getInternalStatus().equalsIgnoreCase("ACTIVE")){
+                WorkflowStatus closedStatus = workflowStatusService.findByWorkflow(workflowStatusService.findById(assignment.getStateId()).getWorkflow()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get();
+                GrantAssignments closedAssignmentEntry = grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getStateId().longValue()== closedStatus.getId().longValue()).findFirst().get();
+                if(closedAssignmentEntry!=null){
+                    closedAssignmentEntry.setAssignments(assignment.getAssignments());
+                    closedAssignmentEntry.setUpdatedBy(userId);
+                    closedAssignmentEntry.setAssignedOn(DateTime.now().toDate());
+                    grantService.saveAssignmentForGrant(closedAssignmentEntry);
+                }
+            }
         }
 
         if (currentAssignments.size() > 0) {
