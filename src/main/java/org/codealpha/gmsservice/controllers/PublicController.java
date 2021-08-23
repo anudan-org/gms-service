@@ -85,7 +85,7 @@ public class PublicController {
 
         Resource image = null;
         if(user.getUserProfile()==null){
-            image = resourceLoader.getResource("classpath:static/images/avatar.png");
+            image = resourceLoader.getResource("classpath:static/images/profile-avatar.png");
             servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
         }else{
             image = resourceLoader.getResource("file:" + user.getUserProfile());
