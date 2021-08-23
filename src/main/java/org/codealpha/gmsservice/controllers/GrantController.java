@@ -1305,7 +1305,7 @@ public class GrantController {
                     }*/
 
                     if(!r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")){
-                        r.setDisabledByAmendment(true);
+                        r.setDisabledByAmendment(false);
                         r.setGrant(finalGrant); //Switch over to new grant happening here
                         reportService.saveReport(r);
                     }
@@ -1320,7 +1320,7 @@ public class GrantController {
                 existingDisbursements.stream().forEach(r -> {
                     if(!r.getStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
                         r.setGrant(finalGrant); //Switch over to new grant happening here
-                        r.setDisabledByAmendment(true);
+                        r.setDisabledByAmendment(false);
                         disbursementService.saveDisbursement(r);
                     }
                 });
