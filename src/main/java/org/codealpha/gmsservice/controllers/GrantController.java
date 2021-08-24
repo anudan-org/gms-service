@@ -1270,10 +1270,10 @@ public class GrantController {
 
 
             grant = grantService.saveGrant(grant);
-
+            final Grant finalGrant = grant;
             WorkflowStatus statusClosed = workflowStatusService
                     .getTenantWorkflowStatuses("GRANT", grant.getGrantorOrganization().getId()).stream()
-                    .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get();
+                    .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED") && ws.getWorkflow().getId().longValue()==finalGrant.getGrantStatus().getWorkflow().getId().longValue()).findFirst().get();
             WorkflowStatus statusActive = workflowStatusService
                     .getTenantWorkflowStatuses("GRANT", grant.getGrantorOrganization().getId()).stream()
                     .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE") && ws.getId().longValue()==toStateId).findFirst().get();
@@ -1290,7 +1290,7 @@ public class GrantController {
                             + grant.getReferenceNo());
             moveToNewState(gn, activeStateOwnerId, origGrant.getId(), origGrant.getGrantStatus().getId(),
                     statusClosed.getId(), tenantCode);
-            Grant finalGrant = grant;
+            //Grant finalGrant = grant;
             List<Report> existingReports = reportService
                     .getReportsForGrant(grantService.getById(grant.getOrigGrantId()));
             if (existingReports != null && existingReports.size() > 0) {
@@ -1545,28 +1545,32 @@ public class GrantController {
 
             WorkflowStatus activeStatus = workflowStatusService
                     .getTenantWorkflowStatuses("GRANT", grant.getGrantorOrganization().getId()).stream()
-                    .filter(st -> st.getInternalStatus().equalsIgnoreCase("ACTIVE")).findFirst().get();
+                    .filter(st -> st.getInternalStatus().equalsIgnoreCase("ACTIVE") && st.getWorkflow().getId().longValue()==finalGrant.getGrantStatus().getWorkflow().getId().longValue()).findFirst().get();
             GrantAssignments activeStateAssignment = grantService.getGrantWorkflowAssignments(grant).stream()
                     .filter(ass -> ass.getStateId().longValue() == activeStatus.getId().longValue()).findFirst().get();
 
             User activeStateOwner = userService.getUserById(activeStateAssignment.getAssignments());
             usersToNotify.removeIf(u -> u.getId().longValue() == activeStateOwner.getId().longValue() || u.isDeleted());
 
-            commonEmailSevice
-                    .sendMail(!activeStateOwner.isDeleted() ? new String[] { activeStateOwner.getEmailId() } : null,
-                            usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
-                                    .toArray(new String[usersToNotify.size()]),
-                            emailNotificationContent[0], emailNotificationContent[1],
-                            new String[] { appConfigService
-                                    .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                                            AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                    .getConfigValue().replaceAll("%RELEASE_VERSION%",
-                                            releaseService.getCurrentRelease().getVersion()) });
+            try {
+                commonEmailSevice
+                        .sendMail(!activeStateOwner.isDeleted() ? new String[]{activeStateOwner.getEmailId()} : null,
+                                usersToNotify.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                                        .toArray(new String[usersToNotify.size()]),
+                                emailNotificationContent[0], emailNotificationContent[1],
+                                new String[]{appConfigService
+                                        .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
+                                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                        .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                        releaseService.getCurrentRelease().getVersion())});
 
-            usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
-                    finalGrant.getId(), "GRANT"));
-            notificationsService.saveNotification(notificationContent, activeStateOwner.getId(), finalGrant.getId(),
-                    "GRANT");
+                usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
+                        finalGrant.getId(), "GRANT"));
+                notificationsService.saveNotification(notificationContent, activeStateOwner.getId(), finalGrant.getId(),
+                        "GRANT");
+            }catch (Exception e){
+                logger.error(e.getMessage(),e);
+            }
 
         }
 
