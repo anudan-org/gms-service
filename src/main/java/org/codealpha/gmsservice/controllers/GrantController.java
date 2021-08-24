@@ -1276,7 +1276,7 @@ public class GrantController {
                     .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst().get();
             WorkflowStatus statusActive = workflowStatusService
                     .getTenantWorkflowStatuses("GRANT", grant.getGrantorOrganization().getId()).stream()
-                    .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE")).findFirst().get();
+                    .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE") && ws.getId().longValue()==toStateId).findFirst().get();
 
             Long activeStateOwnerId = grantService.getGrantWorkflowAssignments(origGrant).stream()
                     .filter(wa -> wa.getStateId().longValue() == statusActive.getId().longValue()).findFirst().get()
