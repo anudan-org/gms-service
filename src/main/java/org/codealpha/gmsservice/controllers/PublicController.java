@@ -89,11 +89,16 @@ public class PublicController {
             servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
         }else{
             image = resourceLoader.getResource("file:" + user.getUserProfile());
+            if(image.exists()){
             String extension = user.getUserProfile().substring(user.getUserProfile().lastIndexOf(".")+1);
             if(user.getUserProfile()!=null && extension.equalsIgnoreCase("png")) {
                 servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
             }else if(user.getUserProfile()!=null && (extension.equalsIgnoreCase("jpg") || extension.equalsIgnoreCase("jpeg"))) {
                 servletResponse.setContentType(MediaType.IMAGE_JPEG_VALUE);
+            }}
+            else{
+                image = resourceLoader.getResource("classpath:static/images/profile-avatar.png");
+                servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
             }
         }
 
