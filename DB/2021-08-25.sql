@@ -18,3 +18,56 @@ update workflow_status_transitions set action='Submit to Finance' where id=141;
 update workflow_status_transitions set action='Submit to CEO/ED' where id=142;
 update workflow_status_transitions set action='Approve Request' where id=143;
 update workflow_status_transitions set action='Submit Disbursement' where id=144;
+
+CREATE OR REPLACE FUNCTION get_owner_disbursement(
+	disbid bigint)
+    RETURNS bigint
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE
+AS $BODY$
+declare _owner bigint;
+begin
+select a.owner into _owner from disbursement_assignments a
+inner join disbursements b on b.id=a.disbursement_id where b.status_id=a.state_id
+and b.id=disbId;
+return _owner;
+end;
+$BODY$;
+
+
+CREATE OR REPLACE FUNCTION get_owner_grant(
+	grantid bigint)
+    RETURNS bigint
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE
+AS $BODY$
+declare _owner bigint;
+begin
+select a.assignments into _owner from grant_assignments a
+inner join grants b on b.id=a.grant_id where b.grant_status_id=a.state_id
+and b.id=grantId;
+return _owner;
+end;
+$BODY$;
+
+
+CREATE OR REPLACE FUNCTION get_owner_report(
+	reportid bigint)
+    RETURNS bigint
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE
+AS $BODY$
+declare _owner bigint;
+begin
+select a.assignment into _owner from report_assignments a
+inner join reports b on b.id=a.report_id where b.status_id=a.state_id
+and b.id=reportId;
+return _owner;
+end;
+$BODY$;

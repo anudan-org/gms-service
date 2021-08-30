@@ -3473,5 +3473,27 @@ public class GrantController {
 
     }
 
+    @GetMapping(value = "/compare/{currentGrantId}/{origGrantId}")
+    public List<PlainGrant> getGrantsToCompare(@RequestHeader("X-TENANT-CODE")String tenantCode,
+                                              @PathVariable("userId")Long userId,
+                                              @PathVariable("currentGrantId")Long currentGrantId,
+                                              @PathVariable("origGrantId")Long origGrantId){
+
+        List<PlainGrant> grantsToReturn = new ArrayList<>();
+
+        Grant currentGrant = grantService.getById(currentGrantId);
+        currentGrant = grantService._grantToReturn(userId,currentGrant);
+
+        Grant origGrant = grantService.getById(origGrantId);
+        origGrant = grantService._grantToReturn(userId,origGrant);
+
+        try {
+            grantsToReturn.add(grantService.grantToPlain(currentGrant));
+            grantsToReturn.add(grantService.grantToPlain(origGrant));
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+        }
+        return grantsToReturn;
+    }
 
 }
