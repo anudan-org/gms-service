@@ -1086,7 +1086,7 @@ public class GrantService {
         plainGrant.setStartDate(start!=null?sd.format(start):"");
         plainGrant.setImplementingOrganizationName(grant.getOrganization()!=null?grant.getOrganization().getName():"");
         plainGrant.setImplementingOrganizationRepresentative(grant.getRepresentative()!=null?grant.getRepresentative():"");
-
+        plainGrant.setReferenceNo(grant.getReferenceNo());
         if(grant.getGrantDetails().getSections()!=null && grant.getGrantDetails().getSections().size()>0){
             List<PlainSection> plainSections = new ArrayList<>();
 

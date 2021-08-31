@@ -10,6 +10,7 @@ public class PlainGrant {
     private String implementingOrganizationName;
     private String implementingOrganizationRepresentative;
     private Double amount;
+    private String referenceNo;
     private List<PlainSection> sections;
 
     public String getName() {
@@ -66,5 +67,13 @@ public class PlainGrant {
 
     public void setSections(List<PlainSection> sections) {
         this.sections = sections;
+    }
+
+    public String getReferenceNo() {
+        return referenceNo;
+    }
+
+    public void setReferenceNo(String referenceNo) {
+        this.referenceNo = referenceNo;
     }
 }
