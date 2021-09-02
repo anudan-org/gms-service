@@ -12,8 +12,8 @@ plugins {
 
 sonarqube {
   properties {
-    property "sonar.projectKey", "jayanth9652_gms-service"
-    property "sonar.organization", "gma-service"
+    property "sonar.projectKey", "anudan-org_gms-service"
+    property "sonar.organization", "anudan"
     property "sonar.sources", "src/main/java"
     property "sonar.host.url", "https://sonarcloud.io"
     property "sonar.projectVersion", "1.0"
