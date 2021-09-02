@@ -1330,4 +1330,59 @@ public class ReportService {
         }
         return closedDisbursements;
     }
+
+    public PlainReport reportToPlain(Report report) throws IOException {
+        SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy");
+        PlainReport plainReport = new PlainReport();
+        plainReport.setName(report.getName());
+        Date end = report.getEndDate();
+        plainReport.setEndDate(end!=null?sd.format(end):"");
+        Date start = report.getStartDate();
+        plainReport.setStartDate(start!=null?sd.format(start):"");
+        Date due = report.getDueDate();
+        plainReport.setDueDate(due!=null?sd.format(due):"");
+
+        if(report.getReportDetails().getSections()!=null && report.getReportDetails().getSections().size()>0){
+            List<PlainSection> plainSections = new ArrayList<>();
+
+            for(SectionVO section : report.getReportDetails().getSections()){
+                List<PlainAttribute> plainAttributes = new ArrayList<>();
+                if(section.getAttributes()!=null && section.getAttributes().size()>0) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    for (SectionAttributesVO attribute : section.getAttributes()) {
+                        PlainAttribute plainAttribute = new PlainAttribute();
+                        plainAttribute.setId(attribute.getId());
+                        plainAttribute.setName(attribute.getFieldName());
+                        plainAttribute.setType(attribute.getFieldType());
+                        plainAttribute.setValue(attribute.getFieldValue());
+                        plainAttribute.setOrder(attribute.getAttributeOrder());
+                        switch (attribute.getFieldType()) {
+
+                            case "kpi":
+                                plainAttribute.setFrequency(attribute.getFrequency());
+                                if(attribute.getTarget()!=null) {
+                                    plainAttribute.setTarget(Long.valueOf(attribute.getTarget()));
+                                }
+                                break;
+                            case "disbursement":
+                            case "table":
+
+                                plainAttribute.setTableValue(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<TableData>>() {}));
+                                break;
+                            case "document":
+                                plainAttribute.setAttachments(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<GrantStringAttributeAttachments>>() {}));
+                                break;
+                        }
+
+                        plainAttributes.add(plainAttribute);
+                    }
+
+                }
+                plainSections.add(new PlainSection(section.getId(),section.getName(),section.getOrder(), plainAttributes));
+            }
+            plainReport.setSections(plainSections);
+        }
+
+        return plainReport;
+    }
 }

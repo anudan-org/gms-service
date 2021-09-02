@@ -1,9 +1,10 @@
 package org.codealpha.gmsservice.services;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.models.GrantTagVO;
-import org.codealpha.gmsservice.models.GrantVO;
+import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -14,12 +15,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -449,5 +446,15 @@ public class DisbursementService {
 
     public Long getUpcomingDisbursementsDisbursementAmount(Long userId) {
         return disbursementRepository.getUpcomingDisbursementsDisbursementAmount(userId);
+    }
+
+    public PlainDisbursement disbursementToPlain(Disbursement currentDisbursement) {
+        SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy");
+        PlainDisbursement plainDisbursement = new PlainDisbursement();
+        plainDisbursement.setRequestedAmount(currentDisbursement.getRequestedAmount());
+        plainDisbursement.setCommentary(currentDisbursement.getReason());
+        plainDisbursement.setGrantName(currentDisbursement.getGrant().getName());
+
+        return plainDisbursement;
     }
 }

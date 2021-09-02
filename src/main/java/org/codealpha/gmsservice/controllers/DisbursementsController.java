@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
@@ -376,10 +377,21 @@ public class DisbursementsController {
         }
 
         @GetMapping("/{disbursementId}/changeHistory")
-        public DisbursementSnapshot getReportHistory(@PathVariable("disbursementId") Long disbursementId,
+        public PlainDisbursement getReportHistory(@PathVariable("disbursementId") Long disbursementId,
                         @PathVariable("userId") Long userId) {
 
-                return disbursementSnapshotService.getMostRecentSnapshotByDisbursementId(disbursementId);
+                Disbursement disbursement = disbursementService.getDisbursementById(disbursementId);
+                DisbursementSnapshot snapshot = disbursementSnapshotService.getMostRecentSnapshotByDisbursementId(disbursementId);
+
+                if(snapshot==null){
+                        return null;
+                }
+
+                disbursement.setRequestedAmount(snapshot.getRequestedAmount());
+                disbursement.setReason(snapshot.getReason());
+
+                PlainDisbursement disbursementToReturn = disbursementService.disbursementToPlain(disbursement);
+                return disbursementToReturn;
         }
 
         @PostMapping("/{disbursementId}/flow/{fromState}/{toState}")
@@ -876,5 +888,40 @@ public class DisbursementsController {
                         logger.error(ex.getMessage(), ex);
                 }
                 return null;
+        }
+
+        @GetMapping(value = "/compare/{currentDisbursementId}/{origDisbursementId}")
+        public List<PlainDisbursement> getReportsToCompare(@RequestHeader("X-TENANT-CODE")String tenantCode,
+                                                     @PathVariable("userId")Long userId,
+                                                     @PathVariable("currentDisbursementId")Long currentDisbursementId,
+                                                     @PathVariable("origDisbursementId")Long origDisbursementId){
+
+                List<PlainDisbursement> disbursementsToReturn = new ArrayList<>();
+
+                Disbursement currentDisbursement = disbursementService.getDisbursementById(currentDisbursementId);
+                currentDisbursement = disbursementService.disbursementToReturn(currentDisbursement,userId);
+
+                Disbursement origDisbursement = disbursementService.getDisbursementById(origDisbursementId);
+                origDisbursement = disbursementService.disbursementToReturn(origDisbursement,userId);
+
+                try {
+                        disbursementsToReturn.add(disbursementService.disbursementToPlain(currentDisbursement));
+                        disbursementsToReturn.add(disbursementService.disbursementToPlain(origDisbursement));
+                }catch (Exception e){
+                        logger.error(e.getMessage(),e);
+                }
+                return disbursementsToReturn;
+        }
+
+        @GetMapping(value = "/compare/{currentDisbursementId}")
+        public PlainDisbursement getPlainGrantForCompare(@RequestHeader("X-TENANT-CODE")String tenantCode,
+                                                   @PathVariable("userId")Long userId,
+                                                   @PathVariable("currentDisbursementId")Long currentDisbursementId) throws IOException {
+                Disbursement currentDisbursement = disbursementService.getDisbursementById(currentDisbursementId);
+                currentDisbursement = disbursementService.disbursementToReturn(currentDisbursement,userId);
+
+
+
+                return disbursementService.disbursementToPlain(currentDisbursement);
         }
 }
