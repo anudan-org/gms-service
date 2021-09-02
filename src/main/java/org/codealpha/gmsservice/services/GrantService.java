@@ -1120,7 +1120,7 @@ public class GrantService {
                     }
 
                 }
-                plainSections.add(new PlainSection(section.getName(),section.getOrder(), plainAttributes));
+                plainSections.add(new PlainSection(section.getId(),section.getName(),section.getOrder(), plainAttributes));
             }
             plainGrant.setSections(plainSections);
         }

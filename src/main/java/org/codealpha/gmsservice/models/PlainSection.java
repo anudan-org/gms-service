@@ -4,14 +4,16 @@ import java.util.List;
 
 public class PlainSection {
 
+    private Long id;
     private String name;
     private int order;
     private List<PlainAttribute> attributes;
 
-    public PlainSection(String name, int order, List<PlainAttribute> attributes) {
+    public PlainSection(Long id,String name, int order, List<PlainAttribute> attributes) {
         this.name = name;
         this.attributes = attributes;
         this.order=order;
+        this.id=id;
     }
 
     public String getName() {
@@ -36,5 +38,13 @@ public class PlainSection {
 
     public void setOrder(int order) {
         this.order = order;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }

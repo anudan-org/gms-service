@@ -5,6 +5,7 @@ import org.codealpha.gmsservice.entities.GrantStringAttributeAttachments;
 import java.util.List;
 
 public class PlainAttribute {
+    private Long id;
     private String name;
     private int order;
     private String type;
@@ -76,5 +77,13 @@ public class PlainAttribute {
 
     public void setOrder(int order) {
         this.order = order;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }

@@ -3129,10 +3129,24 @@ public class GrantController {
     }
 
     @GetMapping("{grantId}/changeHistory")
-    public GrantSnapshot getGrantHistory(@PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId) {
+    public PlainGrant getGrantHistory(@PathVariable("grantId") Long grantId, @PathVariable("userId") Long userId) throws IOException {
         Grant grant = grantService.getById(grantId);
+        GrantSnapshot snapshot = grantSnapshotService.getMostRecentSnapshotByGrantId(grantId);
+        if(snapshot==null){
+            return null;
+        }
+        grant.setName(snapshot.getName());
+        grant.setOrganization(organizationService.findByName(snapshot.getGrantee()));
+        grant.setAmount(snapshot.getAmount());
+        grant.setStartDate(snapshot.getStartDate());
+        grant.setEndDate(snapshot.getEndDate());
+        grant.setRepresentative(snapshot.getRepresentative());
+        grant.setGrantDetails(new GrantVO().build(grant,grantService.getGrantSections(grant), workflowPermissionService,
+                userService.getUserById(userId), appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),userService).getGrantDetails());
 
-        return grantSnapshotService.getMostRecentSnapshotByGrantId(grantId);
+        PlainGrant grantToReturn = grantService.grantToPlain(grant);
+        return grantToReturn;
     }
 
     @GetMapping("/active")
@@ -3494,6 +3508,18 @@ public class GrantController {
             logger.error(e.getMessage(),e);
         }
         return grantsToReturn;
+    }
+
+    @GetMapping(value = "/compare/{currentGrantId}")
+    public PlainGrant getPlainGrantForCompare(@RequestHeader("X-TENANT-CODE")String tenantCode,
+                                               @PathVariable("userId")Long userId,
+                                               @PathVariable("currentGrantId")Long currentGrantId) throws IOException {
+        Grant currentGrant = grantService.getById(currentGrantId);
+        currentGrant = grantService._grantToReturn(userId,currentGrant);
+
+
+
+        return grantService.grantToPlain(currentGrant);
     }
 
 }
