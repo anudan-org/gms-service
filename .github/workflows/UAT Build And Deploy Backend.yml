@@ -2,8 +2,8 @@ name: UAT Build And Deploy Backend
 
 on:
   workflow_dispatch:
-  #push:
-   #branches: [ master ]
+  push:
+   branches: [ master ]
   #pull_request:
     #branches: [ master ]
 
@@ -20,7 +20,7 @@ jobs:
       - name: Checking out my release repo
         uses: actions/checkout@master
         with:
-          repository: jayanth9652/gms-service
+          repository: anudan-org/gms-service
           token: ${{ secrets.MY_PAT }}
           ref: master
       - run: pwd
@@ -44,7 +44,7 @@ jobs:
     - name: checking out gms-service repo
       uses: actions/checkout@master
       with:
-          repository: jayanth9652/gms-service
+          repository: anudan-org/gms-service
           token: ${{ secrets.MY_PAT }}
           ref: master
     - name: Set up JDK 1.8
@@ -97,7 +97,7 @@ jobs:
       - name: Checking out my anudan-config repo
         uses: actions/checkout@master
         with:
-          repository: jayanth9652/anudan-config   
+          repository: anudan-org/anudan-config   
           token: ${{ secrets.MY_PAT }}
       - run: pwd
       - run: ls -lrt     
@@ -117,7 +117,7 @@ jobs:
         - name: UAT-deployment 
           uses: convictional/trigger-workflow-and-wait@v1.3.0
           with:
-            owner: jayanth9652
+            owner: anudan-org
             repo: anudan-app
             github_token: ${{ secrets.MY_PAT }}
             workflow_file_name: UAT-Package.yml
@@ -131,7 +131,7 @@ jobs:
       steps:
         - uses: actions/checkout@v2
           with:
-            repository: jayanth9652/release   
+            repository: anudan-org/release   
             token: ${{ secrets.MY_PAT }}
         - name: creating UAT_release.json artifact 
           uses: actions/upload-artifact@v2

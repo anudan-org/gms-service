@@ -2,8 +2,8 @@ name: Hotfix Build And Deploy Backend
 
 on:
   workflow_dispatch:
-  #push:
-   #branches: [ hotfix/production_bug_fixes ] 
+  push:
+   branches: [ hotfix/production_bug_fixes ] 
   #pull_request:
     #branches: [ hotfix/production_bug_fixes ]
 
@@ -19,7 +19,7 @@ jobs:
       - name: Checking out gms-service repo
         uses: actions/checkout@v2
         with:
-          repository: jayanth9652/gms-service
+          repository: anudan-org/gms-service
           token: ${{ secrets.MY_PAT }}
           ref: hotfix/production_bug_fixes
       - run: pwd
@@ -43,7 +43,7 @@ jobs:
     - name: checking out gms-service repo
       uses: actions/checkout@v2
       with:
-          repository: jayanth9652/gms-service
+          repository: anudan-org/gms-service
           token: ${{ secrets.MY_PAT }}
     - name: Set up JDK 1.8
       uses: actions/setup-java@v1
@@ -94,7 +94,7 @@ jobs:
       - name: Checking out my anudan-config repo
         uses: actions/checkout@master
         with:
-          repository: jayanth9652/anudan-config   
+          repository: anudan-org/anudan-config   
           token: ${{ secrets.MY_PAT }}
       - run: pwd
       - run: ls -lrt     
@@ -114,7 +114,7 @@ jobs:
         - name: Hotfix-deployment 
           uses: convictional/trigger-workflow-and-wait@v1.3.0
           with:
-            owner: jayanth9652
+            owner: anudan-org
             repo: anudan-app
             github_token: ${{ secrets.MY_PAT }}
             workflow_file_name: Hotfix-package.yml
@@ -128,7 +128,7 @@ jobs:
       steps:
         - uses: actions/checkout@v2
           with:
-            repository: jayanth9652/release   
+            repository: anudan-org/release   
             token: ${{ secrets.MY_PAT }}
         - name: creating Hotfix_release.json artifact 
           uses: actions/upload-artifact@v2
