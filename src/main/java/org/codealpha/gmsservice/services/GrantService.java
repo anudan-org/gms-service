@@ -1089,10 +1089,11 @@ public class GrantService {
         plainGrant.setReferenceNo(grant.getReferenceNo());
         if(grant.getGrantDetails().getSections()!=null && grant.getGrantDetails().getSections().size()>0){
             List<PlainSection> plainSections = new ArrayList<>();
-
+            grant.getGrantDetails().getSections().sort((a,b) ->Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
             for(SectionVO section : grant.getGrantDetails().getSections()){
                 List<PlainAttribute> plainAttributes = new ArrayList<>();
                 if(section.getAttributes()!=null && section.getAttributes().size()>0) {
+                    section.getAttributes().sort((a,b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
                     ObjectMapper mapper = new ObjectMapper();
                     for (SectionAttributesVO attribute : section.getAttributes()) {
                         PlainAttribute plainAttribute = new PlainAttribute();
