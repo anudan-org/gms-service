@@ -3141,9 +3141,8 @@ public class GrantController {
         grant.setStartDate(snapshot.getStartDate());
         grant.setEndDate(snapshot.getEndDate());
         grant.setRepresentative(snapshot.getRepresentative());
-        grant.setGrantDetails(new GrantVO().build(grant,grantService.getGrantSections(grant), workflowPermissionService,
-                userService.getUserById(userId), appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),userService).getGrantDetails());
+        GrantDetailVO details = new ObjectMapper().readValue(snapshot.getStringAttributes(),GrantDetailVO.class);
+        grant.setGrantDetails(details);
 
         PlainGrant grantToReturn = grantService.grantToPlain(grant);
         return grantToReturn;
