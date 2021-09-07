@@ -1,0 +1,1 @@
+alter table grants add column amendment_detail_snapshot text;

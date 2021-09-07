@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.services.GrantService;
 import org.codealpha.gmsservice.services.UserService;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.slf4j.Logger;
@@ -76,10 +77,19 @@ public class GrantVO {
   private int amendmentNo;
   private Date minEndEndate;
   private Boolean internal;
+  private String amendmentDetailsSnapshot;
   private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
   public Long getId() {
     return id;
+  }
+
+  public String getAmendmentDetailsSnapshot() {
+    return amendmentDetailsSnapshot;
+  }
+
+  public void setAmendmentDetailsSnapshot(String amendmentDetailsSnapshot) {
+    this.amendmentDetailsSnapshot = amendmentDetailsSnapshot;
   }
 
   public void setId(Long id) {
@@ -345,8 +355,8 @@ public class GrantVO {
   }
 
   public GrantVO build(Grant grant, List<GrantSpecificSection> sections,
-      WorkflowPermissionService workflowPermissionService, User user, AppConfig submissionWindow,
-      UserService userService) {
+                       WorkflowPermissionService workflowPermissionService, User user, AppConfig submissionWindow,
+                       UserService userService, GrantService grantService) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
     GrantVO vo = new GrantVO();
     Submission submissionVOList = null;
@@ -369,7 +379,14 @@ public class GrantVO {
             vo.setNoteAddedByUser(
                 userService.getUserByEmailAndOrg(grant.getNoteAddedBy(), grant.getGrantorOrganization()));
 
-          } else {
+          } else if (voPd.getName().equalsIgnoreCase("amendGrantId")){
+            if(grant.getAmendGrantId()!=null) {
+              Grant amendGrant = grantService.getById(grant.getAmendGrantId());
+              if(amendGrant==null){
+                grant.setAmendGrantId(null);
+              }
+            }
+        } else {
             voPd.getWriteMethod().invoke(vo, value);
           }
         } catch (IllegalAccessException e) {

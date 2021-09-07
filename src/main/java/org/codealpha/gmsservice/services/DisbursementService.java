@@ -145,7 +145,7 @@ public class DisbursementService {
                 userService.getUserById(userId),
                 appConfigService.getAppConfigForGranterOrg(disbursement.getGrant().getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService);
+                userService,grantService);
 
         disbursement.getGrant().setGrantDetails(vo.getGrantDetails());
         if (disbursement.getNoteAddedBy() != null) {
