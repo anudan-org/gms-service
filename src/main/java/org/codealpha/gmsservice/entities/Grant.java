@@ -217,6 +217,10 @@ public class Grant {
   @Column
   private Long grantTypeId;
 
+  @JsonIgnore
+  @Column
+  private String amendmentDetailsSnapshot;
+
 
   public Long getId() {
     return id;
@@ -632,5 +636,13 @@ public class Grant {
 
   public void setTags(List<GrantTagVO> tags) {
     this.tags = tags;
+  }
+
+  public String getAmendmentDetailsSnapshot() {
+    return amendmentDetailsSnapshot;
+  }
+
+  public void setAmendmentDetailsSnapshot(String amendmentDetailsSnapshot) {
+    this.amendmentDetailsSnapshot = amendmentDetailsSnapshot;
   }
 }

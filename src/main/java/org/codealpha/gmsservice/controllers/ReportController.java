@@ -388,7 +388,7 @@ public class ReportController {
                 workflowPermissionService, userService.getUserById(userId),
                 appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService);
+                userService,grantService);
 
         ObjectMapper mapper = new ObjectMapper();
         report.getGrant().setGrantDetails(grantVO.getGrantDetails());
@@ -2217,7 +2217,7 @@ public class ReportController {
                 workflowPermissionService, userService.getUserById(userId),
                 appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService);
+                userService,grantService);
         grant.setGrantDetails(grantVO.getGrantDetails());
 
         List<Map<DatePeriod,PeriodAttribWithLabel>> periodsWithAttributes = new ArrayList<>();

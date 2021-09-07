@@ -695,7 +695,7 @@ public class GrantService {
         grantVO = grantVO.build(grant, getGrantSections(grant), workflowPermissionService, user,
                 appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService);
+                userService,this);
         grant.setGrantDetails(grantVO.getGrantDetails());
         grant.setNoteAddedBy(grantVO.getNoteAddedBy());
         grant.setNoteAddedByUser(grantVO.getNoteAddedByUser());
@@ -1097,6 +1097,7 @@ public class GrantService {
                     ObjectMapper mapper = new ObjectMapper();
                     for (SectionAttributesVO attribute : section.getAttributes()) {
                         PlainAttribute plainAttribute = new PlainAttribute();
+                        plainAttribute.setId(attribute.getId());
                         plainAttribute.setName(attribute.getFieldName());
                         plainAttribute.setType(attribute.getFieldType());
                         plainAttribute.setValue(attribute.getFieldValue());

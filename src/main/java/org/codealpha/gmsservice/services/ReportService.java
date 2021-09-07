@@ -1061,7 +1061,7 @@ public class ReportService {
                 workflowPermissionService, userService.getUserById(userId),
                 appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService);
+                userService,grantService);
 
         ObjectMapper mapper = new ObjectMapper();
         report.getGrant().setGrantDetails(grantVO.getGrantDetails());
