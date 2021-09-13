@@ -1417,6 +1417,7 @@ public class ReportController {
         report.setName(snapshot.getName());
         report.setStartDate(snapshot.getStartDate());
         report.setEndDate(snapshot.getEndDate());
+        report.setStatus(workflowStatusService.findById(snapshot.getStatusId()));
         report.setDueDate(snapshot.getDueDate());
         ReportDetailVO details = new ObjectMapper().readValue(snapshot.getStringAttributes(),ReportDetailVO.class);
         report.setReportDetails(details);

@@ -1342,6 +1342,15 @@ public class ReportService {
         Date due = report.getDueDate();
         plainReport.setDueDate(due!=null?sd.format(due):"");
 
+        plainReport.setCurrentInternalStatus(report.getStatus().getInternalStatus());
+        plainReport.setCurrentStatus(report.getStatus().getName());
+
+        Optional<ReportAssignment> assignment =  getAssignmentsForReport(report).stream().filter(ass -> ass.getStateId().longValue()==report.getStatus().getId()).findFirst();
+        if(assignment.isPresent()){
+            User owner = userService.getUserById(assignment.get().getAssignment());
+            plainReport.setCurrentOwner(owner.getFirstName()+" "+owner.getLastName());
+        }
+
         if(report.getReportDetails().getSections()!=null && report.getReportDetails().getSections().size()>0){
             List<PlainSection> plainSections = new ArrayList<>();
 
