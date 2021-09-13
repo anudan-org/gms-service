@@ -8,6 +8,10 @@ public class PlainReport {
     private String endDate;
     private String dueDate;
     private List<PlainSection> sections;
+    private String currentOwner;
+    private String currentStatus;
+    private String currentInternalStatus;
+    private boolean external;
 
     public String getName() {
         return name;
@@ -47,5 +51,37 @@ public class PlainReport {
 
     public void setSections(List<PlainSection> sections) {
         this.sections = sections;
+    }
+
+    public String getCurrentOwner() {
+        return currentOwner;
+    }
+
+    public void setCurrentOwner(String currentOwner) {
+        this.currentOwner = currentOwner;
+    }
+
+    public String getCurrentStatus() {
+        return currentStatus;
+    }
+
+    public void setCurrentStatus(String currentStatus) {
+        this.currentStatus = currentStatus;
+    }
+
+    public String getCurrentInternalStatus() {
+        return currentInternalStatus;
+    }
+
+    public void setCurrentInternalStatus(String currentInternalStatus) {
+        this.currentInternalStatus = currentInternalStatus;
+    }
+
+    public boolean isExternal() {
+        return external;
+    }
+
+    public void setExternal(boolean external) {
+        this.external = external;
     }
 }

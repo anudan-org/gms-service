@@ -455,6 +455,14 @@ public class DisbursementService {
         plainDisbursement.setCommentary(currentDisbursement.getReason());
         plainDisbursement.setGrantName(currentDisbursement.getGrant().getName());
 
+        plainDisbursement.setCurrentInternalStatus(currentDisbursement.getStatus().getInternalStatus());
+        plainDisbursement.setCurrentStatus(currentDisbursement.getStatus().getName());
+        Optional<DisbursementAssignment> assignment = getDisbursementAssignments(currentDisbursement).stream().filter(ass -> ass.getStateId().longValue()==currentDisbursement.getStatus().getId()).findFirst();
+        if(assignment.isPresent()){
+            User owner = userService.getUserById(assignment.get().getOwner());
+            plainDisbursement.setCurrentOwner(owner.getFirstName()+" "+owner.getLastName());
+        }
+
         if(currentDisbursement.getActualDisbursements()!=null){
             plainDisbursement.setActualDisbursement(currentDisbursement.getActualDisbursements());
         }
