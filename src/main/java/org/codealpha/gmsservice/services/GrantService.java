@@ -1087,6 +1087,13 @@ public class GrantService {
         plainGrant.setImplementingOrganizationName(grant.getOrganization()!=null?grant.getOrganization().getName():"");
         plainGrant.setImplementingOrganizationRepresentative(grant.getRepresentative()!=null?grant.getRepresentative():"");
         plainGrant.setReferenceNo(grant.getReferenceNo());
+        plainGrant.setCurrentInternalStatus(grant.getGrantStatus().getInternalStatus());
+        plainGrant.setCurrentStatus(grant.getGrantStatus().getName());
+        Optional<GrantAssignments> assignment =  grant.getWorkflowAssignment().stream().filter(ass -> ass.getStateId().longValue()==grant.getGrantStatus().getId()).findFirst();
+        if(assignment.isPresent()){
+            User owner = userService.getUserById(assignment.get().getAssignments());
+            plainGrant.setCurrentOwner(owner.getFirstName()+" "+owner.getLastName());
+        }
         if(grant.getGrantDetails().getSections()!=null && grant.getGrantDetails().getSections().size()>0){
             List<PlainSection> plainSections = new ArrayList<>();
             grant.getGrantDetails().getSections().sort((a,b) ->Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));

@@ -574,6 +574,66 @@ public class GrantController {
             e.printStackTrace();
         }
 
+        List<WorkflowStatus> wfStatuses = workflowStatusService.findByWorkflow(existingGrant.getGrantStatus().getWorkflow());
+        wfStatuses.removeIf(st -> st.getId().longValue()!=existingGrant.getGrantStatus().getId().longValue());
+        WorkflowStatus activeStatus = wfStatuses.get(0);
+
+        User prevOwner = null;
+        Optional<GrantAssignments> staeOwnerPrevTemp = grantService.getGrantCurrentAssignments(existingGrant).stream().filter(g -> g.getStateId().longValue()==activeStatus.getId().longValue()).findFirst();
+        if(staeOwnerPrevTemp.isPresent()){
+            prevOwner= userService.getUserById(staeOwnerPrevTemp.get().getAssignments());
+        }
+        User currentOwner = userService.getUserById(userId);
+        List<User> tenantUsers = userService.getAllTenantUsers(organizationService.findOrganizationByTenantCode(tenantCode));
+        List<User> admins = tenantUsers.stream().filter(u -> {
+            Boolean isAdmin = u.getUserRoles().stream().filter(r -> r.getRole().getName().equalsIgnoreCase("ADMIN")).findFirst().isPresent();
+            if (isAdmin) {
+                return true;
+            }
+            return false;
+        }).collect(Collectors.toList());
+
+        List<User> ccList = new ArrayList<>();
+        ccList.addAll(admins);
+        ccList.removeIf(u -> u.getId().longValue()==currentOwner.getId());
+        ccList.add(currentOwner);
+
+        User user = userService.getUserById(userId);
+        String emailNotificationContent[] = grantService.buildEmailNotificationContent(existingGrant, user,
+                user.getFirstName().concat(" ").concat(user.getLastName()), null,
+                new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                        AppConfiguration.AMENDMENT_INIT_MAIL_SUBJECT).getConfigValue(),
+                appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
+                        AppConfiguration.AMENDMENT_INIT_MAIL_MESSAGE).getConfigValue(),
+                null,
+                currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), null,
+                null,
+                null, "", "",
+                "",
+                "",
+                "", null, null, null, null);
+
+
+
+        commonEmailSevice
+                .sendMail(!prevOwner.isDeleted() ? new String[]{prevOwner.getEmailId()} : null,
+                        ccList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
+                                .toArray(new String[ccList.size()]),
+                        emailNotificationContent[0], emailNotificationContent[1],
+                        new String[]{appConfigService
+                                .getAppConfigForGranterOrg(existingGrant.getGrantorOrganization().getId(),
+                                        AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                .getConfigValue().replaceAll("%RELEASE_VERSION%",
+                                releaseService.getCurrentRelease().getVersion())});
+
+        final Grant finalGrant = existingGrant;
+        User finalPrevOwner = prevOwner;
+        ccList.removeIf(u -> u.getId().longValue()== finalPrevOwner.getId().longValue());
+        ccList.add(prevOwner);
+        ccList.stream().forEach(u -> notificationsService.saveNotification(emailNotificationContent, u.getId(),
+                finalGrant.getId(), "GRANT"));
+
         return grant;
 
     }
@@ -3120,6 +3180,7 @@ public class GrantController {
             return null;
         }
         grant.setName(snapshot.getName());
+        grant.setGrantStatus(workflowStatusService.findById(snapshot.getGrantStatusId()));
         grant.setOrganization(organizationService.findByName(snapshot.getGrantee()));
         grant.setAmount(snapshot.getAmount());
         grant.setStartDate(snapshot.getStartDate());
