@@ -455,6 +455,10 @@ public class DisbursementService {
         plainDisbursement.setCommentary(currentDisbursement.getReason());
         plainDisbursement.setGrantName(currentDisbursement.getGrant().getName());
 
+        if(currentDisbursement.getActualDisbursements()!=null){
+            plainDisbursement.setActualDisbursement(currentDisbursement.getActualDisbursements());
+        }
+
         return plainDisbursement;
     }
 }
