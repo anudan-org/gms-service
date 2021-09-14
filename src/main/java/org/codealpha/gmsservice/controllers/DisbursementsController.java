@@ -387,6 +387,8 @@ public class DisbursementsController {
                         return null;
                 }
 
+                disbursement.setStatus(workflowStatusService.findById(snapshot.getStatusId()));
+
                 disbursement.setRequestedAmount(snapshot.getRequestedAmount());
                 disbursement.setReason(snapshot.getReason());
 
