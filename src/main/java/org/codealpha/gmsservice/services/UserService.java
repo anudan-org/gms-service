@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.services;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.codealpha.gmsservice.entities.Organization;
@@ -38,7 +39,8 @@ public class UserService {
     }
 
     public User getUserById(Long userId) {
-        return userRepository.findById(userId).get();
+        Optional<User> user = userRepository.findById(userId);
+        return user.isPresent()?user.get():null;
     }
 
     public User getUserByEmailAndTenant(String email, String tenant) {
