@@ -40,7 +40,7 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.orm.jpa.EntityManagerFactoryInfo;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -53,6 +53,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import java.awt.*;
 import java.io.*;
 import java.net.URLEncoder;
@@ -78,6 +79,12 @@ public class GrantController {
 
     private static final Logger logger = LoggerFactory.getLogger(GrantController.class);
 
+    @Autowired
+    DataSource dataSource;
+    @Autowired
+    private GrantQuantitativeDataService quantitativeDataService;
+    @Autowired
+    GrantQualitativeDataService qualitativeDataService;
     @Autowired
     private WorkflowPermissionService workflowPermissionService;
     @Autowired
@@ -575,13 +582,13 @@ public class GrantController {
         }
 
         List<WorkflowStatus> wfStatuses = workflowStatusService.findByWorkflow(existingGrant.getGrantStatus().getWorkflow());
-        wfStatuses.removeIf(st -> st.getId().longValue()!=existingGrant.getGrantStatus().getId().longValue());
+        wfStatuses.removeIf(st -> st.getId().longValue() != existingGrant.getGrantStatus().getId().longValue());
         WorkflowStatus activeStatus = wfStatuses.get(0);
 
         User prevOwner = null;
-        Optional<GrantAssignments> staeOwnerPrevTemp = grantService.getGrantCurrentAssignments(existingGrant).stream().filter(g -> g.getStateId().longValue()==activeStatus.getId().longValue()).findFirst();
-        if(staeOwnerPrevTemp.isPresent()){
-            prevOwner= userService.getUserById(staeOwnerPrevTemp.get().getAssignments());
+        Optional<GrantAssignments> staeOwnerPrevTemp = grantService.getGrantCurrentAssignments(existingGrant).stream().filter(g -> g.getStateId().longValue() == activeStatus.getId().longValue()).findFirst();
+        if (staeOwnerPrevTemp.isPresent()) {
+            prevOwner = userService.getUserById(staeOwnerPrevTemp.get().getAssignments());
         }
         User currentOwner = userService.getUserById(userId);
         List<User> tenantUsers = userService.getAllTenantUsers(organizationService.findOrganizationByTenantCode(tenantCode));
@@ -595,7 +602,7 @@ public class GrantController {
 
         List<User> ccList = new ArrayList<>();
         ccList.addAll(admins);
-        ccList.removeIf(u -> u.getId().longValue()==currentOwner.getId());
+        ccList.removeIf(u -> u.getId().longValue() == currentOwner.getId());
         ccList.add(currentOwner);
 
         User user = userService.getUserById(userId);
@@ -615,7 +622,6 @@ public class GrantController {
                 "", null, null, null, null);
 
 
-
         commonEmailSevice
                 .sendMail(!prevOwner.isDeleted() ? new String[]{prevOwner.getEmailId()} : null,
                         ccList.stream().map(u -> u.getEmailId()).collect(Collectors.toList())
@@ -629,7 +635,7 @@ public class GrantController {
 
         final Grant finalGrant = existingGrant;
         User finalPrevOwner = prevOwner;
-        ccList.removeIf(u -> u.getId().longValue()== finalPrevOwner.getId().longValue());
+        ccList.removeIf(u -> u.getId().longValue() == finalPrevOwner.getId().longValue());
         ccList.add(prevOwner);
         ccList.stream().forEach(u -> notificationsService.saveNotification(emailNotificationContent, u.getId(),
                 finalGrant.getId(), "GRANT"));
@@ -3039,9 +3045,9 @@ public class GrantController {
 
         //org.hibernate.query.Query hQuery = ((Session) entityManager.getDelegate()).createSQLQuery("select b.name as organization_name,a.reference_no,a.name as grant_name,d.name as grant_type,a.start_date,a.end_date,a.amount, case when d.internal then b.name else (select name from organizations where id=a.organization_id) end as implementing_organization, a.representative as implementing_org_rep, case when orig_grant_id is not null then 'Yes' else 'No' end as is_amended from grants a inner join organizations b on b.id=a.grantor_org_id inner join workflow_statuses c on c.id=a.grant_status_id inner join grant_types d on d.id=a.grant_type_id where b.id=:tenantId and c.internal_status='ACTIVE'");
 
+        Connection conn = null;
         try {
-            EntityManagerFactoryInfo info = (EntityManagerFactoryInfo) entityManager.getEntityManagerFactory();
-            Connection conn = info.getDataSource().getConnection();
+            conn = DataSourceUtils.getConnection(dataSource);
 
             Long tenantId = organizationService.findOrganizationByTenantCode(tenantCode).getId();
             List<DataExportConfig> exportConfigs = exportConfigService.getDataExportConfigForTenantByCategory("ACTIVE_GRANTS_DETAILS", tenantId);
@@ -3060,13 +3066,24 @@ public class GrantController {
                     String grantsTagsQuery = "select string_agg(concat('\"',name,'\" as \"Tag - ',name,'\"'),',') from (select * from org_tags order by name) X where tenant=%tenantId% group by tenant";
                     grantsTagsQuery = grantsTagsQuery.replaceAll("%tenantId%", String.valueOf(tenantId));
 
-                    ps = conn.prepareStatement(grantsTagsQuery);
-                    ResultSet grantTagsSelectStatement = ps.executeQuery();
-                    String tagsSelect = null;
-                    while (grantTagsSelectStatement.next()) {
-                        tagsSelect = grantTagsSelectStatement.getString("string_agg");
+                    ResultSet grantTagsSelectStatement = null;
+                    try {
+                        ps = conn.prepareStatement(grantsTagsQuery);
+                        grantTagsSelectStatement = ps.executeQuery();
+
+                        String tagsSelect = null;
+                        while (grantTagsSelectStatement.next()) {
+                            tagsSelect = grantTagsSelectStatement.getString("string_agg");
+                        }
+                        q = q.replaceAll("%grantTags%", tagsSelect == null ? "'' as Tags" : tagsSelect);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage(), e);
+                    } finally {
+                        grantTagsSelectStatement.close();
+                        ps.close();
                     }
-                    q = q.replaceAll("%grantTags%", tagsSelect == null ? "'' as Tags" : tagsSelect);
+
+
                 }
 
                 if (q.indexOf("%grantTagDefs%") >= 0) {
@@ -3077,28 +3094,44 @@ public class GrantController {
                     grantsTagsDefQuery = grantsTagsDefQuery.replaceAll("%tenantId%", String.valueOf(tenantId));
                     grantsTagsSelectDefQuery = grantsTagsSelectDefQuery.replaceAll("%tenantId%", String.valueOf(tenantId));
 
-                    ps = conn.prepareStatement(grantsTagsDefQuery);
-                    ps2 = conn.prepareStatement(grantsTagsSelectDefQuery);
-                    ResultSet grantTagsDefsStatement = ps.executeQuery();
-                    ResultSet grantTagsSelectDefsStatement = ps2.executeQuery();
-                    String tagsDefs = null;
-                    String tagsSelectDefs = null;
-                    while (grantTagsDefsStatement.next()) {
-                        tagsDefs = grantTagsDefsStatement.getString("string_agg");
+                    ResultSet grantTagsDefsStatement = null;
+                    ResultSet grantTagsSelectDefsStatement = null;
+                    try {
+                        ps = conn.prepareStatement(grantsTagsDefQuery);
+                        ps2 = conn.prepareStatement(grantsTagsSelectDefQuery);
+                        grantTagsDefsStatement = ps.executeQuery();
+                        grantTagsSelectDefsStatement = ps2.executeQuery();
+                        String tagsDefs = null;
+                        String tagsSelectDefs = null;
+                        while (grantTagsDefsStatement.next()) {
+                            tagsDefs = grantTagsDefsStatement.getString("string_agg");
+                        }
+                        while (grantTagsSelectDefsStatement.next()) {
+                            tagsSelectDefs = grantTagsSelectDefsStatement.getString("string_agg");
+                        }
+
+                        q = q.replaceAll("%grantTagDefs%", tagsDefs == null ? "no_tag text" : tagsDefs);
+                        q = q.replaceAll("%grantTagSelectDefs%", tagsSelectDefs == null ? "string_agg(no_tag,',') as no_tag" : tagsSelectDefs);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage(), e);
+                    } finally {
+                        grantTagsDefsStatement.close();
+                        grantTagsSelectDefsStatement.close();
+                        ps.close();
+                        ps2.close();
                     }
-                    while (grantTagsSelectDefsStatement.next()) {
-                        tagsSelectDefs = grantTagsSelectDefsStatement.getString("string_agg");
-                    }
-                    q = q.replaceAll("%grantTagDefs%", tagsDefs == null ? "no_tag text" : tagsDefs);
-                    q = q.replaceAll("%grantTagSelectDefs%", tagsSelectDefs == null ? "string_agg(no_tag,',') as no_tag" : tagsSelectDefs);
+
+
                 }
-                //exportConfig.setQuery(q);
-                //String finalQuery = new String(exportConfig.getQuery());
-                PreparedStatement activeGrantsStatement = conn.prepareStatement(q);
+                ResultSet activeGrants = null;
+                PreparedStatement activeGrantsStatement = null;
+                try {
+                    activeGrantsStatement = conn.prepareStatement(q);
 
-                ResultSet activeGrants = activeGrantsStatement.executeQuery();
-                //BufferedWriter out = new BufferedWriter(new FileWriter("result.csv"));
-
+                    activeGrants = activeGrantsStatement.executeQuery();
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
 
                 String filename = orgName + "_" + exportConfig.getName() + "_" + dt + ".csv";
                 ZipEntry entry = new ZipEntry(filename);
@@ -3114,6 +3147,8 @@ public class GrantController {
                 exportSummary = grantService.saveExportSummary(exportSummary);
                 summaryListIds.add(exportSummary.getId());
                 writer.flush();
+                activeGrants.close();
+                activeGrantsStatement.close();
                 //zipOut.closeEntry();
 
             }
@@ -3121,17 +3156,30 @@ public class GrantController {
             String summaryQuery = "select summary_for as \"Summary For\",extract_request_by as \"Extract Requested By\",extract_requested_on as \"Extract Requested On\",records_retrieved as \"Records Retrieved\" from data_extract_logs where id in (%logIds%)";
             summaryQuery = summaryQuery.replaceAll("%logIds%", StringUtils.join(summaryListIds.toArray(new Long[summaryListIds.size()]), ","));
 
-            PreparedStatement summaryStmnt = conn.prepareStatement(summaryQuery);
-            ResultSet summaryResult = summaryStmnt.executeQuery();
-            String filename = orgName + "_Extract_Summary_" + dt + ".csv";
-            ZipEntry entry = new ZipEntry(filename);
-            zipOut.putNextEntry(entry);
-            CSVWriter writer = new CSVWriter(new OutputStreamWriter(zipOut));
-            writer.writeAll(summaryResult, true);
-            //writer.writeAll(summaryDetails);
-            writer.flush();
-            zipOut.closeEntry();
-            zipOut.close();
+            PreparedStatement summaryStmnt = null;
+            CSVWriter writer = null;
+            ResultSet summaryResult = null;
+            try {
+                summaryStmnt = conn.prepareStatement(summaryQuery);
+                summaryResult = summaryStmnt.executeQuery();
+                String filename = orgName + "_Extract_Summary_" + dt + ".csv";
+                ZipEntry entry = new ZipEntry(filename);
+                zipOut.putNextEntry(entry);
+                writer = new CSVWriter(new OutputStreamWriter(zipOut));
+                writer.writeAll(summaryResult, true);
+
+
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            } finally {
+                summaryResult.close();
+                summaryStmnt.close();
+                writer.flush();
+                zipOut.closeEntry();
+                zipOut.close();
+                DataSourceUtils.doReleaseConnection(conn, dataSource);
+
+            }
 
 
         } catch (Exception e) {
@@ -3533,12 +3581,12 @@ public class GrantController {
 
     @GetMapping(value = "/compare/{currentGrantId}/{origGrantId}")
     public GrantCompareVO getGrantsToCompare(@RequestHeader("X-TENANT-CODE") String tenantCode,
-                                               @PathVariable("userId") Long userId,
-                                               @PathVariable("currentGrantId") Long currentGrantId,
-                                               @PathVariable("origGrantId") Long origGrantId) {
+                                             @PathVariable("userId") Long userId,
+                                             @PathVariable("currentGrantId") Long currentGrantId,
+                                             @PathVariable("origGrantId") Long origGrantId) {
 
         List<PlainGrant> grantsToReturn = new ArrayList<>();
-        String checkType= "strong";
+        String checkType = "strong";
 
         Grant currentGrant = grantService.getById(currentGrantId);
         currentGrant = grantService._grantToReturn(userId, currentGrant);
@@ -3547,14 +3595,14 @@ public class GrantController {
         origGrant = grantService._grantToReturn(userId, origGrant);
 
         String amendGrantDetailsSnapshot = currentGrant.getAmendmentDetailsSnapshot();
-        if(amendGrantDetailsSnapshot==null || amendGrantDetailsSnapshot.equalsIgnoreCase("")){
+        if (amendGrantDetailsSnapshot == null || amendGrantDetailsSnapshot.equalsIgnoreCase("")) {
             checkType = "weak";
-        }else{
+        } else {
 
             try {
-                origGrant.setGrantDetails(new ObjectMapper().readValue(amendGrantDetailsSnapshot,GrantDetailVO.class));
+                origGrant.setGrantDetails(new ObjectMapper().readValue(amendGrantDetailsSnapshot, GrantDetailVO.class));
             } catch (IOException e) {
-                logger.error(e.getMessage(),e);
+                logger.error(e.getMessage(), e);
             }
         }
 
@@ -3565,7 +3613,7 @@ public class GrantController {
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
-        return new GrantCompareVO(checkType,grantsToReturn);
+        return new GrantCompareVO(checkType, grantsToReturn);
     }
 
     @GetMapping(value = "/compare/{currentGrantId}")
