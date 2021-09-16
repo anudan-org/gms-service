@@ -37,6 +37,7 @@ public class GmsServiceApplication {
         SpringApplication.run(GmsServiceApplication.class, args);
     }
 
+    //Testing sync with github
     @Bean
     public JavaMailSender getJavaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
