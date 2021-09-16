@@ -2066,6 +2066,16 @@ public class ReportController {
         AtomicBoolean reportTemplateHasDisbursement = new AtomicBoolean(false);
         AtomicReference<ReportStringAttribute> disbursementAttributeValue = new AtomicReference<>(new ReportStringAttribute());
 
+
+        if(!granterReportSections.stream().filter(rs -> rs.getSectionName().equalsIgnoreCase("Project Indicators")).findFirst().isPresent()){
+            GranterReportSection indicatorSection = new GranterReportSection();
+            indicatorSection.setReportTemplate(reportTemplate);
+            indicatorSection.setDeletable(true);
+            indicatorSection.setGranter((Granter)granterOrg);
+            indicatorSection.setSectionName("Project Indicators");
+            indicatorSection.setSectionOrder(granterReportSections.size());
+            granterReportSections.add(indicatorSection);
+        }
         for (GranterReportSection reportSection : granterReportSections) {
             ReportSpecificSection specificSection = new ReportSpecificSection();
             specificSection.setDeletable(true);

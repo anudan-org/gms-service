@@ -41,6 +41,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -53,14 +54,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
 import java.awt.*;
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.time.Month;
 import java.util.List;
@@ -3046,8 +3044,10 @@ public class GrantController {
         //org.hibernate.query.Query hQuery = ((Session) entityManager.getDelegate()).createSQLQuery("select b.name as organization_name,a.reference_no,a.name as grant_name,d.name as grant_type,a.start_date,a.end_date,a.amount, case when d.internal then b.name else (select name from organizations where id=a.organization_id) end as implementing_organization, a.representative as implementing_org_rep, case when orig_grant_id is not null then 'Yes' else 'No' end as is_amended from grants a inner join organizations b on b.id=a.grantor_org_id inner join workflow_statuses c on c.id=a.grant_status_id inner join grant_types d on d.id=a.grant_type_id where b.id=:tenantId and c.internal_status='ACTIVE'");
 
         Connection conn = null;
-        try {
+        try{
             conn = DataSourceUtils.getConnection(dataSource);
+        /*EntityManagerFactoryInfo info = (EntityManagerFactoryInfo) entityManager.getEntityManagerFactory();
+        Connection conn = info.getDataSource().getConnection();*/
 
             Long tenantId = organizationService.findOrganizationByTenantCode(tenantCode).getId();
             List<DataExportConfig> exportConfigs = exportConfigService.getDataExportConfigForTenantByCategory("ACTIVE_GRANTS_DETAILS", tenantId);
@@ -3066,25 +3066,25 @@ public class GrantController {
                     String grantsTagsQuery = "select string_agg(concat('\"',name,'\" as \"Tag - ',name,'\"'),',') from (select * from org_tags order by name) X where tenant=%tenantId% group by tenant";
                     grantsTagsQuery = grantsTagsQuery.replaceAll("%tenantId%", String.valueOf(tenantId));
 
-                    ResultSet grantTagsSelectStatement = null;
-                    try {
-                        ps = conn.prepareStatement(grantsTagsQuery);
-                        grantTagsSelectStatement = ps.executeQuery();
+                ResultSet grantTagsSelectStatement = null;
+                try {
+                    ps = conn.prepareStatement(grantsTagsQuery);
+                     grantTagsSelectStatement = ps.executeQuery();
 
-                        String tagsSelect = null;
-                        while (grantTagsSelectStatement.next()) {
-                            tagsSelect = grantTagsSelectStatement.getString("string_agg");
-                        }
-                        q = q.replaceAll("%grantTags%", tagsSelect == null ? "'' as Tags" : tagsSelect);
-                    } catch (Exception e) {
-                        logger.error(e.getMessage(), e);
-                    } finally {
-                        grantTagsSelectStatement.close();
-                        ps.close();
+                    String tagsSelect = null;
+                    while(grantTagsSelectStatement.next()){
+                        tagsSelect = grantTagsSelectStatement.getString("string_agg");
                     }
-
-
+                    q = q.replaceAll("%grantTags%",tagsSelect==null?"'' as Tags":tagsSelect);
+                }catch (Exception e){
+                    logger.error(e.getMessage(),e);
+                }finally {
+                    grantTagsSelectStatement.close();
+                    ps.close();
                 }
+
+
+            }
 
                 if (q.indexOf("%grantTagDefs%") >= 0) {
                     PreparedStatement ps = null;
@@ -3094,62 +3094,63 @@ public class GrantController {
                     grantsTagsDefQuery = grantsTagsDefQuery.replaceAll("%tenantId%", String.valueOf(tenantId));
                     grantsTagsSelectDefQuery = grantsTagsSelectDefQuery.replaceAll("%tenantId%", String.valueOf(tenantId));
 
-                    ResultSet grantTagsDefsStatement = null;
-                    ResultSet grantTagsSelectDefsStatement = null;
-                    try {
-                        ps = conn.prepareStatement(grantsTagsDefQuery);
-                        ps2 = conn.prepareStatement(grantsTagsSelectDefQuery);
-                        grantTagsDefsStatement = ps.executeQuery();
-                        grantTagsSelectDefsStatement = ps2.executeQuery();
-                        String tagsDefs = null;
-                        String tagsSelectDefs = null;
-                        while (grantTagsDefsStatement.next()) {
-                            tagsDefs = grantTagsDefsStatement.getString("string_agg");
-                        }
-                        while (grantTagsSelectDefsStatement.next()) {
-                            tagsSelectDefs = grantTagsSelectDefsStatement.getString("string_agg");
-                        }
-
-                        q = q.replaceAll("%grantTagDefs%", tagsDefs == null ? "no_tag text" : tagsDefs);
-                        q = q.replaceAll("%grantTagSelectDefs%", tagsSelectDefs == null ? "string_agg(no_tag,',') as no_tag" : tagsSelectDefs);
-                    } catch (Exception e) {
-                        logger.error(e.getMessage(), e);
-                    } finally {
-                        grantTagsDefsStatement.close();
-                        grantTagsSelectDefsStatement.close();
-                        ps.close();
-                        ps2.close();
+                ResultSet grantTagsDefsStatement =  null;
+                ResultSet grantTagsSelectDefsStatement =  null;
+                try {
+                    ps = conn.prepareStatement(grantsTagsDefQuery);
+                    ps2 = conn.prepareStatement(grantsTagsSelectDefQuery);
+                     grantTagsDefsStatement =  ps.executeQuery();
+                     grantTagsSelectDefsStatement =  ps2.executeQuery();
+                    String tagsDefs = null;
+                    String tagsSelectDefs = null;
+                    while(grantTagsDefsStatement.next()){
+                        tagsDefs = grantTagsDefsStatement.getString("string_agg");
+                    }
+                    while(grantTagsSelectDefsStatement.next()){
+                        tagsSelectDefs = grantTagsSelectDefsStatement.getString("string_agg");
                     }
 
-
+                    q = q.replaceAll("%grantTagDefs%",tagsDefs==null?"no_tag text":tagsDefs);
+                    q = q.replaceAll("%grantTagSelectDefs%",tagsSelectDefs==null?"string_agg(no_tag,',') as no_tag":tagsSelectDefs);
+                }catch (Exception e){
+                    logger.error(e.getMessage(),e);
+                }finally {
+                    grantTagsDefsStatement.close();
+                    grantTagsSelectDefsStatement.close();
+                    ps.close();
+                    ps2.close();
                 }
-                ResultSet activeGrants = null;
-                PreparedStatement activeGrantsStatement = null;
-                try {
-                    activeGrantsStatement = conn.prepareStatement(q);
 
-                    activeGrants = activeGrantsStatement.executeQuery();
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
+
+
+            }
+            ResultSet activeGrants = null;
+            PreparedStatement activeGrantsStatement = null;
+            try {
+                activeGrantsStatement = conn.prepareStatement(q);
+
+                activeGrants = activeGrantsStatement.executeQuery();
+            }catch (Exception e){
+                logger.error(e.getMessage(),e);
+            }
 
                 String filename = orgName + "_" + exportConfig.getName() + "_" + dt + ".csv";
                 ZipEntry entry = new ZipEntry(filename);
 
                 //Summary CSV
 
-                //End of Summary CSV
-                zipOut.putNextEntry(entry);
-                CSVWriter writer = new CSVWriter(new OutputStreamWriter(zipOut));
-                int count = writer.writeAll(activeGrants, true);
-                //summary.add(new String[]{orgName+"_" + exportConfig.getName()+"_"+dt,userService.getUserById(userId).getFirstName().concat(" ").concat(userService.getUserById(userId).getLastName()),dt,String.valueOf(count)});
-                DataExportSummary exportSummary = new DataExportSummary(orgName + "_" + exportConfig.getName() + "_" + dt, userService.getUserById(userId).getFirstName().concat(" ").concat(userService.getUserById(userId).getLastName()), extractDate, count - 1);
-                exportSummary = grantService.saveExportSummary(exportSummary);
-                summaryListIds.add(exportSummary.getId());
-                writer.flush();
-                activeGrants.close();
-                activeGrantsStatement.close();
-                //zipOut.closeEntry();
+            //End of Summary CSV
+            zipOut.putNextEntry(entry);
+            CSVWriter writer = new CSVWriter(new OutputStreamWriter(zipOut));
+            int count = writer.writeAll(activeGrants,true);
+            //summary.add(new String[]{orgName+"_" + exportConfig.getName()+"_"+dt,userService.getUserById(userId).getFirstName().concat(" ").concat(userService.getUserById(userId).getLastName()),dt,String.valueOf(count)});
+            DataExportSummary exportSummary = new DataExportSummary(orgName+"_" + exportConfig.getName()+"_"+dt,userService.getUserById(userId).getFirstName().concat(" ").concat(userService.getUserById(userId).getLastName()),extractDate,count-1);
+            exportSummary = grantService.saveExportSummary(exportSummary);
+            summaryListIds.add(exportSummary.getId());
+            writer.flush();
+            activeGrants.close();
+            activeGrantsStatement.close();
+            //zipOut.closeEntry();
 
             }
 
@@ -3159,31 +3160,46 @@ public class GrantController {
             PreparedStatement summaryStmnt = null;
             CSVWriter writer = null;
             ResultSet summaryResult = null;
-            try {
+            try{
                 summaryStmnt = conn.prepareStatement(summaryQuery);
-                summaryResult = summaryStmnt.executeQuery();
-                String filename = orgName + "_Extract_Summary_" + dt + ".csv";
+                 summaryResult = summaryStmnt.executeQuery();
+                String filename = orgName+"_Extract_Summary_" +dt+".csv";
                 ZipEntry entry = new ZipEntry(filename);
                 zipOut.putNextEntry(entry);
-                writer = new CSVWriter(new OutputStreamWriter(zipOut));
-                writer.writeAll(summaryResult, true);
+                 writer = new CSVWriter(new OutputStreamWriter(zipOut));
+                writer.writeAll(summaryResult,true);
+                //writer.writeAll(summaryDetails);
 
 
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            } finally {
+            }catch (Exception e){
+                logger.error(e.getMessage(),e);
+            }finally {
                 summaryResult.close();
                 summaryStmnt.close();
                 writer.flush();
                 zipOut.closeEntry();
                 zipOut.close();
-                DataSourceUtils.doReleaseConnection(conn, dataSource);
+                DataSourceUtils.doReleaseConnection(conn,dataSource);
+
+            }
+
+
+
 
             }
 
 
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+        } finally {
+            /*try {
+                *//*DataSourceUtils.doReleaseConnection(conn,dataSource);*//*
+                *//*if(!conn.isClosed()){
+                    conn.isClosed();
+                }*//*
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }*/
         }
 
         return byteArrayOutputStream.toByteArray();
