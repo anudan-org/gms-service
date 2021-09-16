@@ -1121,7 +1121,10 @@ public class GrantService {
                                 plainAttribute.setTableValue(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<TableData>>() {}));
                                 break;
                             case "document":
-                                plainAttribute.setAttachments(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<GrantStringAttributeAttachments>>() {}));
+                                if(attribute.getFieldValue()!=null && !attribute.getFieldValue().equalsIgnoreCase("")){
+                                    plainAttribute.setAttachments(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<GrantStringAttributeAttachments>>() {}));
+                                }
+
                                 break;
                         }
 
