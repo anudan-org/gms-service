@@ -28,7 +28,7 @@ jobs:
       - run: pwd
       - run: ls -lrt
       - run: ./gradlew bootJar
-      - run: pwd. 
+      - run: pwd
       - run: ls -lrt
 
       - name: uploading anudan backend artifact
