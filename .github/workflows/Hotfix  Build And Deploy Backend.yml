@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
   push:
    branches: [ hotfix/production_bug_fixes ] 
-  #pull_request:
-    #branches: [ hotfix/production_bug_fixes ]
+   paths-ignore: 
+     '.github/workflows/**.yml'
 
 env:
   commitmsg: ${{ github.event.head_commit.message }}     
