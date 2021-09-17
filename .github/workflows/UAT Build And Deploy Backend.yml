@@ -1,0 +1,226 @@
+name: UAT Build And Deploy Backend
+
+on:
+  workflow_dispatch:
+  push:
+   branches: [ master ]
+   paths-ignore: 
+     '.github/workflows/**.yml'
+
+env:
+  commitmsg: ${{ github.event.head_commit.message }} 
+
+jobs:
+  UAT-Backend-Build:
+    
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    name: Build Backend | UAT
+    steps:
+      - name: Checking out my release repo
+        uses: actions/checkout@master
+        with:
+          repository: anudan-org/gms-service
+          token: ${{ secrets.MY_PAT }}
+          ref: master
+      - run: pwd
+      - run: ls -lrt
+      - run: ./gradlew bootJar
+      - run: pwd
+      - run: ls -lrt
+
+      - name: uploading anudan backend artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: Anudan-backend-artifact
+          path: build/libs/gms-service-0.0.1-SNAPSHOT.jar
+          retention-days: 5
+
+  unit-and-functional-testing-Backend:
+    runs-on: ubuntu-latest
+    needs: UAT-Backend-Build
+    if: github.ref == 'refs/heads/master'
+    name: Test Backend | Units and functions
+    steps: 
+    - name: checking out gms-service repo
+      uses: actions/checkout@master
+      with:
+          repository: anudan-org/gms-service
+          token: ${{ secrets.MY_PAT }}
+          ref: master
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+          java-version: 1.8      
+    - name: test backend code(functional)
+      run: |
+        ls -l
+        ./gradlew test jacocoTestReport
+  
+  Static-Code-Analysis-Sonarqube-Backend:
+    runs-on: ubuntu-latest
+    needs: UAT-Backend-Build
+    name: Analyse Static Code | Sonarqube
+    if: github.ref == 'refs/heads/master'
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        # Disabling shallow clone is recommended for improving relevancy of reporting
+        fetch-depth: 0
+        ref: master
+    - name: Set up JDK 11
+      uses: actions/setup-java@v1
+      with:
+          java-version: 11
+    - name: Cache SonarCloud packages
+      uses: actions/cache@v1
+      with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+    - name: Cache Gradle packages
+      uses: actions/cache@v1
+      with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: ${{ runner.os }}-gradle
+    - name: analyze
+      env:
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: | 
+        ./gradlew  sonarqube --info
+
+  Anudan-config:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    name: Checkout application.yaml | anudan config
+    steps: 
+      - name: Checking out my anudan-config repo
+        uses: actions/checkout@master
+        with:
+          repository: anudan-org/anudan-config   
+          token: ${{ secrets.MY_PAT }}
+      - run: pwd
+      - run: ls -lrt     
+      - name: anudan-config artifact building
+        uses: actions/upload-artifact@v2
+        with:
+          name: Anudan-Configuration
+          path: backend/application.yaml
+          retention-days: 5 
+            
+
+  Trigger-UAT-Release:
+      runs-on: ubuntu-latest
+      needs: [unit-and-functional-testing-Backend, Static-Code-Analysis-Sonarqube-Backend]
+      if: github.ref == 'refs/heads/master' 
+      name: Create Uat Release Version
+      steps:      
+        - name: Create Uat Release Version
+          uses: convictional/trigger-workflow-and-wait@v1.3.0
+          with:
+            owner: anudan-org
+            repo: anudan-app
+            github_token: ${{ secrets.MY_PAT }}
+            workflow_file_name: UAT-Package.yml
+            ref: master  
+
+  Release-repo-checkout:
+      runs-on: ubuntu-latest
+      if: github.ref == 'refs/heads/master'
+      name: Checkout release.json
+      needs: Trigger-UAT-Release
+      steps:
+        - uses: actions/checkout@v2
+          with:
+            repository: anudan-org/release   
+            token: ${{ secrets.MY_PAT }}
+        - name: creating UAT_release.json artifact 
+          uses: actions/upload-artifact@v2
+          with:
+            name: Anudan-UAT-Release
+            path: UAT_release.json
+            retention-days: 5    
+
+  Rsync-UAT-Deployments:
+    runs-on: ubuntu-latest
+    needs: [UAT-Backend-Build, unit-and-functional-testing-Backend, Static-Code-Analysis-Sonarqube-Backend, Anudan-config, Release-repo-checkout]
+    if: github.ref == 'refs/heads/master'
+    name: Copy Artifacts To UAT Server
+    steps:
+    - name: downloading Anudan-Configuration arifact 
+      uses: actions/download-artifact@v2
+      with:
+        name:  Anudan-Configuration
+    - name: downloading Anudan-backend-artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: Anudan-backend-artifact     
+    - name: downloading Anudan-UAT-Release artifact 
+      uses: actions/download-artifact@v2
+      with:
+          name: Anudan-UAT-Release     
+    - run: |  
+          ls -lrt
+          mv UAT_release.json release.json
+          ls -lrt
+    - name: rsync deployments
+      uses: burnett01/rsync-deployments@4.1
+      with:
+        switches: -avzr -q
+        path: .
+        remote_path: /home/anudan/github
+        remote_host: ${{ secrets.HOST_UAT}}
+        remote_port: ${{ secrets.SSH_PORT }}
+        remote_user: ${{ secrets.SSH_USER }}
+        remote_key: ${{ secrets.SSH_DEPLOY_KEY }}                        
+  
+  Notify-on-email:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [UAT-Backend-Build, unit-and-functional-testing-Backend, Static-Code-Analysis-Sonarqube-Backend, Anudan-config, Rsync-UAT-Deployments, Trigger-UAT-Release]
+    name: Notify via Email
+    steps:
+      - name: Anudan Release artifact downloading      
+        uses: actions/download-artifact@v2
+        with:
+            name: Anudan-UAT-Release
+
+      - name: set env variable with bash expression 
+        run:   |
+          ls -lrt
+          echo "UAT_Version=`cat UAT_release.json| cut -d "," -f1 | cut -d ":" -f2 | sed 's/"//g' | sed 's/}//g'`" >> $GITHUB_ENV
+      - name: Send some mail
+        uses: wadeww/send-email-action@master
+        with:
+          server_address: smtp.gmail.com
+          port: ${{ secrets.SMTP_SERVER_PORT }}
+          username: ${{ secrets.AUTH_USER }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: UAT Build Backend Workflow Finished
+          body: Organization Name/Repository - ${{github.repository}} 
+          
+                ${{ github.actor }} commit message - ${{ env.commitmsg }}
+
+
+
+               1. Build result - ${{needs.UAT-Backend-Build.result}} 
+ 
+               2. Test result (units and functionals) - ${{needs.unit-and-functional-testing-Backend.result}} 
+
+               3. Static Code Analysis result - ${{needs.Static-Code-Analysis-Sonarqube-Backend.result}} 
+
+               4. Checkout release.json result - ${{needs.Anudan-config.result}} 
+ 
+               5. Copy Artifacts To UAT Server - ${{needs.Rsync-UAT-Deployments.result}}
+
+               6. Uat Release result - ${{needs.Trigger-UAT-Release.result}}
+
+               7. Anudan - Grant Management System › UAT Build - ${{ env.UAT_Version }}
+          to: prabhu@socialalpha.org
+          from: donotreply@anudan.org 
+          
+         
+               
+                
