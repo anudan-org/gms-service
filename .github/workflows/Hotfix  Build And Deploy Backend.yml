@@ -225,19 +225,7 @@ jobs:
                  6. Hotfix Release result - ${{needs.Trigger-Hotfix-Release.result}}
 
                  7. Anudan - Grant Management System › Hotfix Release - ${{ env.Hotfix_Release }}
-          to: prabhu@socialalpha.org
+          to: prabhu@socialalpha.org, vineet@socialalpha.org
           from: donotreply@anudan.org           
         
-       
  
-                
-
-              
-
-               
-
-                
-
-                 
-
-                7. Anudan - Grant Management System › Hotfix Release - ${{ env.Hotfix_Release }}
