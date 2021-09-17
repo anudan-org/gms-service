@@ -41,7 +41,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -54,6 +53,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import java.awt.*;
 import java.io.*;
 import java.net.URLEncoder;
@@ -61,6 +61,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.time.Month;
+import java.util.Date;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -3038,17 +3039,10 @@ public class GrantController {
         BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
         ZipOutputStream zipOut = new ZipOutputStream(bufferedOutputStream);
 
-        /*Query query = entityManager.createNativeQuery("select * from grants where grantor_org_id=:tenantId");
-        query.setParameter("tenantId",11);*/
-
-        //org.hibernate.query.Query hQuery = ((Session) entityManager.getDelegate()).createSQLQuery("select b.name as organization_name,a.reference_no,a.name as grant_name,d.name as grant_type,a.start_date,a.end_date,a.amount, case when d.internal then b.name else (select name from organizations where id=a.organization_id) end as implementing_organization, a.representative as implementing_org_rep, case when orig_grant_id is not null then 'Yes' else 'No' end as is_amended from grants a inner join organizations b on b.id=a.grantor_org_id inner join workflow_statuses c on c.id=a.grant_status_id inner join grant_types d on d.id=a.grant_type_id where b.id=:tenantId and c.internal_status='ACTIVE'");
-
+        
         Connection conn = null;
         try{
             conn = DataSourceUtils.getConnection(dataSource);
-        /*EntityManagerFactoryInfo info = (EntityManagerFactoryInfo) entityManager.getEntityManagerFactory();
-        Connection conn = info.getDataSource().getConnection();*/
-
             Long tenantId = organizationService.findOrganizationByTenantCode(tenantCode).getId();
             List<DataExportConfig> exportConfigs = exportConfigService.getDataExportConfigForTenantByCategory("ACTIVE_GRANTS_DETAILS", tenantId);
 
@@ -3183,23 +3177,8 @@ public class GrantController {
 
             }
 
-
-
-
-            }
-
-
-        } catch (Exception e) {
+            }catch (Exception e) {
             logger.error(e.getMessage(), e);
-        } finally {
-            /*try {
-                *//*DataSourceUtils.doReleaseConnection(conn,dataSource);*//*
-                *//*if(!conn.isClosed()){
-                    conn.isClosed();
-                }*//*
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }*/
         }
 
         return byteArrayOutputStream.toByteArray();
