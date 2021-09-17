@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
   push:
    branches: [ master ]
-  #pull_request:
-    #branches: [ master ]
+   paths-ignore: 
+     '.github/workflows/**.yml'
 
 env:
   commitmsg: ${{ github.event.head_commit.message }} 
