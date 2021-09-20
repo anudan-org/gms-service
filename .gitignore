@@ -31,3 +31,4 @@ gms.log*
 /.nb-gradle/
 .vscode/settings.json
 .vscode/launch.json
+release.json
