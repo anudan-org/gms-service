@@ -218,8 +218,8 @@ jobs:
                6. Uat Release result - ${{needs.Trigger-UAT-Release.result}}
 
                7. Anudan - Grant Management System › UAT Build - ${{ env.UAT_Version }}
-          to: prabhu@socialalpha.org
-          from: donotreply@anudan.org 
+          to: ${{ secrets.TO_ADDRESSES }} 
+          from: ${{ secrets.FROM_ADDRESS }} 
           
          
                
