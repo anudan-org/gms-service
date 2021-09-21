@@ -471,7 +471,11 @@ public class ReportService {
     }
 
     public Report getReportById(Long reportId) {
-        return reportRepository.findById(reportId).get();
+        Optional<Report> report = reportRepository.findById(reportId);
+        if(report.isPresent()) {
+            return report.get();
+        }
+        return null;
     }
 
     public ReportSpecificSection getReportSpecificSectionById(Long reportSpecificSectionId) {
