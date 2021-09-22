@@ -203,7 +203,7 @@ jobs:
           port: ${{ secrets.SMTP_SERVER_PORT }}
           username: ${{ secrets.AUTH_USER }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: DEV Build - Backend Workflow Finished
+          subject:  DEV Build & Deploy Finished | Backend
           body: Organization Name/Repository - ${{github.repository}}
           
            ${{ github.actor }} commit message - ${{ env.commitmsg }}
