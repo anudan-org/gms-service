@@ -1383,7 +1383,10 @@ public class ReportService {
                                 plainAttribute.setTableValue(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<TableData>>() {}));
                                 break;
                             case "document":
-                                plainAttribute.setAttachments(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<GrantStringAttributeAttachments>>() {}));
+                                if(attribute.getFieldValue()!=null) {
+                                    plainAttribute.setAttachments(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<GrantStringAttributeAttachments>>() {
+                                    }));
+                                }
                                 break;
                         }
 
