@@ -1379,11 +1379,13 @@ public class ReportService {
                                 break;
                             case "disbursement":
                             case "table":
-
-                                plainAttribute.setTableValue(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<TableData>>() {}));
+                                if(attribute.getFieldValue()!=null && !"".equalsIgnoreCase(attribute.getFieldValue())) {
+                                    plainAttribute.setTableValue(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<TableData>>() {
+                                    }));
+                                }
                                 break;
                             case "document":
-                                if(attribute.getFieldValue()!=null) {
+                                if(attribute.getFieldValue()!=null && !"".equalsIgnoreCase(attribute.getFieldValue().trim())) {
                                     plainAttribute.setAttachments(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<GrantStringAttributeAttachments>>() {
                                     }));
                                 }
