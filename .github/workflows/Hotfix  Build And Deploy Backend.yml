@@ -5,7 +5,16 @@ on:
   push:
    branches: [ hotfix/production_bug_fixes ] 
    paths-ignore: 
-     - '.github/workflows/**.yml'
+      - '.github/workflows/**.yml'
+      - 'DB/**'
+      - 'gradle/**'
+      - '.DS_Store'
+      - '.gitignore'
+      - '**.md'
+      - '**.gradle'
+      - 'gradlew'
+      - '**.bat'
+      - '**.properties'
 
 env:
   commitmsg: ${{ github.event.head_commit.message }}     
