@@ -8,7 +8,7 @@ on:
   push:
    branches: [ dev ]
    paths-ignore: 
-     '.github/workflows/**.yml'
+      - '.github/workflows/**.yml'
 env:
   commitmsg: ${{ github.event.head_commit.message }} 
 
