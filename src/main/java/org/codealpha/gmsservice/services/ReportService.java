@@ -471,7 +471,11 @@ public class ReportService {
     }
 
     public Report getReportById(Long reportId) {
-        return reportRepository.findById(reportId).get();
+        Optional<Report> report = reportRepository.findById(reportId);
+        if(report.isPresent()) {
+            return report.get();
+        }
+        return null;
     }
 
     public ReportSpecificSection getReportSpecificSectionById(Long reportSpecificSectionId) {
@@ -1061,7 +1065,7 @@ public class ReportService {
                 workflowPermissionService, userService.getUserById(userId),
                 appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService);
+                userService,grantService);
 
         ObjectMapper mapper = new ObjectMapper();
         report.getGrant().setGrantDetails(grantVO.getGrantDetails());
@@ -1329,5 +1333,74 @@ public class ReportService {
             closedDisbursements.addAll(getDisbursementsByStatusIds(grantService.getById(grant.getOrigGrantId()),statusIds));
         }
         return closedDisbursements;
+    }
+
+    public PlainReport reportToPlain(Report report) throws IOException {
+        SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy");
+        PlainReport plainReport = new PlainReport();
+        plainReport.setName(report.getName());
+        Date end = report.getEndDate();
+        plainReport.setEndDate(end!=null?sd.format(end):"");
+        Date start = report.getStartDate();
+        plainReport.setStartDate(start!=null?sd.format(start):"");
+        Date due = report.getDueDate();
+        plainReport.setDueDate(due!=null?sd.format(due):"");
+
+        plainReport.setCurrentInternalStatus(report.getStatus().getInternalStatus());
+        plainReport.setCurrentStatus(report.getStatus().getName());
+
+        Optional<ReportAssignment> assignment =  getAssignmentsForReport(report).stream().filter(ass -> ass.getStateId().longValue()==report.getStatus().getId()).findFirst();
+        if(assignment.isPresent()){
+            User owner = userService.getUserById(assignment.get().getAssignment());
+            plainReport.setCurrentOwner(owner.getFirstName()+" "+owner.getLastName());
+        }
+
+        if(report.getReportDetails().getSections()!=null && report.getReportDetails().getSections().size()>0){
+            List<PlainSection> plainSections = new ArrayList<>();
+
+            for(SectionVO section : report.getReportDetails().getSections()){
+                List<PlainAttribute> plainAttributes = new ArrayList<>();
+                if(section.getAttributes()!=null && section.getAttributes().size()>0) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    for (SectionAttributesVO attribute : section.getAttributes()) {
+                        PlainAttribute plainAttribute = new PlainAttribute();
+                        plainAttribute.setId(attribute.getId());
+                        plainAttribute.setName(attribute.getFieldName());
+                        plainAttribute.setType(attribute.getFieldType());
+                        plainAttribute.setValue(attribute.getFieldValue());
+                        plainAttribute.setOrder(attribute.getAttributeOrder());
+                        switch (attribute.getFieldType()) {
+
+                            case "kpi":
+                                plainAttribute.setFrequency(attribute.getFrequency());
+                                if(attribute.getTarget()!=null) {
+                                    plainAttribute.setTarget(Long.valueOf(attribute.getTarget()));
+                                }
+                                break;
+                            case "disbursement":
+                            case "table":
+                                if(attribute.getFieldValue()!=null && !"".equalsIgnoreCase(attribute.getFieldValue())) {
+                                    plainAttribute.setTableValue(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<TableData>>() {
+                                    }));
+                                }
+                                break;
+                            case "document":
+                                if(attribute.getFieldValue()!=null && !"".equalsIgnoreCase(attribute.getFieldValue().trim())) {
+                                    plainAttribute.setAttachments(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<GrantStringAttributeAttachments>>() {
+                                    }));
+                                }
+                                break;
+                        }
+
+                        plainAttributes.add(plainAttribute);
+                    }
+
+                }
+                plainSections.add(new PlainSection(section.getId(),section.getName(),section.getOrder(), plainAttributes));
+            }
+            plainReport.setSections(plainSections);
+        }
+
+        return plainReport;
     }
 }

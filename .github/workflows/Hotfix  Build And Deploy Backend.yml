@@ -225,7 +225,7 @@ jobs:
                  6. Hotfix Release result - ${{needs.Trigger-Hotfix-Release.result}}
 
                  7. Anudan - Grant Management System › Hotfix Release - ${{ env.Hotfix_Release }}
-          to: ${{ secrets.TO_ADDRESSES }} 
-          from: ${{ secrets.FROM_ADDRESS }}           
+          to: ${{ secrets.TO_ADDRESSES }}
+          from: ${{ secrets.FROM_ADDRESS }}
         
  

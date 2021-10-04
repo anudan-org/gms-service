@@ -388,7 +388,7 @@ public class ReportController {
                 workflowPermissionService, userService.getUserById(userId),
                 appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService);
+                userService,grantService);
 
         ObjectMapper mapper = new ObjectMapper();
         report.getGrant().setGrantDetails(grantVO.getGrantDetails());
@@ -1404,10 +1404,26 @@ public class ReportController {
     }
 
     @GetMapping("{reportId}/changeHistory")
-    public ReportSnapshot getReportHistory(@PathVariable("reportId") Long reportId,
-            @PathVariable("userId") Long userId) {
+    public PlainReport getReportHistory(@PathVariable("reportId") Long reportId,
+            @PathVariable("userId") Long userId) throws IOException {
 
-        return reportSnapshotService.getMostRecentSnapshotByReportId(reportId);
+        Report report = reportService.getReportById(reportId);
+        ReportSnapshot snapshot = reportSnapshotService.getMostRecentSnapshotByReportId(reportId);
+
+        if(snapshot==null){
+            return null;
+        }
+
+        report.setName(snapshot.getName());
+        report.setStartDate(snapshot.getStartDate());
+        report.setEndDate(snapshot.getEndDate());
+        report.setStatus(workflowStatusService.findById(snapshot.getStatusId()));
+        report.setDueDate(snapshot.getDueDate());
+        ReportDetailVO details = new ObjectMapper().readValue(snapshot.getStringAttributes(),ReportDetailVO.class);
+        report.setReportDetails(details);
+
+        PlainReport reportToReturn = reportService.reportToPlain(report);
+        return reportToReturn;
     }
 
     @PostMapping("/{reportId}/flow/{fromState}/{toState}")
@@ -2212,7 +2228,7 @@ public class ReportController {
                 workflowPermissionService, userService.getUserById(userId),
                 appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService);
+                userService,grantService);
         grant.setGrantDetails(grantVO.getGrantDetails());
 
         List<Map<DatePeriod,PeriodAttribWithLabel>> periodsWithAttributes = new ArrayList<>();
@@ -2673,5 +2689,40 @@ public class ReportController {
             Report report = reportService.getReportById(reportId);
 
         reportService.deleteReport(report);
+    }
+
+    @GetMapping(value = "/compare/{currentReportId}/{origReportId}")
+    public List<PlainReport> getReportsToCompare(@RequestHeader("X-TENANT-CODE")String tenantCode,
+                                               @PathVariable("userId")Long userId,
+                                               @PathVariable("currentGrantId")Long currentReportId,
+                                               @PathVariable("origGrantId")Long origReportId){
+
+        List<PlainReport> reportsToReturn = new ArrayList<>();
+
+        Report currentReport = reportService.getReportById(currentReportId);
+        currentReport = _ReportToReturn(currentReport,userId);
+
+        Report origReport = reportService.getReportById(origReportId);
+        origReport = _ReportToReturn(origReport,userId);
+
+        try {
+            reportsToReturn.add(reportService.reportToPlain(currentReport));
+            reportsToReturn.add(reportService.reportToPlain(origReport));
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+        }
+        return reportsToReturn;
+    }
+
+    @GetMapping(value = "/compare/{currentReportId}")
+    public PlainReport getPlainGrantForCompare(@RequestHeader("X-TENANT-CODE")String tenantCode,
+                                              @PathVariable("userId")Long userId,
+                                              @PathVariable("currentReportId")Long currentReportId) throws IOException {
+        Report currenReport = reportService.getReportById(currentReportId);
+        currenReport = _ReportToReturn(currenReport,userId);
+
+
+
+        return reportService.reportToPlain(currenReport);
     }
 }

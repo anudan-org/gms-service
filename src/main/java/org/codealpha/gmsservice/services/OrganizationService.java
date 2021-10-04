@@ -101,4 +101,8 @@ public class OrganizationService {
 						.getConfigValue()
 						.replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()) });
 	}
+
+	public Organization findByName(String grantee) {
+		return repository.findByName(grantee);
+	}
 }

@@ -30,4 +30,6 @@ public interface OrganizationRepository extends CrudRepository<Organization, Lon
   public List<Organization> getAssociatedGranteesForTenant(Long granterId);
 
 
+    @Query(value="select * from organizations where name=?1",nativeQuery = true)
+    Organization findByName(String grantee);
 }

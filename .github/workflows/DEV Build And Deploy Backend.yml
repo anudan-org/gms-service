@@ -203,7 +203,7 @@ jobs:
           port: ${{ secrets.SMTP_SERVER_PORT }}
           username: ${{ secrets.AUTH_USER }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: DEV Build - Backend Workflow Finished
+          subject:  DEV Build & Deploy Finished | Backend
           body: Organization Name/Repository - ${{github.repository}}
           
            ${{ github.actor }} commit message - ${{ env.commitmsg }}
@@ -224,4 +224,4 @@ jobs:
                 7. Anudan - Grant Management System › DEV Build - ${{ env.Dev_Version }}
                 
           to: ${{ secrets.TO_ADDRESSES }}
-          from: ${{ secrets.FROM_ADDRESS }}     
+          from: ${{ secrets.FROM_ADDRESS }}

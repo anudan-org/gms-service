@@ -1,11 +1,8 @@
 package org.codealpha.gmsservice.services;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
@@ -13,7 +10,6 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.KpiType;
 import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.entities.dashboard.GranterGrantSummaryCommitted;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
 import org.joda.time.DateTime;
@@ -26,7 +22,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.xml.crypto.Data;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class GrantService {
@@ -130,6 +129,9 @@ public class GrantService {
     private ReportRepository reportRepository;
     @Autowired
     private ReportCardRepository reportCardRepository;
+
+    public GrantService() {
+    }
 
     public List<String> getGrantAlerts(Grant grant) {
         return null;
@@ -296,24 +298,12 @@ public class GrantService {
         return quantitativeKpiNotesRepository.save(quantKpiNote);
     }
 
-    public DocKpiDataDocument getDockpiDocById(Long id) {
-        return docKpiDataDocumentRepository.findById(id).get();
-    }
-
     public DocKpiDataDocument saveDocKpiDataDoc(DocKpiDataDocument dataDocument) {
         return docKpiDataDocumentRepository.save(dataDocument);
     }
 
     public QualKpiDataDocument getQualkpiDocById(Long id) {
         return qualKpiDocumentRepository.findById(id).get();
-    }
-
-    public QualKpiDataDocument saveQualKpiDataDoc(QualKpiDataDocument dataDocument) {
-        return qualKpiDocumentRepository.save(dataDocument);
-    }
-
-    public QuantKpiDataDocument getQuantkpiDocById(Long id) {
-        return quantKpiDocumentRepository.findById(id).get();
     }
 
     public QuantKpiDataDocument saveQuantKpiDataDoc(QuantKpiDataDocument dataDocument) {
@@ -705,7 +695,7 @@ public class GrantService {
         grantVO = grantVO.build(grant, getGrantSections(grant), workflowPermissionService, user,
                 appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService);
+                userService,this);
         grant.setGrantDetails(grantVO.getGrantDetails());
         grant.setNoteAddedBy(grantVO.getNoteAddedBy());
         grant.setNoteAddedByUser(grantVO.getNoteAddedByUser());
@@ -1083,5 +1073,70 @@ public class GrantService {
 
     public List<Grant> getgrantsByStatusForUser(Long userId, String status) {
         return grantRepository.getgrantsByStatusForUser(userId,status);
+    }
+
+    public PlainGrant grantToPlain(Grant grant) throws IOException {
+        SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy");
+        PlainGrant plainGrant = new PlainGrant();
+        plainGrant.setName(grant.getName());
+        plainGrant.setAmount(grant.getAmount());
+        Date end = grant.getEndDate();
+        plainGrant.setEndDate(end!=null?sd.format(end):"");
+        Date start = grant.getStartDate();
+        plainGrant.setStartDate(start!=null?sd.format(start):"");
+        plainGrant.setImplementingOrganizationName(grant.getOrganization()!=null?grant.getOrganization().getName():"");
+        plainGrant.setImplementingOrganizationRepresentative(grant.getRepresentative()!=null?grant.getRepresentative():"");
+        plainGrant.setReferenceNo(grant.getReferenceNo());
+        plainGrant.setCurrentInternalStatus(grant.getGrantStatus().getInternalStatus());
+        plainGrant.setCurrentStatus(grant.getGrantStatus().getName());
+        Optional<GrantAssignments> assignment =  grant.getWorkflowAssignment().stream().filter(ass -> ass.getStateId().longValue()==grant.getGrantStatus().getId()).findFirst();
+        if(assignment.isPresent()){
+            User owner = userService.getUserById(assignment.get().getAssignments());
+            plainGrant.setCurrentOwner(owner.getFirstName()+" "+owner.getLastName());
+        }
+        if(grant.getGrantDetails().getSections()!=null && grant.getGrantDetails().getSections().size()>0){
+            List<PlainSection> plainSections = new ArrayList<>();
+            grant.getGrantDetails().getSections().sort((a,b) ->Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+            for(SectionVO section : grant.getGrantDetails().getSections()){
+                List<PlainAttribute> plainAttributes = new ArrayList<>();
+                if(section.getAttributes()!=null && section.getAttributes().size()>0) {
+                    section.getAttributes().sort((a,b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+                    ObjectMapper mapper = new ObjectMapper();
+                    for (SectionAttributesVO attribute : section.getAttributes()) {
+                        PlainAttribute plainAttribute = new PlainAttribute();
+                        plainAttribute.setId(attribute.getId());
+                        plainAttribute.setName(attribute.getFieldName());
+                        plainAttribute.setType(attribute.getFieldType());
+                        plainAttribute.setValue(attribute.getFieldValue());
+                        plainAttribute.setOrder(attribute.getAttributeOrder());
+                        switch (attribute.getFieldType()) {
+
+                            case "kpi":
+                                plainAttribute.setFrequency(attribute.getFrequency());
+                                plainAttribute.setTarget(Long.valueOf(attribute.getTarget()));
+                                break;
+                            case "disbursement":
+                            case "table":
+
+                                plainAttribute.setTableValue(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<TableData>>() {}));
+                                break;
+                            case "document":
+                                if(attribute.getFieldValue()!=null && !attribute.getFieldValue().equalsIgnoreCase("")){
+                                    plainAttribute.setAttachments(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<GrantStringAttributeAttachments>>() {}));
+                                }
+
+                                break;
+                        }
+
+                        plainAttributes.add(plainAttribute);
+                    }
+
+                }
+                plainSections.add(new PlainSection(section.getId(),section.getName(),section.getOrder(), plainAttributes));
+            }
+            plainGrant.setSections(plainSections);
+        }
+
+        return plainGrant;
     }
 }
