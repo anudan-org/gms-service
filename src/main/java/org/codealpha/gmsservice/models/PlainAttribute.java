@@ -12,6 +12,7 @@ public class PlainAttribute {
     private String value;
     private List<TableData> tableValue;
     private Long target;
+    private Double actualTarget;
     private String frequency;
     List<GrantStringAttributeAttachments> attachments;
 
@@ -85,5 +86,13 @@ public class PlainAttribute {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Double getActualTarget() {
+        return actualTarget;
+    }
+
+    public void setActualTarget(Double actualTarget) {
+        this.actualTarget = actualTarget;
     }
 }

@@ -1376,6 +1376,9 @@ public class ReportService {
                                 if(attribute.getTarget()!=null) {
                                     plainAttribute.setTarget(Long.valueOf(attribute.getTarget()));
                                 }
+                                if(attribute.getActualTarget()!=null) {
+                                    plainAttribute.setActualTarget(attribute.getActualTarget());
+                                }
                                 break;
                             case "disbursement":
                             case "table":
