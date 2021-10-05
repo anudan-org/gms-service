@@ -16,7 +16,7 @@ sonarqube {
         property "sonar.organization", "anudan"
         property "sonar.sources", "src/main/java"
         property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.projectVersion", "1.1"
+        property "sonar.projectVersion", "1.0"
         property "sonar.language", "java"
         property "sonar.binaries", "build/classes"
         property "sonar.dynamicAnalysis", "reuseReports"
