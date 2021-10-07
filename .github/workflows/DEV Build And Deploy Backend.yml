@@ -100,20 +100,7 @@ jobs:
     - name: analyze
       env:
           GITHUB_TOKEN: ${{ secrets.MY_PAT }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  
-      with:
-         args: >
-          -Dsonar.organization=anudan
-          -Dsonar.projectKey=gms-service-dev
-          -Dsonar.projectName=gms-service/dev
-          -Dsonar.projectVersion=1.0
-          -Dsonar.sources=src/main/java
-          -Dsonar.host.url=https://sonarcloud.io
-          -Dsonar.sonar.binaries=build/classes
-          -Dsonar.sonar.dynamicAnalysis=reuseReports
-          -Dsonar.sonar.junit.reportsPath=build/test-results/test
-          -Dsonar.sonar.java.coveragePlugin=jacoco
-          -Dsonar.sonar.jacoco.reportPath=build/jacoco/jacoco.exec   
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}     
       run: ./gradlew build sonarqube --info     
       
 
