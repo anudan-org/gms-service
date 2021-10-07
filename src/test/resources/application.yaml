@@ -14,5 +14,5 @@ spring:
   recaptcha-secret-key: changeit
   send-mail: false
   use-captcha: false
-  timezone: Asia/Kolkata
+  timezone: Asia/Kolkata 
 
