@@ -101,6 +101,8 @@ jobs:
       env:
           GITHUB_TOKEN: ${{ secrets.MY_PAT }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: | 
+        ./gradlew  sonarqube --info    
       with:
          args: >
           -Dsonar.organization=anudan
@@ -113,10 +115,8 @@ jobs:
           -Dsonar.sonar.dynamicAnalysis=reuseReports
           -Dsonar.sonar.junit.reportsPath=build/test-results/test
           -Dsonar.sonar.java.coveragePlugin=jacoco
-          -Dsonar.sonar.jacoco.reportPath=build/jacoco/jacoco.exec
-    - name: sonar command     
-      run: | 
-        ./gradlew  sonarqube --info
+          -Dsonar.sonar.jacoco.reportPath=build/jacoco/jacoco.exec    
+      
 
   Anudan-config:
     runs-on: ubuntu-latest
