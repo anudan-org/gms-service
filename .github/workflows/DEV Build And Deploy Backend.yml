@@ -100,9 +100,7 @@ jobs:
     - name: analyze
       env:
           GITHUB_TOKEN: ${{ secrets.MY_PAT }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      run: | 
-        ./gradlew  sonarqube --info    
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  
       with:
          args: >
           -Dsonar.organization=anudan
