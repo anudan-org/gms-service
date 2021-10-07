@@ -114,7 +114,7 @@ jobs:
           -Dsonar.sonar.junit.reportsPath=build/test-results/test
           -Dsonar.sonar.java.coveragePlugin=jacoco
           -Dsonar.sonar.jacoco.reportPath=build/jacoco/jacoco.exec
-    - name: run      
+    - name: sonar command     
       run: | 
         ./gradlew  sonarqube --info
 
