@@ -5,7 +5,16 @@ on:
   push:
    branches: [ hotfix/production_bug_fixes ] 
    paths-ignore: 
-     '.github/workflows/**.yml'
+      - '.github/workflows/**.yml'
+      - 'DB/**'
+      - 'gradle/**'
+      - '.DS_Store'
+      - '.gitignore'
+      - '**.md'
+      - '**.gradle'
+      - 'gradlew'
+      - '**.bat'
+      - '**.properties'
 
 env:
   commitmsg: ${{ github.event.head_commit.message }}     
@@ -31,9 +40,9 @@ jobs:
       - name: uploading anudan backend artifact
         uses: actions/upload-artifact@master
         with:
-          name: Anudan-backend-artifact
+          name: Anudan-backend-artifact upload to github. 
           path: build/libs/gms-service-0.0.1-SNAPSHOT.jar
-          retention-days: 5
+          retention-days: 1
 
   unit-and-functional-testing-Backend:
     runs-on: ubuntu-latest
@@ -54,6 +63,8 @@ jobs:
       run: |
         ls -l
         ./gradlew test jacocoTestReport
+
+
   Static-Code-Analysis-Sonarqube-Backend:
      runs-on: ubuntu-latest
      needs: Hotfix-Backend-Build
@@ -100,12 +111,12 @@ jobs:
           token: ${{ secrets.MY_PAT }}
       - run: pwd
       - run: ls -lrt     
-      - name: anudan-config artifact building
+      - name: anudan-config artifact uploadig to github. 
         uses: actions/upload-artifact@v2
         with:
           name: Anudan-Configuration
           path: backend/application.yaml
-          retention-days: 5  
+          retention-days: 1 
   
 
   Trigger-Hotfix-Release:
@@ -144,12 +155,12 @@ jobs:
           run: | 
              echo '{"releaseCandidate":"${{ env.major}}.${{ env.minor }}.${{ env.releaseCandidate }}","productionRelease":"${{ env.major}}.${{ env.minor }}.${{ env.productionRelease }}","hotFixRelease":"${{ env.hotFixRelease }}"}' > release.json 
              ls -lrt    
-        - name: creating Hotfix_release.json artifact 
+        - name: upload Hotfix_release.json artifact to github. 
           uses: actions/upload-artifact@v2
           with:
             name: Anudan-Hotfix-Release
             path: release.json
-            retention-days: 5           
+            retention-days: 1           
 
   Rsync-Hotfix-Deployments:
     runs-on: ubuntu-latest
@@ -157,22 +168,22 @@ jobs:
     needs: [Hotfix-Backend-Build, unit-and-functional-testing-Backend, Static-Code-Analysis-Sonarqube-Backend, Anudan-config, Release-repo-checkout]
     name: Copy Artifacts To Hotfix Server
     steps:
-    - name: downloading Anudan-Configuration arifact
+    - name: downloading Anudan-Configuration arifact from github. 
       uses: actions/download-artifact@v2
       with:
         name: Anudan-Configuration
-    - name: downloading Anudan-backend-artifact 
+    - name: downloading Anudan-backend artifact from github. 
       uses: actions/download-artifact@v2
       with:
         name: Anudan-backend-artifact     
-    - name: downloading Anudan-Hotfix-Release artifact 
+    - name: downloading Anudan-Hotfix-Release artifact from github. 
       uses: actions/download-artifact@v2
       with:
           name: Anudan-Hotfix-Release     
     - run: |  
           ls -lrt
           pwd
-    - name: rsync deployments
+    - name: copy artifacts to Hotfix server. 
       uses: burnett01/rsync-deployments@4.1
       with:
         switches: -avzr -q
@@ -212,17 +223,17 @@ jobs:
                 
 
 
-                 1. Build result - ${{needs.Hotfix-Backend-Build.result}}
+                 1. Build Result - ${{needs.Hotfix-Backend-Build.result}}
  
-                 2. Test result (units and functionals) - ${{needs.unit-and-functional-testing-Backend.result}}
+                 2. Test Result (units and functionals) - ${{needs.unit-and-functional-testing-Backend.result}}
 
-                 3. Static Code Analysis result - ${{needs.Static-Code-Analysis-Sonarqube-Backend.result}}
+                 3. Static Code Analysis Result - ${{needs.Static-Code-Analysis-Sonarqube-Backend.result}}
 
-                 4. Checkout release.json result - ${{needs.Anudan-config.result}} 
+                 4. Checkout release.json Result - ${{needs.Anudan-config.result}} 
  
                  5. Copy Artifacts To Hotfix Server - ${{needs.Rsync-Hotfix-Deployments.result}}
 
-                 6. Hotfix Release result - ${{needs.Trigger-Hotfix-Release.result}}
+                 6. Hotfix Release Result - ${{needs.Trigger-Hotfix-Release.result}}
 
                  7. Anudan - Grant Management System › Hotfix Release - ${{ env.Hotfix_Release }}
           to: ${{ secrets.TO_ADDRESSES }}
