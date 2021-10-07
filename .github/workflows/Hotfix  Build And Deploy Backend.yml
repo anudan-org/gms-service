@@ -40,7 +40,7 @@ jobs:
       - name: uploading anudan backend artifact
         uses: actions/upload-artifact@master
         with:
-          name: Anudan-backend-artifact upload to github. 
+          name: Anudan-backend-artifact 
           path: build/libs/gms-service-0.0.1-SNAPSHOT.jar
           retention-days: 1
 
@@ -172,7 +172,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: Anudan-Configuration
-    - name: downloading Anudan-backend artifact from github. 
+    - name: downloading Anudan-backend-artifact from github. 
       uses: actions/download-artifact@v2
       with:
         name: Anudan-backend-artifact     
