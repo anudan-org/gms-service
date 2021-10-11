@@ -15,4 +15,4 @@ spring:
   send-mail: false
   use-captcha: false
   timezone: Asia/Kolkata 
-
+ 
