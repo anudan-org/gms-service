@@ -114,7 +114,7 @@ jobs:
             -Dsonar.sonar.junit.reportsPath=build/test-results/test
             -Dsonar.sonar.java.coveragePlugin=jacoco
             -Dsonar.sonar.jacoco.reportPath=build/jacoco/jacoco.exec  
-            -DsystemProp.sonar.login= ${{ secrets.SONAR_TOKEN }} 
+            -DsystemProp.sonar.login=${{ secrets.SONAR_TOKEN }} 
        
          
   Anudan-config:
