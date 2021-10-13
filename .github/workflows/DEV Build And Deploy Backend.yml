@@ -115,6 +115,12 @@ jobs:
             -Dsonar.sonar.java.coveragePlugin=jacoco
             -Dsonar.sonar.jacoco.reportPath=build/jacoco/jacoco.exec  
             -DsystemProp.sonar.login=${{ secrets.SONAR_TOKEN }} 
+    - name: SonarQube Quality Gate check
+      uses: sonarsource/sonarqube-quality-gate-action@master
+      # Force to fail step after specific time
+      timeout-minutes: 5
+      env:
+       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}        
        
          
   Anudan-config:
