@@ -113,8 +113,10 @@ jobs:
             -Dsonar.sonar.dynamicAnalysis=reuseReports
             -Dsonar.sonar.junit.reportsPath=build/test-results/test
             -Dsonar.sonar.java.coveragePlugin=jacoco
-            -Dsonar.sonar.jacoco.reportPath=build/jacoco/jacoco.exec   
-      
+            -Dsonar.sonar.jacoco.reportPath=build/jacoco/jacoco.exec  
+            -DsystemProp.sonar.login=${{ secrets.SONAR_TOKEN }}        
+       
+         
   Anudan-config:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/dev'
@@ -170,7 +172,7 @@ jobs:
   #https://github.com/marketplace/actions/rsync-deployments-action
   Rsync-Dev-Deployments:
     runs-on: ubuntu-latest
-    if: always()
+    if: github.ref == 'refs/heads/dev'
     needs: [DEV-Backend-Build, unit-and-functional-testing-Backend, Static-Code-Analysis-Sonarqube-Backend, Anudan-config, Release-repo-checkout]
     name: Copy artifacts to Dev server
     steps:
