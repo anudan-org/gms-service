@@ -15,4 +15,21 @@ spring:
   send-mail: false
   use-captcha: false
   timezone: Asia/Kolkata 
+  spring:
+  #datasource:
+  #  driver-class-name: org.h2.Driver
+  #  url: jdbc:h2:mem:db
+  #  username: sa
+  #  password: sa
+  profiles:
+    active: dev
+  jpa:
+    hibernate:
+      ddl-auto: none
+  upload-file-location: /
+  supported-file-types: pdf
+  recaptcha-secret-key: changeit
+  send-mail: false
+  use-captcha: false
+  timezone: Asia/Kolkata 
  
