@@ -1,7 +1,6 @@
 buildscript {
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:2.1.5.RELEASE")
-        classpath("com.usaa.plugin.gradle:sonarqube-quality-gates:1.0")
     }
 }
 
