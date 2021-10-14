@@ -108,7 +108,13 @@ jobs:
            -Dsonar.sonar.dynamicAnalysis=reuseReports
            -Dsonar.sonar.junit.reportsPath=build/test-results/test
            -Dsonar.sonar.java.coveragePlugin=jacoco
-           -Dsonar.sonar.jacoco.reportPath=build/jacoco/jacoco.exec         
+           -Dsonar.sonar.jacoco.reportPath=build/jacoco/jacoco.exec  
+    - name: SonarQube Quality Gate check
+      uses: sonarsource/sonarqube-quality-gate-action@master
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        scanMetadataReportFile: build/sonar/report-task.txt              
 
   Anudan-config:
     runs-on: ubuntu-latest
