@@ -15,7 +15,4 @@ public interface GranterClosureTemplateRepository extends CrudRepository<Granter
 
     public List<GranterClosureTemplate> findByGranterIdAndPublishedAndPrivateToClosure(Long granterId,
             Boolean publishedStatus, boolean _private);
-
-    public List<GranterClosureTemplate> findByGranterIdAndPublishedAndPrivateToClosure(Long granterId, boolean published,
-            boolean _private);
 }

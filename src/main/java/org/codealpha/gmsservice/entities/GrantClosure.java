@@ -1,8 +1,8 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import org.codealpha.gmsservice.models.ClosureDetailVO;
-import org.codealpha.gmsservice.models.GrantDetailVO;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -38,6 +38,13 @@ public class GrantClosure {
     private List<ClosureAssignments> workflowAssignment;
     @Transient
     private ClosureDetailVO closureDetails;
+    @OneToMany(mappedBy = "report", fetch = FetchType.EAGER)
+    @JsonProperty("stringAttribute")
+    @ApiModelProperty(name = "stringAttributes", value = "Report template structure with values", dataType = "List<ReportStringAttributes>")
+    private List<ClosureStringAttribute> stringAttributes;
+
+
+
 
     public Long getId() {
         return id;
@@ -133,5 +140,13 @@ public class GrantClosure {
 
     public void setUpdateAt(Date updateAt) {
         this.updateAt = updateAt;
+    }
+
+    public List<ClosureStringAttribute> getStringAttributes() {
+        return stringAttributes;
+    }
+
+    public void setStringAttributes(List<ClosureStringAttribute> stringAttributes) {
+        this.stringAttributes = stringAttributes;
     }
 }

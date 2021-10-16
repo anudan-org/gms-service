@@ -29,9 +29,49 @@ import java.util.stream.Collectors;
 
 @Service
 public class GrantClosureService {
+    @Autowired
+    private ClosureAssignmentRepository closureAssignmentRepository;
+    @Autowired
+    private GranterClosureTemplateRepository granterClosureTemplateRepository;
+    @Autowired
+    private ClosureSpecificSectionRepository closureSpecificSectionRepository;
+    @Autowired
+    private ClosureSpecificSectionAttributeRepository closureSpecificSectionAttributeRepository;
+    @Autowired
+    private ClosureStringAttributeRepository closureStringAttributeRepository;
 
 
     public List<GranterClosureTemplate> findTemplatesAndPublishedStatusAndPrivateStatus(Long grantId, boolean isPublished, boolean isPrivate) {
-        return null;
+        return granterClosureTemplateRepository.findByGranterIdAndPublishedAndPrivateToClosure(grantId, isPublished,
+                isPrivate);
+    }
+
+    public ClosureAssignments saveAssignmentForClosure(ClosureAssignments assignment) {
+        return closureAssignmentRepository.save(assignment);
+    }
+
+    public GranterClosureTemplate findByTemplateId(Long templateId) {
+        return granterClosureTemplateRepository.findById(templateId).get();
+    }
+
+    public ClosureSpecificSection saveClosureSpecificSection(ClosureSpecificSection specificSection) {
+        return closureSpecificSectionRepository.save(specificSection);
+    }
+
+    public ClosureSpecificSectionAttribute saveClosureSpecificSectionAttribute(ClosureSpecificSectionAttribute sectionAttribute) {
+        return closureSpecificSectionAttributeRepository.save(sectionAttribute);
+    }
+
+    public ClosureStringAttribute saveClosureStringAttribute(ClosureStringAttribute stringAttribute) {
+        return closureStringAttributeRepository.save(stringAttribute);
+    }
+
+    public List<ClosureSpecificSection> getClosureSections(Grant grant) {
+        return closureSpecificSectionRepository.findByGranterAndGrantId((Granter) grant.getGrantorOrganization(),
+                grant.getId());
+    }
+
+    public List<ClosureSpecificSectionAttribute> getAttributesBySection(ClosureSpecificSection closureSection) {
+        return closureSpecificSectionAttributeRepository.findBySection(closureSection);
     }
 }
