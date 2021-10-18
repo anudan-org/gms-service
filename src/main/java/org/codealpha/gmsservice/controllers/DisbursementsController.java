@@ -926,4 +926,26 @@ public class DisbursementsController {
 
                 return disbursementService.disbursementToPlain(currentDisbursement);
         }
+
+        @GetMapping(value = "/grant/{grantId}/{status}")
+        public List<Disbursement> getDisbursementsForGrantByStatus(@RequestHeader("X-TENANT-CODE")String tenantCode,
+                                                                   @PathVariable("userId")Long userId,
+                                                                   @PathVariable("grantId") Long grantId,
+                                                                   @PathVariable("status") String status){
+                Grant grant = grantService.getById(grantId);
+                Workflow wf = workflowService.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(),"DISBURSEMENT");
+
+                List<WorkflowStatus> statuses = workflowStatusService.findByWorkflow(wf);
+                statuses.removeIf(
+                        w -> !w.getInternalStatus().equalsIgnoreCase("CLOSED")
+                );
+                List<Disbursement> disbursements = disbursementService.getDibursementsForGrantByStatuses(grantId,statuses.stream().mapToLong(a -> a.getId()).boxed().collect(Collectors.toList()));
+
+                for(Disbursement disb : disbursements){
+                        disb = disbursementService.disbursementToReturn(disb,userId);
+                }
+
+                return disbursements;
+
+        }
 }
