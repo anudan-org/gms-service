@@ -68,7 +68,7 @@ jobs:
         ls -l
         ./gradlew test jacocoTestReport
     #- name: test backend code(unit) Run JUnit Test and record results
-    #  run: ./gradlew test jacocoTestReport
+    #  run: ./gradlew test jacocoTestReport 
   
   Static-Code-Analysis-Sonarqube-Backend:
     runs-on: ubuntu-latest
