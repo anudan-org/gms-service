@@ -632,8 +632,10 @@ public class UserController {
     }
 
     private Filter getFilterForGrantsByStatus(Organization tenantOrg, String status) {
-        GranterGrantSummaryCommitted activeGrantSummaryCommitted = dashboardService
-                .getActiveGrantCommittedSummaryForGranter(tenantOrg.getId(), status);
+        GranterGrantSummaryCommitted activeGrantSummaryCommitted = "ACTIVE".equalsIgnoreCase(status)?dashboardService
+                .getActiveStatusGrantCommittedSummaryForGranter(tenantOrg.getId(), status):
+                dashboardService
+                        .getClosedGrantCommittedSummaryForGranter(tenantOrg.getId(), status);
         if (activeGrantSummaryCommitted == null) {
             return null;
         }

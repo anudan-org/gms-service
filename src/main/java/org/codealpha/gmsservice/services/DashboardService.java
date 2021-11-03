@@ -411,6 +411,14 @@ public class DashboardService {
         return granterActiveGrantSummaryCommittedRepository.getGrantCommittedSummaryForGranter(granterId, status);
     }
 
+    public GranterGrantSummaryCommitted getActiveStatusGrantCommittedSummaryForGranter(Long granterId, String status) {
+        return granterActiveGrantSummaryCommittedRepository.getActiveGrantCommittedSummaryForGranter(granterId, status);
+    }
+
+    public GranterGrantSummaryCommitted getClosedGrantCommittedSummaryForGranter(Long granterId, String status) {
+        return granterActiveGrantSummaryCommittedRepository.getClosedGrantCommittedSummaryForGranter(granterId, status);
+    }
+
     public GranterGrantSummaryCommitted getActiveGrantCommittedSummaryForGrantee(Long granteeId, String status) {
         return granterActiveGrantSummaryCommittedRepository.getGrantCommittedSummaryForGrantee(granteeId, status);
     }

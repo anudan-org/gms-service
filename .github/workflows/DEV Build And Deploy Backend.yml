@@ -68,7 +68,7 @@ jobs:
         ls -l
         ./gradlew test jacocoTestReport
     #- name: test backend code(unit) Run JUnit Test and record results
-    #  run: ./gradlew test jacocoTestReport
+    #  run: ./gradlew test jacocoTestReport 
   
   Static-Code-Analysis-Sonarqube-Backend:
     runs-on: ubuntu-latest
@@ -148,7 +148,7 @@ jobs:
   Trigger-Dev-Release:
       runs-on: ubuntu-latest
       needs: [unit-and-functional-testing-Backend, Static-Code-Analysis-Sonarqube-Backend]
-      if: github.event_name == 'push'
+      if: github.ref == 'refs/heads/dev'
       name: Create Dev Release Version
       steps:      
         - name: DEV-deployment  
@@ -162,7 +162,7 @@ jobs:
 
   Release-repo-checkout:
       runs-on: ubuntu-latest
-      if: always()
+      if: github.ref == 'refs/heads/dev' 
       name: Checkout release.json
       needs: [Trigger-Dev-Release]
       steps:

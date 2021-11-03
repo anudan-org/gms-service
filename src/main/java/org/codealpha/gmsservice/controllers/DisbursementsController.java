@@ -48,6 +48,7 @@ import java.util.zip.ZipOutputStream;
 @RequestMapping("/user/{userId}/disbursements")
 public class DisbursementsController {
 
+        public static final String CLOSED = "CLOSED";
         private static Logger logger = LoggerFactory.getLogger(DisbursementsController.class);
         @Autowired
         private GrantService grantService;
@@ -88,28 +89,11 @@ public class DisbursementsController {
                 List<Grant> ownerGrants = grantService.getGrantsOwnedByUserByStatus(userId, "ACTIVE");
                 List<Grant> grantsToReturn = new ArrayList<>();
                 if (ownerGrants != null && ownerGrants.size() > 0) {
-                        /*List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses(
-                                        "DISBURSEMENT", ownerGrants.get(0).getGrantorOrganization().getId());
-
-                        workflowStatusService.findInitialStatusByObjectAndGranterOrgId()
-                        List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream()
-                                        .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED"))
-                                        .collect(Collectors.toList());
-                        List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
-                                        .collect(Collectors.toList());
-
-                        List<WorkflowStatus> draftAndReviewStatuses = workflowStatuses.stream()
-                                        .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")
-                                                        || ws.getInternalStatus().equalsIgnoreCase("REVIEW"))
-                                        .collect(Collectors.toList());
-                        List<Long> draftAndReviewStatusIds = draftAndReviewStatuses.stream().mapToLong(s -> s.getId())
-                                        .boxed().collect(Collectors.toList());*/
-
                         for (Grant g : ownerGrants) {
                                 Double total = 0d;
 
                                 List<Long> statusIds=workflowStatusService.findByWorkflow(workflowService.findWorkflowByGrantTypeAndObject(g.getGrantTypeId(),"DISBURSEMENT")).stream()
-                                        .filter(st ->st.getInternalStatus().equalsIgnoreCase("CLOSED"))
+                                        .filter(st ->st.getInternalStatus().equalsIgnoreCase(CLOSED))
                                         .mapToLong(s -> s.getId()).boxed()
                                         .collect(Collectors.toList());
                                 List<Disbursement> closedDisbursements = disbursementService
@@ -518,7 +502,7 @@ public class DisbursementsController {
                                                                 : "",
                                 "", null, null, null, null);
                 final User finalCurrentOwner = currentOwner;
-                if (!toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
+                if (!toStatus.getInternalStatus().equalsIgnoreCase(CLOSED)) {
                         usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue()
                                         || u.isDeleted());
 
@@ -925,5 +909,27 @@ public class DisbursementsController {
 
 
                 return disbursementService.disbursementToPlain(currentDisbursement);
+        }
+
+        @GetMapping(value = "/grant/{grantId}/{status}")
+        public List<Disbursement> getDisbursementsForGrantByStatus(@RequestHeader("X-TENANT-CODE")String tenantCode,
+                                                                   @PathVariable("userId")Long userId,
+                                                                   @PathVariable("grantId") Long grantId,
+                                                                   @PathVariable("status") String status){
+                Grant grant = grantService.getById(grantId);
+                Workflow wf = workflowService.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(),"DISBURSEMENT");
+
+                List<WorkflowStatus> statuses = workflowStatusService.findByWorkflow(wf);
+                statuses.removeIf(
+                        w -> !w.getInternalStatus().equalsIgnoreCase(CLOSED)
+                );
+                List<Disbursement> disbursements = disbursementService.getDibursementsForGrantByStatuses(grantId,statuses.stream().mapToLong(WorkflowStatus::getId).boxed().collect(Collectors.toList()));
+
+                for(Disbursement disb : disbursements){
+                        disbursementService.disbursementToReturn(disb,userId);
+                }
+
+                return disbursements;
+
         }
 }
