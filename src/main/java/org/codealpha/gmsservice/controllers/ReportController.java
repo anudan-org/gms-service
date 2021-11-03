@@ -297,21 +297,23 @@ public class ReportController {
     @GetMapping("/{grantId}/approved")
     public List<Report> getApprovedReportsForGrant(@PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("grantId") Long grantId) {
-        Optional<WorkflowStatus> reportApprovedStatus = workflowStatusService
+        List<WorkflowStatus> reportApprovedStatus = workflowStatusService
                 .getTenantWorkflowStatuses("REPORT",
                         organizationService.findOrganizationByTenantCode(tenantCode).getId())
-                .stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
+                .stream().filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).collect(Collectors.toList());
+        Workflow currentReportWorkflow = workflowService.findWorkflowByGrantTypeAndObject(grantService.getById(grantId).getGrantTypeId(),"REPORT");
+        reportApprovedStatus.removeIf(r -> r.getWorkflow().getId().longValue()!=currentReportWorkflow.getId().longValue());
         List<Report> reports = new ArrayList<>();
-        if (reportApprovedStatus.isPresent()) {
+
             Grant grant = grantService.getById(grantId);
-            reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(), grant);
+            reports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(0), grant);
             // Include approved reports of orgiginal grant if exist
             if (grant.getOrigGrantId() != null) {
-                reports.addAll(reportService.findReportsByStatusForGrant(reportApprovedStatus.get(),
+                reports.addAll(reportService.findReportsByStatusForGrant(reportApprovedStatus.get(0),
                         grantService.getById(grant.getOrigGrantId())));
             }
             // End
-        }
+
 
         for (Report report : reports) {
             report = _ReportToReturn(report, userId);

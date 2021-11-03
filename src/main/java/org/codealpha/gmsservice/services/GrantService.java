@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.codealpha.gmsservice.constants.AppConfiguration;
-import org.codealpha.gmsservice.constants.KpiType;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
@@ -31,6 +30,9 @@ import java.util.stream.Collectors;
 public class GrantService {
 
     private static final String SECRET = "bhjgsdf788778hsdfhgsdf777werghsbdfjhdsf88yw3r7t7yt^%^%%@#Ghj";
+    public static final String GRANT_NAME = "%GRANT_NAME%";
+    public static final String ACTIVE = "ACTIVE";
+    public static final String CLOSED = "CLOSED";
     @Autowired
     private GrantRepository grantRepository;
     @Autowired
@@ -131,11 +133,9 @@ public class GrantService {
     private ReportCardRepository reportCardRepository;
 
     public GrantService() {
+        //Adding for sonar
     }
 
-    public List<String> getGrantAlerts(Grant grant) {
-        return null;
-    }
 
     public Grant saveGrant(Grant grant) {
         return grantRepository.save(grant);
@@ -159,7 +159,8 @@ public class GrantService {
     }
 
     public GrantSpecificSectionAttribute getAttributeById(Long attributeId) {
-        return grantSpecificSectionAttributeRepository.findById(attributeId).get();
+        Optional<GrantSpecificSectionAttribute> attr = grantSpecificSectionAttributeRepository.findById(attributeId);
+        return attr.isPresent()?attr.get():null;
     }
 
     public GrantSpecificSectionAttribute getSectionAttributeByAttributeIdAndType(Long attributeId, String type) {
@@ -169,23 +170,24 @@ public class GrantService {
                 return grantStringAttribute.get().getSectionAttribute();
             }
         } else if (type.equalsIgnoreCase("multiline")) {
-           GrantStringAttribute grantStringAttribute = grantStringAttributeRepository.getGrantStringAttributeById(attributeId);
-                return grantStringAttribute.getSectionAttribute();
+            return getGrantSpecificSectionAttribute(attributeId);
 
         } else if (type.equalsIgnoreCase("document")) {
-            GrantStringAttribute grantStringAttribute = grantStringAttributeRepository.getGrantStringAttributeById(attributeId);
-                return grantStringAttribute.getSectionAttribute();
+            return getGrantSpecificSectionAttribute(attributeId);
 
         } else if (type.equalsIgnoreCase("kpi")) {
-            GrantStringAttribute grantStringAttribute = grantStringAttributeRepository.getGrantStringAttributeById(attributeId);
-                return grantStringAttribute.getSectionAttribute();
+            return getGrantSpecificSectionAttribute(attributeId);
 
         } else if (type.equalsIgnoreCase("table") || type.equalsIgnoreCase("disbursement")) {
-            GrantStringAttribute grantStringAttribute = grantStringAttributeRepository.getGrantStringAttributeById(attributeId);
-                return grantStringAttribute.getSectionAttribute();
+            return getGrantSpecificSectionAttribute(attributeId);
         }
 
         return null;
+    }
+
+    private GrantSpecificSectionAttribute getGrantSpecificSectionAttribute(Long attributeId) {
+        GrantStringAttribute grantStringAttribute = grantStringAttributeRepository.getGrantStringAttributeById(attributeId);
+        return grantStringAttribute.getSectionAttribute();
     }
 
     public List<GrantStringAttribute> getStringAttributesByAttribute(
@@ -194,7 +196,8 @@ public class GrantService {
     }
 
     public GrantDocumentAttributes getDocumentAttributeById(Long docAttribId) {
-        return grantDocumentAttributesRepository.findById(docAttribId).get();
+        Optional<GrantDocumentAttributes> attribs = grantDocumentAttributesRepository.findById(docAttribId);
+        return attribs.isPresent()?attribs.get():null;
     }
 
     public GrantStringAttribute saveStringAttribute(GrantStringAttribute grantStringAttribute) {
@@ -209,105 +212,10 @@ public class GrantService {
         return grantSpecificSectionRepository.save(newSection);
     }
 
-    public GrantQuantitativeKpiData getGrantQuantitativeKpiDataById(Long quntKpiDataId) {
-        if (grantQuantitativeDataRepository.findById(quntKpiDataId).isPresent()) {
-            return grantQuantitativeDataRepository.findById(quntKpiDataId).get();
-        }
-        return null;
-    }
 
-    public GrantQualitativeKpiData getGrantQualitativeKpiDataById(Long qualKpiDataId) {
-        if (grantQualitativeDataRepository.findById(qualKpiDataId).isPresent()) {
-            return grantQualitativeDataRepository.findById(qualKpiDataId).get();
-        }
-        return null;
-    }
-
-    public GrantQuantitativeKpiData saveGrantQunatitativeKpiData(GrantQuantitativeKpiData kpiData) {
-        return grantQuantitativeDataRepository.save(kpiData);
-    }
-
-    public GrantQualitativeKpiData saveGrantQualitativeKpiData(GrantQualitativeKpiData kpiData) {
-        return grantQualitativeDataRepository.save(kpiData);
-    }
-
-    public GrantKpi saveGrantKpi(GrantKpi grantKpi) {
-
-        return grantKpiRepository.save(grantKpi);
-    }
-
-    public GrantKpi getGrantKpiById(Long id) {
-        if (grantKpiRepository.findById(id).isPresent()) {
-            return grantKpiRepository.findById(id).get();
-        }
-        return null;
-    }
-
-    public GrantKpi getGrantKpiByNameAndTypeAndGrant(String title, KpiType kpiType, Grant grant) {
-        return grantKpiRepository.findByTitleAndKpiTypeAndGrant(title, kpiType, grant);
-    }
-
-    public GrantDocumentKpiData getGrantDocumentKpiDataById(Long id) {
-        if (grantDocumentDataRepository.findById(id).isPresent()) {
-            return grantDocumentDataRepository.findById(id).get();
-        }
-        return null;
-    }
-
-    public GrantDocumentKpiData saveGrantDocumentKpiData(GrantDocumentKpiData kpiData) {
-        return grantDocumentDataRepository.save(kpiData);
-    }
-
-    public List<Template> getKpiTemplates(GrantKpi kpiId) {
-
-        return templateRepository.findByKpi(kpiId);
-    }
-
-    public Template getKpiTemplateById(Long templateId) {
-        if (templateRepository.findById(templateId).isPresent()) {
-            return templateRepository.findById(templateId).get();
-        }
-        return null;
-    }
 
     public GrantDocumentAttributes saveGrantDocumentAttribute(GrantDocumentAttributes grantDocumentAttributes) {
         return grantDocumentAttributesRepository.save(grantDocumentAttributes);
-    }
-
-    public DocumentKpiNotes getDocKpiNoteById(Long id) {
-        return documentKpiNotesRepository.findById(id).get();
-    }
-
-    public DocumentKpiNotes saveDocumentKpiNote(DocumentKpiNotes documentKpiNote) {
-        return documentKpiNotesRepository.save(documentKpiNote);
-    }
-
-    public QualitativeKpiNotes getQualKpiNoteById(Long id) {
-        return qualitativeKpiNotesRepository.findById(id).get();
-    }
-
-    public QualitativeKpiNotes saveQualKpiNote(QualitativeKpiNotes qualKpiNote) {
-        return qualitativeKpiNotesRepository.save(qualKpiNote);
-    }
-
-    public QuantitativeKpiNotes getQuantKpiNoteById(Long id) {
-        return quantitativeKpiNotesRepository.findById(id).get();
-    }
-
-    public QuantitativeKpiNotes saveQuantKpiNote(QuantitativeKpiNotes quantKpiNote) {
-        return quantitativeKpiNotesRepository.save(quantKpiNote);
-    }
-
-    public DocKpiDataDocument saveDocKpiDataDoc(DocKpiDataDocument dataDocument) {
-        return docKpiDataDocumentRepository.save(dataDocument);
-    }
-
-    public QualKpiDataDocument getQualkpiDocById(Long id) {
-        return qualKpiDocumentRepository.findById(id).get();
-    }
-
-    public QuantKpiDataDocument saveQuantKpiDataDoc(QuantKpiDataDocument dataDocument) {
-        return quantKpiDocumentRepository.save(dataDocument);
     }
 
     public GrantStringAttribute findGrantStringBySectionAttribueAndGrant(GrantSpecificSection granterGrantSection,
@@ -323,7 +231,8 @@ public class GrantService {
     }
 
     public GrantStringAttribute findGrantStringAttributeById(Long grantStringAttributeId) {
-        return grantStringAttributeRepository.findById(grantStringAttributeId).get();
+        Optional<GrantStringAttribute> attr = grantStringAttributeRepository.findById(grantStringAttributeId);
+        return attr.isPresent()?attr.get():null;
     }
 
     public GrantDocumentAttributes findGrantDocumentBySectionAttribueAndGrant(GrantSpecificSection granterGrantSection,
@@ -353,7 +262,7 @@ public class GrantService {
     }
 
     public String buildNotificationContent(Grant grant, WorkflowStatus status, String configValue) {
-        return configValue.replace("%GRANT_NAME%", grant.getName()).replace("%GRANT_STATUS%", status.getVerb());
+        return configValue.replace(GRANT_NAME, grant.getName()).replace("%GRANT_STATUS%", status.getVerb());
     }
 
     public List<GrantSpecificSection> getGrantSections(Grant grant) {
@@ -447,8 +356,9 @@ public class GrantService {
     }
 
     public GrantAssignments getGrantAssignmentById(Long assignmentId) {
-        if (grantAssignmentRepository.findById(assignmentId).isPresent()) {
-            return grantAssignmentRepository.findById(assignmentId).get();
+        Optional<GrantAssignments> assignments = grantAssignmentRepository.findById(assignmentId);
+        if (assignments.isPresent()) {
+            return assignments.get();
         }
         return null;
     }
@@ -464,7 +374,8 @@ public class GrantService {
     }
 
     public GrantStringAttributeAttachments getStringAttributeAttachmentsByAttachmentId(Long attachmentId) {
-        return grantStringAttributeAttachmentRepository.findById(attachmentId).get();
+        Optional<GrantStringAttributeAttachments> attachments = grantStringAttributeAttachmentRepository.findById(attachmentId);
+        return attachments.isPresent()?attachments.get():null;
     }
 
     public void deleteStringAttributeAttachmentsByAttachmentId(Long attachmentId) {
@@ -514,7 +425,7 @@ public class GrantService {
         }else{
             grantName = finalGrant.getReferenceNo()!=null?"[".concat(finalGrant.getReferenceNo()).concat("] ").concat(finalGrant.getName()):finalGrant.getName();
         }
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", grantName)
+        String message = msgConfigValue.replaceAll(GRANT_NAME, grantName)
                 .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
                 .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
                 .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
@@ -529,7 +440,7 @@ public class GrantService {
                 .replaceAll("%APPROVER_TYPE%", "Approver").replaceAll("%ENTITY_TYPE%", "grant")
                 .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
                 .replaceAll("%ENTITY_NAME%", finalGrant.getName());
-        String subject = subConfigValue.replaceAll("%GRANT_NAME%", grantName);
+        String subject = subConfigValue.replaceAll(GRANT_NAME, grantName);
 
         return new String[] { subject, message };
     }
@@ -546,7 +457,7 @@ public class GrantService {
         String[] table = {
                 "<table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>Current State Owners</b></td><td><b>Previous State Owners</b></td></tr>" };
         newAssignments.forEach(a -> {
-            Long prevAss = assignments.keySet().stream().filter(b -> b == a.getStateId()).findFirst().get();
+            Long prevAss = assignments.keySet().stream().filter(b -> b.longValue() == a.getStateId().longValue()).findFirst().get();
 
             table[0] = table[0].concat("<tr>").concat("<td width='30%'>")
                     .concat(workflowStatusRepository.findById(a.getStateId()).get().getName()).concat("</td>")
@@ -566,9 +477,9 @@ public class GrantService {
 
     }
 
-    public String[] buildGrantInvitationContent(Grant grant, User user, String sub, String msg, String url) {
-        sub = sub.replace("%GRANT_NAME%", grant.getName());
-        msg = msg.replace("%GRANT_NAME%", grant.getName())
+    public String[] buildGrantInvitationContent(Grant grant, String sub, String msg, String url) {
+        sub = sub.replace(GRANT_NAME, grant.getName());
+        msg = msg.replace(GRANT_NAME, grant.getName())
                 .replace("%TENANT_NAME%", grant.getGrantorOrganization().getName()).replace("%LINK%", url);
         return new String[] { sub, msg };
     }
@@ -653,9 +564,8 @@ public class GrantService {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            return secureHash;
         }
+        return secureHash;
     }
 
     public List<Grant> getActiveGrantsForTenant(Organization organization) {
@@ -749,8 +659,8 @@ public class GrantService {
                 grant.getGrantorOrganization().getId());
 
         List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream()
-                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE")
-                        || ws.getInternalStatus().equalsIgnoreCase("CLOSED"))
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase(ACTIVE)
+                        || ws.getInternalStatus().equalsIgnoreCase(CLOSED))
                 .collect(Collectors.toList());
         List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
                 .collect(Collectors.toList());
@@ -777,27 +687,29 @@ public class GrantService {
         grant.setApprovedDisbursementsTotal(
                 approvedActualDisbursements.stream().mapToDouble(ActualDisbursement::getActualAmount).sum());
 
-        Optional<WorkflowStatus> reportApprovedStatus = workflowStatusService
+        List<WorkflowStatus> reportApprovedStatus = workflowStatusService
                 .getTenantWorkflowStatuses("REPORT", grant.getGrantorOrganization().getId()).stream()
-                .filter(s -> s.getInternalStatus().equalsIgnoreCase("CLOSED")).findFirst();
+                .filter(s -> s.getInternalStatus().equalsIgnoreCase(CLOSED)).collect(Collectors.toList());
+        Workflow currentReportWorkflow = workflowRepository.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(),"REPORT");
+        reportApprovedStatus.removeIf(wf -> wf.getWorkflow().getId().longValue()!=currentReportWorkflow.getId().longValue());
         List<ReportCard> reports = new ArrayList<>();
         int noOfReports = 0;
-        if (reportApprovedStatus.isPresent()) {
-            reports = reportService.findReportCardsByStatusForGrant(reportApprovedStatus.get(), grant);
+        //if (reportApprovedStatus.isPresent()) {
+            reports = reportService.findReportCardsByStatusForGrant(reportApprovedStatus.get(0), grant);
             noOfReports = reports.size();
             // Include approved reports of orgiginal grant if exist
             if (grant.getOrigGrantId() != null) {
-                reports = reportService.findReportCardsByStatusForGrant(reportApprovedStatus.get(),
+                reports = reportService.findReportCardsByStatusForGrant(reportApprovedStatus.get(0),
                         getById(grant.getOrigGrantId()));
                 noOfReports += reports.size();
             }
             // End
             grant.setApprovedReportsForGrant(noOfReports);
-        }
+
 
         // Set old grant ref no if current amendment grant is still in porogress
-        if (grant.getOrigGrantId() != null && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("ACTIVE")
-                && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase("CLOSED")) {
+        if (grant.getOrigGrantId() != null && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(ACTIVE)
+                && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(CLOSED)) {
             grant.setOrigGrantRefNo(getById(grant.getOrigGrantId()).getReferenceNo());
         }
 
@@ -859,8 +771,8 @@ public class GrantService {
                 grant.getGrantorOrganization().getId());
 
         List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream()
-                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE")
-                        || ws.getInternalStatus().equalsIgnoreCase("CLOSED"))
+                .filter(ws -> ws.getInternalStatus().equalsIgnoreCase(ACTIVE)
+                        || ws.getInternalStatus().equalsIgnoreCase(CLOSED))
                 .collect(Collectors.toList());
         List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
                 .collect(Collectors.toList());
@@ -922,7 +834,8 @@ public class GrantService {
     }
 
     public GrantDocument getGrantDocumentById(Long attachmentId) {
-        return grantDocumentRepository.findById(attachmentId).get();
+        Optional<GrantDocument> doc = grantDocumentRepository.findById(attachmentId);
+        return doc.isPresent()?doc.get():null;
     }
 
     public void deleteGrantDocument(GrantDocument doc) {
@@ -938,7 +851,8 @@ public class GrantService {
     }
 
     public GrantType getGrantypeById(Long grantTypeId){
-        return grantTypeRepository.findById(grantTypeId).get();
+        Optional<GrantType> type = grantTypeRepository.findById(grantTypeId);
+        return type.isPresent()?type.get():null;
     }
 
     public List<Grant> getAllGrantsForGranter(Long granterId){
@@ -1124,7 +1038,6 @@ public class GrantService {
                                 if(attribute.getFieldValue()!=null && !attribute.getFieldValue().equalsIgnoreCase("")){
                                     plainAttribute.setAttachments(mapper.readValue(attribute.getFieldValue(), new TypeReference<List<GrantStringAttributeAttachments>>() {}));
                                 }
-
                                 break;
                         }
 
