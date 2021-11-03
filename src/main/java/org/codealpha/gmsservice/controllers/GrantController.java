@@ -2399,13 +2399,15 @@ public class GrantController {
             assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
 
             //Change the reports anchor to the new Grant Active State Owner
-            if (grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(ACTIVE) && assignmentsVO.getStateId() == grant.getGrantStatus().getId()) {
+            if (grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(ACTIVE) && assignmentsVO.getStateId().longValue() == grant.getGrantStatus().getId().longValue()) {
                 List<Report> reports = reportService.getReportsForGrant(grant);
                 //reports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase(CLOSED));
 
                 for (Report report : reports) {
-                    WorkflowStatus closedStatusForReport = workflowStatusService.findByWorkflow(report.getStatus().getWorkflow()).stream().filter(st -> st.getInternalStatus().equalsIgnoreCase(CLOSED)).findFirst().get();
-
+                    List<WorkflowStatus> workflowStatusList = workflowStatusService.findByWorkflow(report.getStatus().getWorkflow()).stream().filter(st -> st.getInternalStatus().equalsIgnoreCase(CLOSED)).collect(Collectors.toList());
+                    Workflow currentReportWorkflow = workflowService.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(),"REPORT");
+                    workflowStatusList.removeIf(wf -> wf.getWorkflow().getId().longValue()!=currentReportWorkflow.getId().longValue());
+                    WorkflowStatus closedStatusForReport = workflowStatusList.get(0);
                     List<ReportAssignment> reportAssignments = reportService.getAssignmentsForReport(report);
                     List<ReportAssignment> tmpAssignments = new ArrayList<>();
                     for (ReportAssignment rAssignment : reportAssignments) {
@@ -2422,7 +2424,10 @@ public class GrantController {
 
                 List<Disbursement> disbursements = disbursementService.getAllDisbursementsForGrant(grant.getId());
                 for (Disbursement disbursement : disbursements) {
-                    WorkflowStatus closedStatusForDisbursement = workflowStatusService.findByWorkflow(disbursement.getStatus().getWorkflow()).stream().filter(st -> st.getInternalStatus().equalsIgnoreCase(CLOSED)).findFirst().get();
+                    List<WorkflowStatus> workflowStatuses = workflowStatusService.findByWorkflow(disbursement.getStatus().getWorkflow()).stream().filter(st -> st.getInternalStatus().equalsIgnoreCase(CLOSED)).collect(Collectors.toList());
+                    Workflow currentWorkflow = workflowService.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(),"DISBURSEMENT");
+                    workflowStatuses.removeIf(wf ->wf.getWorkflow().getId().longValue()!=currentWorkflow.getId().longValue());
+                    WorkflowStatus closedStatusForDisbursement = workflowStatuses.get(0);
 
                     List<DisbursementAssignment> disbursementAssignments = disbursementService.getDisbursementAssignments(disbursement);
                     disbursementAssignments.removeIf(d -> d.getStateId().longValue() != closedStatusForDisbursement.getId().longValue());
