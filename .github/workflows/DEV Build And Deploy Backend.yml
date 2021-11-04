@@ -198,6 +198,7 @@ jobs:
           name: Anudan-Dev-Release     
     - run: |  
           ls -lrt
+          echo "Dev_Version=`cat Dev_release.json| cut -d "," -f1 | cut -d ":" -f2 | sed 's/"//g' | sed 's/}//g'`" >> $GITHUB_ENV
           mv Dev_release.json release.json
           ls -lrt       
     - name: copy artifacts to Dev Server. 
@@ -217,15 +218,6 @@ jobs:
     needs: [DEV-Backend-Build, unit-and-functional-testing-Backend, Static-Code-Analysis-Sonarqube-Backend, Anudan-config, Rsync-Dev-Deployments, Trigger-Dev-Release]
     name: Notify Via Email
     steps:
-      - name: Anudan Release artifact downloading from github.    
-        uses: actions/download-artifact@v2
-        with:
-            name: Anudan-Dev-Release
-
-      - name: set env variable with bash expression 
-        run:   |
-          ls -lrt
-          echo "Dev_Version=`cat Dev_release.json| cut -d "," -f1 | cut -d ":" -f2 | sed 's/"//g' | sed 's/}//g'`" >> $GITHUB_ENV
       - name: Send some mail
         uses: wadeww/send-email-action@master
         with:
