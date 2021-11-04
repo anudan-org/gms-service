@@ -77,6 +77,7 @@ public class GrantController {
     public static final String ACTIVE = "ACTIVE";
     public static final String FILE = "file:";
     public static final String ATTACHMENT_FILENAME_TEST_ZIP = "attachment; filename=\"test.zip\"";
+    public static final String CONTENT_DISPOSITION = "Content-Disposition";
 
     @Autowired
     DataSource dataSource;
@@ -2722,7 +2723,7 @@ public class GrantController {
         // setting headers
         response.setContentType("application/zip");
         response.setStatus(HttpServletResponse.SC_OK);
-        response.addHeader("Content-Disposition", ATTACHMENT_FILENAME_TEST_ZIP);
+        response.addHeader(CONTENT_DISPOSITION, ATTACHMENT_FILENAME_TEST_ZIP);
 
         // creating byteArray stream, make it bufforable and passing this buffor to
         // ZipOutputStream
@@ -2781,7 +2782,7 @@ public class GrantController {
         // setting headers
         response.setContentType("application/zip");
         response.setStatus(HttpServletResponse.SC_OK);
-        response.addHeader("Content-Disposition", ATTACHMENT_FILENAME_TEST_ZIP);
+        response.addHeader(CONTENT_DISPOSITION, ATTACHMENT_FILENAME_TEST_ZIP);
 
         // creating byteArray stream, make it bufforable and passing this buffor to
         // ZipOutputStream
@@ -3220,7 +3221,7 @@ public class GrantController {
         // setting headers
         response.setContentType("application/zip");
         response.setStatus(HttpServletResponse.SC_OK);
-        response.addHeader("Content-Disposition", ATTACHMENT_FILENAME_TEST_ZIP);
+        response.addHeader(CONTENT_DISPOSITION, ATTACHMENT_FILENAME_TEST_ZIP);
 
         // creating byteArray stream, make it bufforable and passing this buffor to
         // ZipOutputStream
