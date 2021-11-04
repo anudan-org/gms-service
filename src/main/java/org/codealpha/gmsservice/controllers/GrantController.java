@@ -13,12 +13,6 @@ import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.text.WordUtils;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDDocumentInformation;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.GrantStatus;
@@ -47,22 +41,19 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
-import springfox.documentation.annotations.ApiIgnore;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
-import java.awt.*;
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.time.Month;
-import java.util.Date;
-import java.util.List;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -85,6 +76,8 @@ public class GrantController {
     public static final String CLOSED = "CLOSED";
     public static final String ACTIVE = "ACTIVE";
     public static final String FILE = "file:";
+    public static final String ATTACHMENT_FILENAME_TEST_ZIP = "attachment; filename=\"test.zip\"";
+    public static final String CONTENT_DISPOSITION = "Content-Disposition";
 
     @Autowired
     DataSource dataSource;
@@ -334,7 +327,7 @@ public class GrantController {
         Organization granterOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         createInitialAssignmentsPlaceholders(userId, grant, granterOrg);
 
-        GranterGrantTemplate grantTemplate = granterGrantTemplateService
+        granterGrantTemplateService
                 .findByTemplateId(existingGrant.getTemplateId());
 
 
@@ -1332,7 +1325,7 @@ public class GrantController {
             grant = grantService.saveGrant(grant);
             final Grant finalGrant = grant;
             WorkflowStatus statusClosed = workflowStatusService
-                    .getTenantWorkflowStatuses("GRANT", grant.getGrantorOrganization().getId()).stream()
+                    .getTenantWorkflowStatuses(GRANT, grant.getGrantorOrganization().getId()).stream()
                     .filter(ws -> ws.getInternalStatus().equalsIgnoreCase(CLOSED) && ws.getWorkflow().getId().longValue() == finalGrant.getGrantStatus().getWorkflow().getId().longValue()).findFirst().get();
             Optional<WorkflowStatus> optionalWorkflowStatus = workflowStatusService
                     .getTenantWorkflowStatuses(GRANT, grant.getGrantorOrganization().getId()).stream()
@@ -2401,7 +2394,6 @@ public class GrantController {
             //Change the reports anchor to the new Grant Active State Owner
             if (grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(ACTIVE) && assignmentsVO.getStateId().longValue() == grant.getGrantStatus().getId().longValue()) {
                 List<Report> reports = reportService.getReportsForGrant(grant);
-                //reports.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase(CLOSED));
 
                 for (Report report : reports) {
                     List<WorkflowStatus> workflowStatusList = workflowStatusService.findByWorkflow(report.getStatus().getWorkflow()).stream().filter(st -> st.getInternalStatus().equalsIgnoreCase(CLOSED)).collect(Collectors.toList());
@@ -2440,7 +2432,7 @@ public class GrantController {
             }
 
             //Change the disbursements anchor to the new Grant Active State Owner
-            if (grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(ACTIVE) && assignmentsVO.getStateId() == grant.getGrantStatus().getId()) {
+            if (grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(ACTIVE) && assignmentsVO.getStateId().longValue() == grant.getGrantStatus().getId().longValue()) {
                 List<Disbursement> disbursements = disbursementService.getAllDisbursementsForGrant(grant.getId());
                 disbursements.removeIf(r -> r.getStatus().getInternalStatus().equalsIgnoreCase(CLOSED));
                 for (Disbursement disbursement : disbursements) {
@@ -2454,14 +2446,19 @@ public class GrantController {
             }
             grantService.saveAssignmentForGrant(assignment);
             if (workflowStatusService.findById(assignment.getStateId()).getInternalStatus().equalsIgnoreCase(ACTIVE)) {
-                WorkflowStatus closedStatus = workflowStatusService.findByWorkflow(workflowStatusService.findById(assignment.getStateId()).getWorkflow()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase(CLOSED)).findFirst().get();
-                GrantAssignments closedAssignmentEntry = grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getStateId().longValue() == closedStatus.getId().longValue()).findFirst().get();
-                if (closedAssignmentEntry != null) {
-                    closedAssignmentEntry.setAssignments(assignment.getAssignments());
-                    closedAssignmentEntry.setUpdatedBy(userId);
-                    closedAssignmentEntry.setAssignedOn(DateTime.now().toDate());
-                    grantService.saveAssignmentForGrant(closedAssignmentEntry);
+
+                Optional<WorkflowStatus> optionalWorkflowStatus = workflowStatusService.findByWorkflow(workflowStatusService.findById(assignment.getStateId()).getWorkflow()).stream().filter(s -> s.getInternalStatus().equalsIgnoreCase(CLOSED)).findFirst();
+                WorkflowStatus closedStatus = optionalWorkflowStatus.isPresent()?optionalWorkflowStatus.get():null;
+                if (closedStatus != null) {
+                    GrantAssignments closedAssignmentEntry = grantService.getGrantWorkflowAssignments(grant).stream().filter(ass -> ass.getStateId().longValue() == closedStatus.getId().longValue()).findFirst().get();
+                    if (closedAssignmentEntry != null) {
+                        closedAssignmentEntry.setAssignments(assignment.getAssignments());
+                        closedAssignmentEntry.setUpdatedBy(userId);
+                        closedAssignmentEntry.setAssignedOn(DateTime.now().toDate());
+                        grantService.saveAssignmentForGrant(closedAssignmentEntry);
+                    }
                 }
+
             }
         }
 
@@ -2727,7 +2724,7 @@ public class GrantController {
         // setting headers
         response.setContentType("application/zip");
         response.setStatus(HttpServletResponse.SC_OK);
-        response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
+        response.addHeader(CONTENT_DISPOSITION, ATTACHMENT_FILENAME_TEST_ZIP);
 
         // creating byteArray stream, make it bufforable and passing this buffor to
         // ZipOutputStream
@@ -2786,7 +2783,7 @@ public class GrantController {
         // setting headers
         response.setContentType("application/zip");
         response.setStatus(HttpServletResponse.SC_OK);
-        response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
+        response.addHeader(CONTENT_DISPOSITION, ATTACHMENT_FILENAME_TEST_ZIP);
 
         // creating byteArray stream, make it bufforable and passing this buffor to
         // ZipOutputStream
@@ -3081,7 +3078,7 @@ public class GrantController {
     public Grant resolveGrant(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,
                               @RequestParam("g") String grantCode) {
         Long grantId = Long.valueOf(new String(Base64.getDecoder().decode(grantCode), StandardCharsets.UTF_8));
-        logger.info("Grant Id: {0}", grantId);
+
         Grant grant = grantService.getById(grantId);
 
         grant = grantService._grantToReturn(userId, grant);
@@ -3226,7 +3223,7 @@ public class GrantController {
         // setting headers
         response.setContentType("application/zip");
         response.setStatus(HttpServletResponse.SC_OK);
-        response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
+        response.addHeader(CONTENT_DISPOSITION, ATTACHMENT_FILENAME_TEST_ZIP);
 
         // creating byteArray stream, make it bufforable and passing this buffor to
         // ZipOutputStream
