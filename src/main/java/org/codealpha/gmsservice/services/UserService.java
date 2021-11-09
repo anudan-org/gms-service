@@ -34,7 +34,7 @@ public class UserService {
     private PasswordResetRequestService passwordResetRequestService;
 
     public User getUserByEmailAndOrg(String email, Organization org) {
-        User user = userRepository.findByEmailIdAndOrganization(email, org);
+        User user = userRepository.findByEmailAndOrg(email, org.getId());
         return user;
     }
 
