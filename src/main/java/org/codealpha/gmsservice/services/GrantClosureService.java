@@ -74,4 +74,30 @@ public class GrantClosureService {
     public List<ClosureSpecificSectionAttribute> getAttributesBySection(ClosureSpecificSection closureSection) {
         return closureSpecificSectionAttributeRepository.findBySection(closureSection);
     }
+
+    public List<ClosureStringAttribute> getStringAttributesForClosure(GrantClosure closure) {
+        return closureStringAttributeRepository.findByClosure(closure);
+    }
+
+    public List<ClosureAssignments> getAssignmentsForClosure(GrantClosure closure) {
+        return closureAssignmentRepository.findByClosureId(closure.getId());
+    }
+
+    public void setAssignmentHistory(ClosureAssignmentsVO assignmentsVO) {
+        if (reportRepository.findReportsThatMovedAtleastOnce(assignmentsVO.getReportId()).size() > 0) {
+            List<ReportAssignmentHistory> assignmentHistories = assignmentHistoryRepository
+                    .findByReportIdAndStateIdOrderByUpdatedOnDesc(assignmentsVO.getReportId(),
+                            assignmentsVO.getStateId());
+            for (ReportAssignmentHistory reportAss : assignmentHistories) {
+                if (reportAss.getAssignment() != null && reportAss.getAssignment() != 0) {
+                    reportAss.setAssignmentUser(userRepository.findById(reportAss.getAssignment()).get());
+                }
+                if (reportAss.getUpdatedBy() != null && reportAss.getUpdatedBy() != 0) {
+                    reportAss.setUpdatedByUser(userRepository.findById(reportAss.getUpdatedBy()).get());
+                }
+
+            }
+            assignmentsVO.setHistory(assignmentHistories);
+        }
+    }
 }
