@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
@@ -32,7 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -128,7 +126,7 @@ public class GrantClosureController {
 
         GrantClosure closure = closureService.getClosureById(closureId);
 
-        closure = _ClosureToReturn(closure, userId);
+        closure = closureToReturn(closure, userId);
         checkAndReturnHistoricalCLosure(userId, closure);
         return closure;
     }
@@ -194,14 +192,11 @@ public class GrantClosureController {
         List<WorkflowStatus> statuses = new ArrayList<>();
         ClosureAssignments assignment = null;
         for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
-            if (!statuses.stream()
-                    .filter(s -> s.getId().longValue() == supportedTransition.getFromState().getId().longValue())
-                    .findFirst().isPresent()) {
+            if (statuses.stream()
+                    .noneMatch(s -> s.getId().longValue() == supportedTransition.getFromState().getId().longValue())) {
                 statuses.add(supportedTransition.getFromState());
             }
-            if (!statuses.stream()
-                    .filter(s -> s.getId().longValue() == supportedTransition.getToState().getId().longValue())
-                    .findFirst().isPresent()) {
+            if (statuses.stream().noneMatch(s -> s.getId().longValue() == supportedTransition.getToState().getId().longValue())) {
                 statuses.add(supportedTransition.getToState());
             }
         }
@@ -217,7 +212,7 @@ public class GrantClosureController {
             assignment.setClosure(closure);
             assignment.setStateId(status.getId());
 
-            if(status.getTerminal()){
+            if(Boolean.TRUE.equals(status.getTerminal())){
                 final GrantClosure finalclosure = closure;
 
                 Optional<GrantAssignments> optionalActiveStateOwner =  grantService.getGrantWorkflowAssignments(closure.getGrant()).stream().filter(ass -> ass.getStateId().longValue()==finalclosure.getGrant().getGrantStatus().getId().longValue()).findFirst();
@@ -302,8 +297,7 @@ public class GrantClosureController {
                         for (int i = 0; i < tableData.getColumns().length; i++) {
 
 
-                            tableData.getColumns()[i] = new ColumnData(colHeaders[i], STRNOSPACE,
-                                    (i == 1 || i == 2) ? CURRENCY : (i == 0) ? DATE : null);
+                            tableData.getColumns()[i] = new ColumnData(colHeaders[i], STRNOSPACE,getType(i));
                         }
                         tableDataList.add(tableData);
 
@@ -323,7 +317,7 @@ public class GrantClosureController {
                         List<ClosureSpecificSection> closureSections = closureService.getClosureSections(closure);
                         specificSection.setSectionOrder(Collections.max(closureSections.stream()
 
-                                .map(rs -> rs.getSectionOrder()).collect(Collectors.toList())) + 1);
+                                .map(ClosureSpecificSection::getSectionOrder).collect(Collectors.toList())) + 1);
                         specificSection = closureService.saveClosureSpecificSection(specificSection);
 
                         ClosureSpecificSectionAttribute sectionAttribute = new ClosureSpecificSectionAttribute();
@@ -353,12 +347,22 @@ public class GrantClosureController {
             }
         }
 
-        closure = _ClosureToReturn(closure, userId);
+        closure = closureToReturn(closure, userId);
         return closure;
     }
 
+    private String getType(int i) {
+        if(i == 1 || i == 2) {
+            return CURRENCY;
+        }else if(i == 0){
+            return DATE;
+        }else{
+            return null;
+        }
+    }
 
-    private GrantClosure _ClosureToReturn(GrantClosure closure, Long userId) {
+
+    private GrantClosure closureToReturn(GrantClosure closure, Long userId) {
 
         closure.setStringAttributes(closureService.getStringAttributesForClosure(closure));
 
@@ -382,13 +386,8 @@ public class GrantClosureController {
         closure.setWorkflowAssignment(workflowAssignments);
         List<ClosureAssignments> closureAssignments = determineCanManage(closure, userId);
 
+        setGranteeUse(closure,userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE));
 
-        if (userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
-
-            closure.setForGranteeUse(true);
-        } else {
-            closure.setForGranteeUse(false);
-        }
         if (closureAssignments != null) {
             for (ClosureAssignments assignment : closureAssignments) {
                 if (closure.getCurrentAssignment() == null) {
@@ -433,7 +432,6 @@ public class GrantClosureController {
         ObjectMapper mapper = new ObjectMapper();
         closure.getGrant().setGrantDetails(grantVO.getGrantDetails());
 
-        List<GrantClosure> approvedClosures = null;
         List<TableData> approvedDisbursements = new ArrayList<>();
         AtomicInteger installmentNumber = new AtomicInteger();
 
@@ -470,19 +468,19 @@ public class GrantClosureController {
         return closure;
     }
 
+    public void setGranteeUse(GrantClosure closure,boolean flag){
+        closure.setForGranteeUse(flag);
+    }
+
     private List<ClosureAssignments> determineCanManage(GrantClosure closure, Long userId) {
         List<ClosureAssignments> closureAssignments = closureService.getAssignmentsForClosure(closure);
-        if ((closureAssignments.stream()
-                .filter(ass -> (ass.getAssignment() == null ? 0L : ass.getAssignment().longValue()) == userId
-                        .longValue() && ass.getStateId().longValue() == closure.getStatus().getId().longValue())
-                .findAny().isPresent())
+        boolean canManageFlag = (closureAssignments.stream()
+                .anyMatch(ass -> (ass.getAssignment() == null ? 0L : ass.getAssignment().longValue()) == userId
+                        .longValue() && ass.getStateId().longValue() == closure.getStatus().getId().longValue()))
 
                 || (closure.getStatus().getInternalStatus().equalsIgnoreCase(ACTIVE) && userService.getUserById(userId)
-                .getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE))) {
-            closure.setCanManage(true);
-        } else {
-            closure.setCanManage(false);
-        }
+                .getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE));
+        closure.setCanManage(canManageFlag);
 
         return closureAssignments;
     }
@@ -494,17 +492,17 @@ public class GrantClosureController {
         List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
 
                 .filter(ws -> ws.getInternalStatus().equalsIgnoreCase(CLOSED)).collect(Collectors.toList());
-        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(WorkflowStatus::getId).boxed()
                 .collect(Collectors.toList());
 
         List<WorkflowStatus> draftStatuses = workflowStatuses.stream()
                 .filter(ws -> ws.getInternalStatus().equalsIgnoreCase(DRAFT)).collect(Collectors.toList());
-        List<Long> draftStatusIds = draftStatuses.stream().mapToLong(s -> s.getId()).boxed()
+        List<Long> draftStatusIds = draftStatuses.stream().mapToLong(WorkflowStatus::getId).boxed()
                 .collect(Collectors.toList());
 
-        List<ActualDisbursement> finalActualDisbursements = new ArrayList<ActualDisbursement>();
+        List<ActualDisbursement> finalActualDisbursements = new ArrayList<>();
         closure.getClosureDetails().getSections().forEach(s -> {
-            if (s.getAttributes() != null && s.getAttributes().size() > 0) {
+            if (s.getAttributes() != null && !s.getAttributes().isEmpty()) {
                 s.getAttributes().forEach(a -> {
                     if (a.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
                         List<Disbursement> closedDisbursements = getDisbursementsByStatusIds(closure.getGrant(),closedStatusIds); //disbursementService
@@ -513,11 +511,10 @@ public class GrantClosureController {
                             List<TableData> tableDataList = new ArrayList<>();
                             if (closedDisbursements != null) {
                                 closedDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
-                                AtomicInteger index = new AtomicInteger(1);
                                 closedDisbursements.forEach(cd -> {
                                     List<ActualDisbursement> ads = disbursementService
                                             .getActualDisbursementsForDisbursement(cd);
-                                    if (ads != null && ads.size() > 0) {
+                                    if (ads != null && !ads.isEmpty()) {
                                         finalActualDisbursements.addAll(ads);
                                     }
 
@@ -525,7 +522,7 @@ public class GrantClosureController {
                             }
 
 
-                            if (draftDisbursements != null && draftDisbursements.size() > 0) {
+                            if (draftDisbursements != null && !draftDisbursements.isEmpty()) {
                                 if (!currentUser.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
                                     draftDisbursements.removeIf(dd -> ((dd.getReportId() != null
                                             && dd.getReportId().longValue() != closure.getId().longValue()  && dd.isGranteeEntry()) || (dd.getReportId() != null
@@ -534,11 +531,10 @@ public class GrantClosureController {
                                 }
                                 if (draftDisbursements != null) {
                                     draftDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
-                                    AtomicInteger index = new AtomicInteger(1);
                                     draftDisbursements.forEach(cd -> {
                                         List<ActualDisbursement> ads = disbursementService
                                                 .getActualDisbursementsForDisbursement(cd);
-                                        if (ads != null && ads.size() > 0) {
+                                        if (ads != null && !ads.isEmpty()) {
                                             finalActualDisbursements.addAll(ads);
                                         }
 
@@ -549,7 +545,7 @@ public class GrantClosureController {
 
 
                             finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getId));
-                            if (finalActualDisbursements.size() > 0) {
+                            if (!finalActualDisbursements.isEmpty()) {
                                 AtomicInteger index = new AtomicInteger(1);
                                 finalActualDisbursements.forEach(ad -> {
                                     TableData td = new TableData();
@@ -613,7 +609,6 @@ public class GrantClosureController {
                             List<TableData> tableDataList = new ArrayList<>();
 
                             if (closedDisbursements != null) {
-                                AtomicInteger index = new AtomicInteger(1);
                                 closedDisbursements.removeIf(
                                         cd -> new DateTime(cd.getMovedOn(), DateTimeZone.forID(timezone)).isAfter(
                                                 new DateTime(closure.getMovedOn(), DateTimeZone.forID(timezone))));
@@ -622,7 +617,7 @@ public class GrantClosureController {
 
                                         List<ActualDisbursement> ads = disbursementService
                                                 .getActualDisbursementsForDisbursement(cd);
-                                        if (ads != null && ads.size() > 0) {
+                                        if (ads != null && !ads.isEmpty()) {
                                             finalActualDisbursements.addAll(ads);
                                         }
                                     });
@@ -630,7 +625,7 @@ public class GrantClosureController {
                             }
 
                             finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
-                            if (finalActualDisbursements.size() > 0) {
+                            if (!finalActualDisbursements.isEmpty()) {
                                 AtomicInteger index = new AtomicInteger(1);
                                 finalActualDisbursements.forEach(ad -> {
                                     TableData td = new TableData();
@@ -723,7 +718,7 @@ public class GrantClosureController {
             closureService._createNewClosureTemplateFromExisiting(closure);
         }
 
-        closure = _ClosureToReturn(closure, userId);
+        closure = closureToReturn(closure, userId);
         return new ClosureSectionInfo(specificSection.getId(), specificSection.getSectionName(), closure);
 
     }
@@ -743,21 +738,21 @@ public class GrantClosureController {
         GrantClosure savedClosure = closureService.getClosureById(closureId);
         determineCanManage(savedClosure, userId);
         if (savedClosure.isCanManage())
-            closure = _processClosure(closureToSave, tenantOrg, user);
+            closure = processClosure(closureToSave, tenantOrg, user);
 
         if(closure!=null) {
             closure.getGrant().setClosureInProgress(true);
             grantService.saveGrant(closure.getGrant());
         }
 
-        closure = _ClosureToReturn(closureToSave, userId);
+        closure = closureToReturn(closureToSave, userId);
         return closure;
     }
 
-    private GrantClosure _processClosure(GrantClosure closureToSave, Organization tenantOrg, User user) {
+    private GrantClosure processClosure(GrantClosure closureToSave, Organization tenantOrg, User user) {
         GrantClosure closure = closureService.getClosureById(closureToSave.getId());
 
-        closure.setReason(_processNewReasonIfPresent(closureToSave));
+        closure.setReason(processNewReasonIfPresent(closureToSave));
         closure.setDescription(closureToSave.getDescription());
         closure.setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
         closure.setUpdatedBy(user.getId());
@@ -785,7 +780,7 @@ public class GrantClosureController {
             } else {
                 try {
                     closure.setLinkedApprovedReports(new ObjectMapper().writeValueAsString(
-                            approvedReports.stream().map(r -> r.getId()).collect(Collectors.toList())));
+                            approvedReports.stream().map(Report::getId).collect(Collectors.toList())));
                 } catch (JsonProcessingException e) {
                     logger.error(e.getMessage(), e);
                 }
@@ -793,14 +788,14 @@ public class GrantClosureController {
             closure = closureService.saveClosure(closure);
         }
 
-        _processStringAttributes(user, closure, closureToSave, tenantOrg);
+        processStringAttributes(user, closure, closureToSave, tenantOrg);
 
         closure = closureService.saveClosure(closure);
 
         return closure;
     }
 
-    private ClosureReason _processNewReasonIfPresent(GrantClosure closureToSave) {
+    private ClosureReason processNewReasonIfPresent(GrantClosure closureToSave) {
         ClosureReason newReason = null;
         if (closureToSave.getReason() != null) {
             if (closureToSave.getReason().getId() <= 0) {
@@ -814,7 +809,7 @@ public class GrantClosureController {
         return newReason;
     }
 
-    private void _processStringAttributes(User user, GrantClosure closure, GrantClosure closureToSave, Organization tenant) {
+    private void processStringAttributes(User user, GrantClosure closure, GrantClosure closureToSave, Organization tenant) {
         ClosureSpecificSection closureSpecificSection = null;
 
         for (SectionVO sectionVO : closureToSave.getClosureDetails().getSections()) {
@@ -967,7 +962,7 @@ public class GrantClosureController {
             closureService._createNewClosureTemplateFromExisiting(closure);
         }
 
-        closure = _ClosureToReturn(closure, userId);
+        closure = closureToReturn(closure, userId);
         return new ClosureFieldInfo(newSectionAttribute.getId(), stringAttribute.getId(), closure);
     }
 
@@ -1000,7 +995,7 @@ public class GrantClosureController {
             GranterClosureTemplate newTemplate = closureService._createNewClosureTemplateFromExisiting(closure);
             newTemplate.getId();
         }
-        closure = _ClosureToReturn(closure, userId);
+        closure = closureToReturn(closure, userId);
         return closure;
     }
 
@@ -1031,7 +1026,7 @@ public class GrantClosureController {
             closureService._createNewClosureTemplateFromExisiting(closure);
         }
 
-        closure = _ClosureToReturn(closure, userId);
+        closure = closureToReturn(closure, userId);
         return new ClosureFieldInfo(currentAttribute.getId(), stringAttribute.getId(), closure);
     }
 
@@ -1059,12 +1054,12 @@ public class GrantClosureController {
 
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
                 filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + CLOSURE_DOCUMENTS
-                        + closureId + "/" + stringAttribute.getSection().getId() + "/"
-                        + stringAttribute.getSectionAttribute().getId() + "/";
+                        + closureId + File.pathSeparator + stringAttribute.getSection().getId() + File.pathSeparator
+                        + stringAttribute.getSectionAttribute().getId() + File.pathSeparator;
             } else {
-                filePath = uploadLocation + tenantCode + CLOSURE_DOCUMENTS + closureId + "/"
-                        + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId()
-                        + "/";
+                filePath = uploadLocation + tenantCode + CLOSURE_DOCUMENTS + closureId + File.pathSeparator
+                        + stringAttribute.getSection().getId() + File.pathSeparator + stringAttribute.getSectionAttribute().getId()
+                        + File.pathSeparator;
             }
 
             File dir = new File(filePath);
@@ -1096,7 +1091,7 @@ public class GrantClosureController {
             e.printStackTrace();
         }
         GrantClosure closure = closureService.getClosureById(closureId);
-        closure = _ClosureToReturn(closure, userId);
+        closure = closureToReturn(closure, userId);
         return new ClosureDocInfo(attachment.getId(), closure);
     }
 
@@ -1113,9 +1108,8 @@ public class GrantClosureController {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        GrantClosure closureToSave = null;
         try {
-            closureToSave = mapper.readValue(closureToSaveStr, GrantClosure.class);
+            mapper.readValue(closureToSaveStr, GrantClosure.class);
         } catch (IOException e) {
             logger.error(e.getMessage());
         }
@@ -1128,14 +1122,13 @@ public class GrantClosureController {
         String filePath = STRNOSPACE;
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
             filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + CLOSURE_DOCUMENTS + closureId
-                    + "/" + attr.getSection().getId() + "/" + attr.getSectionAttribute().getId() + "/";
+                    + File.pathSeparator + attr.getSection().getId() + File.pathSeparator + attr.getSectionAttribute().getId() + File.pathSeparator;
         } else {
-            filePath = uploadLocation + tenantCode + CLOSURE_DOCUMENTS + closureId + "/" + attr.getSection().getId()
-                    + "/" + attr.getSectionAttribute().getId() + "/";
+            filePath = uploadLocation + tenantCode + CLOSURE_DOCUMENTS + closureId + File.pathSeparator + attr.getSection().getId()
+                    + File.pathSeparator + attr.getSectionAttribute().getId() + File.pathSeparator;
         }
         File dir = new File(filePath);
         dir.mkdirs();
-        List<DocInfo> docInfos = new ArrayList<>();
         List<ClosureStringAttributeAttachments> attachments = new ArrayList<>();
 
 
@@ -1198,7 +1191,7 @@ public class GrantClosureController {
         }
 
         closure = closureService.getClosureById(closureId);
-        closure = _ClosureToReturn(closure, userId);
+        closure = closureToReturn(closure, userId);
 
         return new ClosureDocInfo(attachments.get(attachments.size() - 1).getId(), closure);
     }
@@ -1236,22 +1229,22 @@ public class GrantClosureController {
             File file = null;
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
                 file = resourceLoader.getResource(FILE + uploadLocation
-                        + user.getOrganization().getName().toUpperCase() + CLOSURE_DOCUMENTS + closureId + "/"
-                        + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType())
+                        + user.getOrganization().getName().toUpperCase() + CLOSURE_DOCUMENTS + closureId + File.pathSeparator
+                        + sectionId + File.pathSeparator + attributeId + File.pathSeparator + attachment.getName() + "." + attachment.getType())
                         .getFile();
                 if (!file.exists()) {
                     file = resourceLoader
                             .getResource(FILE + uploadLocation
                                     + closureService.getClosureById(closureId).getGrant().getGrantorOrganization()
                                     .getCode().toUpperCase()
-                                    + CLOSURE_DOCUMENTS + closureId + "/" + sectionId + "/" + attributeId + "/"
+                                    + CLOSURE_DOCUMENTS + closureId + File.pathSeparator + sectionId + File.pathSeparator + attributeId + File.pathSeparator
                                     + attachment.getName() + "." + attachment.getType())
                             .getFile();
                 }
             } else {
                 file = resourceLoader.getResource(
-                        FILE + uploadLocation + tenantCode + CLOSURE_DOCUMENTS + closureId + "/" + sectionId + "/"
-                                + attributeId + "/" + attachment.getName() + "." + attachment.getType())
+                        FILE + uploadLocation + tenantCode + CLOSURE_DOCUMENTS + closureId + File.pathSeparator + sectionId + File.pathSeparator
+                                + attributeId + File.pathSeparator + attachment.getName() + "." + attachment.getType())
                         .getFile();
                 if (!file.exists()) {
 
@@ -1259,7 +1252,7 @@ public class GrantClosureController {
                             .getResource(FILE + uploadLocation
                                     + closureService.getClosureById(closureId).getGrant().getOrganization().getName()
                                     .toUpperCase()
-                                    + CLOSURE_DOCUMENTS + closureId + "/" + sectionId + "/" + attributeId + "/"
+                                    + CLOSURE_DOCUMENTS + closureId + File.pathSeparator + sectionId + File.pathSeparator + attributeId + File.pathSeparator
                                     + attachment.getName() + "." + attachment.getType())
                             .getFile();
                 }
@@ -1318,7 +1311,7 @@ public class GrantClosureController {
 
         GrantClosure closure = closureService.getClosureById(closureId);
 
-        closure = _ClosureToReturn(closure, userId);
+        closure = closureToReturn(closure, userId);
         return closure;
     }
 
@@ -1351,7 +1344,7 @@ public class GrantClosureController {
         if (closureService.checkIfClosureTemplateChanged(closure, attribute.getSection(), null)) {
             closureService._createNewClosureTemplateFromExisiting(closure);
         }
-        closure = _ClosureToReturn(closure, userId);
+        closure = closureToReturn(closure, userId);
         return closure;
     }
 
@@ -1515,7 +1508,7 @@ public class GrantClosureController {
 
         }
 
-        closure = _ClosureToReturn(closure, userId);
+        closure = closureToReturn(closure, userId);
         return closure;
     }
 
@@ -1838,7 +1831,7 @@ public class GrantClosureController {
 
         }
 
-        closure = _ClosureToReturn(closure, userId);
+        closure = closureToReturn(closure, userId);
         _saveSnapShot(closure, fromStateId, toStateId, currentOwner, previousOwner);
 
         if (toStatus.getInternalStatus().equalsIgnoreCase(CLOSED)) {
@@ -1879,10 +1872,10 @@ public class GrantClosureController {
         List<PlainClosure> closuresToReturn = new ArrayList<>();
 
         GrantClosure currentClosure = closureService.getClosureById(currentClosureId);
-        currentClosure = _ClosureToReturn(currentClosure,userId);
+        currentClosure = closureToReturn(currentClosure,userId);
 
         GrantClosure origClosure = closureService.getClosureById(origClosureId);
-        origClosure = _ClosureToReturn(origClosure,userId);
+        origClosure = closureToReturn(origClosure,userId);
 
         try {
             closuresToReturn.add(closureService.closureToPlain(currentClosure));
@@ -1898,7 +1891,7 @@ public class GrantClosureController {
                                                @PathVariable("userId")Long userId,
                                                @PathVariable("currentClosureId")Long currentClosureId) throws IOException {
         GrantClosure currenClosure = closureService.getClosureById(currentClosureId);
-        currenClosure = _ClosureToReturn(currenClosure,userId);
+        currenClosure = closureToReturn(currenClosure,userId);
 
 
 
