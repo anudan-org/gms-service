@@ -1,27 +1,14 @@
 package org.codealpha.gmsservice.services;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import org.apache.commons.collections.Closure;
-import org.codealpha.gmsservice.constants.AppConfiguration;
-import org.codealpha.gmsservice.constants.KpiType;
-import org.codealpha.gmsservice.controllers.GrantClosureController;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -30,7 +17,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,6 +24,12 @@ import java.util.stream.Collectors;
 public class GrantClosureService {
 
     private static final Logger logger = LoggerFactory.getLogger(GrantClosureService.class);
+    public static final String GRANT_NAME = "%GRANT_NAME%";
+    public static final String TENANT_NAME = "%TENANT_NAME%";
+    public static final String HOME_ACTION_LOGIN_ORG = "/home/?action=login&org=";
+    public static final String R = "&r=";
+    public static final String EMAIL_TYPE_CLOSURE = "&email=&type=closure";
+    public static final String TD = "</td>";
     @Autowired
     private ClosureAssignmentRepository closureAssignmentRepository;
     @Autowired
@@ -83,7 +75,11 @@ public class GrantClosureService {
     }
 
     public GranterClosureTemplate findByTemplateId(Long templateId) {
-        return granterClosureTemplateRepository.findById(templateId).get();
+        Optional<GranterClosureTemplate> optionalGranterClosureTemplate = granterClosureTemplateRepository.findById(templateId);
+        if(optionalGranterClosureTemplate.isPresent()){
+            return optionalGranterClosureTemplate.get();
+        }
+        return null;
     }
 
     public ClosureSpecificSection saveClosureSpecificSection(ClosureSpecificSection specificSection) {
@@ -121,10 +117,12 @@ public class GrantClosureService {
                             assignmentsVO.getStateId());
             for (ClosureAssignmentHistory closureAss : assignmentHistories) {
                 if (closureAss.getAssignment() != null && closureAss.getAssignment() != 0) {
-                    closureAss.setAssignmentUser(userRepository.findById(closureAss.getAssignment()).get());
+                    Optional<User> optionalUser = userRepository.findById(closureAss.getAssignment());
+                    closureAss.setAssignmentUser(optionalUser.isPresent()?optionalUser.get():null);
                 }
                 if (closureAss.getUpdatedBy() != null && closureAss.getUpdatedBy() != 0) {
-                    closureAss.setUpdatedByUser(userRepository.findById(closureAss.getUpdatedBy()).get());
+                    Optional<User> optionalUser=userRepository.findById(closureAss.getUpdatedBy());
+                    closureAss.setUpdatedByUser(optionalUser.isPresent()?optionalUser.get():null);
                 }
 
             }
@@ -134,12 +132,13 @@ public class GrantClosureService {
 
     public List<WorkFlowPermission> getFlowAuthority(GrantClosure closure, Long userId) {
         List<WorkFlowPermission> permissions = new ArrayList<>();
+        Optional<User> optionalUser = userRepository.findById(userId);
         if ((closureAssignmentRepository.findByClosureId(closure.getId()).stream()
                 .filter(ass -> ass.getStateId().longValue() == closure.getStatus().getId().longValue()
                         && (ass.getAssignment() == null ? 0 : ass.getAssignment().longValue()) == userId)
                 .findFirst().isPresent())
-                || (userRepository.findById(userId).get().getOrganization().getOrganizationType().equalsIgnoreCase(
-                "GRANTEE") && closure.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"))) {
+                || (optionalUser.isPresent()?optionalUser.get().getOrganization().getOrganizationType().equalsIgnoreCase(
+                "GRANTEE") && closure.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"):null)) {
 
             List<WorkflowStatusTransition> allowedTransitions = workflowStatusTransitionRepository
                     .findByWorkflow(workflowStatusRepository.getById(closure.getStatus().getId()).getWorkflow()).stream()
@@ -211,7 +210,7 @@ public class GrantClosureService {
         return closureSpecificSectionRepository.save(specificSection);
     }
 
-    public boolean _checkIfClosureTemplateChanged(GrantClosure closure, ClosureSpecificSection newSection, ClosureSpecificSectionAttribute newAttribute, GrantClosureController grantClosureController) {
+    public boolean checkIfClosureTemplateChanged(GrantClosure closure, ClosureSpecificSection newSection, ClosureSpecificSectionAttribute newAttribute) {
         GranterClosureTemplate currentClosureTemplate = findByTemplateId(closure.getTemplate().getId());
         for (GranterClosureSection closureSection : currentClosureTemplate.getSections()) {
             if (!closureSection.getSectionName().equalsIgnoreCase(newSection.getSectionName())) {
@@ -286,7 +285,7 @@ public class GrantClosureService {
                     }
                 }
 
-                newAttribute = saveClosureTemplateSectionAttribute(newAttribute);
+                saveClosureTemplateSectionAttribute(newAttribute);
 
             }
         }
@@ -294,7 +293,6 @@ public class GrantClosureService {
         newTemplate.setSections(newSections);
         newTemplate = saveClosureTemplate(newTemplate);
 
-        // grant = grantService.getById(grant.getId());
         closure.setTemplate(newTemplate);
         saveClosure(closure);
         return newTemplate;
@@ -353,7 +351,11 @@ public class GrantClosureService {
     }
 
     public ClosureStringAttributeAttachments getStringAttributeAttachmentsByAttachmentId(Long attachmentId) {
-        return closureStringAttributeAttachmentsRepository.findById(attachmentId).get();
+        Optional<ClosureStringAttributeAttachments> optionalClosureStringAttributeAttachments=closureStringAttributeAttachmentsRepository.findById(attachmentId);
+        if(optionalClosureStringAttributeAttachments.isPresent()){
+            return optionalClosureStringAttributeAttachments.get();
+        }
+        return null;
     }
 
     public void deleteStringAttributeAttachments(List<ClosureStringAttributeAttachments> attachments) {
@@ -389,15 +391,15 @@ public class GrantClosureService {
         return null;
     }
 
-    public String[] buildClosureInvitationContent(GrantClosure closure, User user, String sub, String msg, String url) {
-        sub = sub.replace("%GRANT_NAME%", closure.getGrant().getName());
-        msg = msg.replace("%GRANT_NAME%", closure.getGrant().getName())
-                .replace("%TENANT_NAME%", closure.getGrant().getGrantorOrganization().getName()).replace("%LINK%", url);
+    public String[] buildClosureInvitationContent(GrantClosure closure, String sub, String msg, String url) {
+        sub = sub.replace(GRANT_NAME, closure.getGrant().getName());
+        msg = msg.replace(GRANT_NAME, closure.getGrant().getName())
+                .replace(TENANT_NAME, closure.getGrant().getGrantorOrganization().getName()).replace("%LINK%", url);
         return new String[] { sub, msg };
     }
 
-    public String[] buildEmailNotificationContent(GrantClosure finalClosure, User u, String userName, String action,
-                                                  String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner,
+    public String[] buildEmailNotificationContent(GrantClosure finalClosure, User u,
+                                                  String subConfigValue, String msgConfigValue, String currentState, String currentOwner,
                                                   String previousState, String previousOwner, String previousAction, String hasChanges,
                                                   String hasChangesComment, String hasNotes, String hasNotesComment, String link, User owner,
                                                   Integer noOfDays, Map<Long, Long> previousApprover, List<ClosureAssignments> newApprover) {
@@ -423,30 +425,30 @@ public class GrantClosureService {
             uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(granteeHost)
                     .port(uriComponents.getPort());
             granteeUrl = uriBuilder.toUriString();
-            granteeUrl = granteeUrl + "/home/?action=login&org="
+            granteeUrl = granteeUrl + HOME_ACTION_LOGIN_ORG
                     + URLEncoder.encode(finalClosure.getGrant().getGrantorOrganization().getName(),
                     StandardCharsets.UTF_8.toString())
-                    + "&r=" + code + "&email=&type=report";
+                    + R + code + EMAIL_TYPE_CLOSURE;
 
             uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme()).host(granterHost)
                     .port(uriComponents.getPort());
             granterUrl = uriBuilder.toUriString();
-            granterUrl = granterUrl + "/home/?action=login&org="
+            granterUrl = granterUrl + HOME_ACTION_LOGIN_ORG
                     + URLEncoder.encode(finalClosure.getGrant().getGrantorOrganization().getName(),
                     StandardCharsets.UTF_8.toString())
-                    + "&r=" + code + "&email=&type=closure";
+                    + R + code + EMAIL_TYPE_CLOSURE;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             granteeUrl = link;
             try {
-                granteeUrl = granteeUrl + "/home/?action=login&org="
+                granteeUrl = granteeUrl + HOME_ACTION_LOGIN_ORG
                         + URLEncoder.encode(finalClosure.getGrant().getGrantorOrganization().getName(),
                         StandardCharsets.UTF_8.toString())
-                        + "&r=" + code + "&email=&type=closure";
-                granterUrl = granterUrl + "/home/?action=login&org="
+                        + R + code + EMAIL_TYPE_CLOSURE;
+                granterUrl = granterUrl + HOME_ACTION_LOGIN_ORG
                         + URLEncoder.encode(finalClosure.getGrant().getGrantorOrganization().getName(),
                         StandardCharsets.UTF_8.toString())
-                        + "&r=" + code + "&email=&type=closure";
+                        + R + code + EMAIL_TYPE_CLOSURE;
             } catch (UnsupportedEncodingException ex) {
                 ex.printStackTrace();
             }
@@ -458,24 +460,24 @@ public class GrantClosureService {
         }else{
             grantName = finalClosure.getGrant().getName();
         }
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", grantName)
-                .replaceAll("%CLOSURE_LINK%", granteeUrl)
-                .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
-                .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
-                .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
-                .replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%", hasNotes)
-                .replaceAll("%HAS_NOTES_COMMENT%", hasNotesComment)
-                .replaceAll("%TENANT%", finalClosure.getGrant().getGrantorOrganization().getName())
-                .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
-                .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
-                .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replaceAll("%GRANTEE%", finalClosure.getGrant().getOrganization()!=null?finalClosure.getGrant().getOrganization().getName():finalClosure.getGrant().getGrantorOrganization().getName())
-                .replaceAll("%GRANTEE_REPORT_LINK%", granteeUrl).replaceAll("%GRANTER_REPORT_LINK%", granterUrl)
-                .replaceAll("%GRANTER%", finalClosure.getGrant().getGrantorOrganization().getName())
-                .replaceAll("%ENTITY_TYPE%", "report")
-                .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
-                .replaceAll("%ENTITY_NAME%", "Closure Request of grant " + grantName);
-        String subject = subConfigValue.replaceAll("%CLOSURE_NAME%", "Closure Request for Grant " + finalClosure.getGrant().getName());
+        String message = msgConfigValue.replace(GRANT_NAME, grantName)
+                .replace("%CLOSURE_LINK%", granteeUrl)
+                .replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner)
+                .replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner)
+                .replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges)
+                .replace("%HAS_CHANGES_COMMENT%", hasChangesComment).replace("%HAS_NOTES%", hasNotes)
+                .replace("%HAS_NOTES_COMMENT%", hasNotesComment)
+                .replace("%TENANT%", finalClosure.getGrant().getGrantorOrganization().getName())
+                .replace("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
+                .replace("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
+                .replace("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
+                .replace("%GRANTEE%", finalClosure.getGrant().getOrganization()!=null?finalClosure.getGrant().getOrganization().getName():finalClosure.getGrant().getGrantorOrganization().getName())
+                .replace("%GRANTEE_REPORT_LINK%", granteeUrl).replace("%GRANTER_REPORT_LINK%", granterUrl)
+                .replace("%GRANTER%", finalClosure.getGrant().getGrantorOrganization().getName())
+                .replace("%ENTITY_TYPE%", "report")
+                .replace("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
+                .replace("%ENTITY_NAME%", "Closure Request of grant " + grantName);
+        String subject = subConfigValue.replace("%CLOSURE_NAME%", "Closure Request for Grant " + finalClosure.getGrant().getName());
 
         return new String[] { subject, message };
     }
@@ -490,17 +492,17 @@ public class GrantClosureService {
         String[] table = {
                 "<table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>Current State Owners</b></td><td><b>Previous State Owners</b></td></tr>" };
         newAssignments.forEach(a -> {
-            Long prevAss = assignments.keySet().stream().filter(b -> b == a.getStateId()).findFirst().get();
+            Long prevAss = assignments.keySet().stream().filter(b -> b.longValue() == a.getStateId().longValue()).findFirst().get();
 
             table[0] = table[0].concat("<tr>").concat("<td width='30%'>")
-                    .concat(workflowStatusRepository.findById(a.getStateId()).get().getName()).concat("</td>")
+                    .concat(workflowStatusRepository.findById(a.getStateId()).get().getName()).concat(TD)
                     .concat("<td>")
                     .concat(a.getAssignment() != null ? userService.getUserById(a.getAssignment()).getFirstName()
                             : "".concat("-")
                             .concat(a.getAssignment() != null
                                     ? userService.getUserById(a.getAssignment()).getLastName()
                                     : ""))
-                    .concat("</td>")
+                    .concat(TD)
 
                     .concat("<td>")
                     .concat(assignments.get(prevAss) != null
@@ -509,7 +511,7 @@ public class GrantClosureService {
                             .concat(assignments.get(prevAss) != null
                                     ? userService.getUserById(assignments.get(prevAss)).getLastName()
                                     : "")
-                            .concat("</td>").concat("</tr>"));
+                            .concat(TD).concat("</tr>"));
         });
 
         table[0] = table[0].concat("</table>");
@@ -518,7 +520,7 @@ public class GrantClosureService {
     }
 
     public PlainClosure closureToPlain(GrantClosure closure) throws IOException {
-        SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy");
+
         PlainClosure plainClosure = new PlainClosure();
         plainClosure.setReason(closure.getReason());
         plainClosure.setDescription(closure.getDescription());
@@ -589,7 +591,7 @@ public class GrantClosureService {
         if(optionalUser.isPresent()){
             return closureRepository.findAllAssignedClosuresForGranterUser(userId,optionalUser.get().getOrganization().getId());
         }
-        return null;
+        return new ArrayList<>();
     }
 
     public void deleteClosure(GrantClosure closure) {
@@ -610,8 +612,9 @@ public class GrantClosureService {
 
             closureRepository.delete(closure);
 
-            GranterClosureTemplate template = granterClosureTemplateRepository.findById(closure.getTemplate().getId()).get();
-            if (!template.isPublished()) {
+            Optional<GranterClosureTemplate> optionalGranterClosureTemplate = granterClosureTemplateRepository.findById(closure.getTemplate().getId());
+            GranterClosureTemplate template = optionalGranterClosureTemplate.isPresent()?optionalGranterClosureTemplate.get():null;
+            if (template !=null && !template.isPublished()) {
                 deleteClosureTemplate(template);
             }
         }
