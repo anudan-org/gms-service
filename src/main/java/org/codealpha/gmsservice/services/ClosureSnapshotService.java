@@ -1,7 +1,6 @@
 package org.codealpha.gmsservice.services;
 
 import org.codealpha.gmsservice.entities.ClosureSnapshot;
-import org.codealpha.gmsservice.entities.ReportSnapshot;
 import org.codealpha.gmsservice.repositories.ClosureSnapshotRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
