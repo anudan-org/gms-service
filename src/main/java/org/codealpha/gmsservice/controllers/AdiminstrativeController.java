@@ -116,6 +116,8 @@ public class AdiminstrativeController {
     private WorkflowValidationService workflowValidationService;
     @Autowired
     private WorkflowStatusTransitionService workflowStatusTransitionService;
+    @Autowired
+    private GrantClosureService closureService;
 
     private static Logger logger = LoggerFactory.getLogger(AdiminstrativeController.class);
 
@@ -151,6 +153,24 @@ public class AdiminstrativeController {
         organizationService.findOrganizationByTenantCode(tenantCode);
 
         WorkflowStatus reportStatus = workflowStatusService.findById(reportService.getReportById(reportId).getStatus().getId());
+
+        return workflowTransitionModelService.getWorkflowsByWorkflowStatusId(reportStatus.getWorkflow().getId());
+    }
+
+    @GetMapping("/workflow/closure/{closureId}/user/{userId}")
+    public List<WorkflowTransitionModel> getCLosureWorkflows(
+            @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("closureId") Long closureId,
+            @PathVariable("userId") Long userId) {
+        Organization org = null;
+        if ("ANUDAN".equalsIgnoreCase(tenantCode)) {
+            org = closureService.getClosureById(closureId).getGrant().getGrantorOrganization();
+        } else {
+            org = organizationService.findOrganizationByTenantCode(tenantCode);
+        }
+        organizationService.findOrganizationByTenantCode(tenantCode);
+
+        WorkflowStatus reportStatus = workflowStatusService.findById(closureService.getClosureById(closureId).getStatus().getId());
 
         return workflowTransitionModelService.getWorkflowsByWorkflowStatusId(reportStatus.getWorkflow().getId());
     }

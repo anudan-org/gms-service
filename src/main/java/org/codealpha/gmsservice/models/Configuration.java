@@ -12,6 +12,7 @@ public class Configuration {
     private List<WorkflowStatus> reportWorkflowStatuses;
     private List<WorkflowStatus> grantWorkflowStatuses;
     private List<WorkflowStatus> disbursementWorkflowStatuses;
+    private List<WorkflowStatus> closureWorkflowStatuses;
     List<WorkflowTransitionModel> reportTransitions;
 
     public List<User> getTenantUsers() {
@@ -52,5 +53,13 @@ public class Configuration {
 
     public void setDisbursementWorkflowStatuses(List<WorkflowStatus> disbursementWorkflowStatuses){
         this.disbursementWorkflowStatuses = disbursementWorkflowStatuses;
+    }
+
+    public List<WorkflowStatus> getClosureWorkflowStatuses() {
+        return closureWorkflowStatuses;
+    }
+
+    public void setClosureWorkflowStatuses(List<WorkflowStatus> closureWorkflowStatuses) {
+        this.closureWorkflowStatuses = closureWorkflowStatuses;
     }
 }

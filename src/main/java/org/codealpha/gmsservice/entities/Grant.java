@@ -220,7 +220,16 @@ public class Grant {
   @JsonIgnore
   @Column
   private String amendmentDetailsSnapshot;
+  @Column
+  private Boolean closureInProgress = false;
 
+  public Boolean getClosureInProgress() {
+    return closureInProgress;
+  }
+
+  public void setClosureInProgress(Boolean closureInProgress) {
+    this.closureInProgress = closureInProgress;
+  }
 
   public Long getId() {
     return id;
