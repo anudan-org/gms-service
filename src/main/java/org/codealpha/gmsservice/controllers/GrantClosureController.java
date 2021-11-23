@@ -147,7 +147,12 @@ public class GrantClosureController {
             @RequestHeader("X-TENANT-CODE") String tenantCode
     ){
 
-        return closureService.getClosuresForUser(userId);
+        List<GrantClosure> closures = closureService.getClosuresForUser(userId);
+
+        for(GrantClosure closure : closures){
+            closure = closureToReturn(closure,userId);
+        }
+        return closures;
     }
 
     @GetMapping("/templates")
