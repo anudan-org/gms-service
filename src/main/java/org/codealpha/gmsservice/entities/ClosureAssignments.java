@@ -15,7 +15,7 @@ public class ClosureAssignments {
     @ManyToOne
     @JoinColumn(referencedColumnName = "id")
     @JsonIgnore
-    private Grant grant;
+    private GrantClosure closure;
 
     @Column
     private Long stateId;
@@ -43,12 +43,12 @@ public class ClosureAssignments {
         this.id = id;
     }
 
-    public Grant getGrant() {
-        return grant;
+    public GrantClosure getClosure() {
+        return closure;
     }
 
-    public void setGrant(Grant grant) {
-        this.grant = grant;
+    public void setClosure(GrantClosure closure) {
+        this.closure = closure;
     }
 
     public Long getAssignment() {

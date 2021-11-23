@@ -1,8 +1,6 @@
 package org.codealpha.gmsservice.repositories;
 
 import org.codealpha.gmsservice.entities.ClosureSpecificSection;
-import org.codealpha.gmsservice.entities.Granter;
-import org.codealpha.gmsservice.entities.ReportSpecificSection;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
@@ -14,5 +12,4 @@ public interface ClosureSpecificSectionRepository extends CrudRepository<Closure
     @Query(value = "select max(section_order)+1 from closure_specific_sections where granter_id=?1 and closure_template_id=?2",nativeQuery = true)
     public int getNextSectionOrder(Long granterId, Long templateId);
 
-    public List<ClosureSpecificSection> findByGranterAndGrantId(Granter grantorOrganization, Long id);
 }

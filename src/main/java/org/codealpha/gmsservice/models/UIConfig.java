@@ -39,6 +39,7 @@ public class UIConfig {
 	private List<WorkflowStatus> workflowStatuses;
 	@ApiModelProperty("Tenant report workflow and statuses")
 	private List<WorkflowStatus> reportWorkflowStatuses;
+	private List<WorkflowStatus> closureWorkflowStatuses;
 	@ApiModelProperty("Tenant grant workflow state transitions")
 	private List<WorkflowTransitionModel> transitions;
 	@ApiModelProperty("Tenant report workflow state transitions")
@@ -169,5 +170,13 @@ public class UIConfig {
 
 	public void setTemplateLibrary(List<TemplateLibrary> templateLibrary) {
 		this.templateLibrary = templateLibrary;
+	}
+
+	public List<WorkflowStatus> getClosureWorkflowStatuses() {
+		return closureWorkflowStatuses;
+	}
+
+	public void setClosureWorkflowStatuses(List<WorkflowStatus> closureWorkflowStatuses) {
+		this.closureWorkflowStatuses = closureWorkflowStatuses;
 	}
 }

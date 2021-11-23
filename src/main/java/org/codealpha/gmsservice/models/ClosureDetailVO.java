@@ -3,10 +3,9 @@ package org.codealpha.gmsservice.models;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
-import org.codealpha.gmsservice.entities.GrantSpecificSection;
-import org.codealpha.gmsservice.entities.GrantStringAttribute;
-import org.codealpha.gmsservice.entities.GrantStringAttributeAttachments;
+import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.services.GrantClosureService;
+import org.codealpha.gmsservice.services.ReportService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,26 +26,25 @@ public class ClosureDetailVO {
     this.sections = sections;
   }
 
-  public ClosureDetailVO buildStringAttributes(List<GrantSpecificSection> grantSections, List<GrantStringAttribute> value) {
+  public ClosureDetailVO buildStringAttributes(List<ClosureSpecificSection> closureSections, List<ClosureStringAttribute> value, GrantClosureService closureService, Long grantId) {
 
     SectionVO sectionVO = null;
     sections = new ArrayList<>();
 
-    for(GrantSpecificSection sec: grantSections){
+    for(ClosureSpecificSection sec: closureSections){
       sectionVO = new SectionVO();
       sectionVO.setId(sec.getId());
       sectionVO.setName(sec.getSectionName());
       sectionVO.setOrder(sec.getSectionOrder());
-
 
       if (!sections.contains(sectionVO)) {
         sections.add(sectionVO);
       }
     }
     if(value!=null) {
-      for (GrantStringAttribute stringAttribute : value) {
+      for (ClosureStringAttribute stringAttribute : value) {
 
-        Optional<SectionVO> so = sections.stream().filter(a -> a.getId().longValue()==stringAttribute.getSection().getId().longValue()).findFirst();
+        Optional<SectionVO> so = sections.stream().filter(a -> a.getId()==stringAttribute.getSection().getId()).findFirst();
         if(so.isPresent()) {
           sectionVO = so.get();
         }else{
@@ -57,20 +55,22 @@ public class ClosureDetailVO {
         sectionAttribute.setId(stringAttribute.getId());
         sectionAttribute.setFieldName(stringAttribute.getSectionAttribute().getFieldName());
         sectionAttribute
-            .setFieldType(stringAttribute.getSectionAttribute().getFieldType());
+                .setFieldType(stringAttribute.getSectionAttribute().getFieldType());
         //sectionAttribute.setDeletable(stringAttribute.getSectionAttribute().getDeletable());
         sectionAttribute.setRequired(stringAttribute.getSectionAttribute().getRequired());
         sectionAttribute.setAttributeOrder(stringAttribute.getSectionAttribute().getAttributeOrder());
-
+        sectionAttribute.setCanEdit(stringAttribute.getSectionAttribute().getCanEdit());
+        sectionAttribute.setGrantLevelTarget(stringAttribute.getGrantLevelTarget());
         sectionAttribute.setFieldValue(stringAttribute.getValue());
+        /*if(grantId!=0) {
+          sectionAttribute.setCumulativeActuals(closureService.getApprovedClosuresActualSumForGrant(grantId, sectionAttribute.getFieldName()));
+        }*/
         if(sectionAttribute.getFieldType().equalsIgnoreCase("table")){
-            ObjectMapper mapper = new ObjectMapper();
+          ObjectMapper mapper = new ObjectMapper();
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){
             List<TableData> tableDataList = new ArrayList<>();
             TableData tableData = new TableData();
             tableData.setName("");
-            tableData.setHeader("");
-            tableData.setEnteredByGrantee(false);
             tableData.setColumns(new ColumnData[5]);
             for(int i=0;i<tableData.getColumns().length;i++){
 
@@ -91,49 +91,9 @@ public class ClosureDetailVO {
             e.printStackTrace();
           }
           sectionAttribute.setFieldTableValue(tableData);
-        } else if(sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")){
-          ObjectMapper mapper = new ObjectMapper();
-          String[] colHeaders = new String[]{"Date/Period","Amount","Funds from other Sources","Notes"};
-          if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){
-            List<TableData> tableDataList = new ArrayList<>();
-            TableData tableData = new TableData();
-            tableData.setName("1");
-            tableData.setHeader("Planned Installment #");
-            tableData.setEnteredByGrantee(false);
-            tableData.setColumns(new ColumnData[4]);
-            for(int i=0;i<tableData.getColumns().length;i++){
-
-              tableData.getColumns()[i] = new ColumnData(colHeaders[i],"",(i==1 || i==2)?"currency":null);
-            }
-            tableDataList.add(tableData);
-
-            try {
-              sectionAttribute.setFieldValue( mapper.writeValueAsString(tableDataList));
-            } catch (JsonProcessingException e) {
-              e.printStackTrace();
-            }
-          }
-          List<TableData> tableData = null;
-          try {
-            tableData = mapper.readValue(sectionAttribute.getFieldValue(), new TypeReference<List<TableData>>() {});
-          } catch (IOException e) {
-            e.printStackTrace();
-          }
-          sectionAttribute.setFieldTableValue(tableData);
         } else if(sectionAttribute.getFieldType().equalsIgnoreCase("document")){
 
           ObjectMapper mapper = new ObjectMapper();
-          /*if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
-            sectionAttribute.setDocs(new ArrayList<>());
-          }else{
-            try {
-              List<TemplateLibrary> assignedTemplates = mapper.readValue(sectionAttribute.getFieldValue(),new TypeReference<List<TemplateLibrary>>(){});
-              sectionAttribute.setDocs(assignedTemplates);
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
-          }*/
-
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
             sectionAttribute.setAttachments(new ArrayList<>());
           }else{
@@ -147,7 +107,8 @@ public class ClosureDetailVO {
         }
         sectionAttribute.setTarget(stringAttribute.getTarget());
         sectionAttribute.setFrequency(stringAttribute.getFrequency());
-        
+        sectionAttribute.setActualTarget(stringAttribute.getActualTarget());
+
         if (sectionAttributes == null) {
           sectionAttributes = new ArrayList<>();
         }

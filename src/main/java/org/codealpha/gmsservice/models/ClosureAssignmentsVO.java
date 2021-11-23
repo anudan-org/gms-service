@@ -1,7 +1,6 @@
 package org.codealpha.gmsservice.models;
 
 import org.codealpha.gmsservice.entities.ClosureAssignmentHistory;
-import org.codealpha.gmsservice.entities.ReportAssignmentHistory;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
 
@@ -10,7 +9,7 @@ import java.util.List;
 public class ClosureAssignmentsVO {
 
     private Long id;
-    private Long grantId;
+    private Long closureId;
     private Long stateId;
     private WorkflowStatus stateName;
     private Long assignmentId;
@@ -77,12 +76,12 @@ public class ClosureAssignmentsVO {
         this.customAssignments = customAssignments;
     }
 
-    public Long getGrantId() {
-        return grantId;
+    public Long getClosureId() {
+        return closureId;
     }
 
-    public void setGrantId(Long grantId) {
-        this.grantId = grantId;
+    public void setClosureId(Long closureId) {
+        this.closureId = closureId;
     }
 
     public List<ClosureAssignmentHistory> getHistory() {

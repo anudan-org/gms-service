@@ -33,7 +33,7 @@ public class ClosureStringAttribute {
   @JoinColumn(referencedColumnName = "id")
   @JsonProperty("sectionDetails")
   private ClosureSpecificSection section;
-  @OneToMany(mappedBy = "reportStringAttribute",cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "closureStringAttribute",cascade = CascadeType.ALL)
   private List<ClosureStringAttributeAttachments> attachments;
   @Column
   private String grantLevelTarget;

@@ -1,80 +1,52 @@
-package org.codealpha.gmsservice.entities;
+package org.codealpha.gmsservice.models;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
-import org.codealpha.gmsservice.models.AssignedTo;
-import org.codealpha.gmsservice.models.ClosureAssignmentsVO;
-import org.codealpha.gmsservice.models.ClosureDetailVO;
+import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.services.GrantClosureService;
+import org.codealpha.gmsservice.services.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-@Entity(name = "grant_closure")
-public class GrantClosure {
+public class GrantClosureVO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private static Logger logger = LoggerFactory.getLogger(GrantClosureVO.class);
+
     private Long id;
-    @ManyToOne
-    @JoinColumn(name = "reason")
     private ClosureReason reason;
-    @OneToOne
-    @JoinColumn(referencedColumnName = "id")
     private GranterClosureTemplate template;
-    @OneToOne
-    @JoinColumn(referencedColumnName = "id")
     private Grant grant;
-    @Column
     private Date movedOn;
-    @Column
     private Long createBy;
-    @Column
     private Date createdAt;
-    @Column
     private Long updatedBy;
-    @Column
     private Date updatedAt;
-    @OneToOne
-    @JoinColumn(referencedColumnName = "id")
     private WorkflowStatus status;
-    @Transient
     private List<ClosureAssignmentsVO> workflowAssignment;
-    @Transient
     private ClosureDetailVO closureDetails;
-    @OneToMany(mappedBy = "closure", fetch = FetchType.EAGER)
-    @JsonProperty("stringAttribute")
     private List<ClosureStringAttribute> stringAttributes;
-    @Transient
     private boolean canManage;
-    @Transient
     private boolean forGranteeUse;
-    @Transient
     private List<AssignedTo> currentAssignment;
-    @Column
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long noteAddedBy;
-    @Transient
     private User noteAddedByUser;
-    @Transient
     private List<User> granteeUsers;
-    @Transient
     private List<WorkFlowPermission> flowAuthorities;
-    @Column(columnDefinition = "text")
     private String note;
-    @Column
-    private Date noteAdded;
-    @Column
     private boolean deleted;
-    @Column private String closureDetail;
-    @Column(columnDefinition = "text")
+    private String closureDetail;
     private String linkedApprovedReports;
-    @Column
     private String description;
-    @Column
+    private Date noteAdded;
     private Long ownerId;
-    @Column
     private String ownerName;
 
     public Long getOwnerId() {
@@ -99,6 +71,22 @@ public class GrantClosure {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getLinkedApprovedReports() {
+        return linkedApprovedReports;
+    }
+
+    public void setLinkedApprovedReports(String linkedApprovedReports) {
+        this.linkedApprovedReports = linkedApprovedReports;
+    }
+
+    public String getClosureDetail() {
+        return closureDetail;
+    }
+
+    public void setClosureDetail(String closureDetail) {
+        this.closureDetail = closureDetail;
     }
 
     public List<WorkFlowPermission> getFlowAuthorities() {
@@ -165,13 +153,6 @@ public class GrantClosure {
         this.id = id;
     }
 
-    public ClosureReason getReason() {
-        return reason;
-    }
-
-    public void setReason(ClosureReason reason) {
-        this.reason = reason;
-    }
 
     public GranterClosureTemplate getTemplate() {
         return template;
@@ -233,6 +214,14 @@ public class GrantClosure {
         return createdAt;
     }
 
+    public ClosureReason getReason() {
+        return reason;
+    }
+
+    public void setReason(ClosureReason reason) {
+        this.reason = reason;
+    }
+
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }
@@ -261,6 +250,48 @@ public class GrantClosure {
         this.stringAttributes = stringAttributes;
     }
 
+    public GrantClosureVO build(GrantClosure closure, List<ClosureSpecificSection> sections, UserService userService, GrantClosureService closureService) {
+
+        PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(closure.getClass());
+        GrantClosureVO vo = new GrantClosureVO();
+        for (PropertyDescriptor descriptor : propertyDescriptors) {
+            if (!descriptor.getName().equalsIgnoreCase("class")) {
+                try {
+                    Object value = descriptor.getReadMethod().invoke(closure);
+                    PropertyDescriptor voPd = BeanUtils.getPropertyDescriptor(vo.getClass(), descriptor.getName());
+                    if (voPd.getName().equalsIgnoreCase("stringAttributes")) {
+                        ClosureDetailVO closureDetailVO = null;
+                        closureDetailVO = vo.getClosureDetails();
+                        if (closureDetailVO == null) {
+                            closureDetailVO = new ClosureDetailVO();
+                        }
+                        closureDetailVO = closureDetailVO.buildStringAttributes(sections,
+                                (List<ClosureStringAttribute>) value, closureService,
+                                closure.getGrant() == null ? 0 : closure.getGrant().getId());
+                        vo.setClosureDetails(closureDetailVO);
+                    } else if (voPd.getName().equalsIgnoreCase("noteAddedBy")
+                            || voPd.getName().equalsIgnoreCase("noteAddedByUser")) {
+                        vo.setNoteAddedBy(closure.getNoteAddedBy());
+                        if (closure.getNoteAddedBy() != null) {
+                            vo.setNoteAddedByUser(userService.getUserById(closure.getNoteAddedBy()));
+                        }
+
+                    } else {
+                        voPd.getWriteMethod().invoke(vo, value);
+                    }
+                } catch (IllegalAccessException e) {
+                    logger.error(e.getMessage(), e);
+                } catch (InvocationTargetException e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
+        }
+
+        Collections.sort(vo.getClosureDetails().getSections());
+
+        return vo;
+    }
+
     public String getNote() {
         return note;
     }
@@ -275,22 +306,6 @@ public class GrantClosure {
 
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
-    }
-
-    public String getClosureDetail() {
-        return closureDetail;
-    }
-
-    public void setClosureDetail(String closureDetail) {
-        this.closureDetail = closureDetail;
-    }
-
-    public String getLinkedApprovedReports() {
-        return linkedApprovedReports;
-    }
-
-    public void setLinkedApprovedReports(String linkedApprovedReports) {
-        this.linkedApprovedReports = linkedApprovedReports;
     }
 
     public Date getNoteAdded() {

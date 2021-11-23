@@ -2,7 +2,6 @@ package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModelProperty;
 import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.ClosureAssignmentsVO;
 import org.codealpha.gmsservice.models.ClosureDetailVO;
@@ -11,18 +10,18 @@ import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
 
-@Entity(name = "grant_closure")
-public class GrantClosure {
+@Entity(name = "grant_closure_history")
+public class GrantClosureHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    @ManyToOne
-    @JoinColumn(name = "reason")
-    private ClosureReason reason;
+    private Long seqid;
+    @Column Long id;
+    @Column
+    private String reason;
     @OneToOne
     @JoinColumn(referencedColumnName = "id")
-    private GranterClosureTemplate template;
+    private GranterReportTemplate template;
     @OneToOne
     @JoinColumn(referencedColumnName = "id")
     private Grant grant;
@@ -64,34 +63,15 @@ public class GrantClosure {
     @Column(columnDefinition = "text")
     private String note;
     @Column
-    private Date noteAdded;
+    private String closureDetail;
     @Column
     private boolean deleted;
-    @Column private String closureDetail;
-    @Column(columnDefinition = "text")
+    @Column
     private String linkedApprovedReports;
     @Column
     private String description;
     @Column
-    private Long ownerId;
-    @Column
-    private String ownerName;
-
-    public Long getOwnerId() {
-        return ownerId;
-    }
-
-    public void setOwnerId(Long ownerId) {
-        this.ownerId = ownerId;
-    }
-
-    public String getOwnerName() {
-        return ownerName;
-    }
-
-    public void setOwnerName(String ownerName) {
-        this.ownerName = ownerName;
-    }
+    private Date noteAdded;
 
     public String getDescription() {
         return description;
@@ -99,6 +79,14 @@ public class GrantClosure {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getLinkedApprovedReports() {
+        return linkedApprovedReports;
+    }
+
+    public void setLinkedApprovedReports(String linkedApprovedReports) {
+        this.linkedApprovedReports = linkedApprovedReports;
     }
 
     public List<WorkFlowPermission> getFlowAuthorities() {
@@ -165,19 +153,27 @@ public class GrantClosure {
         this.id = id;
     }
 
-    public ClosureReason getReason() {
+    public String getReason() {
         return reason;
     }
 
-    public void setReason(ClosureReason reason) {
+    public void setReason(String reason) {
         this.reason = reason;
     }
 
-    public GranterClosureTemplate getTemplate() {
+    public Long getSeqid() {
+        return seqid;
+    }
+
+    public void setSeqid(Long seqid) {
+        this.seqid = seqid;
+    }
+
+    public GranterReportTemplate getTemplate() {
         return template;
     }
 
-    public void setTemplate(GranterClosureTemplate template) {
+    public void setTemplate(GranterReportTemplate template) {
         this.template = template;
     }
 
@@ -269,14 +265,6 @@ public class GrantClosure {
         this.note = note;
     }
 
-    public boolean isDeleted() {
-        return deleted;
-    }
-
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
-    }
-
     public String getClosureDetail() {
         return closureDetail;
     }
@@ -285,12 +273,12 @@ public class GrantClosure {
         this.closureDetail = closureDetail;
     }
 
-    public String getLinkedApprovedReports() {
-        return linkedApprovedReports;
+    public boolean isDeleted() {
+        return deleted;
     }
 
-    public void setLinkedApprovedReports(String linkedApprovedReports) {
-        this.linkedApprovedReports = linkedApprovedReports;
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 
     public Date getNoteAdded() {
