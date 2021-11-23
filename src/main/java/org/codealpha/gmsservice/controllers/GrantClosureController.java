@@ -1462,7 +1462,7 @@ public class GrantClosureController {
             List<ClosureAssignments> newAssignments = closureService.getAssignmentsForClosure(closure);
 
             String[] notifications = closureService.buildEmailNotificationContent(closure,
-                    , null, null, null,
+                    userService.getUserById(userId), null, null, null,
                     appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
