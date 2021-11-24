@@ -19,7 +19,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -72,6 +75,7 @@ public class GrantClosureController {
     public static final String YES = "Yes";
     public static final String NO = "No";
     public static final String STREMPTY = " ";
+    public static final String DISBURSEMENTCAPS = "DISBURSEMENT";
 
     @Autowired
     private WorkflowStatusService workflowStatusService;
@@ -493,7 +497,7 @@ public class GrantClosureController {
     }
 
     private void showDisbursementsForClosure(GrantClosure closure, User currentUser) {
-        List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",
+        List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses(DISBURSEMENTCAPS,
                 closure.getGrant().getGrantorOrganization().getId());
 
         List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
@@ -1974,6 +1978,37 @@ public class GrantClosureController {
         }
 
         return history;
+    }
 
+    @GetMapping("{grantId}/warnings")
+    public ResponseEntity<> getClosureWarning(@PathVariable("userId") Long userId,
+                                            @RequestHeader("X-TENANT-CODE") String tenantCode,
+                                            @PathVariable("grantId")Long grantId){
+
+
+        List<WorkflowStatus> reportWfStatuses = workflowStatusService.findByWorkflow(
+                workflowService.findWorkflowByGrantTypeAndObject(grantService.getById(grantId).getGrantTypeId(),REPORT)
+        );
+
+        List<Report> reportsInProgress = new ArrayList<>();
+        reportWfStatuses.removeIf(ws -> ws.getInternalStatus().equalsIgnoreCase(DRAFT) || ws.getInternalStatus().equalsIgnoreCase(CLOSED));
+        for(WorkflowStatus status :reportWfStatuses){
+            reportsInProgress.addAll(reportService.findReportsByStatusForGrant(status,grantService.getById(grantId)));
+        }
+
+
+        List<WorkflowStatus> disbursementWfStatuses = workflowStatusService.findByWorkflow(
+                workflowService.findWorkflowByGrantTypeAndObject(grantService.getById(grantId).getGrantTypeId(), DISBURSEMENTCAPS)
+        );
+
+        disbursementWfStatuses.removeIf(ws -> ws.getInternalStatus().equalsIgnoreCase(DRAFT) || ws.getInternalStatus().equalsIgnoreCase(CLOSED) || ws.getInternalStatus().equalsIgnoreCase(ACTIVE));
+        List<Disbursement> disbursementsInProgress = disbursementService.getDibursementsForGrantByStatuses(grantId,disbursementWfStatuses.stream().mapToLong(d -> d.getId()).boxed().collect(Collectors.toList()));
+
+        Grant grantInAmendment = null;
+        if(grantService.getById(grantId).getAmendGrantId()!=null){
+            grantInAmendment = grantService.getById(grantService.getById(grantId).getAmendGrantId());
+        }
+
+        return new ResponseEntity<>(new ClosureWarnings(disbursementsInProgress,reportsInProgress,grantInAmendment), HttpStatus.OK);
     }
 }
