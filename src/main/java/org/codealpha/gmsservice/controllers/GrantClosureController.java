@@ -1981,7 +1981,7 @@ public class GrantClosureController {
     }
 
     @GetMapping("{grantId}/warnings")
-    public ResponseEntity<> getClosureWarning(@PathVariable("userId") Long userId,
+    public ResponseEntity<ClosureWarnings> getClosureWarning(@PathVariable("userId") Long userId,
                                             @RequestHeader("X-TENANT-CODE") String tenantCode,
                                             @PathVariable("grantId")Long grantId){
 
