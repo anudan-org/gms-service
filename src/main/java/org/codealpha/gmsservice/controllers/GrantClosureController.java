@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -2002,7 +2001,7 @@ public class GrantClosureController {
         );
 
         disbursementWfStatuses.removeIf(ws -> ws.getInternalStatus().equalsIgnoreCase(DRAFT) || ws.getInternalStatus().equalsIgnoreCase(CLOSED) || ws.getInternalStatus().equalsIgnoreCase(ACTIVE));
-        List<Disbursement> disbursementsInProgress = disbursementService.getDibursementsForGrantByStatuses(grantId,disbursementWfStatuses.stream().mapToLong(d -> d.getId()).boxed().collect(Collectors.toList()));
+        List<Disbursement> disbursementsInProgress = disbursementService.getDibursementsForGrantByStatuses(grantId,disbursementWfStatuses.stream().mapToLong(WorkflowStatus::getId).boxed().collect(Collectors.toList()));
 
         Grant grantInAmendment = null;
         if(grantService.getById(grantId).getAmendGrantId()!=null){
