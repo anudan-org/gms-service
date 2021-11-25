@@ -259,7 +259,7 @@ public class GrantClosureVO {
                 try {
                     Object value = descriptor.getReadMethod().invoke(closure);
                     PropertyDescriptor voPd = BeanUtils.getPropertyDescriptor(vo.getClass(), descriptor.getName());
-                    if (voPd.getName().equalsIgnoreCase("stringAttributes")) {
+                    if (voPd!=null && voPd.getName().equalsIgnoreCase("stringAttributes")) {
                         ClosureDetailVO closureDetailVO = null;
                         closureDetailVO = vo.getClosureDetails();
                         if (closureDetailVO == null) {
