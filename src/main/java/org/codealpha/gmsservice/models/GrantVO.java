@@ -78,6 +78,7 @@ public class GrantVO {
   private Date minEndEndate;
   private Boolean internal;
   private String amendmentDetailsSnapshot;
+  private Boolean closureInProgress;
   private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
   public Long getId() {
@@ -90,6 +91,14 @@ public class GrantVO {
 
   public void setAmendmentDetailsSnapshot(String amendmentDetailsSnapshot) {
     this.amendmentDetailsSnapshot = amendmentDetailsSnapshot;
+  }
+
+  public Boolean getClosureInProgress() {
+    return closureInProgress;
+  }
+
+  public void setClosureInProgress(Boolean closureInProgress) {
+    this.closureInProgress = closureInProgress;
   }
 
   public void setId(Long id) {

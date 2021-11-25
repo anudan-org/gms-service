@@ -82,6 +82,7 @@ public class ApplicationController {
     @Autowired private AppConfigService appConfigService;
     @Autowired private ReportService reportService;
     @Autowired private DisbursementService disbursementService;
+    @Autowired private GrantClosureService closureService;
 
     @GetMapping(value = {"/config/user/{userId}/{host}", "/config"})
     @ApiOperation(value = "Application Configuration for tenant and Anudan platform.",notes = "Publicly available application configuration for tenant.\nIf host is passed then tenant specific configuration is retrieved. If tenant is not passed then Anudan platform level configuration is retrieved.",response = UIConfig.class)
@@ -113,8 +114,9 @@ public class ApplicationController {
                 //config.setGrantInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("GRANT", org.getId()));
                 //config.setSubmissionInitialStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId("SUBMISSION", org.getId()));
                 config.setWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANT",org.getId()));
-                config.setReportWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("REPORT",org.getId()));
                 config.setTenantUsers(userService.getAllTenantUsers(org));
+                config.setReportWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("REPORT",org.getId()));
+                config.setClosureWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANTCLOSURE",org.getId()));
                 //config.setTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"GRANT"));
                 //config.setReportTransitions(workflowTransitionModelService.getWorkflowsByGranterAndType(org.getId(),"REPORT"));
                 config.setGranteeOrgs(organizationService.getAssociatedGranteesForTenant(org));
@@ -291,6 +293,10 @@ public class ApplicationController {
             Disbursement disbursement = disbursementService.getDisbursementById(id);
             config.setTenantUsers(userService.getAllTenantUsers(disbursement.getGrant().getGrantorOrganization()));
             config.setDisbursementWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("DISBURSEMENT",disbursement.getGrant().getGrantorOrganization().getId()));
+        }else if("closure".equalsIgnoreCase(type)){
+            GrantClosure closure = closureService.getClosureById(id);
+            config.setTenantUsers(userService.getAllTenantUsers(closure.getGrant().getGrantorOrganization()));
+            config.setClosureWorkflowStatuses(workflowStatusService.getTenantWorkflowStatuses("GRANTCLOSURE",closure.getGrant().getGrantorOrganization().getId()));
         }
         return config;
     }

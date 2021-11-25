@@ -224,7 +224,17 @@ public class GrantCard {
   private String ownerName;
   @Column
   private String ownerId;
+  @Column
+  private boolean closureInProgress;
 
+
+  public boolean isClosureInProgress() {
+    return closureInProgress;
+  }
+
+  public void setClosureInProgress(boolean closureInProgress) {
+    this.closureInProgress = closureInProgress;
+  }
 
   public String getOwnerId() {
     return ownerId;

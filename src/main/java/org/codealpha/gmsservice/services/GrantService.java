@@ -131,6 +131,8 @@ public class GrantService {
     private ReportRepository reportRepository;
     @Autowired
     private ReportCardRepository reportCardRepository;
+    @Autowired
+    private ClosureReasonsRepository closureReasonsRepository;
 
     public GrantService() {
         //Adding for sonar
@@ -1051,5 +1053,9 @@ public class GrantService {
         }
 
         return plainGrant;
+    }
+
+    public List<ClosureReason> getClosureReasons(Long orgId) {
+        return closureReasonsRepository.getClosureReasonsForOrg(orgId);
     }
 }
