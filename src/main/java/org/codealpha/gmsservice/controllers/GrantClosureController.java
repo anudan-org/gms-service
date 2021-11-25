@@ -755,7 +755,7 @@ public class GrantClosureController {
             grantService.saveGrant(closure.getGrant());
         }
 
-        closure = closureToReturn(closureToSave, userId);
+        closure = closureToReturn(closure, userId);
         return closure;
     }
 
