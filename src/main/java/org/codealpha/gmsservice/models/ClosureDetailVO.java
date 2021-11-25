@@ -44,7 +44,7 @@ public class ClosureDetailVO {
     if(value!=null) {
       for (ClosureStringAttribute stringAttribute : value) {
 
-        Optional<SectionVO> so = sections.stream().filter(a -> a.getId()==stringAttribute.getSection().getId()).findFirst();
+        Optional<SectionVO> so = sections.stream().filter(a -> a.getId().longValue()==stringAttribute.getSection().getId().longValue()).findFirst();
         if(so.isPresent()) {
           sectionVO = so.get();
         }else{

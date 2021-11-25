@@ -1067,7 +1067,7 @@ public class GrantClosureController {
                         + closureId + File.pathSeparator + stringAttribute.getSection().getId() + File.pathSeparator
                         + stringAttribute.getSectionAttribute().getId() + File.pathSeparator;
             } else {
-                filePath = uploadLocation + tenantCode + CLOSURE_DOCUMENTS + closureId + File.pathSeparator
+                filePath = uploadLocation + user.getOrganization().getCode().toUpperCase() + CLOSURE_DOCUMENTS + closureId + File.pathSeparator
                         + stringAttribute.getSection().getId() + File.pathSeparator + stringAttribute.getSectionAttribute().getId()
                         + File.pathSeparator;
             }
@@ -1113,8 +1113,7 @@ public class GrantClosureController {
             @PathVariable("closureId") Long closureId,
             @PathVariable("attributeId") Long attributeId,
             @RequestParam("closureToSave") String closureToSaveStr,
-            @RequestParam("file") MultipartFile[] files,
-            @RequestHeader("X-TENANT-CODE") String tenantCode) {
+            @RequestParam("file") MultipartFile[] files) {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -1130,13 +1129,8 @@ public class GrantClosureController {
         User user = userService.getUserById(userId);
 
         String filePath = STRNOSPACE;
-        if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
             filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + CLOSURE_DOCUMENTS + closureId
                     + File.pathSeparator + attr.getSection().getId() + File.pathSeparator + attr.getSectionAttribute().getId() + File.pathSeparator;
-        } else {
-            filePath = uploadLocation + tenantCode + CLOSURE_DOCUMENTS + closureId + File.pathSeparator + attr.getSection().getId()
-                    + File.pathSeparator + attr.getSectionAttribute().getId() + File.pathSeparator;
-        }
         File dir = new File(filePath);
         dir.mkdirs();
         List<ClosureStringAttributeAttachments> attachments = new ArrayList<>();

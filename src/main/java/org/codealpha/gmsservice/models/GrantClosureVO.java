@@ -259,7 +259,8 @@ public class GrantClosureVO {
                 try {
                     Object value = descriptor.getReadMethod().invoke(closure);
                     PropertyDescriptor voPd = BeanUtils.getPropertyDescriptor(vo.getClass(), descriptor.getName());
-                    if (voPd.getName().equalsIgnoreCase("stringAttributes")) {
+
+                    if (voPd!=null && voPd.getName().equalsIgnoreCase("stringAttributes")) {
                         ClosureDetailVO closureDetailVO = null;
                         closureDetailVO = vo.getClosureDetails();
                         if (closureDetailVO == null) {
@@ -269,15 +270,17 @@ public class GrantClosureVO {
                                 (List<ClosureStringAttribute>) value, closureService,
                                 closure.getGrant() == null ? 0 : closure.getGrant().getId());
                         vo.setClosureDetails(closureDetailVO);
-                    } else if (voPd.getName().equalsIgnoreCase("noteAddedBy")
-                            || voPd.getName().equalsIgnoreCase("noteAddedByUser")) {
+                    } else if (voPd!=null && (voPd.getName().equalsIgnoreCase("noteAddedBy")
+                            || voPd.getName().equalsIgnoreCase("noteAddedByUser"))) {
                         vo.setNoteAddedBy(closure.getNoteAddedBy());
                         if (closure.getNoteAddedBy() != null) {
                             vo.setNoteAddedByUser(userService.getUserById(closure.getNoteAddedBy()));
                         }
 
                     } else {
-                        voPd.getWriteMethod().invoke(vo, value);
+                        if(voPd!=null){
+                            voPd.getWriteMethod().invoke(vo, value);
+                        }
                     }
                 } catch (IllegalAccessException e) {
                     logger.error(e.getMessage(), e);
