@@ -269,7 +269,7 @@ public class GrantClosureVO {
                                 (List<ClosureStringAttribute>) value, closureService,
                                 closure.getGrant() == null ? 0 : closure.getGrant().getId());
                         vo.setClosureDetails(closureDetailVO);
-                    } else if (voPd.getName().equalsIgnoreCase("noteAddedBy")
+                    } else if (voPd!=null && voPd.getName().equalsIgnoreCase("noteAddedBy")
                             || voPd.getName().equalsIgnoreCase("noteAddedByUser")) {
                         vo.setNoteAddedBy(closure.getNoteAddedBy());
                         if (closure.getNoteAddedBy() != null) {
