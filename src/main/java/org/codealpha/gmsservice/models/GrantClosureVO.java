@@ -277,7 +277,9 @@ public class GrantClosureVO {
                         }
 
                     } else {
-                        voPd.getWriteMethod().invoke(vo, value);
+                        if(voPd!=null){
+                            voPd.getWriteMethod().invoke(vo, value);
+                        }
                     }
                 } catch (IllegalAccessException e) {
                     logger.error(e.getMessage(), e);
