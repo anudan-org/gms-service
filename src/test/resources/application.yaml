@@ -10,6 +10,7 @@ spring:
     hibernate:
       ddl-auto: none
   upload-file-location: /
+  preview-file-location: /
   supported-file-types: pdf
   recaptcha-secret-key: changeit
   send-mail: false
