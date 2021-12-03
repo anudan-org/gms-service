@@ -2609,7 +2609,7 @@ public class GrantController {
         Long sectionId = attachment.getGrantStringAttribute().getSectionAttribute().getSection().getId();
         Long attributeId = attachment.getGrantStringAttribute().getSectionAttribute().getId();
         File file = resourceLoader.getResource(FILE + uploadLocation + tenantCode + GRANT_DOCUMENTS + grantId
-                + FILE_SEPARATOR + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + attachment.getName() + "." + attachment.getType())
+                + FILE_SEPARATOR + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + attachment.getName())
                 .getFile();
         Map<String, File> fileMap = new HashMap<>();
         fileMap.put(attachment.getType(), file);
@@ -3236,7 +3236,7 @@ public class GrantController {
             GrantDocument doc = grantService.getGrantDocumentById(downloadRequest.getAttachmentIds()[0]);
             fileMap = new HashMap<>();
             File file = resourceLoader.getResource(FILE + uploadLocation + tenantCode + GRANT_DOCUMENTS + id
-                    + FILE_SEPARATOR + doc.getName() + "." + doc.getExtension()).getFile();
+                    + FILE_SEPARATOR + doc.getName()).getFile();
             fileMap.put(doc.getExtension(), file);
         } else if (REPORT.equalsIgnoreCase(forEntity)) {
             ReportStringAttributeAttachments attachment = reportService.getStringAttributeAttachmentsByAttachmentId(downloadRequest.getAttachmentIds()[0]);
@@ -3244,7 +3244,7 @@ public class GrantController {
             Long attributeId = attachment.getReportStringAttribute().getSectionAttribute().getId();
             File file = resourceLoader.getResource(FILE + uploadLocation
                     + organizationService.findOrganizationByTenantCode(tenantCode).getName().toUpperCase() + "/report-documents/" + id + FILE_SEPARATOR
-                    + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + attachment.getName() + "." + attachment.getType())
+                    + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + attachment.getName())
                     .getFile();
             fileMap = new HashMap<>();
             fileMap.put(attachment.getType(), file);
