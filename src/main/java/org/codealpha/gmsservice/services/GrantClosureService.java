@@ -317,7 +317,7 @@ public class GrantClosureService {
 
     }
 
-    private GranterClosureTemplate saveClosureTemplate(GranterClosureTemplate newTemplate) {
+    public GranterClosureTemplate saveClosureTemplate(GranterClosureTemplate newTemplate) {
         return granterClosureTemplateRepository.save(newTemplate);
     }
 
@@ -540,6 +540,8 @@ public class GrantClosureService {
         PlainClosure plainClosure = new PlainClosure();
         plainClosure.setReason(closure.getReason());
         plainClosure.setDescription(closure.getDescription());
+        plainClosure.setName(closure.getGrant().getName());
+        plainClosure.setReferenceNo(closure.getGrant().getReferenceNo());
 
         plainClosure.setCurrentInternalStatus(closure.getStatus().getInternalStatus());
         plainClosure.setCurrentStatus(closure.getStatus().getName());
