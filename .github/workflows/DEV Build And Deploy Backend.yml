@@ -181,7 +181,7 @@ jobs:
   Rsync-Dev-Deployments:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/dev'
-    needs: [DEV-Backend-Build, unit-and-functional-testing-Backend, Static-Code-Analysis-Sonarqube-Backend, Anudan-config, Release-repo-checkout]
+    needs: [DEV-Backend-Build, unit-and-functional-testing-Backend, Anudan-config, Release-repo-checkout]
     name: Copy artifacts to Dev server
     steps:
     - name: downloading Anudan-backend-artifact arifact from github. 
@@ -214,7 +214,7 @@ jobs:
   Notify-on-email:
     runs-on: ubuntu-latest
     if: always()
-    needs: [DEV-Backend-Build, unit-and-functional-testing-Backend, Static-Code-Analysis-Sonarqube-Backend, Anudan-config, Rsync-Dev-Deployments, Trigger-Dev-Release]
+    needs: [DEV-Backend-Build, unit-and-functional-testing-Backend, Anudan-config, Rsync-Dev-Deployments, Trigger-Dev-Release]
     name: Notify Via Email
     steps:
       - name: Anudan Release artifact downloading from github.    
@@ -244,7 +244,9 @@ jobs:
                
                 2. Test Result (units and functionals) - ${{needs.unit-and-functional-testing-Backend.result}} 
                 
-                3. Static Code Analysis Result - ${{needs.Static-Code-Analysis-Sonarqube-Backend.result}} 
+                # 3. Static Code Analysis Result - ${{needs.Static-Code-Analysis-Sonarqube-Backend.result}} 
+                
+                3. Static Code Analysis Result - DISABLED
 
                 4. Checkout application.yaml Result - ${{needs.Anudan-config.result}} 
                 
