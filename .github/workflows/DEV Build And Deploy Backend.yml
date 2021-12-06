@@ -116,7 +116,7 @@ jobs:
             -Dsonar.sonar.jacoco.reportPath=build/jacoco/jacoco.exec  
             -DsystemProp.sonar.login=${{ secrets.SONAR_TOKEN }}   
     - name: SonarQube Quality Gate check
-      uses: sonarsource/sonarqube-quality-gate-action@master
+      # uses: sonarsource/sonarqube-quality-gate-action@master
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       with:
