@@ -244,7 +244,7 @@ jobs:
                
                 2. Test Result (units and functionals) - ${{needs.unit-and-functional-testing-Backend.result}} 
                                 
-                3. Static Code Analysis Result - DISABLED
+                3. Static Code Analysis Result - ${{needs.Static-Code-Analysis-Sonarqube-Backend.result}}
 
                 4. Checkout application.yaml Result - ${{needs.Anudan-config.result}} 
                 
