@@ -4,8 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Ordering;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -14,16 +12,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
-import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.exceptions.ApplicationException;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.GrantValidator;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,11 +50,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.time.Month;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -84,7 +75,6 @@ public class GrantController {
     public static final String FILE_SEPARATOR = "/";
     public static final String DOCUMENT = "document";
     public static final String RELEASE_VERSION = "%RELEASE_VERSION%";
-    public static final String PLEASE_REVIEW = "Please review.";
     public static final String APPLICATION_ZIP = "application/zip";
     public static final String TENANT_ID = "%tenantId%";
     public static final String STRING_AGG = "string_agg";
@@ -221,7 +211,7 @@ public class GrantController {
             grantSpecificSections.add(specificSection);
         }
 
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
         return grant;
     }
 
@@ -439,7 +429,7 @@ public class GrantController {
             }
         }
 
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
         return grant;
 
     }
@@ -571,7 +561,7 @@ public class GrantController {
                         AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
                 userService, grantService);
         grant.setGrantDetails(grantVO.getGrantDetails());
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
 
         try {
             grant.setAmendmentDetailsSnapshot(new ObjectMapper().writeValueAsString(grant.getGrantDetails()));
@@ -601,8 +591,6 @@ public class GrantController {
 
         User user = userService.getUserById(userId);
         String[] emailNotificationContent = grantService.buildEmailNotificationContent(existingGrant, user,
-                user.getFirstName().concat(" ").concat(user.getLastName()), null,
-                new SimpleDateFormat(DD_MMM_YYYY).format(DateTime.now().toDate()),
                 appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.AMENDMENT_INIT_MAIL_SUBJECT).getConfigValue(),
                 appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
@@ -715,7 +703,7 @@ public class GrantController {
             createNewGrantTemplateFromExisiting(grant);
         }
 
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
         return new FieldInfo(newSectionAttribute != null ? newSectionAttribute.getId() : 0L, stringAttribute.getId(), grant);
     }
 
@@ -753,7 +741,7 @@ public class GrantController {
         if (checkIfGrantTemplateChanged(grant, attribute.getSection(), null)) {
             createNewGrantTemplateFromExisiting(grant);
         }
-        grant = grantService._grantToReturn(userService.getUserById(userId).getId(), grant);
+        grant = grantService.grantToReturn(userService.getUserById(userId).getId(), grant);
         return grant;
     }
 
@@ -785,7 +773,7 @@ public class GrantController {
             createNewGrantTemplateFromExisiting(grant);
         }
 
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
         return new FieldInfo(currentAttribute.getId(), stringAttribute.getId(), grant);
     }
 
@@ -817,7 +805,7 @@ public class GrantController {
             createNewGrantTemplateFromExisiting(grant);
         }
 
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
         return new SectionInfo(specificSection.getId(), specificSection.getSectionName(), grant);
 
     }
@@ -849,7 +837,7 @@ public class GrantController {
         if (checkIfGrantTemplateChanged(grant, section, null)) {
             createNewGrantTemplateFromExisiting(grant);
         }
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
         return grant;
     }
 
@@ -947,7 +935,7 @@ public class GrantController {
             @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId) {
 
         Grant grant = grantService.getById(grantId);
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
 
         return grant;
     }
@@ -960,264 +948,7 @@ public class GrantController {
             @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        Organization tenantOrg = null;
-        User user = userService.getUserById(userId);
-        if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-            tenantOrg = grantService.getById(grantId).getGrantorOrganization();
-        } else {
-            tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
-        }
-        GrantType grantType = grantService.getGrantypeById(grantToSave.getGrantTypeId());
-        if (grantType.isInternal()) {
-            grantToSave.setOrganization(tenantOrg);
-        } else {
-            grantToSave.setOrganization(processNewGranteeOrgIfPresent(grantToSave));
-        }
-        Grant grant = processGrant(grantToSave, tenantOrg, user);
-        grant.setActionAuthorities(
-                workflowPermissionService.getGrantActionPermissions(grant.getGrantorOrganization().getId(),
-                        user.getUserRoles(), grant.getGrantStatus().getId(), userId, grant.getId()));
-
-        grant.setFlowAuthorities(workflowPermissionService.getGrantFlowPermissions(grant.getGrantStatus().getId(),
-                userId, grant.getId()));
-
-        for (Submission submission : grant.getSubmissions()) {
-            submission.setActionAuthorities(workflowPermissionService
-                    .getSubmissionActionPermission(grant.getGrantorOrganization().getId(), user.getUserRoles()));
-
-            AppConfig submissionWindow = appConfigService.getAppConfigForGranterOrg(
-                    submission.getGrant().getGrantorOrganization().getId(),
-                    AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS);
-            Date submissionWindowStart = new DateTime(submission.getSubmitBy())
-                    .minusDays(Integer.valueOf(submissionWindow.getConfigValue()) + 1).toDate();
-
-            List<WorkFlowPermission> flowPermissions = workflowPermissionService.getSubmissionFlowPermissions(
-                    grant.getGrantorOrganization().getId(), user.getUserRoles(),
-                    submission.getSubmissionStatus().getId());
-
-            if (!flowPermissions.isEmpty() && DateTime.now().toDate().after(submissionWindowStart)) {
-                submission.setFlowAuthorities(flowPermissions);
-            }
-            submission.setOpenForReporting(DateTime.now().toDate().after(submissionWindowStart));
-        }
-
-        GrantVO grantVO = new GrantVO();
-
-        grantVO = grantVO.build(grant, grantService.getGrantSections(grant), workflowPermissionService, user,
-                appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService, grantService);
-        grant.setGrantDetails(grantVO.getGrantDetails());
-        grant.setNoteAddedBy(grantVO.getNoteAddedBy());
-        grant.setNoteAddedByUser(grantVO.getNoteAddedByUser());
-        List<GrantAssignmentsVO> workflowAssignments = new ArrayList<>();
-        for (GrantAssignments assignment : grantService.getGrantWorkflowAssignments(grant)) {
-            GrantAssignmentsVO assignmentsVO = new GrantAssignmentsVO();
-            assignmentsVO.setId(assignment.getId());
-            assignmentsVO.setAnchor(assignment.isAnchor());
-            assignmentsVO.setAssignments(assignment.getAssignments());
-            if (assignment.getAssignments() != null && assignment.getAssignments() > 0) {
-                assignmentsVO.setAssignmentUser(userService.getUserById(assignment.getAssignments()));
-            }
-            assignmentsVO.setGrantId(assignment.getGrant().getId());
-            assignmentsVO.setStateId(assignment.getStateId());
-            assignmentsVO.setStateName(workflowStatusService.findById(assignment.getStateId()));
-            grantService.setAssignmentHistory(grant, assignmentsVO);
-            workflowAssignments.add(assignmentsVO);
-
-        }
-        grant.setWorkflowAssignments(workflowAssignments);
-        List<GrantAssignments> grantAssignments = grantService.getGrantCurrentAssignments(grant);
-        if (grantAssignments != null) {
-            for (GrantAssignments assignment : grantAssignments) {
-                grant.setCurrentAssignment(assignment.getAssignments());
-            }
-        }
-        GranterGrantTemplate templ = granterGrantTemplateService.findByTemplateId(grant.getTemplateId());
-        if (templ != null) {
-            grant.setGrantTemplate(templ);
-        }
-
-
-        grant.getSubmissions().sort((a, b) -> a.getSubmitBy().compareTo(b.getSubmitBy()));
-        grant.getGrantDetails().getSections()
-                .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
-        for (SectionVO sec : grant.getGrantDetails().getSections()) {
-            if (sec.getAttributes() != null) {
-                sec.getAttributes().sort(
-                        (a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
-            }
-        }
-
-        grant.setSecurityCode(grantService.buildHashCode(grant));
-
-        if (grant.getOrigGrantId() != null && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(ACTIVE)
-                && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(CLOSED)) {
-            grant.setOrigGrantRefNo(grantService.getById(grant.getOrigGrantId()).getReferenceNo());
-        }
-
-        if (grant.getOrigGrantId() != null) {
-            List<Report> existingReports = reportService
-                    .getReportsForGrant(grantService.getById(grant.getOrigGrantId()));
-            if (existingReports != null && !existingReports.isEmpty()) {
-                existingReports.removeIf(r -> r.getEndDate() == null);
-                if (!existingReports.isEmpty()) {
-                    Comparator<Report> endDateComparator = Comparator.comparing(Report::getEndDate);
-                    existingReports.sort(endDateComparator);
-                    Report lastReport = existingReports.get(existingReports.size() - 1);
-                    grant.setMinEndEndate(lastReport.getEndDate());
-                } else {
-                    grant.setMinEndEndate(grant.getStartDate());
-                }
-            }
-        }
-
-        List<GrantTag> grantTags = grantService.getTagsForGrant(grant.getId());
-        List<GrantTagVO> grantTagsVoList = new ArrayList<>();
-        for (GrantTag tag : grantTags) {
-            GrantTagVO vo = new GrantTagVO();
-            vo.setGrantId(grant.getId());
-            vo.setId(tag.getId());
-            vo.setOrgTagId(tag.getOrgTagId());
-            vo.setTagName(orgTagService.getOrgTagById(tag.getOrgTagId()).getName());
-            grantTagsVoList.add(vo);
-        }
-        grant.setTags(grantTagsVoList);
-        return grant;
-    }
-
-    private Grantee processNewGranteeOrgIfPresent(Grant grantToSave) {
-        Grantee newGrantee = null;
-        if (grantToSave.getOrganization() != null) {
-            if (grantToSave.getOrganization().getId() < 0) {
-                newGrantee = (Grantee) grantToSave.getOrganization();
-                newGrantee = granteeService.saveGrantee(newGrantee);
-                Role role = new Role();
-                role.setCreatedBy("System");
-                role.setCreatedAt(DateTime.now().toDate());
-                role.setDescription("Admin role");
-                role.setName("Admin");
-                role.setOrganization(newGrantee);
-                role.setHasUsers(false);
-                role.setLinkedUsers(0);
-                role.setInternal(false);
-                roleService.saveRole(role);
-            } else {
-                newGrantee = (Grantee) grantToSave.getOrganization();
-            }
-        }
-        return newGrantee;
-    }
-
-    private Grant processGrant(Grant grantToSave, Organization tenant, User user) {
-        Grant grant = grantService.getById(grantToSave.getId());
-
-        grant.setAmount(grantToSave.getAmount());
-        grant.setDescription(grantToSave.getDescription());
-        grant.setRepresentative(grantToSave.getRepresentative());
-
-        if (grantToSave.getEndDate() != null) {
-            grant.setEnDate(grantToSave.getEnDate());
-            grant.setEndDate(grantToSave.getEndDate());
-        }
-        if (grantToSave.getStartDate() != null) {
-            grant.setStDate(grantToSave.getStDate());
-            grant.setStartDate(grantToSave.getStartDate());
-        }
-        grant.setGrantorOrganization((Granter) tenant);
-        grant.setGrantStatus(grantToSave.getGrantStatus());
-        grant.setName(grantToSave.getName());
-
-        grantToSave.setOrganization(grantToSave.getOrganization());
-
-        grant.setOrganization(grantToSave.getOrganization());
-
-        grant.setStatusName(grantToSave.getStatusName());
-        if (grantToSave.getEndDate() != null) {
-            grant.setStartDate(grantToSave.getStartDate());
-            grant.setStDate(grantToSave.getStDate());
-        }
-        grant.setSubstatus(grantToSave.getSubstatus());
-        grant.setUpdatedAt(DateTime.now().toDate());
-        grant.setUpdatedBy(user.getEmailId());
-        grant.setSubstatus(grantToSave.getSubstatus());
-        grant = grantService.saveGrant(grant);
-
-        processStringAttributes(grant, grantToSave, tenant);
-
-        grant = grantService.saveGrant(grant);
-
-        return grant;
-    }
-
-    private void processStringAttributes(Grant grant, Grant grantToSave, Organization tenant) {
-        GrantSpecificSection grantSpecificSection = null;
-
-        for (SectionVO sectionVO : grantToSave.getGrantDetails().getSections()) {
-            if (sectionVO.getId() < 0 && grantSpecificSection == null) {
-                grantSpecificSection = new GrantSpecificSection();
-            } else if (sectionVO.getId() > 0) {
-                grantSpecificSection = grantService.getGrantSectionBySectionId(sectionVO.getId());
-            }
-            grantSpecificSection.setSectionName(sectionVO.getName());
-            grantSpecificSection.setSectionOrder(sectionVO.getOrder());
-            grantSpecificSection.setGranter((Granter) tenant);
-            grantSpecificSection.setDeletable(true);
-
-            grantSpecificSection = grantService.saveSection(grantSpecificSection);
-
-            GrantSpecificSectionAttribute sectionAttribute = null;
-
-            if (sectionVO.getAttributes() != null) {
-                List<GrantSpecificSectionAttribute> sectionAttributesToDelete = new ArrayList<>();
-                for (SectionAttributesVO sectionAttributesVO : sectionVO.getAttributes()) {
-
-                    sectionAttribute = grantService.getSectionAttributeByAttributeIdAndType(sectionAttributesVO.getId(),
-                            sectionAttributesVO.getFieldType());
-
-                    if (sectionAttribute == null) {
-                        sectionAttributesToDelete.add(sectionAttribute);
-                        continue;
-                    }
-                    sectionAttribute.setFieldName(sectionAttributesVO.getFieldName());
-                    sectionAttribute.setFieldType(sectionAttributesVO.getFieldType());
-                    sectionAttribute.setGranter((Granter) tenant);
-                    sectionAttribute.setAttributeOrder(sectionAttributesVO.getAttributeOrder());
-                    sectionAttribute.setRequired(true);
-                    sectionAttribute.setSection(grantSpecificSection);
-                    sectionAttribute = grantService.saveSectionAttribute(sectionAttribute);
-
-                    GrantStringAttribute grantStringAttribute = grantService
-                            .findGrantStringBySectionAttribueAndGrant(grantSpecificSection, sectionAttribute, grant);
-                    if (grantStringAttribute == null) {
-                        grantStringAttribute = new GrantStringAttribute();
-                        grantStringAttribute.setSectionAttribute(sectionAttribute);
-                        grantStringAttribute.setSection(grantSpecificSection);
-                        grantStringAttribute.setGrant(grant);
-                    }
-                    grantStringAttribute.setTarget(sectionAttributesVO.getTarget());
-                    grantStringAttribute.setFrequency(sectionAttributesVO.getFrequency());
-                    if (sectionAttribute.getFieldType().equalsIgnoreCase(TABLE)
-                            || sectionAttribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
-                        List<TableData> tableData = sectionAttributesVO.getFieldTableValue();
-                        ObjectMapper mapper = new ObjectMapper();
-                        try {
-                            grantStringAttribute.setValue(mapper.writeValueAsString(tableData));
-                        } catch (JsonProcessingException e) {
-                            e.printStackTrace();
-                        }
-
-                    } else {
-                        grantStringAttribute.setValue(sectionAttributesVO.getFieldValue());
-                    }
-                    grantService.saveGrantStringAttribute(grantStringAttribute);
-                    grant.getStringAttributes().add(grantStringAttribute);
-                }
-            }
-
-        }
-        grantService.saveGrant(grant);
-
+        return grantService.saveGrant(grantId,grantToSave,userId,tenantCode);
     }
 
     @PostMapping("/{grantId}/flow/{fromState}/{toState}")
@@ -1229,7 +960,8 @@ public class GrantController {
                                 @ApiParam(name = "toStateId", value = "Unique identifier of the ending state of the grant in the workflow") @PathVariable("toState") Long toStateId,
                                 @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        Grant grant = moveToNewState(grantwithNote, userId, grantId, fromStateId, toStateId, tenantCode);
+
+        Grant grant = grantService.moveToNewState(grantwithNote, userId, grantId, fromStateId, toStateId, tenantCode);
         if (grant.getOrigGrantId() != null
                 && workflowStatusService.findById(toStateId).getInternalStatus().equalsIgnoreCase(ACTIVE)) {
             Grant origGrant = grantService.getById(grant.getOrigGrantId());
@@ -1250,7 +982,7 @@ public class GrantController {
                     .filter(wa -> wa.getStateId().longValue() == statusActive.getId().longValue()).findFirst();
             Long activeStateOwnerId = optionalGrantAssignments.isPresent() ? optionalGrantAssignments.get()
                     .getAssignments() : 0;
-            origGrant = grantService._grantToReturn(activeStateOwnerId, origGrant);
+            origGrant = grantService.grantToReturn(activeStateOwnerId, origGrant);
 
             GrantWithNote gn = new GrantWithNote();
             gn.setGrant(origGrant);
@@ -1258,7 +990,7 @@ public class GrantController {
                     "No note added.<br><i><b>System Note</b>: </i>Closed because of an amendment. Amended grant reference no. is "
                             + grant.getReferenceNo());
             if (statusClosed != null) {
-                moveToNewState(gn, activeStateOwnerId, origGrant.getId(), origGrant.getGrantStatus().getId(),
+                grantService.moveToNewState(gn, activeStateOwnerId, origGrant.getId(), origGrant.getGrantStatus().getId(),
                         statusClosed.getId(), tenantCode);
             }
             List<Report> existingReports = reportService
@@ -1316,868 +1048,8 @@ public class GrantController {
 
     }
 
-    private String getCurrentGrantDetails(Long grantId, User user) throws JsonProcessingException {
-        Grant g = grantService.getById(grantId);
-        GrantVO vo = new GrantVO().build(g, grantService.getGrantSections(g), workflowPermissionService, user,
-                appConfigService.getAppConfigForGranterOrg(g.getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService, grantService);
-
-        return new ObjectMapper().writeValueAsString(vo.getGrantDetails());
-
-    }
-
-    private Grant moveToNewState(GrantWithNote grantwithNote, Long userId, Long grantId, Long fromStateId,
-                                 Long toStateId, String tenantCode) {
-
-        String fromStringAttributes = null;
-        try {
-            fromStringAttributes = getCurrentGrantDetails(grantId, userService.getUserById(userId));
-        } catch (JsonProcessingException e) {
-
-            logger.error(e.getMessage(), e);
-        }
-        for (SectionVO section : grantwithNote.getGrant().getGrantDetails().getSections()) {
-            if (section.getAttributes() != null) {
-                for (SectionAttributesVO attribute : section.getAttributes()) {
-                    if (attribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
-                        List<String> rowNames = new ArrayList<>();
-                        if (attribute.getFieldTableValue().size() > 1) {
-                            for (int i = 0; i < attribute.getFieldTableValue().size(); i++) {
-                                if (attribute.getFieldTableValue().get(i).getColumns()[0].getValue().trim().equalsIgnoreCase("")
-                                        && attribute.getFieldTableValue().get(i).getColumns()[1].getValue().trim().equalsIgnoreCase("")
-                                        && attribute.getFieldTableValue().get(i).getColumns()[2].getValue().trim().equalsIgnoreCase("")
-                                        && attribute.getFieldTableValue().get(i).getColumns()[3].getValue()
-                                        .trim().equalsIgnoreCase("")) {
-                                    rowNames.add(attribute.getFieldTableValue().get(i).getName());
-                                }
-                            }
-                        }
-
-                        if (attribute.getFieldTableValue().size() == rowNames.size()) {
-                            rowNames.remove(rowNames.size() - 1);
-                        }
-                        for (String rowName : rowNames) {
-                            attribute.getFieldTableValue().removeIf(e -> e.getName().equalsIgnoreCase(rowName));
-                        }
-
-                        for (int i = 0; i < attribute.getFieldTableValue().size(); i++) {
-                            attribute.getFieldTableValue().get(i).setName(String.valueOf(i + 1));
-                            try {
-                                attribute.setFieldValue(
-                                        new ObjectMapper().writeValueAsString(attribute.getFieldTableValue()));
-                            } catch (JsonProcessingException e) {
-                                logger.error(e.getMessage(), e);
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
-
-        saveGrant(grantId, grantwithNote.getGrant(), userId, tenantCode);
-        Grant grant = grantService.getById(grantId);
-        Grant finalGrant = grant;
-        WorkflowStatus toStatus = workflowStatusService.findById(toStateId);
-        User user = userService.getUserById(userId);
-
-        if (grant.getOrigGrantId() != null) {
-            grant.setAmendmentNo(grantService.getById(grant.getOrigGrantId()).getAmendmentNo() + 1);
-        }
-
-        if (toStatus.getInternalStatus().equalsIgnoreCase(ACTIVE)) {
-
-            if (Boolean.TRUE.equals(Boolean.valueOf(appConfigService
-                    .getAppConfigForGranterOrg(organizationService.findOrganizationByTenantCode(tenantCode).getId(),
-                            AppConfiguration.GENERATE_GRANT_REFERENCE)
-                    .getConfigValue()))) {
-
-                grant = generateGrantReferenceNo(grant);
-
-            }
-
-            createReportingPeriods(grant, user, tenantCode);
-        }
-
-        WorkflowStatus previousState = grant.getGrantStatus();
-        List<GrantAssignments> previousAssignments = grantService.getGrantWorkflowAssignments(grant).stream()
-                .filter(ass -> ass.getGrant().getId().longValue() == grantId.longValue()
-                        && ass.getStateId().longValue() == finalGrant.getGrantStatus().getId().longValue())
-                .collect(Collectors.toList());
-        User previousOwner = null;
-        if (previousAssignments != null && !previousAssignments.isEmpty()) {
-            previousOwner = userService.getUserById(previousAssignments.get(0).getAssignments());
-        }
-        grant.setGrantStatus(workflowStatusService.findById(toStateId));
-        grant.setNote((grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase(""))
-                ? grantwithNote.getNote()
-                : "No note added");
-        grant.setNoteAdded(new Date());
-        grant.setNoteAddedBy(userService.getUserById(userId).getEmailId());
-
-        Date currentDateTime = DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate();
-        grant.setUpdatedAt(currentDateTime);
-        grant.setUpdatedBy(userService.getUserById(userId).getEmailId());
-        grant.setMovedOn(currentDateTime);
-
-
-        grant = grantService.saveGrant(grant);
-        List<User> usersToNotify = new ArrayList<>();
-
-        final List<GrantAssignments> assigments = grantService.getGrantWorkflowAssignments(grant);
-        assigments.forEach(ass -> {
-            if (usersToNotify.stream().noneMatch(u -> u.getId().longValue() == ass.getAssignments().longValue())) {
-                usersToNotify.add(userService.getUserById(ass.getAssignments()));
-            }
-        });
-
-        Optional<GrantAssignments> assignmentForCurrentState = grantService.getGrantWorkflowAssignments(grant).stream()
-                .filter(ass -> ass.getGrant().getId().longValue() == grantId.longValue()
-                        && ass.getStateId().longValue() == toStateId.longValue())
-                .findFirst();
-        User currentOwner = null;
-        if (assignmentForCurrentState.isPresent()) {
-            currentOwner = userService.getUserById(assignmentForCurrentState.get().getAssignments());
-        } else {
-            currentOwner = new User();
-            currentOwner.setFirstName("-");
-            currentOwner.setLastName("-");
-        }
-
-        WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(previousState,
-                toStatus);
-
-        String[] emailNotificationContent = grantService.buildEmailNotificationContent(finalGrant, user,
-                user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(),
-                new SimpleDateFormat(DD_MMM_YYYY).format(DateTime.now().toDate()),
-                appConfigService.getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                        AppConfiguration.GRANT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
-                appConfigService.getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                        AppConfiguration.GRANT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
-                workflowStatusService.findById(toStateId).getName(),
-                currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), previousState.getName(),
-                previousOwner == null ? " -"
-                        : previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                transition.getAction(), "Yes", PLEASE_REVIEW,
-                grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
-                grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("")
-                        ? PLEASE_REVIEW
-                        : "",
-                "", null, null, null, null);
-        String[] notificationContent = grantService.buildEmailNotificationContent(finalGrant, user,
-                user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(),
-                new SimpleDateFormat(DD_MMM_YYYY).format(DateTime.now().toDate()),
-                appConfigService.getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                        AppConfiguration.GRANT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
-                appConfigService.getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                        AppConfiguration.GRANT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
-                workflowStatusService.findById(toStateId).getName(),
-                currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), previousState.getName(),
-                previousOwner == null ? " -"
-                        : previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                transition.getAction(), "Yes", PLEASE_REVIEW,
-                grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
-                grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("")
-                        ? PLEASE_REVIEW
-                        : "",
-                "", null, null, null, null);
-
-        if (!toStatus.getInternalStatus().equalsIgnoreCase(CLOSED)) {
-            final User currentOwnerFinal = currentOwner;
-            usersToNotify.removeIf(u -> u.getId().longValue() == currentOwnerFinal.getId() || u.isDeleted());
-            commonEmailSevice
-                    .sendMail(!currentOwner.isDeleted() ? new String[]{currentOwner.getEmailId()} : null,
-                            usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
-                                    .toArray(new String[usersToNotify.size()]),
-                            emailNotificationContent[0], emailNotificationContent[1],
-                            new String[]{appConfigService
-                                    .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                                            AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                    .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion())});
-
-            usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
-                    finalGrant.getId(), GRANT));
-            notificationsService.saveNotification(notificationContent, currentOwner.getId(), finalGrant.getId(),
-                    GRANT);
-        } else {
-
-            Optional<WorkflowStatus> first = workflowStatusService
-                    .getTenantWorkflowStatuses(GRANT, grant.getGrantorOrganization().getId()).stream()
-                    .filter(st -> st.getInternalStatus().equalsIgnoreCase(ACTIVE) && st.getWorkflow().getId().longValue() == finalGrant.getGrantStatus().getWorkflow().getId().longValue()).findFirst();
-            WorkflowStatus activeStatus = first.isPresent() ? first.get() : null;
-            Optional<GrantAssignments> optionalGrantAssignments = grantService.getGrantWorkflowAssignments(grant).stream()
-                    .filter(ass -> ass.getStateId().longValue() == activeStatus.getId().longValue()).findFirst();
-            GrantAssignments activeStateAssignment = optionalGrantAssignments.isPresent() ? optionalGrantAssignments.get() : null;
-
-            User activeStateOwner = userService.getUserById(activeStateAssignment.getAssignments());
-            usersToNotify.removeIf(u -> u.getId().longValue() == activeStateOwner.getId().longValue() || u.isDeleted());
-
-            try {
-                commonEmailSevice
-                        .sendMail(!activeStateOwner.isDeleted() ? new String[]{activeStateOwner.getEmailId()} : null,
-                                usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
-                                        .toArray(new String[usersToNotify.size()]),
-                                emailNotificationContent[0], emailNotificationContent[1],
-                                new String[]{appConfigService
-                                        .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
-                                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                        .getConfigValue().replace(RELEASE_VERSION,
-                                        releaseService.getCurrentRelease().getVersion())});
-
-                usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
-                        finalGrant.getId(), GRANT));
-                notificationsService.saveNotification(notificationContent, activeStateOwner.getId(), finalGrant.getId(),
-                        GRANT);
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-
-        }
-
-        grant.setActionAuthorities(
-                workflowPermissionService.getGrantActionPermissions(grant.getGrantorOrganization().getId(),
-                        user.getUserRoles(), grant.getGrantStatus().getId(), userId, grantId));
-
-        grant.setFlowAuthorities(workflowPermissionService.getGrantFlowPermissions(grant.getGrantStatus().getId(),
-                userId, grant.getId()));
-        GrantVO grantVO = new GrantVO().build(grant, grantService.getGrantSections(grant), workflowPermissionService,
-                user, appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
-                userService, grantService);
-
-        grant.setGrantDetails(grantVO.getGrantDetails());
-        grant.setNoteAddedByUser(
-                userService.getUserByEmailAndOrg(grant.getNoteAddedBy(), grant.getGrantorOrganization()));
-        List<GrantAssignments> grantAssignments = grantService.getGrantCurrentAssignments(grant);
-        if (grantAssignments != null) {
-            for (GrantAssignments assignment : grantAssignments) {
-                grant.setCurrentAssignment(assignment.getAssignments());
-            }
-        }
-        grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
-
-        grant.getWorkflowAssignment().sort((a, b) -> a.getId().compareTo(b.getId()));
-        grant.getSubmissions().sort((a, b) -> a.getSubmitBy().compareTo(b.getSubmitBy()));
-        grant.getGrantDetails().getSections()
-                .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
-        for (SectionVO sec : grant.getGrantDetails().getSections()) {
-            if (sec.getAttributes() != null) {
-                sec.getAttributes().sort(
-                        (a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
-            }
-        }
-
-        // Save Snapshot
-
-        saveSnapShot(grant, fromStateId, fromStringAttributes, toStateId, grant.getNote(), currentDateTime,
-                assignmentForCurrentState.isPresent()
-                        ? userService.getUserById(assignmentForCurrentState.get().getAssignments())
-                        : null,
-                previousOwner);
-
-        return grant;
-    }
-
-    private Grant generateGrantReferenceNo(Grant grant) {
-        logger.info("GENERATING SNO");
-        if (grant.getStartDate() == null && grant.getEndDate() == null && grant.getOrganization() == null) {
-            throw new ApplicationException("Cannot generate reference code");
-        }
-
-        SimpleDateFormat stFormat = new SimpleDateFormat("yyMM");
-        SimpleDateFormat enFormat = new SimpleDateFormat("yyMM");
-        Integer sNo = grantService.getActiveGrantsForTenant(grant.getGrantorOrganization()).size();
-
-        String referenceCode = "";
-        if (grant.getOrigGrantId() != null) {
-
-            String prevRefNo = grantService.getById(grant.getOrigGrantId()).getReferenceNo();
-            if (prevRefNo.startsWith("A" + (grant.getAmendmentNo() - 1) + "-")) {
-                prevRefNo = prevRefNo.substring(prevRefNo.indexOf("-") + 1);
-            }
-            referenceCode = "A" + grant.getAmendmentNo() + "-" + prevRefNo;
-        } else {
-            String code = grant.getOrganization() == null ? grant.getGrantorOrganization().getName() : grant.getOrganization().getName();
-            referenceCode = code.replace(" ", "").substring(0, 4).toUpperCase() + "-"
-                    + stFormat.format(grant.getStartDate()) + "-" + enFormat.format(grant.getEndDate()) + ("-" + (sNo + 1));
-        }
-        grant.setReferenceNo(referenceCode);
-        return grantService.saveGrant(grant);
-
-    }
-
-    private void createReportingPeriods(Grant grant, User user, String tenantCode) {
-        Map<DatePeriod, PeriodAttribWithLabel> quarterlyPeriods = new HashMap<>();
-        Map<DatePeriod, PeriodAttribWithLabel> halfyearlyPeriods = new HashMap<>();
-        Map<DatePeriod, PeriodAttribWithLabel> monthlyPeriods = new HashMap<>();
-        Map<DatePeriod, PeriodAttribWithLabel> yearlyPeriods = new HashMap<>();
-        if (grant.getStartDate() != null && grant.getEndDate() != null) {
-            grant.getGrantDetails().getSections().forEach(sec -> {
-                if (sec.getAttributes() != null && !sec.getAttributes().isEmpty()) {
-                    List<String> order = ImmutableList.of("YEARLY", "HALF-YEARLY", "QUARTERLY", "MONTHLY");
-                    Ordering.explicit(order);
-                    Comparator<SectionAttributesVO> attrComparator = Comparator
-                            .comparing(c -> order.indexOf(c.getFrequency().toUpperCase()));
-                    sec.getAttributes().removeIf(attr -> attr.getFrequency() == null);
-                    sec.getAttributes().sort(attrComparator);
-
-                    sec.getAttributes().forEach(attr -> {
-                        if (attr.getFieldType().equalsIgnoreCase("KPI")) {
-
-                            if (attr.getFrequency().equalsIgnoreCase("YEARLY")) {
-                                DateTime st = new DateTime(grant.getMinEndEndate() != null
-                                        ? new DateTime(grant.getMinEndEndate()).plusDays(1).toDate()
-                                        : grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay();
-                                DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23,
-                                        59, 59, 999);
-                                List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en,
-                                        Frequency.YEARLY);
-
-                                reportingFrequencies.forEach(rf -> {
-
-                                    List<SectionAttributesVO> attrList = null;
-
-                                    if (yearlyPeriods.containsKey(rf)) {
-                                        attrList = yearlyPeriods.get(rf).getAttributes();
-                                    } else {
-                                        attrList = new ArrayList<>();
-                                    }
-                                    attrList.add(attr);
-                                    yearlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(), attrList));
-
-                                });
-                            }
-
-                            if (attr.getFrequency().equalsIgnoreCase("HALF-YEARLY")) {
-                                DateTime st = new DateTime(grant.getMinEndEndate() != null
-                                        ? new DateTime(grant.getMinEndEndate()).plusDays(1).toDate()
-                                        : grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay();
-                                DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23,
-                                        59, 59, 999);
-                                List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en,
-                                        Frequency.HALF_YEARLY);
-
-                                reportingFrequencies.forEach(rf -> {
-
-                                    List<SectionAttributesVO> attrList = null;
-                                    if (yearlyPeriods.containsKey(rf)) {
-                                        yearlyPeriods.get(rf).getAttributes().add(attr);
-                                    } else {
-
-                                        if (halfyearlyPeriods.containsKey(rf)) {
-                                            attrList = halfyearlyPeriods.get(rf).getAttributes();
-                                        } else {
-                                            attrList = new ArrayList<>();
-                                        }
-                                        attrList.add(attr);
-                                        halfyearlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(), attrList));
-                                    }
-                                });
-                            }
-
-                            if (attr.getFrequency().equalsIgnoreCase("QUARTERLY")) {
-
-                                DateTime st = new DateTime(grant.getMinEndEndate() != null
-                                        ? new DateTime(grant.getMinEndEndate()).plusDays(1).toDate()
-                                        : grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay();
-                                DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23,
-                                        59, 59, 999);
-                                List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en,
-                                        Frequency.QUARTERLY);
-                                reportingFrequencies.forEach(rf -> {
-
-                                    List<SectionAttributesVO> attrList = null;
-
-                                    if (yearlyPeriods.containsKey(rf)) {
-                                        yearlyPeriods.get(rf).getAttributes().add(attr);
-                                    } else if (halfyearlyPeriods.containsKey(rf)) {
-                                        halfyearlyPeriods.get(rf).getAttributes().add(attr);
-                                    } else {
-                                        if (quarterlyPeriods.containsKey(rf)) {
-                                            attrList = quarterlyPeriods.get(rf).getAttributes();
-                                        } else {
-                                            attrList = new ArrayList<>();
-                                        }
-                                        attrList.add(attr);
-                                        quarterlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(), attrList));
-                                    }
-                                });
-
-                            }
-                        }
-
-                        if (attr.getFrequency().equalsIgnoreCase("MONTHLY")) {
-                            DateTime st = new DateTime(grant.getMinEndEndate() != null
-                                    ? new DateTime(grant.getMinEndEndate()).plusDays(1).toDate()
-                                    : grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay();
-                            DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23, 59,
-                                    59, 999);
-                            List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en, Frequency.MONTHLY);
-
-                            reportingFrequencies.forEach(rf -> {
-
-                                List<SectionAttributesVO> attrList = null;
-                                if (yearlyPeriods.containsKey(rf)) {
-                                    yearlyPeriods.get(rf).getAttributes().add(attr);
-                                } else if (halfyearlyPeriods.containsKey(rf)) {
-                                    halfyearlyPeriods.get(rf).getAttributes().add(attr);
-                                } else if (quarterlyPeriods.containsKey(rf)) {
-                                    quarterlyPeriods.get(rf).getAttributes().add(attr);
-                                } else {
-
-                                    if (monthlyPeriods.containsKey(rf)) {
-                                        attrList = monthlyPeriods.get(rf).getAttributes();
-                                    } else {
-                                        attrList = new ArrayList<>();
-                                    }
-                                    attrList.add(attr);
-                                    monthlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(), attrList));
-                                }
-                            });
-
-                        }
-
-                    });
-                }
-            });
-        }
-
-        Date now = DateTime.now().toDate();
-
-        final int[] i = {1};
-        GranterReportTemplate reportTemplate = reportService.getDefaultTemplate(grant.getGrantorOrganization().getId());
-
-        yearlyPeriods.forEach((entry, val) -> {
-            Report report = new Report();
-            report.setCreatedAt(now);
-            report.setCreatedBy(user.getId());
-            report.setDueDate(
-                    new DateTime(entry.getEnd(),
-                            DateTimeZone.forID(timezone))
-                            .plusDays(
-                                    Integer.valueOf(appConfigService
-                                            .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                                                    AppConfiguration.REPORT_DUE_DATE_INTERVAL)
-                                            .getConfigValue()))
-                            .toDate());
-            report.setEndDate(entry.getEnd());
-            report.setGrant(grant);
-            report.setName(val.getPeriodLabel());
-            report.setTemplate(reportTemplate);
-            report.setStartDate(entry.getStart());
-            report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId(REPORT,
-                    grant.getGrantorOrganization().getId(), grant.getGrantTypeId()));
-            report.setType("Yearly");
-
-            report = reportService.saveReport(report);
-
-            createSectionsForReports(reportTemplate, val.getAttributes(), report);
-
-            reportService.saveAssignments(report, tenantCode, user.getId());
-            i[0]++;
-        });
-
-        i[0] = 1;
-
-        halfyearlyPeriods.forEach((entry, val) -> {
-            Report report = new Report();
-            report.setCreatedAt(now);
-            report.setCreatedBy(user.getId());
-            report.setDueDate(
-                    new DateTime(entry.getEnd(),
-                            DateTimeZone.forID(timezone))
-                            .plusDays(
-                                    Integer.valueOf(appConfigService
-                                            .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                                                    AppConfiguration.REPORT_DUE_DATE_INTERVAL)
-                                            .getConfigValue()))
-                            .toDate());
-            report.setEndDate(entry.getEnd());
-            report.setGrant(grant);
-            report.setName(val.getPeriodLabel());
-            report.setTemplate(reportTemplate);
-            report.setStartDate(entry.getStart());
-            report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId(REPORT,
-                    grant.getGrantorOrganization().getId(), grant.getGrantTypeId()));
-            report.setType("Half-Yearly");
-            report = reportService.saveReport(report);
-            createSectionsForReports(reportTemplate, val.getAttributes(), report);
-            reportService.saveAssignments(report, tenantCode, user.getId());
-            i[0]++;
-        });
-
-        i[0] = 1;
-
-        quarterlyPeriods.forEach((entry, val) -> {
-            Report report = new Report();
-            report.setCreatedAt(now);
-            report.setCreatedBy(user.getId());
-            report.setDueDate(
-                    new DateTime(entry.getEnd(),
-                            DateTimeZone.forID(timezone))
-                            .plusDays(
-                                    Integer.valueOf(appConfigService
-                                            .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                                                    AppConfiguration.REPORT_DUE_DATE_INTERVAL)
-                                            .getConfigValue()))
-                            .toDate());
-            report.setEndDate(entry.getEnd());
-            report.setGrant(grant);
-            report.setName(val.getPeriodLabel());
-            report.setTemplate(reportTemplate);
-            report.setStartDate(entry.getStart());
-            report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId(REPORT,
-                    grant.getGrantorOrganization().getId(), grant.getGrantTypeId()));
-            report.setType("Quarterly");
-            report = reportService.saveReport(report);
-            createSectionsForReports(reportTemplate, val.getAttributes(), report);
-            reportService.saveAssignments(report, tenantCode, user.getId());
-            i[0]++;
-        });
-
-        i[0] = 1;
-
-        monthlyPeriods.forEach((entry, val) -> {
-            Report report = new Report();
-            report.setCreatedAt(now);
-            report.setCreatedBy(user.getId());
-            report.setDueDate(
-                    new DateTime(entry.getEnd(),
-                            DateTimeZone.forID(timezone))
-                            .plusDays(
-                                    Integer.valueOf(appConfigService
-                                            .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                                                    AppConfiguration.REPORT_DUE_DATE_INTERVAL)
-                                            .getConfigValue()))
-                            .toDate());
-            report.setEndDate(entry.getEnd());
-            report.setGrant(grant);
-            report.setName(val.getPeriodLabel());
-            report.setTemplate(reportTemplate);
-            report.setStartDate(entry.getStart());
-            report.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId(REPORT,
-                    grant.getGrantorOrganization().getId(), grant.getGrantTypeId()));
-            report.setType("Monthly");
-            report = reportService.saveReport(report);
-            createSectionsForReports(reportTemplate, val.getAttributes(), report);
-            reportService.saveAssignments(report, tenantCode, user.getId());
-            i[0]++;
-        });
-    }
-
-    private List<DatePeriod> getReportingFrequencies(DateTime st, DateTime en, Frequency frequency) {
-
-        List<DatePeriod> periods = new ArrayList<>();
-        if (frequency == Frequency.MONTHLY) {
-
-            while (st.isBefore(en) && !st.withTime(23, 59, 59, 999).isEqual(en)) {
-                DateTime tempEn = st.dayOfMonth().withMaximumValue().withTime(23, 59, 59, 999);
-                if (tempEn.isAfter(en)) {
-                    DatePeriod dp = new DatePeriod(st.toDate(), en.toDate());
-                    dp.setLabel("Monthly Report");
-                    periods.add(dp);
-                    break;
-                }
-                DatePeriod p = new DatePeriod(st.toDate(), tempEn.toDate());
-                p.setLabel("Monthly Report");
-                periods.add(p);
-                st = tempEn.plusDays(1).withTimeAtStartOfDay();
-            }
-
-        } else if (frequency == Frequency.QUARTERLY) {
-
-            while (st.isBefore(en) && !st.withTime(23, 59, 59, 999).isEqual(en)) {
-                DatePeriodLabel qrtrEnd = endOfQuarter(st);
-                assert qrtrEnd != null;
-                DateTime tempEn = qrtrEnd.getDateTime().dayOfMonth().withMaximumValue().withTime(23, 59, 59, 999);
-                if (tempEn.isAfter(en)) {
-                    DatePeriod dp = new DatePeriod(st.toDate(), en.toDate());
-                    DatePeriodLabel lbl = endOfQuarter(st);
-                    dp.setLabel(lbl != null ? lbl.getPeriodLabel() : "");
-                    periods.add(dp);
-                    break;
-                }
-                DatePeriod p = new DatePeriod(st.toDate(), tempEn.toDate());
-                p.setLabel(qrtrEnd.getPeriodLabel());
-                periods.add(p);
-                st = tempEn.plusDays(1).withTimeAtStartOfDay();
-            }
-        } else if (frequency == Frequency.HALF_YEARLY) {
-
-            while (st.isBefore(en) && !st.withTime(23, 59, 59, 999).isEqual(en)) {
-                DatePeriodLabel halfYrEnd = endOfHalfYear(st);
-                assert halfYrEnd != null;
-                DateTime tempEn = halfYrEnd.getDateTime().dayOfMonth().withMaximumValue().withTime(23, 59, 59, 999);
-                if (tempEn.isAfter(en)) {
-                    DatePeriod dp = new DatePeriod(st.toDate(), en.toDate());
-                    dp.setLabel(halfYrEnd.getPeriodLabel());
-                    periods.add(dp);
-                    break;
-                }
-                DatePeriod p = new DatePeriod(st.toDate(), tempEn.toDate());
-                p.setLabel(halfYrEnd.getPeriodLabel());
-                periods.add(p);
-                st = tempEn.plusDays(1).withTimeAtStartOfDay();
-            }
-        } else if (frequency == Frequency.YEARLY) {
-
-            while (st.isBefore(en) && !st.withTime(23, 59, 59, 999).isEqual(en)) {
-                DatePeriodLabel endOfYear = endOfYear(st);
-                assert endOfYear != null;
-                DateTime tempEn = endOfYear.getDateTime().dayOfMonth().withMaximumValue().withTime(23, 59, 59, 999);
-                if (tempEn.isAfter(en)) {
-                    DatePeriod dp = new DatePeriod(st.toDate(), en.toDate());
-                    String periodLabel = endOfYear.getPeriodLabel();
-                    assert periodLabel != null;
-                    dp.setLabel(periodLabel);
-                    periods.add(dp);
-                    break;
-                }
-                DatePeriod p = new DatePeriod(st.toDate(), tempEn.toDate());
-                p.setLabel(endOfYear.getPeriodLabel());
-                periods.add(p);
-                st = tempEn.plusDays(1).withTimeAtStartOfDay();
-            }
-        }
-
-        return periods;
-    }
-
-    private DatePeriodLabel endOfQuarter(DateTime st) {
-        if (st.getMonthOfYear() >= Month.JANUARY.getValue() && st.getMonthOfYear() <= Month.MARCH.getValue()) {
-            return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
-                    "Quarterly Report - Q4 " + (st.getYear() - 1) + FILE_SEPARATOR
-                            + (String.valueOf(st.getYear()).substring(2, 4)));
-        } else if (st.getMonthOfYear() >= Month.APRIL.getValue() && st.getMonthOfYear() <= Month.JUNE.getValue()) {
-            return new DatePeriodLabel(st.withMonthOfYear(Month.JUNE.getValue()),
-                    "Quarterly Report - Q1 " + (st.getYear()) + FILE_SEPARATOR
-                            + (String.valueOf(st.getYear() + 1).substring(2, 4)));
-        } else if (st.getMonthOfYear() >= Month.JULY.getValue() && st.getMonthOfYear() <= Month.SEPTEMBER.getValue()) {
-            return new DatePeriodLabel(st.withMonthOfYear(Month.SEPTEMBER.getValue()),
-                    "Quarterly Report - Q2 " + (st.getYear()) + FILE_SEPARATOR
-                            + (String.valueOf(st.getYear() + 1).substring(2, 4)));
-        } else if (st.getMonthOfYear() >= Month.OCTOBER.getValue()
-                && st.getMonthOfYear() <= Month.DECEMBER.getValue()) {
-            return new DatePeriodLabel(st.withMonthOfYear(Month.DECEMBER.getValue()),
-                    "Quarterly Report - Q3 " + (st.getYear()) + FILE_SEPARATOR
-                            + (String.valueOf(st.getYear() + 1).substring(2, 4)));
-        }
-        return null;
-    }
-
-    private DatePeriodLabel endOfHalfYear(DateTime st) {
-        if (st.getMonthOfYear() >= Month.APRIL.getValue() && st.getMonthOfYear() <= Month.SEPTEMBER.getValue()) {
-            return new DatePeriodLabel(st.withMonthOfYear(Month.SEPTEMBER.getValue()),
-                    "Half-Yearly Report - H1 " + (st.getYear()) + FILE_SEPARATOR
-                            + (String.valueOf(st.getYear() + 1).substring(2, 4)));
-        } else if (st.getMonthOfYear() >= Month.OCTOBER.getValue()
-                && st.getMonthOfYear() <= Month.DECEMBER.getValue()) {
-            return new DatePeriodLabel(st.plusYears(1).withMonthOfYear(Month.MARCH.getValue()),
-                    "Half-Yearly Report - H2 " + (st.getYear()) + FILE_SEPARATOR
-                            + (String.valueOf(st.getYear() + 1).substring(2, 4)));
-        } else if (st.getMonthOfYear() >= Month.JANUARY.getValue() && st.getMonthOfYear() <= Month.MARCH.getValue()) {
-            return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
-                    "Half-Yearly Report - H2 " + (st.getYear() - 1) + FILE_SEPARATOR
-                            + (String.valueOf(st.getYear()).substring(2, 4)));
-        }
-        return null;
-    }
-
-    private DatePeriodLabel endOfYear(DateTime st) {
-        if (st.getMonthOfYear() >= Month.APRIL.getValue() && st.getMonthOfYear() <= Month.DECEMBER.getValue()) {
-            return new DatePeriodLabel(st.plusYears(1).withMonthOfYear(Month.MARCH.getValue()),
-                    "Yearly Report " + (st.getYear()) + FILE_SEPARATOR
-                            + (String.valueOf(st.getYear() + 1).substring(2, 4)));
-        } else if (st.getMonthOfYear() >= Month.JANUARY.getValue() && st.getMonthOfYear() <= Month.MARCH.getValue()) {
-            return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
-                    "Yearly Report " + (st.getYear() - 1) + FILE_SEPARATOR
-                            + (String.valueOf(st.getYear()).substring(2, 4)));
-        }
-        return null;
-    }
-
-    private void createSectionsForReports(GranterReportTemplate reportTemplate, List<SectionAttributesVO> val,
-                                          Report report) {
-        List<GranterReportSection> granterReportSections = reportTemplate.getSections();
-        report.setStringAttributes(new ArrayList<>());
-        AtomicBoolean reportTemplateHasDisbursement = new AtomicBoolean(false);
-        AtomicReference<ReportStringAttribute> disbursementAttributeValue = null;
-        AtomicInteger sectionOrder = new AtomicInteger(0);
-        for (GranterReportSection reportSection : granterReportSections) {
-            ReportSpecificSection specificSection = new ReportSpecificSection();
-            specificSection.setDeletable(true);
-            specificSection.setGranter((Granter) report.getGrant().getGrantorOrganization());
-            specificSection.setReportId(report.getId());
-            specificSection.setReportTemplateId(reportTemplate.getId());
-            specificSection.setSectionName(reportSection.getSectionName());
-            specificSection.setSectionOrder(reportSection.getSectionOrder());
-            sectionOrder.set(specificSection.getSectionOrder());
-            specificSection = reportService.saveReportSpecificSection(specificSection);
-            ReportSpecificSection finalSpecificSection = specificSection;
-            Report finalReport = report;
-            final AtomicInteger[] attribVOOrder = {new AtomicInteger(1)};
-            if (specificSection.getSectionName().equalsIgnoreCase("Project Indicators")) {
-                val.forEach(attribVo -> {
-                    ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
-                    sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
-                    sectionAttribute.setDeletable(attribVo.isDeletable());
-                    sectionAttribute.setFieldName(attribVo.getFieldName());
-                    sectionAttribute.setFieldType(attribVo.getFieldType());
-                    sectionAttribute.setGranter(finalSpecificSection.getGranter());
-                    sectionAttribute.setRequired(attribVo.isRequired());
-                    sectionAttribute.setSection(finalSpecificSection);
-                    sectionAttribute.setCanEdit(false);
-                    sectionAttribute = reportService.saveReportSpecificSectionAttribute(sectionAttribute);
-
-                    ReportStringAttribute stringAttribute = new ReportStringAttribute();
-
-                    stringAttribute.setSection(finalSpecificSection);
-                    stringAttribute.setReport(finalReport);
-                    stringAttribute.setSectionAttribute(sectionAttribute);
-                    stringAttribute.setGrantLevelTarget(attribVo.getTarget());
-                    stringAttribute.setFrequency(attribVo.getFrequency());
-
-                    stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
-                });
-            }
-            reportSection.getAttributes().forEach(a -> {
-                ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
-                sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
-                sectionAttribute.setDeletable(a.getDeletable());
-                sectionAttribute.setFieldName(a.getFieldName());
-                sectionAttribute.setFieldType(a.getFieldType());
-                sectionAttribute.setGranter(finalSpecificSection.getGranter());
-                sectionAttribute.setRequired(a.getRequired());
-                sectionAttribute.setSection(finalSpecificSection);
-                sectionAttribute.setCanEdit(true);
-                sectionAttribute.setExtras(a.getExtras());
-                sectionAttribute = reportService.saveReportSpecificSectionAttribute(sectionAttribute);
-
-                ReportStringAttribute stringAttribute = new ReportStringAttribute();
-
-                stringAttribute.setSection(finalSpecificSection);
-                stringAttribute.setReport(finalReport);
-                stringAttribute.setSectionAttribute(sectionAttribute);
-                if (sectionAttribute.getFieldType().equalsIgnoreCase("kpi")) {
-                    stringAttribute.setGrantLevelTarget(null);
-                    stringAttribute.setFrequency(report.getType().toLowerCase());
-                } else if (sectionAttribute.getFieldType().equalsIgnoreCase(TABLE)) {
-                    stringAttribute.setValue(a.getExtras());
-                }
-
-                stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
-                if (sectionAttribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
-                    reportTemplateHasDisbursement.set(true);
-                    disbursementAttributeValue.set(stringAttribute);
-                }
-            });
-
-        }
-
-        // Handle logic for setting dibursement type in reports
-        for (GrantSpecificSection grantSection : grantService.getGrantSections(report.getGrant())) {
-            for (GrantSpecificSectionAttribute specificSectionAttribute : grantService
-                    .getAttributesBySection(grantSection)) {
-                if (specificSectionAttribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
-                    if (reportTemplateHasDisbursement.get()) {
-                        ObjectMapper mapper = new ObjectMapper();
-                        String[] colHeaders = new String[]{"Disbursement Date", "Actual Disbursement",
-                                "Funds from other Sources", "Notes"};
-                        List<TableData> tableDataList = new ArrayList<>();
-                        TableData tableData = new TableData();
-                        tableData.setName("1");
-                        tableData.setHeader("Planned Installment #");
-                        tableData.setEnteredByGrantee(false);
-                        tableData.setColumns(new ColumnData[4]);
-                        for (int i = 0; i < tableData.getColumns().length; i++) {
-
-                            tableData.getColumns()[i] = new ColumnData(colHeaders[i], "",
-                                    (i == 1 || i == 2) ? "currency" : (i == 0) ? "date" : null);
-                        }
-                        tableDataList.add(tableData);
-
-                        try {
-                            assert disbursementAttributeValue != null;
-                            disbursementAttributeValue.get().setValue(mapper.writeValueAsString(tableDataList));
-                            reportService.saveReportStringAttribute(disbursementAttributeValue.get());
-                        } catch (JsonProcessingException e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        ReportSpecificSection specificSection = new ReportSpecificSection();
-                        specificSection.setDeletable(true);
-                        specificSection.setGranter((Granter) report.getGrant().getGrantorOrganization());
-                        specificSection.setReportId(report.getId());
-                        specificSection.setReportTemplateId(reportTemplate.getId());
-                        specificSection.setSectionName("Project Funds");
-                        List<ReportSpecificSection> reportSections = reportService.getReportSections(report);
-                        specificSection.setSectionOrder(Collections.max(reportSections.stream()
-                                .map(ReportSpecificSection::getSectionOrder).collect(Collectors.toList())) + 1);
-                        specificSection = reportService.saveReportSpecificSection(specificSection);
-
-                        ReportSpecificSectionAttribute sectionAttribute = new ReportSpecificSectionAttribute();
-                        sectionAttribute.setAttributeOrder(1);
-                        sectionAttribute.setDeletable(true);
-                        sectionAttribute.setFieldName("Disbursement Details");
-                        sectionAttribute.setFieldType(DISBURSEMENT);
-                        sectionAttribute.setGranter((Granter) report.getGrant().getGrantorOrganization());
-                        sectionAttribute.setRequired(false);
-                        sectionAttribute.setSection(specificSection);
-                        sectionAttribute.setCanEdit(true);
-                        sectionAttribute.setExtras(null);
-                        sectionAttribute = reportService.saveReportSpecificSectionAttribute(sectionAttribute);
-
-                        ReportStringAttribute stringAttribute = new ReportStringAttribute();
-
-                        stringAttribute.setSection(specificSection);
-                        stringAttribute.setReport(report);
-                        stringAttribute.setSectionAttribute(sectionAttribute);
-                        reportService.saveReportStringAttribute(stringAttribute);
-
-                    }
-                }
-            }
-        }
-    }
-
-
-    private void saveSnapShot(Grant grant, Long fromStateId, String fromStringAttributes, Long toStatusId,
-                              String fromNote, Date movedOn, User currentUser, User previousUser) {
-
-        try {
-            GrantSnapshot snapshot = new GrantSnapshot();
-            snapshot.setAmount(grant.getAmount());
-            if (currentUser != null) {
-                snapshot.setAssignedToId(currentUser.getId());
-            }
-            if (previousUser != null) {
-                snapshot.setAssignedBy(previousUser.getId());
-            }
-            snapshot.setDescription(grant.getDescription());
-            snapshot.setMovedOn(movedOn);
-            snapshot.setEndDate(grant.getEndDate());
-            snapshot.setGrantee(grant.getOrganization() != null ? grant.getOrganization().getName() : "");
-            snapshot.setGrantId(grant.getId());
-            snapshot.setName(grant.getName());
-            snapshot.setRepresentative(grant.getRepresentative());
-            snapshot.setStartDate(grant.getStartDate());
-            snapshot.setGrantStatusId(fromStateId); // Legacy for backward compatibility
-            snapshot.setToStateId(toStatusId);
-            snapshot.setFromStateId(fromStateId);
-            snapshot.setFromStringAttributes(fromStringAttributes);
-            snapshot.setFromNote(fromNote);
-            snapshot.setStringAttributes(new ObjectMapper().writeValueAsString(grant.getGrantDetails()));
-            grantSnapshotService.saveGrantSnapshot(snapshot);
-        } catch (JsonProcessingException e) {
-            logger.error(e.getMessage(), e);
-        }
-
-    }
-
     @PutMapping("/{grantId}/template/{templateId}/{templateName}")
-    @ApiOperation("Save custom grant template with name and description")
+    @ApiOperation("Save custom grachangeHistorynt template with name and description")
     public Grant updateTemplateName(
             @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,
@@ -2194,7 +1066,7 @@ public class GrantController {
         grantService.saveGrantTemplate(template);
 
         Grant grant = grantService.getById(grantId);
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
         return grant;
 
     }
@@ -2316,7 +1188,6 @@ public class GrantController {
             List<GrantAssignments> newAssignments = grantService.getGrantWorkflowAssignments(grant);
 
             String[] notifications = grantService.buildEmailNotificationContent(grant, userService.getUserById(userId),
-                    null, null, null,
                     appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
@@ -2353,7 +1224,7 @@ public class GrantController {
             }
 
             final String[] finaNotifications = grantService.buildEmailNotificationContent(grant,
-                    userService.getUserById(userId), null, null, null,
+                    userService.getUserById(userId),
                     appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
@@ -2369,7 +1240,7 @@ public class GrantController {
         }
 
         grant = grantService.getById(grantId);
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
         return grant;
     }
 
@@ -2423,7 +1294,7 @@ public class GrantController {
             e.printStackTrace();
         }
         Grant grant = grantService.getById(grantId);
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
         return new DocInfo(attachment.getId(), grant);
     }
 
@@ -2462,7 +1333,7 @@ public class GrantController {
 
         Grant grant = grantService.getById(grantId);
 
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
         return grant;
     }
 
@@ -2555,7 +1426,7 @@ public class GrantController {
         }
 
         grant = grantService.getById(grantId);
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
 
         return new DocInfo(attachments.get(attachments.size() - 1).getId(), grant);
     }
@@ -2924,7 +1795,7 @@ public class GrantController {
             }
         }
 
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
         return grant;
     }
 
@@ -2935,7 +1806,7 @@ public class GrantController {
 
         Grant grant = grantService.getById(grantId);
 
-        grant = grantService._grantToReturn(userId, grant);
+        grant = grantService.grantToReturn(userId, grant);
         return grant;
     }
 
@@ -2993,8 +1864,9 @@ public class GrantController {
             }
             GrantDocument attachment = new GrantDocument();
             attachment.setExtension(FilenameUtils.getExtension(file.getOriginalFilename()));
+            String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp";
             attachment.setName(file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp"
-                    .replace("." + FilenameUtils.getExtension(file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp"), ""));
+                    .replace("." + FilenameUtils.getExtension(filename), ""));
             attachment.setLocation(filePath + file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp");
             attachment.setUploadedOn(new Date());
             attachment.setUploadedBy(userId);
@@ -3183,10 +2055,10 @@ public class GrantController {
         String checkType = "strong";
 
         Grant currentGrant = grantService.getById(currentGrantId);
-        currentGrant = grantService._grantToReturn(userId, currentGrant);
+        currentGrant = grantService.grantToReturn(userId, currentGrant);
 
         Grant origGrant = grantService.getById(origGrantId);
-        origGrant = grantService._grantToReturn(userId, origGrant);
+        origGrant = grantService.grantToReturn(userId, origGrant);
 
         String amendGrantDetailsSnapshot = currentGrant.getAmendmentDetailsSnapshot();
         if (amendGrantDetailsSnapshot == null || amendGrantDetailsSnapshot.equalsIgnoreCase("")) {
@@ -3215,7 +2087,7 @@ public class GrantController {
                                               @PathVariable("userId") Long userId,
                                               @PathVariable("currentGrantId") Long currentGrantId) throws IOException {
         Grant currentGrant = grantService.getById(currentGrantId);
-        currentGrant = grantService._grantToReturn(userId, currentGrant);
+        currentGrant = grantService.grantToReturn(userId, currentGrant);
 
 
         return grantService.grantToPlain(currentGrant);

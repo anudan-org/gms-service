@@ -1,6 +1,5 @@
 package org.codealpha.gmsservice.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
@@ -19,7 +18,6 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.annotations.ApiOperation;
@@ -31,9 +29,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -116,7 +112,7 @@ public class DisbursementsController {
                         }
 
                         for (Grant ownerGrant : grantsToReturn) {
-                                ownerGrant = grantService._grantToReturn(userId, ownerGrant);
+                                ownerGrant = grantService.grantToReturn(userId, ownerGrant);
                         }
 
                         for (Grant ownerGrant : grantsToReturn) {
@@ -146,7 +142,7 @@ public class DisbursementsController {
 
                 Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
                 disbursementToSave = new Disbursement();
-                Grant grant = grantService._grantToReturn(userId, grantService.getById(grantId));
+                Grant grant = grantService.grantToReturn(userId, grantService.getById(grantId));
                 disbursementToSave.setGrant(grant);
                 disbursementToSave.setReason(null);
                 disbursementToSave.setRequestedAmount(null);
@@ -674,7 +670,7 @@ public class DisbursementsController {
 
                 Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
                 Disbursement disbursementToSave = new Disbursement();
-                Grant grant = grantService._grantToReturn(userId, grantService.getById(grantId));
+                Grant grant = grantService.grantToReturn(userId, grantService.getById(grantId));
                 disbursementToSave.setGrant(grant);
                 disbursementToSave.setReason(null);
                 disbursementToSave.setRequestedAmount(null);

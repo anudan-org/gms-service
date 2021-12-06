@@ -6,6 +6,8 @@ import java.util.List;
 
 public class PlainClosure {
     private ClosureReason reason;
+    private String name;
+    private String referenceNo;
     private String description;
     private List<PlainSection> sections;
     private String currentOwner;
@@ -67,5 +69,21 @@ public class PlainClosure {
 
     public void setExternal(boolean external) {
         this.external = external;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getReferenceNo() {
+        return referenceNo;
+    }
+
+    public void setReferenceNo(String referenceNo) {
+        this.referenceNo = referenceNo;
     }
 }
