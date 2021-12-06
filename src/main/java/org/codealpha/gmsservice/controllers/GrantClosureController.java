@@ -1860,7 +1860,7 @@ public class GrantClosureController {
                 GrantWithNote gn = new GrantWithNote();
                 gn.setGrant(grant);
                 gn.setNote(
-                        "No note added.<br><i><b>System Note</b>: </i>Closed via Closure Request.");
+                        "No note added.<br><i><b>System Note</b>: </i>"+closure.getReason());
                 grantService.moveToNewState(gn,userId,grant.getId(),grant.getGrantStatus().getId(),optionalClosedStatus.get().getId(),tenantCode);
             }
         }
