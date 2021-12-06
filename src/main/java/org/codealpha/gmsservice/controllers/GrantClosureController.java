@@ -135,7 +135,7 @@ public class GrantClosureController {
     }
 
     @DeleteMapping("/{closureId}")
-    public void deleteReport(
+    public void deleteClosure(
             @PathVariable("closureId") Long closureId,
             @PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode) {
