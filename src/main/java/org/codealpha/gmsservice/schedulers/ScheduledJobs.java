@@ -149,7 +149,6 @@ public class ScheduledJobs {
         User owner = userService.getUserById(
                 wfAssignment.isPresent() ? wfAssignment.get().getAssignments() : 0);
         String[] messageMetadata = reportService.buildEmailNotificationContent(report, granteeToNotify,
-                granteeToNotify.getFirstName() + " " + granteeToNotify.getLastName(), "", null,
                 taskConfiguration.getSubjectReport(), taskConfiguration.getMessageReport(), "", "", "", "", "", "", "",
                 "", "", link, owner, null, null, null);
 
@@ -250,7 +249,7 @@ public class ScheduledJobs {
                                             .getMinutes() > afterNoOfHour) {
                                         User user = userService.getUserById(reportAssignment.getAssignment());
                                         String[] messageMetadata = reportService.buildEmailNotificationContent(report,
-                                                user, user.getFirstName() + " " + user.getLastName(), "", null,
+                                                user,
                                                 taskConfiguration.getSubjectReport(),
                                                 taskConfiguration.getMessageReport(), "", "", "", "", "", "", "", "",
                                                 "",
@@ -307,7 +306,7 @@ public class ScheduledJobs {
                                             .getMinutes() > afterNoOfHour) {
                                         User user = userService.getUserById(reportAssignment.getAssignment());
                                         String[] messageMetadata = reportService.buildEmailNotificationContent(report,
-                                                user, user.getFirstName() + " " + user.getLastName(), "", null,
+                                                user,
                                                 taskConfiguration.getSubjectReport(),
                                                 taskConfiguration.getMessageReport(), "", "", "", "", "", "", "", "",
                                                 "",
