@@ -113,7 +113,7 @@ public class GrantClosureService {
     }
 
     public void setAssignmentHistory(ClosureAssignmentsVO assignmentsVO) {
-        if (grantClosureRepository.findClosuresThatMovedAtleastOnce(assignmentsVO.getClosureId()).size() > 0) {
+        if (!grantClosureRepository.findClosuresThatMovedAtleastOnce(assignmentsVO.getClosureId()).isEmpty()) {
             List<ClosureAssignmentHistory> assignmentHistories = assignmentHistoryRepository
                     .findByClosureIdAndStateIdOrderByUpdatedOnDesc(assignmentsVO.getClosureId(),
                             assignmentsVO.getStateId());
@@ -137,9 +137,9 @@ public class GrantClosureService {
         Optional<User> optionalUser = userRepository.findById(userId);
 
         if ((closureAssignmentRepository.findByClosureId(closure.getId()).stream()
-                .filter(ass -> ass.getStateId().longValue() == closure.getStatus().getId().longValue()
+                .anyMatch(ass -> ass.getStateId().longValue() == closure.getStatus().getId().longValue()
                         && (ass.getAssignment() == null ? 0 : ass.getAssignment().longValue()) == userId)
-                .findFirst().isPresent())
+                )
 
                 || (optionalUser.isPresent()?optionalUser.get().getOrganization().getOrganizationType().equalsIgnoreCase(
                 "GRANTEE") && closure.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"):null)) {
@@ -148,7 +148,7 @@ public class GrantClosureService {
                     .findByWorkflow(workflowStatusRepository.getById(closure.getStatus().getId()).getWorkflow()).stream()
                     .filter(st -> st.getFromState().getId().longValue() == closure.getStatus().getId().longValue())
                     .collect(Collectors.toList());
-            if (allowedTransitions != null && allowedTransitions.size() > 0) {
+            if (allowedTransitions != null && !allowedTransitions.isEmpty()) {
                 allowedTransitions.forEach(tr -> {
                     WorkFlowPermission workFlowPermission = new WorkFlowPermission();
                     workFlowPermission.setAction(tr.getAction());
@@ -170,9 +170,9 @@ public class GrantClosureService {
         return grantClosureRepository.getApprovedClosuresActualSumForGrantAndAttribute(grantId, attributeName);
     }
 
-    public List<GranterClosureTemplate> findByGranterIdAndPublishedStatusAndPrivateStatus(Long id, boolean publishedStatus, boolean _private) {
+    public List<GranterClosureTemplate> findByGranterIdAndPublishedStatusAndPrivateStatus(Long id, boolean publishedStatus, boolean isPrivate) {
             return granterClosureTemplateRepository.findByGranterIdAndPublishedAndPrivateToClosure(id, publishedStatus,
-                    _private);
+                    isPrivate);
 
     }
 
@@ -406,8 +406,7 @@ public class GrantClosureService {
         return new String[] { sub, msg };
     }
 
-    public String[] buildEmailNotificationContent(GrantClosure finalClosure, User u, String userName, String action,
-                                                  String date, String subConfigValue, String msgConfigValue, String currentState, String currentOwner,
+    public String[] buildEmailNotificationContent(GrantClosure finalClosure, User u, String subConfigValue, String msgConfigValue, String currentState, String currentOwner,
                                                   String previousState, String previousOwner, String previousAction, String hasChanges,
                                                   String hasChangesComment, String hasNotes, String hasNotesComment, String link, User owner,
                                                   Integer noOfDays, Map<Long, Long> previousApprover, List<ClosureAssignments> newApprover) {
@@ -507,14 +506,18 @@ public class GrantClosureService {
 
             Long prevAss = assignments.keySet().stream().filter(b -> b.longValue() == a.getStateId().longValue()).findFirst().get();
 
+            String check = a.getAssignment() != null
+                    ? userService.getUserById(a.getAssignment()).getLastName()
+                    : "";
+            String check2 = assignments.get(prevAss) != null
+                    ? userService.getUserById(assignments.get(prevAss)).getLastName()
+                    : "";
             table[0] = table[0].concat("<tr>").concat("<td width='30%'>")
                     .concat(workflowStatusRepository.findById(a.getStateId()).get().getName()).concat(TD)
                     .concat("<td>")
                     .concat(a.getAssignment() != null ? userService.getUserById(a.getAssignment()).getFirstName()
                             : "".concat("-")
-                            .concat(a.getAssignment() != null
-                                    ? userService.getUserById(a.getAssignment()).getLastName()
-                                    : ""))
+                            .concat(check))
 
                     .concat(TD)
 
@@ -522,9 +525,7 @@ public class GrantClosureService {
                     .concat(assignments.get(prevAss) != null
                             ? userService.getUserById(assignments.get(prevAss)).getFirstName()
                             : "".concat("-")
-                            .concat(assignments.get(prevAss) != null
-                                    ? userService.getUserById(assignments.get(prevAss)).getLastName()
-                                    : "")
+                            .concat(check2)
 
                             .concat(TD).concat("</tr>"));
         });
@@ -590,6 +591,8 @@ public class GrantClosureService {
                                     }));
                                 }
                                 break;
+                            default:
+
                         }
 
                         plainAttributes.add(plainAttribute);
@@ -650,5 +653,9 @@ public class GrantClosureService {
 
     public List<GrantClosureHistory> getClosureHistory(Long closureId) {
         return grantClosureHistoryRepository.findByClosureId(closureId);
+    }
+
+    public List<GrantClosure> getClosuresForGrant(Long grantId) {
+        return closureRepository.findByGrant(grantId);
     }
 }

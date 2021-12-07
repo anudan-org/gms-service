@@ -6,7 +6,6 @@ import org.springframework.data.repository.CrudRepository;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 public interface GrantClosureRepository extends CrudRepository<GrantClosure, Long> {
     @Query(value = "select distinct A.*,get_owner_closure(A.id) owner_id,get_owner_closure_name(A.id) owner_name from grant_closure A inner join grants Z on Z.id=A.grant_id inner join closure_assignments B on B.closure_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.anchor=true and B.assignment = ?1) or (B.assignment=?1 and B.state_id=A.status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_closure_history where id=A.id)>0 and ?1 = any (array(select assignment from closure_assignments where closure_id=A.id))) or (C.internal_status='REVIEW' and ?1 = any( array(select assignment from closure_assignments where closure_id=A.id))) or (C.internal_status='ACTIVE' or C.internal_status='CLOSED' ) ) and C.internal_status=?3 and Z.organization_id=?2 and Z.deleted=false and A.deleted=false order by A.due_date desc", nativeQuery = true)
@@ -158,4 +157,7 @@ public interface GrantClosureRepository extends CrudRepository<GrantClosure, Lon
 
     @Query(value = "select A.*,get_owner_closure(A.id) owner_id,get_owner_closure_name(A.id) owner_name from grant_closure A where A.id=?1",nativeQuery = true)
     public GrantClosure findByClosureId(Long closureId);
+
+    @Query(value = "select * from grant_closure where grant_id=?1",nativeQuery = true)
+    List<GrantClosure> findByGrant(Long grantId);
 }
