@@ -381,8 +381,10 @@ public class GrantVO {
                     } else if (voPd!=null && (voPd.getName().equalsIgnoreCase("noteAddedBy")
                             || voPd.getName().equalsIgnoreCase("noteAddedByUser"))) {
                         vo.setNoteAddedBy(grant.getNoteAddedBy());
-                        vo.setNoteAddedByUser(
-                                userService.getUserByEmailAndOrg(grant.getNoteAddedBy(), grant.getGrantorOrganization()));
+                        if(grant.getNoteAddedBy()!=null) {
+                            vo.setNoteAddedByUser(
+                                    userService.getUserByEmailAndOrg(grant.getNoteAddedBy(), grant.getGrantorOrganization()));
+                        }
 
                     } else if (voPd!=null && voPd.getName().equalsIgnoreCase("amendGrantId")) {
                         if (grant.getAmendGrantId() != null) {
