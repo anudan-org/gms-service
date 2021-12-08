@@ -1837,7 +1837,7 @@ public class GrantService {
 
             createSectionsForReports(reportTemplate, val.getAttributes(), report);
 
-            reportService.saveAssignments(report, tenantCode, user.getId());
+            reportService.saveAssignments(report, tenantCode);
             i[0]++;
         });
 
@@ -1866,7 +1866,7 @@ public class GrantService {
             report.setType("Half-Yearly");
             report = reportService.saveReport(report);
             createSectionsForReports(reportTemplate, val.getAttributes(), report);
-            reportService.saveAssignments(report, tenantCode, user.getId());
+            reportService.saveAssignments(report, tenantCode);
             i[0]++;
         });
 
@@ -1895,7 +1895,7 @@ public class GrantService {
             report.setType("Quarterly");
             report = reportService.saveReport(report);
             createSectionsForReports(reportTemplate, val.getAttributes(), report);
-            reportService.saveAssignments(report, tenantCode, user.getId());
+            reportService.saveAssignments(report, tenantCode);
             i[0]++;
         });
 
@@ -1924,7 +1924,7 @@ public class GrantService {
             report.setType("Monthly");
             report = reportService.saveReport(report);
             createSectionsForReports(reportTemplate, val.getAttributes(), report);
-            reportService.saveAssignments(report, tenantCode, user.getId());
+            reportService.saveAssignments(report, tenantCode);
             i[0]++;
         });
     }
