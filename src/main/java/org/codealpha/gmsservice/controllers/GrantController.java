@@ -557,8 +557,6 @@ public class GrantController {
 
         grant.setStringAttributes(stringAttrsToSave);
         GrantVO grantVO = new GrantVO().build(grant, grantService.getGrantSections(grant), workflowPermissionService, userService.getUserById(userId),
-                appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
                 userService, grantService);
         grant.setGrantDetails(grantVO.getGrantDetails());
         grant = grantService.grantToReturn(userId, grant);

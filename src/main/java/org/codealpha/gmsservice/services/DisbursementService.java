@@ -143,8 +143,6 @@ public class DisbursementService {
         GrantVO vo = new GrantVO().build(disbursement.getGrant(),
                 grantService.getGrantSections(disbursement.getGrant()), workflowPermissionService,
                 userService.getUserById(userId),
-                appConfigService.getAppConfigForGranterOrg(disbursement.getGrant().getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
                 userService,grantService);
 
         disbursement.getGrant().setGrantDetails(vo.getGrantDetails());

@@ -171,6 +171,8 @@ public class GrantService {
     private NotificationsService notificationsService;
     @Autowired
     private GrantSnapshotService grantSnapshotService;
+    @Autowired
+    private GrantClosureService closureService;
 
     public GrantService() {
         //Adding for sonar
@@ -634,8 +636,6 @@ public class GrantService {
         GrantVO grantVO = new GrantVO();
 
         grantVO = grantVO.build(grant, getGrantSections(grant), workflowPermissionService, user,
-                appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
                 userService, this);
         grant.setGrantDetails(grantVO.getGrantDetails());
         grant.setNoteAddedBy(grantVO.getNoteAddedBy());
@@ -779,6 +779,17 @@ public class GrantService {
             grantTagsVoList.add(vo);
         }
         grant.setTags(grantTagsVoList);
+
+        List<GrantClosure> closuresForGrant = closureService.getClosuresForGrant(grant.getId());
+        GrantClosure currentClosure = null;
+        if(closuresForGrant!=null && !closuresForGrant.isEmpty()){
+            currentClosure=closuresForGrant.get(0);
+            grant.setHashClosure(true);
+            grant.setClosureId(currentClosure.getId());
+        }
+
+
+
         return grant;
     }
 
@@ -1291,8 +1302,7 @@ public class GrantService {
         grant.setFlowAuthorities(workflowPermissionService.getGrantFlowPermissions(grant.getGrantStatus().getId(),
                 userId, grant.getId()));
         GrantVO grantVO = new GrantVO().build(grant, getGrantSections(grant), workflowPermissionService,
-                user, appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
+                user,
                 userService, this);
 
         grant.setGrantDetails(grantVO.getGrantDetails());
@@ -1364,8 +1374,6 @@ public class GrantService {
     private String getCurrentGrantDetails(Long grantId, User user) throws JsonProcessingException {
         Grant g = getById(grantId);
         GrantVO vo = new GrantVO().build(g, getGrantSections(g), workflowPermissionService, user,
-                appConfigService.getAppConfigForGranterOrg(g.getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
                 userService, this);
 
         return new ObjectMapper().writeValueAsString(vo.getGrantDetails());
@@ -1422,8 +1430,6 @@ public class GrantService {
         GrantVO grantVO = new GrantVO();
 
         grantVO = grantVO.build(grant, getGrantSections(grant), workflowPermissionService, user,
-                appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
                 userService, this);
         grant.setGrantDetails(grantVO.getGrantDetails());
         grant.setNoteAddedBy(grantVO.getNoteAddedBy());
@@ -1831,7 +1837,7 @@ public class GrantService {
 
             createSectionsForReports(reportTemplate, val.getAttributes(), report);
 
-            reportService.saveAssignments(report, tenantCode, user.getId());
+            reportService.saveAssignments(report, tenantCode);
             i[0]++;
         });
 
@@ -1860,7 +1866,7 @@ public class GrantService {
             report.setType("Half-Yearly");
             report = reportService.saveReport(report);
             createSectionsForReports(reportTemplate, val.getAttributes(), report);
-            reportService.saveAssignments(report, tenantCode, user.getId());
+            reportService.saveAssignments(report, tenantCode);
             i[0]++;
         });
 
@@ -1889,7 +1895,7 @@ public class GrantService {
             report.setType("Quarterly");
             report = reportService.saveReport(report);
             createSectionsForReports(reportTemplate, val.getAttributes(), report);
-            reportService.saveAssignments(report, tenantCode, user.getId());
+            reportService.saveAssignments(report, tenantCode);
             i[0]++;
         });
 
@@ -1918,7 +1924,7 @@ public class GrantService {
             report.setType("Monthly");
             report = reportService.saveReport(report);
             createSectionsForReports(reportTemplate, val.getAttributes(), report);
-            reportService.saveAssignments(report, tenantCode, user.getId());
+            reportService.saveAssignments(report, tenantCode);
             i[0]++;
         });
     }

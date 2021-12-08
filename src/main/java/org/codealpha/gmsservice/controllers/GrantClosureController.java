@@ -135,7 +135,7 @@ public class GrantClosureController {
     }
 
     @DeleteMapping("/{closureId}")
-    public void deleteReport(
+    public void deleteClosure(
             @PathVariable("closureId") Long closureId,
             @PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -435,8 +435,6 @@ public class GrantClosureController {
 
         GrantVO grantVO = new GrantVO().build(closure.getGrant(), grantService.getGrantSections(closure.getGrant()),
                 workflowPermissionService, userService.getUserById(userId),
-                appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
                 userService,grantService);
 
         ObjectMapper mapper = new ObjectMapper();
@@ -1473,7 +1471,7 @@ public class GrantClosureController {
             List<ClosureAssignments> newAssignments = closureService.getAssignmentsForClosure(closure);
 
             String[] notifications = closureService.buildEmailNotificationContent(closure,
-                    userService.getUserById(userId), null, null, null,
+                    userService.getUserById(userId),
                     appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
@@ -1507,8 +1505,7 @@ public class GrantClosureController {
             for (ClosureAssignments ass : newAssignments) {
                 cleanAsigneesList.put(ass.getAssignment(), ass.getAssignment());
             }
-            notifications = closureService.buildEmailNotificationContent(closure, userService.getUserById(userId), null,
-                    null, null,
+            notifications = closureService.buildEmailNotificationContent(closure, userService.getUserById(userId),
                     appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
@@ -1610,8 +1607,7 @@ public class GrantClosureController {
             usersToNotify
                     .removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue() || u.isDeleted());
             String[] emailNotificationContent = closureService.buildEmailNotificationContent(finalClosure,
-                    finalCurrentOwner, currentOwner.getFirstName().concat(STREMPTY).concat(currentOwner.getLastName()), null,
-                    new SimpleDateFormat(DD_MMM_YYYY).format(DateTime.now().toDate()),
+                    finalCurrentOwner,
                     appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
@@ -1637,8 +1633,6 @@ public class GrantClosureController {
                                     releaseService.getCurrentRelease().getVersion()) });
 
             String[] notificationContent = closureService.buildEmailNotificationContent(finalClosure, currentOwner,
-                    currentOwner.getFirstName().concat(STREMPTY).concat(currentOwner.getLastName()), toStatus.getVerb(),
-                    new SimpleDateFormat(DD_MMM_YYYY).format(DateTime.now().toDate()),
                     appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.REPORT_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
@@ -1658,8 +1652,6 @@ public class GrantClosureController {
 
             usersToNotify.stream().forEach(u -> {
                 final String[] nc = closureService.buildEmailNotificationContent(finalClosure, u,
-                        u.getFirstName().concat(STREMPTY).concat(u.getLastName()), toStatus.getVerb(),
-                        new SimpleDateFormat(DD_MMM_YYYY).format(DateTime.now().toDate()),
                         appConfigService
                                 .getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                                         AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_SUBJECT)
@@ -1690,8 +1682,7 @@ public class GrantClosureController {
             }
 
             String[] emailNotificationContent = closureService.buildEmailNotificationContent(finalClosure,
-                    finalCurrentOwner, currentOwner.getFirstName().concat(STREMPTY).concat(currentOwner.getLastName()), null,
-                    new SimpleDateFormat(DD_MMM_YYYY).format(DateTime.now().toDate()),
+                    finalCurrentOwner,
                     appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
@@ -1717,8 +1708,6 @@ public class GrantClosureController {
                                     releaseService.getCurrentRelease().getVersion()) });
 
             String[] notificationContent = closureService.buildEmailNotificationContent(finalClosure, currentOwner,
-                    currentOwner.getFirstName().concat(STREMPTY).concat(currentOwner.getLastName()), toStatus.getVerb(),
-                    new SimpleDateFormat(DD_MMM_YYYY).format(DateTime.now().toDate()),
                     appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
@@ -1738,8 +1727,6 @@ public class GrantClosureController {
 
             usersToNotify.stream().forEach(u -> {
                 final String[] nc = closureService.buildEmailNotificationContent(finalClosure, u,
-                        u.getFirstName().concat(STREMPTY).concat(u.getLastName()), toStatus.getVerb(),
-                        new SimpleDateFormat(DD_MMM_YYYY).format(DateTime.now().toDate()),
                         appConfigService
                                 .getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                                         AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_SUBJECT)
@@ -1771,8 +1758,6 @@ public class GrantClosureController {
                 usersToNotify.removeIf(u -> u.getId().longValue() == granteeUser.getId().longValue() || u.isDeleted());
 
                 String[] emailNotificationContent = closureService.buildEmailNotificationContent(finalClosure, granteeUser,
-                        granteeUser.getFirstName().concat(STREMPTY).concat(granteeUser.getLastName()), null,
-                        new SimpleDateFormat(DD_MMM_YYYY).format(DateTime.now().toDate()),
                         appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
                         appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
@@ -1798,8 +1783,6 @@ public class GrantClosureController {
                                         releaseService.getCurrentRelease().getVersion()) });
 
                 String[] notificationContent = closureService.buildEmailNotificationContent(finalClosure, granteeUser,
-                        granteeUser.getFirstName().concat(STREMPTY).concat(granteeUser.getLastName()), toStatus.getVerb(),
-                        new SimpleDateFormat(DD_MMM_YYYY).format(DateTime.now().toDate()),
                         appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_SUBJECT).getConfigValue(),
                         appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
@@ -1821,8 +1804,6 @@ public class GrantClosureController {
 
             usersToNotify.stream().forEach(u -> {
                 final String[] nc = closureService.buildEmailNotificationContent(finalClosure, u,
-                        u.getFirstName().concat(STREMPTY).concat(u.getLastName()), toStatus.getVerb(),
-                        new SimpleDateFormat(DD_MMM_YYYY).format(DateTime.now().toDate()),
                         appConfigService
                                 .getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                                         AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_SUBJECT)
@@ -1860,7 +1841,7 @@ public class GrantClosureController {
                 GrantWithNote gn = new GrantWithNote();
                 gn.setGrant(grant);
                 gn.setNote(
-                        "No note added.<br><i><b>System Note</b>: </i>Closed via Closure Request.");
+                        "No note added.<br><i><b>System Note</b>: </i>"+closure.getReason());
                 grantService.moveToNewState(gn,userId,grant.getId(),grant.getGrantStatus().getId(),optionalClosedStatus.get().getId(),tenantCode);
             }
         }
