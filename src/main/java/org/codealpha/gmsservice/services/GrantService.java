@@ -303,7 +303,7 @@ public class GrantService {
     }
 
     public String buildNotificationContent(Grant grant, WorkflowStatus status, String configValue) {
-        return configValue.replace(GRANT_NAME, grant.getName()).replace("%GRANT_STATUS%", status.getVerb());
+        return configValue.replaceAll(GRANT_NAME, grant.getName()).replaceAll("%GRANT_STATUS%", status.getVerb());
     }
 
     public List<GrantSpecificSection> getGrantSections(Grant grant) {
@@ -465,22 +465,22 @@ public class GrantService {
         } else {
             grantName = finalGrant.getReferenceNo() != null ? "[".concat(finalGrant.getReferenceNo()).concat("] ").concat(finalGrant.getName()) : finalGrant.getName();
         }
-        String message = msgConfigValue.replace(GRANT_NAME, grantName)
-                .replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner)
-                .replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner)
-                .replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges)
-                .replace("%HAS_CHANGES_COMMENT%", hasChangesComment).replace("%HAS_NOTES%", hasNotes)
-                .replace("%HAS_NOTES_COMMENT%", hasNotesComment)
-                .replace("%TENANT%", finalGrant.getGrantorOrganization().getName()).replace("%GRANT_LINK%", url)
-                .replace("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
-                .replace("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
-                .replace("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replace("%GRANTEE%",
+        String message = msgConfigValue.replaceAll(GRANT_NAME, grantName)
+                .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
+                .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
+                .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
+                .replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%", hasNotes)
+                .replaceAll("%HAS_NOTES_COMMENT%", hasNotesComment)
+                .replaceAll("%TENANT%", finalGrant.getGrantorOrganization().getName()).replaceAll("%GRANT_LINK%", url)
+                .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
+                .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
+                .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
+                .replaceAll("%GRANTEE%",
                         finalGrant.getOrganization() != null ? finalGrant.getOrganization().getName() : "")
-                .replace("%APPROVER_TYPE%", "Approver").replace("%ENTITY_TYPE%", "grant")
-                .replace("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
-                .replace("%ENTITY_NAME%", finalGrant.getName());
-        String subject = subConfigValue.replace(GRANT_NAME, grantName);
+                .replaceAll("%APPROVER_TYPE%", "Approver").replaceAll("%ENTITY_TYPE%", "grant")
+                .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
+                .replaceAll("%ENTITY_NAME%", finalGrant.getName());
+        String subject = subConfigValue.replaceAll(GRANT_NAME, grantName);
 
         return new String[]{subject, message};
     }
@@ -517,9 +517,9 @@ public class GrantService {
     }
 
     public String[] buildGrantInvitationContent(Grant grant, String sub, String msg, String url) {
-        sub = sub.replace(GRANT_NAME, grant.getName());
-        msg = msg.replace(GRANT_NAME, grant.getName())
-                .replace("%TENANT_NAME%", grant.getGrantorOrganization().getName()).replace("%LINK%", url);
+        sub = sub.replaceAll(GRANT_NAME, grant.getName());
+        msg = msg.replaceAll(GRANT_NAME, grant.getName())
+                .replaceAll("%TENANT_NAME%", grant.getGrantorOrganization().getName()).replaceAll("%LINK%", url);
         return new String[]{sub, msg};
     }
 
@@ -1253,7 +1253,7 @@ public class GrantService {
                             new String[]{appConfigService
                                     .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                    .getConfigValue().replace(RELEASE_VERSION,
+                                    .getConfigValue().replaceAll(RELEASE_VERSION,
                                     releaseService.getCurrentRelease().getVersion())});
 
             usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
@@ -1282,7 +1282,7 @@ public class GrantService {
                                 new String[]{appConfigService
                                         .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                        .getConfigValue().replace(RELEASE_VERSION,
+                                        .getConfigValue().replaceAll(RELEASE_VERSION,
                                         releaseService.getCurrentRelease().getVersion())});
 
                 usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
@@ -1662,7 +1662,7 @@ public class GrantService {
             referenceCode = "A" + grant.getAmendmentNo() + "-" + prevRefNo;
         } else {
             String code = grant.getOrganization() == null ? grant.getGrantorOrganization().getName() : grant.getOrganization().getName();
-            referenceCode = code.replace(" ", "").substring(0, 4).toUpperCase() + "-"
+            referenceCode = code.replaceAll(" ", "").substring(0, 4).toUpperCase() + "-"
                     + stFormat.format(grant.getStartDate()) + "-" + enFormat.format(grant.getEndDate()) + ("-" + (sNo + 1));
         }
         grant.setReferenceNo(referenceCode);

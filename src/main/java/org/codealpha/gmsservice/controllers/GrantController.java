@@ -1185,12 +1185,13 @@ public class GrantController {
 
             List<GrantAssignments> newAssignments = grantService.getGrantWorkflowAssignments(grant);
 
-            String[] notifications = grantService.buildEmailNotificationContent(grant, userService.getUserById(userId),
+            User currentUser = userService.getUserById(userId);
+            String[] notifications = grantService.buildEmailNotificationContent(grant, currentUser,
                     appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
-                    null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+                    null,currentUser.getFirstName().concat(" ").concat(currentUser.getLastName()) , null, null, null, null, null, null, null, null, null, null, currentAssignments,
                     newAssignments);
             List<User> toUsers = newAssignments.stream().map(GrantAssignments::getAssignments)
                     .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
