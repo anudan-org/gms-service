@@ -2427,7 +2427,11 @@ public class ReportController {
                 .getStringAttributeAttachmentsByAttachmentId(attachmentId);
         reportService.deleteStringAttributeAttachments(Arrays.asList(new ReportStringAttributeAttachments[]{attch}));
 
-        File file = new File(attch.getLocation() + attch.getName() + "." + attch.getType());
+        String fileName = attch.getName();
+        if(!fileName.contains(".".concat(attch.getType()))){
+            fileName = fileName.concat(".".concat(attch.getType()));
+        }
+        File file = new File(attch.getLocation() + fileName);
         try {
             Files.delete(file.toPath());
         } catch (IOException e) {

@@ -748,8 +748,8 @@ public class DisbursementsController {
                         }
                         DisbursementDocument attachment = new DisbursementDocument();
                         attachment.setExtension(FilenameUtils.getExtension(file.getOriginalFilename()));
-                        attachment.setName((file.getOriginalFilename()!=null)?file.getOriginalFilename():""
-                                .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
+                        attachment.setName((file.getOriginalFilename()!=null)?file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""):""
+                                );
                         attachment.setLocation(filePath + file.getOriginalFilename());
                         attachment.setUploadedOn(new Date());
                         attachment.setUploadedBy(userId);

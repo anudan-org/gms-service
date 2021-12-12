@@ -80,6 +80,7 @@ public class GrantController {
     public static final String STRING_AGG = "string_agg";
     public static final String EMAIL = "&email=";
     public static final String TYPE_GRANT = "&type=grant";
+    public static final String LIBRARY = "library";
 
     @Autowired
     DataSource dataSource;
@@ -1382,14 +1383,14 @@ public class GrantController {
                 GrantStringAttributeAttachments attachment = new GrantStringAttributeAttachments();
                 attachment.setVersion(1);
                 attachment.setType(FilenameUtils.getExtension(file.getOriginalFilename()));
-                attachment.setTitle(file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp"
-                        .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
+                attachment.setTitle(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), "") : "temp"
+                        );
                 attachment.setLocation(filePath);
-                attachment.setName(file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp"
-                        .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
+                attachment.setName(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), "") : "temp"
+                        );
                 attachment.setGrantStringAttribute(attr);
-                attachment.setDescription(file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp"
-                        .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
+                attachment.setDescription(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), "") : "temp"
+                        );
                 attachment.setCreatedOn(new Date());
                 attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
                 attachment = grantService.saveGrantStringAttributeAttachment(attachment);
@@ -1478,8 +1479,12 @@ public class GrantController {
                 .getStringAttributeAttachmentsByAttachmentId(attachmentId);
         Long sectionId = attachment.getGrantStringAttribute().getSectionAttribute().getSection().getId();
         Long attributeId = attachment.getGrantStringAttribute().getSectionAttribute().getId();
+        String fileName = attachment.getName();
+        if(!fileName.contains(".".concat(attachment.getType()))){
+            fileName=fileName.concat(".".concat(attachment.getType()));
+        }
         File file = resourceLoader.getResource(FILE + uploadLocation + tenantCode + GRANT_DOCUMENTS + grantId
-                + FILE_SEPARATOR + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + attachment.getName())
+                + FILE_SEPARATOR + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + fileName)
                 .getFile();
         Map<String, File> fileMap = new HashMap<>();
         fileMap.put(attachment.getType(), file);
@@ -1864,8 +1869,8 @@ public class GrantController {
             GrantDocument attachment = new GrantDocument();
             attachment.setExtension(FilenameUtils.getExtension(file.getOriginalFilename()));
             String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp";
-            attachment.setName(file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp"
-                    .replace("." + FilenameUtils.getExtension(filename), ""));
+            attachment.setName(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(filename), "") : "temp"
+                    );
             attachment.setLocation(filePath + file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp");
             attachment.setUploadedOn(new Date());
             attachment.setUploadedBy(userId);
@@ -2106,25 +2111,51 @@ public class GrantController {
         } else if (PROJECT.equalsIgnoreCase(forEntity)) {
             GrantDocument doc = grantService.getGrantDocumentById(downloadRequest.getAttachmentIds()[0]);
             fileMap = new HashMap<>();
+            String fileName = doc.getName();
+            if(!fileName.contains(".".concat(doc.getExtension()))){
+                fileName=fileName.concat(".".concat(doc.getExtension()));
+            }
             File file = resourceLoader.getResource(FILE + uploadLocation + tenantCode + GRANT_DOCUMENTS + id
-                    + FILE_SEPARATOR + doc.getName()).getFile();
+                    + FILE_SEPARATOR + fileName).getFile();
             fileMap.put(doc.getExtension(), file);
         } else if (REPORT.equalsIgnoreCase(forEntity)) {
             ReportStringAttributeAttachments attachment = reportService.getStringAttributeAttachmentsByAttachmentId(downloadRequest.getAttachmentIds()[0]);
             Long sectionId = attachment.getReportStringAttribute().getSectionAttribute().getSection().getId();
             Long attributeId = attachment.getReportStringAttribute().getSectionAttribute().getId();
+
+            String fileName = attachment.getName();
+            if(!fileName.contains(".".concat(attachment.getType()))){
+                fileName=fileName.concat(".".concat(attachment.getType()));
+            }
+
             File file = resourceLoader.getResource(FILE + uploadLocation
-                    + organizationService.findOrganizationByTenantCode(tenantCode).getName().toUpperCase() + "/report-documents/" + id + FILE_SEPARATOR
-                    + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + attachment.getName())
+                    + tenantCode + "/report-documents/" + id + FILE_SEPARATOR
+                    + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + fileName)
                     .getFile();
             fileMap = new HashMap<>();
             fileMap.put(attachment.getType(), file);
         } else if (DISBURSEMENT.equalsIgnoreCase(forEntity)) {
             DisbursementDocument attachment = disbursementService.getDisbursementDocumentById(id);
 
-            File file = resourceLoader.getResource(FILE + attachment.getLocation()).getFile();
+            String fileName = attachment.getLocation();
+            if(!fileName.contains(".".concat(attachment.getExtension()))){
+                fileName=fileName.concat(".".concat(attachment.getExtension()));
+            }
+
+            File file = resourceLoader.getResource(FILE + fileName).getFile();
             fileMap = new HashMap<>();
             fileMap.put(attachment.getExtension(), file);
+        }else if (LIBRARY.equalsIgnoreCase(forEntity)) {
+            TemplateLibrary attachment = templateLibraryService.getTemplateLibraryDocumentById(id);
+
+            String fileName = attachment.getLocation();
+            if(!fileName.contains(".".concat(attachment.getType()))){
+                fileName=fileName.concat(".".concat(attachment.getType()));
+            }
+
+            File file = resourceLoader.getResource(FILE +uploadLocation+ fileName).getFile();
+            fileMap = new HashMap<>();
+            fileMap.put(attachment.getType(), file);
         }
 
         if (fileMap == null) {
