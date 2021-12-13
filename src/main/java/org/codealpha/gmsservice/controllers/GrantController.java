@@ -1486,8 +1486,7 @@ public class GrantController {
         if(!fileName.contains(".".concat(attachment.getType()))){
             fileName=fileName.concat(".".concat(attachment.getType()));
         }
-        File file = resourceLoader.getResource(FILE + uploadLocation + tenantCode + GRANT_DOCUMENTS + grantId
-                + FILE_SEPARATOR + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + fileName)
+        File file = resourceLoader.getResource(FILE + attachment.getLocation() + fileName)
                 .getFile();
         Map<String, File> fileMap = new HashMap<>();
         fileMap.put(attachment.getType(), file);
@@ -2118,8 +2117,7 @@ public class GrantController {
             if(!fileName.contains(".".concat(doc.getExtension()))){
                 fileName=fileName.concat(".".concat(doc.getExtension()));
             }
-            File file = resourceLoader.getResource(FILE + uploadLocation + tenantCode + GRANT_DOCUMENTS + id
-                    + FILE_SEPARATOR + fileName).getFile();
+            File file = resourceLoader.getResource(FILE + doc.getLocation() + fileName).getFile();
             fileMap.put(doc.getExtension(), file);
         } else if (REPORT.equalsIgnoreCase(forEntity)) {
             ReportStringAttributeAttachments attachment = reportService.getStringAttributeAttachmentsByAttachmentId(downloadRequest.getAttachmentIds()[0]);
@@ -2131,9 +2129,7 @@ public class GrantController {
                 fileName=fileName.concat(".".concat(attachment.getType()));
             }
 
-            File file = resourceLoader.getResource(FILE + uploadLocation
-                    + tenantCode + "/report-documents/" + id + FILE_SEPARATOR
-                    + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + fileName)
+            File file = resourceLoader.getResource(FILE + attachment.getLocation() + fileName)
                     .getFile();
             fileMap = new HashMap<>();
             fileMap.put(attachment.getType(), file);
@@ -2169,9 +2165,7 @@ public class GrantController {
                 fileName=fileName.concat(".".concat(attachment.getType()));
             }
 
-            File file = resourceLoader.getResource(FILE + uploadLocation
-                    + tenantCode + "/closure-documents/" + id + FILE_SEPARATOR
-                    + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + fileName)
+            File file = resourceLoader.getResource(FILE + attachment.getLocation() + fileName)
                     .getFile();
             fileMap = new HashMap<>();
             fileMap.put(attachment.getType(), file);
