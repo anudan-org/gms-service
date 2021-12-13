@@ -1082,12 +1082,12 @@ public class GrantClosureController {
 
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
                 filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + CLOSURE_DOCUMENTS
-                        + closureId + File.pathSeparator + stringAttribute.getSection().getId() + File.pathSeparator
-                        + stringAttribute.getSectionAttribute().getId() + File.pathSeparator;
+                        + closureId + "/" + stringAttribute.getSection().getId() + "/"
+                        + stringAttribute.getSectionAttribute().getId() + "/";
             } else {
-                filePath = uploadLocation + user.getOrganization().getCode().toUpperCase() + CLOSURE_DOCUMENTS + closureId + File.pathSeparator
-                        + stringAttribute.getSection().getId() + File.pathSeparator + stringAttribute.getSectionAttribute().getId()
-                        + File.pathSeparator;
+                filePath = uploadLocation + user.getOrganization().getCode().toUpperCase() + CLOSURE_DOCUMENTS + closureId + "/"
+                        + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId()
+                        + "/";
             }
 
             File dir = new File(filePath);
@@ -1147,8 +1147,8 @@ public class GrantClosureController {
         User user = userService.getUserById(userId);
 
         String filePath = STRNOSPACE;
-            filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + CLOSURE_DOCUMENTS + closureId
-                    + File.pathSeparator + attr.getSection().getId() + File.pathSeparator + attr.getSectionAttribute().getId() + File.pathSeparator;
+            filePath = uploadLocation + closure.getGrant().getOrganization().getCode() + CLOSURE_DOCUMENTS + closureId
+                    + "/" + attr.getSection().getId() + "/" + attr.getSectionAttribute().getId() + "/";
         File dir = new File(filePath);
         dir.mkdirs();
         List<ClosureStringAttributeAttachments> attachments = new ArrayList<>();
@@ -1167,14 +1167,11 @@ public class GrantClosureController {
             ClosureStringAttributeAttachments attachment = new ClosureStringAttributeAttachments();
             attachment.setVersion(1);
             attachment.setType(FilenameUtils.getExtension(file.getOriginalFilename()));
-            attachment.setTitle(file.getOriginalFilename()!=null?file.getOriginalFilename():""
-                    .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), STRNOSPACE));
+            attachment.setTitle(file.getOriginalFilename()!=null?file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), STRNOSPACE):"");
             attachment.setLocation(filePath);
-            attachment.setName(file.getOriginalFilename()!=null?file.getOriginalFilename():""
-                    .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), STRNOSPACE));
+            attachment.setName(file.getOriginalFilename()!=null?file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), STRNOSPACE):"");
             attachment.setClosureStringAttribute(attr);
-            attachment.setDescription(file.getOriginalFilename()!=null?file.getOriginalFilename():""
-                    .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), STRNOSPACE));
+            attachment.setDescription(file.getOriginalFilename()!=null?file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), STRNOSPACE):"");
             attachment.setCreatedOn(new Date());
             attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
             attachment = closureService.saveClosureStringAttributeAttachment(attachment);
@@ -1250,30 +1247,29 @@ public class GrantClosureController {
             File file = null;
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
                 file = resourceLoader.getResource(FILE + uploadLocation
-                        + user.getOrganization().getName().toUpperCase() + CLOSURE_DOCUMENTS + closureId + File.pathSeparator
-                        + sectionId + File.pathSeparator + attributeId + File.pathSeparator + attachment.getName() + "." + attachment.getType())
+                        + user.getOrganization().getCode() + CLOSURE_DOCUMENTS + closureId + "/"
+                        + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType())
                         .getFile();
                 if (!file.exists()) {
                     file = resourceLoader
                             .getResource(FILE + uploadLocation
-                                    + closureService.getClosureById(closureId).getGrant().getGrantorOrganization()
-                                    .getCode().toUpperCase()
-                                    + CLOSURE_DOCUMENTS + closureId + File.pathSeparator + sectionId + File.pathSeparator + attributeId + File.pathSeparator
+                                    + tenantCode.toUpperCase()
+                                    + CLOSURE_DOCUMENTS + closureId + "/" + sectionId + "/" + attributeId + "/"
                                     + attachment.getName() + "." + attachment.getType())
                             .getFile();
                 }
             } else {
                 file = resourceLoader.getResource(
-                        FILE + uploadLocation + tenantCode + CLOSURE_DOCUMENTS + closureId + File.pathSeparator + sectionId + File.pathSeparator
-                                + attributeId + File.pathSeparator + attachment.getName() + "." + attachment.getType())
+                        FILE + uploadLocation + tenantCode + CLOSURE_DOCUMENTS + closureId + "/" + sectionId + "/"
+                                + attributeId + "/" + attachment.getName() + "." + attachment.getType())
                         .getFile();
                 if (!file.exists()) {
 
                     file = resourceLoader
                             .getResource(FILE + uploadLocation
-                                    + closureService.getClosureById(closureId).getGrant().getOrganization().getName()
+                                    + tenantCode
                                     .toUpperCase()
-                                    + CLOSURE_DOCUMENTS + closureId + File.pathSeparator + sectionId + File.pathSeparator + attributeId + File.pathSeparator
+                                    + CLOSURE_DOCUMENTS + closureId + "/" + sectionId + "/" + attributeId + "/"
                                     + attachment.getName() + "." + attachment.getType())
                             .getFile();
                 }

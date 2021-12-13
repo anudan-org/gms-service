@@ -81,6 +81,7 @@ public class GrantController {
     public static final String EMAIL = "&email=";
     public static final String TYPE_GRANT = "&type=grant";
     public static final String LIBRARY = "library";
+    public static final String CLOSURE = "closure";
 
     @Autowired
     DataSource dataSource;
@@ -136,6 +137,8 @@ public class GrantController {
     private String[] supportedFileTypes;
     @Value("${spring.timezone}")
     private String timezone;
+    @Autowired
+    private GrantClosureService grantClosureService;
 
     @Autowired
     private CommonEmailSevice commonEmailSevice;
@@ -2154,6 +2157,22 @@ public class GrantController {
             }
 
             File file = resourceLoader.getResource(FILE +uploadLocation+ fileName).getFile();
+            fileMap = new HashMap<>();
+            fileMap.put(attachment.getType(), file);
+        }else if (CLOSURE.equalsIgnoreCase(forEntity)) {
+            ClosureStringAttributeAttachments attachment = grantClosureService.getStringAttributeAttachmentsByAttachmentId(downloadRequest.getAttachmentIds()[0]);
+            Long sectionId = attachment.getClosureStringAttribute().getSectionAttribute().getSection().getId();
+            Long attributeId = attachment.getClosureStringAttribute().getSectionAttribute().getId();
+
+            String fileName = attachment.getName();
+            if(!fileName.contains(".".concat(attachment.getType()))){
+                fileName=fileName.concat(".".concat(attachment.getType()));
+            }
+
+            File file = resourceLoader.getResource(FILE + uploadLocation
+                    + tenantCode + "/closure-documents/" + id + FILE_SEPARATOR
+                    + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + fileName)
+                    .getFile();
             fileMap = new HashMap<>();
             fileMap.put(attachment.getType(), file);
         }
