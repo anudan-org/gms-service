@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.io.FileDeleteStrategy;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -45,6 +47,7 @@ import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -2152,7 +2155,7 @@ public class GrantController {
                 fileName=fileName.concat(".".concat(attachment.getType()));
             }
 
-            File file = resourceLoader.getResource(FILE +uploadLocation+ fileName).getFile();
+            File file = resourceLoader.getResource(FILE +fileName).getFile();
             fileMap = new HashMap<>();
             fileMap.put(attachment.getType(), file);
         }else if (CLOSURE.equalsIgnoreCase(forEntity)) {
@@ -2182,5 +2185,13 @@ public class GrantController {
         return new PreviewData(tempFileName);
     }
 
+    @GetMapping(value = "/attachments/delete/preview/file/{tempFileName}")
+    public void deleteTempFile(@PathVariable("tempFileName") String tempFileName) {
+        try {
+            Files.delete(Paths.get(previewLocation + FILE_SEPARATOR + tempFileName));
+        } catch (IOException e) {
+            logger.error(e.getMessage(),e);
+        }
 
+    }
 }

@@ -715,18 +715,20 @@ public class AdiminstrativeController {
             @RequestParam("docName") String docName, @RequestParam("docDescription") String docDescription) {
         User user = userService.getUserById(userId);
 
-        String filePath = uploadLocation + tenantCode + "/template-library";
+        String filePath = uploadLocation + (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")?user.getOrganization().getName():tenantCode) + "/template-library";
+        new File(filePath).mkdirs();
 
+
+
+        File fileToCreate = new File(new File(filePath), files[0].getOriginalFilename());
         TemplateLibrary libraryDoc = new TemplateLibrary();
         libraryDoc.setName(FilenameUtils.getBaseName(files[0].getOriginalFilename()));
         libraryDoc.setDescription(FilenameUtils.getBaseName(files[0].getOriginalFilename()));
         libraryDoc.setFileType(FilenameUtils.getExtension(files[0].getOriginalFilename()));
         libraryDoc.setType(FilenameUtils.getExtension(files[0].getOriginalFilename()));
-        libraryDoc.setLocation(tenantCode + "/template-library/" + files[0].getOriginalFilename());
+        libraryDoc.setLocation(fileToCreate.getPath());
         libraryDoc.setGranterId(user.getOrganization().getId());
         libraryDoc = templateLibraryService.saveLibraryDoc(libraryDoc);
-
-        File fileToCreate = new File(new File(filePath), files[0].getOriginalFilename());
         try {
             FileOutputStream fos = new FileOutputStream(fileToCreate);
             fos.write(files[0].getBytes());

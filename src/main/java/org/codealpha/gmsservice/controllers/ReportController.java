@@ -936,13 +936,13 @@ public class ReportController {
         String filePath = null;
         try {
             file = resourceLoader
-                    .getResource(FILE + uploadLocation + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8"))
+                    .getResource(FILE  + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8"))
                     .getFile();
 
             User user = userService.getUserById(userId);
 
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
-                filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + REPORT_DOCUMENTS
+                filePath = uploadLocation + reportToSave.getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS
                         + reportId + "/" + stringAttribute.getSection().getId() + "/"
                         + stringAttribute.getSectionAttribute().getId() + "/";
             } else {
@@ -1012,7 +1012,7 @@ public class ReportController {
 
         String filePath = "";
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
-            filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + REPORT_DOCUMENTS + reportId
+            filePath = uploadLocation + report.getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS + reportId
                     + "/" + attr.getSection().getId() + "/" + attr.getSectionAttribute().getId() + "/";
         } else {
             filePath = uploadLocation + tenantCode + REPORT_DOCUMENTS + reportId + "/" + attr.getSection().getId()
