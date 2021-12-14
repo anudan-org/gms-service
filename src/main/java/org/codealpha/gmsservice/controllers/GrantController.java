@@ -1873,7 +1873,7 @@ public class GrantController {
             String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp";
             attachment.setName(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(filename), "") : "temp"
                     );
-            attachment.setLocation(filePath + file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp");
+            attachment.setLocation(filePath + (file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp"));
             attachment.setUploadedOn(new Date());
             attachment.setUploadedBy(userId);
             attachment.setGrantId(grantId);
@@ -2117,7 +2117,7 @@ public class GrantController {
             if(!fileName.contains(".".concat(doc.getExtension()))){
                 fileName=fileName.concat(".".concat(doc.getExtension()));
             }
-            File file = resourceLoader.getResource(FILE + doc.getLocation() + fileName).getFile();
+            File file = resourceLoader.getResource(FILE + doc.getLocation()).getFile();
             fileMap.put(doc.getExtension(), file);
         } else if (REPORT.equalsIgnoreCase(forEntity)) {
             ReportStringAttributeAttachments attachment = reportService.getStringAttributeAttachmentsByAttachmentId(downloadRequest.getAttachmentIds()[0]);
