@@ -2,6 +2,7 @@ package org.codealpha.gmsservice.schedulers;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.ArrayUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.AppRelease;
@@ -14,13 +15,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.support.CronSequenceGenerator;
 import org.springframework.stereotype.Component;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -56,6 +63,10 @@ public class ScheduledJobs {
     private DisbursementService disbursementService;
     @Value("${spring.timezone}")
     private String timezone;
+    @Autowired
+    private HygieneCheckService hygieneCheckService;
+    @Autowired
+    DataSource dataSource;
 
     @Scheduled(cron = "0 * * * * *")
     public void dueReportsChecker() {
@@ -714,5 +725,46 @@ public class ScheduledJobs {
                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                 .getConfigValue().replace(RELEASE_VERSION,
                 releaseService.getCurrentRelease().getVersion())});
+    }
+
+    @Scheduled(cron = "0 * * * * *")
+    public void hygieneCheck() {
+        List<HygieneCheck> checks = hygieneCheckService.getChecks();
+        for(HygieneCheck check : checks){
+            CronSequenceGenerator generator = new CronSequenceGenerator(check.getScheduledRun());
+            Date runDate = generator.next(new Date());
+            Date now = DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate();
+            runDate = new DateTime(runDate).withSecondOfMinute(0).withMillisOfSecond(0).toDate();
+            if(new DateTime(runDate).isEqual(new DateTime((now)))){
+
+                String query = check.getHygieneQuery();
+                try(PreparedStatement ps = DataSourceUtils.getConnection(dataSource).prepareStatement(query)){
+
+                    ResultSet result = ps.executeQuery();
+                    while(result.next()){
+
+                        String msg = check.getMessage();
+                        msg = msg.replaceAll("%SUMMARY%",result.getString("summary"));
+                        String[] _to = result.getString("emails_to").split(",");
+                        long grantorOrg = result.getLong("grantor_org_id");
+
+                        List<User> adminUsers = userService.getAdminUsersForTenant(grantorOrg);
+
+                        String[] adminUsersArray = adminUsers.stream().map(e -> e.getEmailId()).collect(Collectors.joining(",")).split(",");
+
+                        emailSevice.sendMail(ArrayUtils.addAll(_to,adminUsersArray),null,check.getSubject(),msg,
+                                new String[]{appConfigService
+                                        .getAppConfigForGranterOrg(grantorOrg,
+                                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                        .getConfigValue()
+                                        .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion())});
+                    }
+                }catch (SQLException throwables) {
+                    logger.error(throwables.getMessage(),throwables);
+                }
+            }else{
+                System.out.println("no run");
+            }
+        }
     }
 }

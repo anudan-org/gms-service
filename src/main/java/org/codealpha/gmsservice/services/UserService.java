@@ -136,4 +136,7 @@ public class UserService {
         return resetRequest;
     }
 
+    public List<User> getAdminUsersForTenant(long grantorOrg) {
+        return userRepository.findAdminUsersForTenant(grantorOrg);
+    }
 }

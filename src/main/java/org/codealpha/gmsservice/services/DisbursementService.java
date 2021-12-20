@@ -203,6 +203,11 @@ public class DisbursementService {
                 approvedActualDisbursements.addAll(getApprovedActualDisbursements(d,statusIds,true));
             }
         }
+
+        //Removing duplicate entries here
+        approvedActualDisbursements = approvedActualDisbursements.stream()
+                .collect(Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparingLong(ActualDisbursement::getId))),
+                        ArrayList::new));
         approvedActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
         return approvedActualDisbursements;
     }

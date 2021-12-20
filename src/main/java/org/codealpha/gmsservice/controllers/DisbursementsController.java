@@ -879,13 +879,9 @@ public class DisbursementsController {
                                                                    @PathVariable("grantId") Long grantId,
                                                                    @PathVariable("status") String status){
                 Grant grant = grantService.getById(grantId);
-                Workflow wf = workflowService.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(), DISBURSEMENT);
+                List<Disbursement> disbursements = getDisbursementsGorGrant(grant);
 
-                List<WorkflowStatus> statuses = workflowStatusService.findByWorkflow(wf);
-                statuses.removeIf(
-                        w -> !w.getInternalStatus().equalsIgnoreCase(CLOSED)
-                );
-                List<Disbursement> disbursements = disbursementService.getDibursementsForGrantByStatuses(grantId,statuses.stream().mapToLong(WorkflowStatus::getId).boxed().collect(Collectors.toList()));
+
 
                 for(Disbursement disb : disbursements){
                         disbursementService.disbursementToReturn(disb,userId);
@@ -893,5 +889,20 @@ public class DisbursementsController {
 
                 return disbursements;
 
+        }
+
+        private List<Disbursement> getDisbursementsGorGrant(Grant grant) {
+                Workflow wf = workflowService.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(), DISBURSEMENT);
+
+                List<WorkflowStatus> statuses = workflowStatusService.findByWorkflow(wf);
+                statuses.removeIf(
+                        w -> !w.getInternalStatus().equalsIgnoreCase(CLOSED)
+                );
+                List<Disbursement> disbursements = disbursementService.getDibursementsForGrantByStatuses(grant.getId(),statuses.stream().mapToLong(WorkflowStatus::getId).boxed().collect(Collectors.toList()));
+
+                if(grant.getOrigGrantId()!=null){
+                        disbursements.addAll(getDisbursementsGorGrant(grantService.getById(grant.getOrigGrantId())));
+                }
+                return disbursements;
         }
 }

@@ -25,4 +25,7 @@ public interface UserRepository extends CrudRepository<User, Long> {
   public List<User> findByOrganization(Organization org);
 
   public List<User> findByOrganizationAndActive(Organization org, boolean active);
+
+  @Query(value = "select a.* from users a inner join user_roles b on a.id=b.user_id inner join roles c on c.id=b.role_id where c.name='Admin' and a.organization_id=?1 and a.active=true and deleted=false",nativeQuery = true)
+    List<User> findAdminUsersForTenant(long grantorOrg);
 }
