@@ -747,12 +747,7 @@ public class ScheduledJobs {
                         msg = msg.replaceAll("%SUMMARY%",result.getString("summary"));
                         String[] _to = result.getString("emails_to").split(",");
                         long grantorOrg = result.getLong("grantor_org_id");
-
-                        List<User> adminUsers = userService.getAdminUsersForTenant(grantorOrg);
-
-                        String[] adminUsersArray = adminUsers.stream().map(e -> e.getEmailId()).collect(Collectors.joining(",")).split(",");
-
-                        emailSevice.sendMail(ArrayUtils.addAll(_to,adminUsersArray),null,check.getSubject(),msg,
+                        emailSevice.sendMail(_to,null,check.getSubject(),msg,
                                 new String[]{appConfigService
                                         .getAppConfigForGranterOrg(grantorOrg,
                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)

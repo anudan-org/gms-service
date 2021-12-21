@@ -20,4 +20,3 @@ CREATE SEQUENCE hygiene_check_seq
         CONSTRAINT hygiene_checks_pk PRIMARY KEY (id)
     );
 
-    alter table messages add column subject text;
