@@ -731,10 +731,11 @@ public class ScheduledJobs {
     @Scheduled(cron = "0 * * * * *")
     public void hygieneCheck() throws SQLException {
         List<HygieneCheck> checks = hygieneCheckService.getChecks();
+        Date now = DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate();
         for(HygieneCheck check : checks){
             CronSequenceGenerator generator = new CronSequenceGenerator(check.getScheduledRun());
-            Date runDate = generator.next(new Date());
-            Date now = DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate();
+            Date runDate = generator.next(now);
+
             runDate = new DateTime(runDate).withSecondOfMinute(0).withMillisOfSecond(0).toDate();
             if(new DateTime(runDate).isEqual(new DateTime((now)))){
 
@@ -746,6 +747,9 @@ public class ScheduledJobs {
                     ResultSet result = ps.executeQuery();
                     while(result.next()){
 
+                        if (result.getString("emails_to")==null){
+                            continue;
+                        }
                         String msg = check.getMessage();
                         msg = msg.replaceAll("%SUMMARY%",result.getString("summary"));
                         String[] _to = result.getString("emails_to").split(",");
