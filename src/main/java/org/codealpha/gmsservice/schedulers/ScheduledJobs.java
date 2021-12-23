@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -728,7 +729,7 @@ public class ScheduledJobs {
     }
 
     @Scheduled(cron = "0 * * * * *")
-    public void hygieneCheck() {
+    public void hygieneCheck() throws SQLException {
         List<HygieneCheck> checks = hygieneCheckService.getChecks();
         for(HygieneCheck check : checks){
             CronSequenceGenerator generator = new CronSequenceGenerator(check.getScheduledRun());
@@ -738,7 +739,9 @@ public class ScheduledJobs {
             if(new DateTime(runDate).isEqual(new DateTime((now)))){
 
                 String query = check.getHygieneQuery();
-                try(PreparedStatement ps = DataSourceUtils.getConnection(dataSource).prepareStatement(query)){
+                Connection conn=null;
+                conn=DataSourceUtils.getConnection(dataSource);
+                try(PreparedStatement ps = conn.prepareStatement(query)){
 
                     ResultSet result = ps.executeQuery();
                     while(result.next()){
@@ -756,6 +759,8 @@ public class ScheduledJobs {
                     }
                 }catch (SQLException throwables) {
                     logger.error(throwables.getMessage(),throwables);
+                }finally {
+                    DataSourceUtils.doReleaseConnection(conn, dataSource);
                 }
             }else{
                 System.out.println("no run");
