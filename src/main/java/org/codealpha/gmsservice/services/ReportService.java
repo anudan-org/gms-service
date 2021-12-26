@@ -735,7 +735,12 @@ public class ReportService {
     }
 
     public Long getApprovedReportsActualSumForGrant(Long grantId, String attributeName) {
-        return reportRepository.getApprovedReportsActualSumForGrantAndAttribute(grantId, attributeName);
+        Long totals = reportRepository.getApprovedReportsActualSumForGrantAndAttribute(grantId, attributeName);
+        totals = totals==null?0:totals;
+        if(grantService.getById(grantId).getOrigGrantId()!=null){
+            totals += getApprovedReportsActualSumForGrant(grantService.getById(grantId).getOrigGrantId(),attributeName);
+        }
+        return totals;
     }
 
     public List<GranterReportTemplate> findByGranterIdAndPublishedStatus(Long id, boolean publishedStatus) {
