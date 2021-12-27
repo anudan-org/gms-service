@@ -33,7 +33,11 @@ public class CommonEmailSevice {
 
   @Async("threadPoolTaskExecutor")
   public void sendMail(String[] to, String[] ccList, String subject, String messageText, String footer[]) {
+    for (String footerBlock : footer) {
+      messageText = messageText.concat(footerBlock);
+    }
     if (!sendMail) {
+
       mailLogService.saveMailLog(new MailLog(DateTime.now().toDate(), StringUtils.arrayToCommaDelimitedString(ccList),
           StringUtils.arrayToCommaDelimitedString(to), messageText, subject, true));
       return;
@@ -51,9 +55,7 @@ public class CommonEmailSevice {
       }
       mimeMessageHelper.setFrom("admin@anudan.org", "donotreply");
       mimeMessageHelper.setSubject(subject);
-      for (String footerBlock : footer) {
-        messageText = messageText.concat(footerBlock);
-      }
+
       mimeMessageHelper.setText(messageText, true);
       mailSender.send(message);
       mailLogService.saveMailLog(new MailLog(DateTime.now().toDate(), StringUtils.arrayToCommaDelimitedString(ccList),

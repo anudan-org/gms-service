@@ -16,7 +16,6 @@ import javax.transaction.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
@@ -632,8 +631,10 @@ public class UserController {
     }
 
     private Filter getFilterForGrantsByStatus(Organization tenantOrg, String status) {
-        GranterGrantSummaryCommitted activeGrantSummaryCommitted = dashboardService
-                .getActiveGrantCommittedSummaryForGranter(tenantOrg.getId(), status);
+        GranterGrantSummaryCommitted activeGrantSummaryCommitted = "ACTIVE".equalsIgnoreCase(status)?dashboardService
+                .getActiveStatusGrantCommittedSummaryForGranter(tenantOrg.getId(), status):
+                dashboardService
+                        .getClosedGrantCommittedSummaryForGranter(tenantOrg.getId(), status);
         if (activeGrantSummaryCommitted == null) {
             return null;
         }
@@ -1016,7 +1017,7 @@ public class UserController {
     public List<Grant> getGrantsForUserByStatus(@PathVariable("userId")Long userId,@PathVariable("status")String status){
         List<Grant> grants =  grantService.getgrantsByStatusForUser(userId,status.toUpperCase());
         for(Grant grant : grants){
-            grant = grantService._grantToReturn(userId,grant);
+            grant = grantService.grantToReturn(userId,grant);
         }
         return grants;
     }

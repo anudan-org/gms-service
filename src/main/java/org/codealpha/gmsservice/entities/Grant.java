@@ -24,12 +24,7 @@ import org.codealpha.gmsservice.models.*;
 @SqlResultSetMapping(name="ONEGRANT",
         entities={
                 @EntityResult(entityClass= org.codealpha.gmsservice.entities.Grant.class
-                        /*fields={
-                                @FieldResult(name="id",column="id"),
-                                @FieldResult(name="name", column="name"),
-                                @FieldResult(name="amendGrantId",column = "amend_grant_id"),
-                                @FieldResult(name="approvedReportsForGrant",column="approved_reports_for_grant")
-                        }*/),
+                        ),
         }
 )
 @NamedNativeQuery(
@@ -216,11 +211,24 @@ public class Grant {
   private Boolean internal;
   @Column
   private Long grantTypeId;
+  @Transient
+  private boolean hashClosure = false;
+  @Transient
+  private Long closureId;
 
   @JsonIgnore
   @Column
   private String amendmentDetailsSnapshot;
+  @Column
+  private Boolean closureInProgress = false;
 
+  public Boolean getClosureInProgress() {
+    return closureInProgress;
+  }
+
+  public void setClosureInProgress(Boolean closureInProgress) {
+    this.closureInProgress = closureInProgress;
+  }
 
   public Long getId() {
     return id;
@@ -644,5 +652,21 @@ public class Grant {
 
   public void setAmendmentDetailsSnapshot(String amendmentDetailsSnapshot) {
     this.amendmentDetailsSnapshot = amendmentDetailsSnapshot;
+  }
+
+  public boolean isHashClosure() {
+    return hashClosure;
+  }
+
+  public void setHashClosure(boolean hashClosure) {
+    this.hashClosure = hashClosure;
+  }
+
+  public Long getClosureId() {
+    return closureId;
+  }
+
+  public void setClosureId(Long closureId) {
+    this.closureId = closureId;
   }
 }

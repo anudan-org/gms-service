@@ -17,7 +17,7 @@ public interface GranteeReportStatusRepository extends CrudRepository<GranteeRep
             "inner join organizations c on c.id=a.grantor_org_id\n" +
             "inner join reports d on d.grant_id=a.id\n" +
             "inner join workflow_statuses e on e.id=d.status_id\n" +
-            "where b.internal_status=?2 and a.organization_id=?1 and a.deleted=false\n" +
+            "where (b.internal_status=?2 or b.internal_status='CLOSED') and a.organization_id=?1 and a.deleted=false\n" +
             "and e.internal_status='CLOSED'\n" +
             "group by c.id",nativeQuery = true)
     List<GranteeReportStatus> getReportApprovedStatusSummaryForGranteeAndStatusByGranter(Long id, String status);

@@ -116,6 +116,8 @@ public class AdiminstrativeController {
     private WorkflowValidationService workflowValidationService;
     @Autowired
     private WorkflowStatusTransitionService workflowStatusTransitionService;
+    @Autowired
+    private GrantClosureService closureService;
 
     private static Logger logger = LoggerFactory.getLogger(AdiminstrativeController.class);
 
@@ -151,6 +153,24 @@ public class AdiminstrativeController {
         organizationService.findOrganizationByTenantCode(tenantCode);
 
         WorkflowStatus reportStatus = workflowStatusService.findById(reportService.getReportById(reportId).getStatus().getId());
+
+        return workflowTransitionModelService.getWorkflowsByWorkflowStatusId(reportStatus.getWorkflow().getId());
+    }
+
+    @GetMapping("/workflow/closure/{closureId}/user/{userId}")
+    public List<WorkflowTransitionModel> getCLosureWorkflows(
+            @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @PathVariable("closureId") Long closureId,
+            @PathVariable("userId") Long userId) {
+        Organization org = null;
+        if ("ANUDAN".equalsIgnoreCase(tenantCode)) {
+            org = closureService.getClosureById(closureId).getGrant().getGrantorOrganization();
+        } else {
+            org = organizationService.findOrganizationByTenantCode(tenantCode);
+        }
+        organizationService.findOrganizationByTenantCode(tenantCode);
+
+        WorkflowStatus reportStatus = workflowStatusService.findById(closureService.getClosureById(closureId).getStatus().getId());
 
         return workflowTransitionModelService.getWorkflowsByWorkflowStatusId(reportStatus.getWorkflow().getId());
     }
@@ -695,18 +715,20 @@ public class AdiminstrativeController {
             @RequestParam("docName") String docName, @RequestParam("docDescription") String docDescription) {
         User user = userService.getUserById(userId);
 
-        String filePath = uploadLocation + tenantCode + "/template-library";
+        String filePath = uploadLocation + (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")?user.getOrganization().getName():tenantCode) + "/template-library";
+        new File(filePath).mkdirs();
 
+
+
+        File fileToCreate = new File(new File(filePath), files[0].getOriginalFilename());
         TemplateLibrary libraryDoc = new TemplateLibrary();
         libraryDoc.setName(FilenameUtils.getBaseName(files[0].getOriginalFilename()));
         libraryDoc.setDescription(FilenameUtils.getBaseName(files[0].getOriginalFilename()));
         libraryDoc.setFileType(FilenameUtils.getExtension(files[0].getOriginalFilename()));
         libraryDoc.setType(FilenameUtils.getExtension(files[0].getOriginalFilename()));
-        libraryDoc.setLocation(tenantCode + "/template-library/" + files[0].getOriginalFilename());
+        libraryDoc.setLocation(fileToCreate.getPath());
         libraryDoc.setGranterId(user.getOrganization().getId());
         libraryDoc = templateLibraryService.saveLibraryDoc(libraryDoc);
-
-        File fileToCreate = new File(new File(filePath), files[0].getOriginalFilename());
         try {
             FileOutputStream fos = new FileOutputStream(fileToCreate);
             fos.write(files[0].getBytes());

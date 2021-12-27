@@ -1,6 +1,5 @@
 package org.codealpha.gmsservice.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
@@ -19,7 +18,6 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.annotations.ApiOperation;
@@ -29,11 +27,10 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -48,6 +45,10 @@ import java.util.zip.ZipOutputStream;
 @RequestMapping("/user/{userId}/disbursements")
 public class DisbursementsController {
 
+        public static final String CLOSED = "CLOSED";
+        public static final String DISBURSEMENT = "DISBURSEMENT";
+        public static final String PLEASE_REVIEW = "Please review.";
+        public static final String RELEASE_VERSION = "%RELEASE_VERSION%";
         private static Logger logger = LoggerFactory.getLogger(DisbursementsController.class);
         @Autowired
         private GrantService grantService;
@@ -88,28 +89,11 @@ public class DisbursementsController {
                 List<Grant> ownerGrants = grantService.getGrantsOwnedByUserByStatus(userId, "ACTIVE");
                 List<Grant> grantsToReturn = new ArrayList<>();
                 if (ownerGrants != null && ownerGrants.size() > 0) {
-                        /*List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses(
-                                        "DISBURSEMENT", ownerGrants.get(0).getGrantorOrganization().getId());
-
-                        workflowStatusService.findInitialStatusByObjectAndGranterOrgId()
-                        List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream()
-                                        .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("CLOSED"))
-                                        .collect(Collectors.toList());
-                        List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
-                                        .collect(Collectors.toList());
-
-                        List<WorkflowStatus> draftAndReviewStatuses = workflowStatuses.stream()
-                                        .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")
-                                                        || ws.getInternalStatus().equalsIgnoreCase("REVIEW"))
-                                        .collect(Collectors.toList());
-                        List<Long> draftAndReviewStatusIds = draftAndReviewStatuses.stream().mapToLong(s -> s.getId())
-                                        .boxed().collect(Collectors.toList());*/
-
                         for (Grant g : ownerGrants) {
                                 Double total = 0d;
 
-                                List<Long> statusIds=workflowStatusService.findByWorkflow(workflowService.findWorkflowByGrantTypeAndObject(g.getGrantTypeId(),"DISBURSEMENT")).stream()
-                                        .filter(st ->st.getInternalStatus().equalsIgnoreCase("CLOSED"))
+                                List<Long> statusIds=workflowStatusService.findByWorkflow(workflowService.findWorkflowByGrantTypeAndObject(g.getGrantTypeId(), DISBURSEMENT)).stream()
+                                        .filter(st ->st.getInternalStatus().equalsIgnoreCase(CLOSED))
                                         .mapToLong(s -> s.getId()).boxed()
                                         .collect(Collectors.toList());
                                 List<Disbursement> closedDisbursements = disbursementService
@@ -132,11 +116,11 @@ public class DisbursementsController {
                         }
 
                         for (Grant ownerGrant : grantsToReturn) {
-                                ownerGrant = grantService._grantToReturn(userId, ownerGrant);
+                                grantService.grantToReturn(userId, ownerGrant);
                         }
 
                         for (Grant ownerGrant : grantsToReturn) {
-                                List<Long> draftAndReviewStatusIds = workflowStatusRepository.findByWorkflow(workflowService.findWorkflowByGrantTypeAndObject(ownerGrant.getGrantTypeId(),"DISBURSEMENT"))
+                                List<Long> draftAndReviewStatusIds = workflowStatusRepository.findByWorkflow(workflowService.findWorkflowByGrantTypeAndObject(ownerGrant.getGrantTypeId(), DISBURSEMENT))
                                         .stream()
                                         .filter(st -> (st.getInternalStatus().equalsIgnoreCase("DRAFT") || st.getInternalStatus().equalsIgnoreCase("REVIEW")))
                                         .mapToLong(s->s.getId()).boxed()
@@ -162,13 +146,13 @@ public class DisbursementsController {
 
                 Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
                 disbursementToSave = new Disbursement();
-                Grant grant = grantService._grantToReturn(userId, grantService.getById(grantId));
+                Grant grant = grantService.grantToReturn(userId, grantService.getById(grantId));
                 disbursementToSave.setGrant(grant);
                 disbursementToSave.setReason(null);
                 disbursementToSave.setRequestedAmount(null);
                 disbursementToSave.setGranteeEntry(false);
                 disbursementToSave.setStatus(workflowStatusService
-                                .findInitialStatusByObjectAndGranterOrgId("DISBURSEMENT", tenantOrg.getId(),grant.getGrantTypeId()));
+                                .findInitialStatusByObjectAndGranterOrgId(DISBURSEMENT, tenantOrg.getId(),grant.getGrantTypeId()));
                 disbursementToSave.setCreatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
                 disbursementToSave.setCreatedBy(userService.getUserById(userId).getEmailId());
 
@@ -228,18 +212,12 @@ public class DisbursementsController {
         public List<Disbursement> getDisbursementsForUser(@PathVariable("userId") Long userId,
                         @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("status") String status) {
                 User user = userService.getUserById(userId);
-                Organization org = org = user.getOrganization();;
-                List<Disbursement> disbursements = new ArrayList<>();
 
-                if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
-                        disbursements = disbursementService.getDisbursementsForUserByStatus(user, org, status);
-                } else if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-                        disbursements = disbursementService.getDisbursementsForUserByStatus(user, org, status);
-                }
+                List<Disbursement> disbursements = disbursementService.getDisbursementsForUserByStatus(user, user.getOrganization(), status);
 
                 if (disbursements != null) {
                         for (Disbursement d : disbursements) {
-                                d = disbursementService.disbursementToReturn(d, userId);
+                                disbursementService.disbursementToReturn(d, userId);
                         }
                 }
                 return disbursements;
@@ -275,7 +253,7 @@ public class DisbursementsController {
                         @ApiParam(name = "assignmentModel", value = "Set assignment for disbursement per workflow state") @RequestBody DisbursementAssignmentModel assignmentModel,
                         @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-                Map<Long, Long> currentAssignments = new LinkedHashMap();
+                Map<Long, Long> currentAssignments = new LinkedHashMap<>();
 
                 if (disbursementService.checkIfDisbursementMovedThroughWFAtleastOnce(
                                 assignmentModel.getDisbursement().getId())) {
@@ -340,10 +318,10 @@ public class DisbursementsController {
                                                                         disbursement.getGrant().getGrantorOrganization()
                                                                                         .getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                        .getConfigValue().replaceAll("%RELEASE_VERSION%", releaseService
+                                                        .getConfigValue().replace(RELEASE_VERSION, releaseService
                                                                         .getCurrentRelease().getVersion()) });
 
-                        Map<Long, Long> cleanAsigneesList = new HashMap();
+                        Map<Long, Long> cleanAsigneesList = new HashMap<>();
                         for (Long ass : currentAssignments.values()) {
                                 cleanAsigneesList.put(ass, ass);
                         }
@@ -367,7 +345,7 @@ public class DisbursementsController {
 
                         cleanAsigneesList.keySet().stream()
                                         .forEach(u -> notificationsService.saveNotification(finaNotifications, u,
-                                                        finalDisbursement.getId(), "DISBURSEMENT"));
+                                                        finalDisbursement.getId(), DISBURSEMENT));
 
                 }
 
@@ -441,7 +419,7 @@ public class DisbursementsController {
 
                 List<DisbursementAssignment> assigments = disbursementService.getDisbursementAssignments(disbursement);
                 assigments.forEach(ass -> {
-                        if (!usersToNotify.stream().filter(u -> u.getId() == ass.getOwner()).findFirst().isPresent()) {
+                        if (!usersToNotify.stream().filter(u -> u.getId().longValue() == ass.getOwner().longValue()).findFirst().isPresent()) {
                                 usersToNotify.add(userService.getUserById(ass.getOwner()));
                         }
                 });
@@ -451,11 +429,9 @@ public class DisbursementsController {
                                 .filter(ass -> ass.getDisbursementId().longValue() == disbursementId.longValue()
                                                 && ass.getStateId().longValue() == toStateId.longValue())
                                 .findAny();
-                User currentOwner = null;
-                String currentOwnerName = "";
+                User currentOwner = new User();
                 if (disbAss.isPresent()) {
                         currentOwner = userService.getUserById(disbAss.get().getOwner());
-                        currentOwnerName = currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName());
                 }
 
                 WorkflowStatusTransition transition = workflowStatusTransitionService
@@ -480,13 +456,13 @@ public class DisbursementsController {
                                 previousOwner == null ? " -"
                                                 : previousOwner.getFirstName().concat(" ")
                                                                 .concat(previousOwner.getLastName()),
-                                transition.getAction(), "Yes", "Please review.",
+                                transition.getAction(), "Yes", PLEASE_REVIEW,
                                 disbursementWithNote.getNote() != null
                                                 && !disbursementWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                                                                 : "No",
                                 disbursementWithNote.getNote() != null
                                                 && !disbursementWithNote.getNote().trim().equalsIgnoreCase("")
-                                                                ? "Please review."
+                                                                ? PLEASE_REVIEW
                                                                 : "",
                                 "", null, null, null, null);
                 String notificationContent[] = disbursementService.buildEmailNotificationContent(finalDisbursement,
@@ -508,22 +484,22 @@ public class DisbursementsController {
                                 previousOwner == null ? " -"
                                                 : previousOwner.getFirstName().concat(" ")
                                                                 .concat(previousOwner.getLastName()),
-                                transition.getAction(), "Yes", "Please review.",
+                                transition.getAction(), "Yes", PLEASE_REVIEW,
                                 disbursementWithNote.getNote() != null
                                                 && !disbursementWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                                                                 : "No",
                                 disbursementWithNote.getNote() != null
                                                 && !disbursementWithNote.getNote().trim().equalsIgnoreCase("")
-                                                                ? "Please review."
+                                                                ? PLEASE_REVIEW
                                                                 : "",
                                 "", null, null, null, null);
                 final User finalCurrentOwner = currentOwner;
-                if (!toStatus.getInternalStatus().equalsIgnoreCase("CLOSED")) {
+                if (!toStatus.getInternalStatus().equalsIgnoreCase(CLOSED)) {
                         usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue()
                                         || u.isDeleted());
 
                         commonEmailSevice.sendMail(
-                                        new String[] { !finalCurrentOwner.isDeleted() ? finalCurrentOwner.getEmailId()
+                                        new String[] { (finalCurrentOwner!=null && !finalCurrentOwner.isDeleted()) ? finalCurrentOwner.getEmailId()
                                                         : null },
                                         usersToNotify.stream().map(mapper -> mapper.getEmailId())
                                                         .collect(Collectors.toList())
@@ -533,19 +509,20 @@ public class DisbursementsController {
                                                         .getAppConfigForGranterOrg(finalDisbursement.getGrant()
                                                                         .getGrantorOrganization().getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                        .getConfigValue().replaceAll("%RELEASE_VERSION%", releaseService
+                                                        .getConfigValue().replace(RELEASE_VERSION, releaseService
                                                                         .getCurrentRelease().getVersion()) });
                         usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent,
-                                        u.getId(), finalDisbursement.getId(), "DISBURSEMENT"));
-                        notificationsService.saveNotification(notificationContent, finalCurrentOwner.getId(),
-                                        finalDisbursement.getId(), "DISBURSEMENT");
+                                        u.getId(), finalDisbursement.getId(), DISBURSEMENT));
+                        notificationsService.saveNotification(notificationContent, (finalCurrentOwner!=null)?finalCurrentOwner.getId():0l,
+                                        finalDisbursement.getId(), DISBURSEMENT);
 
                 } else {
                         WorkflowStatus activeStatus = workflowStatusService.findById(fromStateId);
-                        User activeStatusOwner = userService.getUserById(disbursementService
-                                        .getDisbursementAssignments(disbursement).stream()
-                                        .filter(ass -> ass.getStateId().longValue() == activeStatus.getId().longValue())
-                                        .findFirst().get().getOwner());
+                        Optional<DisbursementAssignment> first = disbursementService
+                                .getDisbursementAssignments(disbursement).stream()
+                                .filter(ass -> ass.getStateId().longValue() == activeStatus.getId().longValue())
+                                .findFirst();
+                        User activeStatusOwner = userService.getUserById(first.isPresent()?first.get().getOwner():null);
                         usersToNotify.removeIf(u -> u.getId().longValue() == activeStatusOwner.getId().longValue()
                                         || u.isDeleted());
 
@@ -559,12 +536,12 @@ public class DisbursementsController {
                                                         .getAppConfigForGranterOrg(finalDisbursement.getGrant()
                                                                         .getGrantorOrganization().getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                        .getConfigValue().replaceAll("%RELEASE_VERSION%", releaseService
+                                                        .getConfigValue().replace(RELEASE_VERSION, releaseService
                                                                         .getCurrentRelease().getVersion()) });
                         usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent,
-                                        u.getId(), finalDisbursement.getId(), "DISBURSEMENT"));
+                                        u.getId(), finalDisbursement.getId(), DISBURSEMENT));
                         notificationsService.saveNotification(notificationContent, activeStatusOwner.getId(),
-                                        finalDisbursement.getId(), "DISBURSEMENT");
+                                        finalDisbursement.getId(), DISBURSEMENT);
 
                 }
 
@@ -601,24 +578,9 @@ public class DisbursementsController {
         @GetMapping("/{disbursementId}/history/")
         public List<DisbursementHistory> getDisbursementHistory(@PathVariable("disbursementId") Long disbursementId,
                         @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
-
-                /*List<DisbursementHistory> history = null;
-                User user = userService.getUserById(userId);
-                if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
-                        history = disbursementService.getDisbursementHistory(disbursementId);
-                }
-
-                for (DisbursementHistory dh : history) {
-                        dh.setNoteAddedByUser(userService.getUserById(dh.getNoteAddedBy()));
-                        dh.setStatus(workflowStatusService.findById(dh.getStatusId()));
-                }
-
-                return history;*/
-
-                List<DisbursementHistory> history = new ArrayList();
+                List<DisbursementHistory> history = new ArrayList<>();
                 List<DisbursementSnapshot> disbursementSnapshotHistory = disbursementSnapshotService.getDisbursementSnapshotForDisbursement(disbursementId);
-                if (disbursementSnapshotHistory == null
-                        || (disbursementSnapshotHistory != null && disbursementSnapshotHistory.get(0).getFromStateId() == null)) {
+                if (disbursementSnapshotHistory == null || disbursementSnapshotHistory.get(0).getFromStateId() == null) {
                         history = disbursementService.getDisbursementHistory(disbursementId);
                         for (DisbursementHistory historyEntry : history) {
                                 historyEntry.setNoteAddedByUser(userService.getUserById(historyEntry.getNoteAddedBy()));
@@ -626,7 +588,6 @@ public class DisbursementsController {
                 } else {
                         for (DisbursementSnapshot snapShot : disbursementSnapshotHistory) {
                                 DisbursementHistory hist = new DisbursementHistory();
-                                //hist.set(snapShot.);
                                 hist.setId(snapShot.getDisbursementId());
                                 hist.setNote(snapShot.getFromNote());
                                 hist.setNoteAdded(snapShot.getMovedOn());
@@ -688,9 +649,8 @@ public class DisbursementsController {
                         @PathVariable("reportId") Long reportId, @PathVariable("userId") Long userId,
                         @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-                Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
                 Disbursement disbursementToSave = new Disbursement();
-                Grant grant = grantService._grantToReturn(userId, grantService.getById(grantId));
+                Grant grant = grantService.grantToReturn(userId, grantService.getById(grantId));
                 disbursementToSave.setGrant(grant);
                 disbursementToSave.setReason(null);
                 disbursementToSave.setRequestedAmount(null);
@@ -698,7 +658,7 @@ public class DisbursementsController {
                 disbursementToSave.setReportId(reportId);
                 disbursementToSave.setMovedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
                 disbursementToSave.setStatus(workflowStatusService.findInitialStatusByObjectAndGranterOrgId(
-                                "DISBURSEMENT", grant.getGrantorOrganization().getId(),grant.getGrantTypeId()));
+                        DISBURSEMENT, grant.getGrantorOrganization().getId(),grant.getGrantTypeId()));
                 disbursementToSave.setCreatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
                 disbursementToSave.setCreatedBy(userService.getUserById(userId).getEmailId());
 
@@ -776,13 +736,11 @@ public class DisbursementsController {
                 String filePath = uploadLocation + tenantCode + "/disbursement-documents/" + disbursement.getGrant().getId() + "/" + disbursementId + "/";
                 File dir = new File(filePath);
                 dir.mkdirs();
-                List<DisbursementDocument> attachments = new ArrayList();
+                List<DisbursementDocument> attachments = new ArrayList<>();
                 for (MultipartFile file : files) {
-                        try {
-                                String fileName = file.getOriginalFilename();
-
-                                File fileToCreate = new File(dir, fileName);
-                                FileOutputStream fos = new FileOutputStream(fileToCreate);
+                        String fileName = file.getOriginalFilename();
+                        File fileToCreate = new File(dir, fileName);
+                        try(FileOutputStream fos = new FileOutputStream(fileToCreate)) {
                                 fos.write(file.getBytes());
                                 fos.close();
                         } catch (IOException e) {
@@ -790,8 +748,8 @@ public class DisbursementsController {
                         }
                         DisbursementDocument attachment = new DisbursementDocument();
                         attachment.setExtension(FilenameUtils.getExtension(file.getOriginalFilename()));
-                        attachment.setName(file.getOriginalFilename()
-                                .replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""));
+                        attachment.setName((file.getOriginalFilename()!=null)?file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""):""
+                                );
                         attachment.setLocation(filePath + file.getOriginalFilename());
                         attachment.setUploadedOn(new Date());
                         attachment.setUploadedBy(userId);
@@ -799,9 +757,7 @@ public class DisbursementsController {
                         attachment = disbursementService.saveDisbursementDocument(attachment);
                         attachments.add(attachment);
                 }
-
-                //updateDisbursementDocuments(disbursementId,tenantCode,userId);
-
+                
                 return attachments;
         }
 
@@ -810,44 +766,34 @@ public class DisbursementsController {
                                                @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest,
                                                HttpServletResponse response) throws IOException {
 
-                ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
-                // setting headers
                 response.setContentType("application/zip");
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
-
-                // creating byteArray stream, make it bufforable and passing this buffor to
-                // ZipOutputStream
+                
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
                 ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
 
-                // simple file list, just for tests
 
                 ArrayList<File> files = new ArrayList<>();
-                //files.add(new File("README.md"));
-
-                // packing files
+                
                 for (Long attachmentId : downloadRequest.getAttachmentIds()) {
                         DisbursementDocument attachment = disbursementService.getDisbursementDocumentById(attachmentId);
-
                         File file = resourceLoader.getResource("file:" + attachment.getLocation()).getFile();
-                        // new zip entry and copying inputstream with file to zipOutputStream, after all
-                        // closing streams
-                        zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
-                        FileInputStream fileInputStream = new FileInputStream(file);
-
-                        IOUtils.copy(fileInputStream, zipOutputStream);
-
-                        fileInputStream.close();
-                        zipOutputStream.closeEntry();
+                        try(FileInputStream fileInputStream = new FileInputStream(file)) {
+                                zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+                                IOUtils.copy(fileInputStream, zipOutputStream);
+                                fileInputStream.close();
+                                zipOutputStream.closeEntry();
+                        }catch (Exception e){
+                                logger.error(e.getMessage(),e);
+                        }
                 }
 
-                if (zipOutputStream != null) {
                         zipOutputStream.finish();
                         zipOutputStream.flush();
                         IOUtils.closeQuietly(zipOutputStream);
-                }
+                
                 IOUtils.closeQuietly(bufferedOutputStream);
                 IOUtils.closeQuietly(byteArrayOutputStream);
                 return byteArrayOutputStream.toByteArray();
@@ -860,10 +806,11 @@ public class DisbursementsController {
                 DisbursementDocument doc = disbursementService.getDisbursementDocumentById(attachmentId);
                 File file = new File(doc.getLocation());
                 disbursementService.deleteDisbursementDocument(doc);
-                file.delete();
-
-                //updateProjectDocuments(grantId,tenantCode,userId);
-
+                try {
+                        Files.delete(file.toPath());
+                } catch (IOException e) {
+                        logger.error(e.getMessage(),e);
+                }
         }
 
         @GetMapping("/{disbursementId}/file/{fileId}")
@@ -885,7 +832,6 @@ public class DisbursementsController {
                         servletResponse.setHeader("filename", attachment.getName() );
                         return ResponseEntity.ok().headers(headers).contentLength(file.length())
                                 .contentType(MediaType.parseMediaType("application/octet-stream")).body(resource);
-                        // StreamUtils.copy(file.getInputStream(), servletResponse.getOutputStream());
                 } catch (IOException ex) {
                         logger.error(ex.getMessage(), ex);
                 }
@@ -925,5 +871,38 @@ public class DisbursementsController {
 
 
                 return disbursementService.disbursementToPlain(currentDisbursement);
+        }
+
+        @GetMapping(value = "/grant/{grantId}/{status}")
+        public List<Disbursement> getDisbursementsForGrantByStatus(@RequestHeader("X-TENANT-CODE")String tenantCode,
+                                                                   @PathVariable("userId")Long userId,
+                                                                   @PathVariable("grantId") Long grantId,
+                                                                   @PathVariable("status") String status){
+                Grant grant = grantService.getById(grantId);
+                List<Disbursement> disbursements = getDisbursementsGorGrant(grant);
+
+
+
+                for(Disbursement disb : disbursements){
+                        disbursementService.disbursementToReturn(disb,userId);
+                }
+
+                return disbursements;
+
+        }
+
+        private List<Disbursement> getDisbursementsGorGrant(Grant grant) {
+                Workflow wf = workflowService.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(), DISBURSEMENT);
+
+                List<WorkflowStatus> statuses = workflowStatusService.findByWorkflow(wf);
+                statuses.removeIf(
+                        w -> !w.getInternalStatus().equalsIgnoreCase(CLOSED)
+                );
+                List<Disbursement> disbursements = disbursementService.getDibursementsForGrantByStatuses(grant.getId(),statuses.stream().mapToLong(WorkflowStatus::getId).boxed().collect(Collectors.toList()));
+
+                if(grant.getOrigGrantId()!=null){
+                        disbursements.addAll(getDisbursementsGorGrant(grantService.getById(grant.getOrigGrantId())));
+                }
+                return disbursements;
         }
 }

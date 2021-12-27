@@ -143,8 +143,6 @@ public class DisbursementService {
         GrantVO vo = new GrantVO().build(disbursement.getGrant(),
                 grantService.getGrantSections(disbursement.getGrant()), workflowPermissionService,
                 userService.getUserById(userId),
-                appConfigService.getAppConfigForGranterOrg(disbursement.getGrant().getGrantorOrganization().getId(),
-                        AppConfiguration.KPI_SUBMISSION_WINDOW_DAYS),
                 userService,grantService);
 
         disbursement.getGrant().setGrantDetails(vo.getGrantDetails());
@@ -205,6 +203,11 @@ public class DisbursementService {
                 approvedActualDisbursements.addAll(getApprovedActualDisbursements(d,statusIds,true));
             }
         }
+
+        //Removing duplicate entries here
+        approvedActualDisbursements = approvedActualDisbursements.stream()
+                .collect(Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparingLong(ActualDisbursement::getId))),
+                        ArrayList::new));
         approvedActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
         return approvedActualDisbursements;
     }
