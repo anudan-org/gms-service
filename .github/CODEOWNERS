@@ -1,4 +1,4 @@
-.github/workflows              @ranjitsocial
+.github/**            @ranjitsocial
 DB/**                          @ranjitsocial
 gradle/**                      @ranjitsocial
 src/**                         @ranjitsocial

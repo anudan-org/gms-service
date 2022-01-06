@@ -17,7 +17,7 @@ on:
       - '**.properties'
 
 env:
-  commitmsg: ${{ github.event.head_commit.message }} 
+  commitmsg: ${{ github.event.head_commit.message }}  
 
 jobs:
   UAT-Backend-Build:
