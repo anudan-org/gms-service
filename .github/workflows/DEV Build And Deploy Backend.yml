@@ -8,7 +8,7 @@ on:
   push:
    branches: [ dev ]
    paths-ignore: 
-      - '.github/workflows/**.yml'
+      - '.github/**'
       - 'DB/**'
       - 'gradle/**'
       - '.DS_Store'
