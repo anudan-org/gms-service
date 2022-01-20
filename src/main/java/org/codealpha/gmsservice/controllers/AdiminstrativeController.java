@@ -1013,6 +1013,9 @@ public class AdiminstrativeController {
         WorkflowValidationResult validationResult = new WorkflowValidationResult();
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(workflowStatusService.getById(fromStateId),workflowStatusService.getById(toStateId));
 
+        if(transition==null){
+            return validationResult;
+        }
         List<WorkflowValidation> validationsToRun = workflowValidationService.getActiveValidationsByObject(_object.toUpperCase());
         if(!validationsToRun.isEmpty()){
             Connection conn = null;

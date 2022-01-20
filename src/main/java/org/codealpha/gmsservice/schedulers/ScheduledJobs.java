@@ -47,6 +47,8 @@ public class ScheduledJobs {
     private ReportService reportService;
     @Autowired
     AppConfigService appConfigService;
+    @Autowired
+    private NotificationsService notificationsService;
 
     @Autowired
     private CommonEmailSevice emailSevice;

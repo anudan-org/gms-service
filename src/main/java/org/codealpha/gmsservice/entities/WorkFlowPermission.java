@@ -25,6 +25,8 @@ public class WorkFlowPermission {
   private Boolean noteRequired;
   @Column
   private Integer seqOrder;
+  @Column
+  private Boolean isForwardDirection;
 
 
   public Long getId() {
@@ -91,5 +93,19 @@ public class WorkFlowPermission {
     this.seqOrder = seqOrder;
   }
 
-  
+  public Boolean getNoteRequired() {
+    return noteRequired;
+  }
+
+  public void setNoteRequired(Boolean noteRequired) {
+    this.noteRequired = noteRequired;
+  }
+
+  public Boolean getForwardDirection() {
+    return isForwardDirection;
+  }
+
+  public void setForwardDirection(Boolean forwardDirection) {
+    isForwardDirection = forwardDirection;
+  }
 }
