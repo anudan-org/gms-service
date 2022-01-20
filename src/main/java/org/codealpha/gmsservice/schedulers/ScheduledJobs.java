@@ -47,6 +47,8 @@ public class ScheduledJobs {
     private ReportService reportService;
     @Autowired
     AppConfigService appConfigService;
+    @Autowired
+    private NotificationsService notificationsService;
 
     @Autowired
     private CommonEmailSevice emailSevice;
@@ -734,7 +736,7 @@ public class ScheduledJobs {
         Date now = DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate();
         for(HygieneCheck check : checks){
             CronSequenceGenerator generator = new CronSequenceGenerator(check.getScheduledRun());
-            Date runDate = generator.next(now);
+            Date runDate = generator.next(new DateTime(now).minusDays(1).toDate());
 
             runDate = new DateTime(runDate).withSecondOfMinute(0).withMillisOfSecond(0).toDate();
             if(new DateTime(runDate).isEqual(new DateTime((now)))){

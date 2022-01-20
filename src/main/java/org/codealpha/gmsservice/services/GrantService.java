@@ -1220,7 +1220,7 @@ public class GrantService {
                 currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), previousState.getName(),
                 previousOwner == null ? " -"
                         : previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                transition.getAction(), "Yes", PLEASE_REVIEW,
+                transition==null?"Request Modifications":transition.getAction(), "Yes", PLEASE_REVIEW,
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("")
                         ? PLEASE_REVIEW
@@ -1235,7 +1235,7 @@ public class GrantService {
                 currentOwner.getFirstName().concat(" ").concat(currentOwner.getLastName()), previousState.getName(),
                 previousOwner == null ? " -"
                         : previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                transition.getAction(), "Yes", PLEASE_REVIEW,
+                transition==null?"Request Modifications":transition.getAction(), "Yes", PLEASE_REVIEW,
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("") ? "Yes" : "No",
                 grantwithNote.getNote() != null && !grantwithNote.getNote().trim().equalsIgnoreCase("")
                         ? PLEASE_REVIEW
