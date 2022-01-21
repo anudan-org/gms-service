@@ -110,6 +110,8 @@ public class ReportService {
     private WorkflowPermissionService workflowPermissionService;
     @Autowired
     private AppConfigService appConfigService;
+    @Autowired
+    private WorkflowPermissionRepository workflowPermissionRepository;
 
     public Report saveReport(Report report) {
         return reportRepository.save(report);
@@ -552,6 +554,11 @@ public class ReportService {
 
     public void deleteSection(ReportSpecificSection section) {
         reportSpecificSectionRepository.delete(section);
+    }
+
+    public List<WorkFlowPermission> getFlowReportFlowAuthority(Report report, Long userId){
+
+        return workflowPermissionRepository.getPermissionsForReportFlow(report.getStatus().getId(),userId,report.getId());
     }
 
     public List<WorkFlowPermission> getFlowAuthority(Report report, Long userId) {
