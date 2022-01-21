@@ -141,7 +141,7 @@ public class ReportController {
         Organization org = null;
         User user = userService.getUserById(userId);
 
-        List<ReportCard> reports = null;
+        List<ReportCard> reports = new ArrayList<>();
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
             org = user.getOrganization();
             if (filterClause != null && filterClause.equalsIgnoreCase("UPCOMING-DUE")) {
@@ -423,7 +423,7 @@ public class ReportController {
             }
         });
         report.setSecurityCode(reportService.buildHashCode(report));
-        report.setFlowAuthorities(reportService.getFlowAuthority(report, userId));
+        report.setFlowAuthorities(reportService.getFlowReportFlowAuthority(report, userId));
 
         List<GrantTag> grantTags = grantService.getTagsForGrant(report.getGrant().getId());
 
@@ -1424,7 +1424,7 @@ public class ReportController {
                             AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                    transition.getAction(), "Yes", PLEASE_REVIEW,
+                    transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                             : "No",
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1449,7 +1449,7 @@ public class ReportController {
                             AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                    transition.getAction(), "Yes", PLEASE_REVIEW,
+                    transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                             : "No",
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1473,7 +1473,7 @@ public class ReportController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                        transition.getAction(), "Yes", PLEASE_REVIEW,
+                        transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                                 ? "Yes"
                                 : "No",
@@ -1499,7 +1499,7 @@ public class ReportController {
                             AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                    transition.getAction(), "Yes", PLEASE_REVIEW,
+                    transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                             : "No",
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1524,7 +1524,7 @@ public class ReportController {
                             AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                    transition.getAction(), "Yes", PLEASE_REVIEW,
+                    transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                             : "No",
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1548,7 +1548,7 @@ public class ReportController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                        transition.getAction(), "Yes", PLEASE_REVIEW,
+                        transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                                 ? "Yes"
                                 : "No",
@@ -1574,7 +1574,7 @@ public class ReportController {
                                 AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                         previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                        transition.getAction(), "Yes", PLEASE_REVIEW,
+                        transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                                 : "No",
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1599,7 +1599,7 @@ public class ReportController {
                                 AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                         previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                        transition.getAction(), "Yes", PLEASE_REVIEW,
+                        transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                                 : "No",
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1625,7 +1625,7 @@ public class ReportController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                        transition.getAction(), "Yes", PLEASE_REVIEW,
+                        transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                                 ? "Yes"
                                 : "No",
