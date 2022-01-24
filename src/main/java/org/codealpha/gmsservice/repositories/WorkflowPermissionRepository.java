@@ -43,7 +43,7 @@ public interface WorkflowPermissionRepository extends CrudRepository<WorkFlowPer
           "\twst\n" +
           "left join grant_assignments c on c.state_id=wst.from_state_id \n" +
           "where \n" +
-          "c.grant_id=?3 and ((wst.is_forward_direction=true and c.assignments=?2) or (wst.is_forward_direction = false and  exists (select * from grant_assignments where assignments=?2 and grant_id=?3) ))\n" +
+          "c.grant_id=?3 and ((wst.is_forward_direction=true and c.assignments=?2) or (wst.is_forward_direction = false and  exists (select * from grant_assignments where assignments=?2 and grant_id=?3 and state_id=?1) ))\n" +
           "order by wst.is_forward_direction desc", nativeQuery = true)
   public List<WorkFlowPermission> getPermissionsForGrantFlow(Long grantStatusId,Long userId,Long grantId);
 
@@ -88,7 +88,7 @@ public interface WorkflowPermissionRepository extends CrudRepository<WorkFlowPer
           "          wst \n" +
           "          left join disbursement_assignments c on c.state_id=wst.from_state_id  \n" +
           "          where  \n" +
-          "          c.disbursement_id=?3 and ((wst.is_forward_direction=true and c.owner=?2) or (wst.is_forward_direction = false and  exists (select * from disbursement_assignments where owner=?2 and disbursement_id=?3) )) \n" +
+          "          c.disbursement_id=?3 and ((wst.is_forward_direction=true and c.owner=?2) or (wst.is_forward_direction = false and  exists (select * from disbursement_assignments where owner=?2 and disbursement_id=?3 and state_id=?1) )) \n" +
           "          order by wst.is_forward_direction desc",nativeQuery = true)
   public List<WorkFlowPermission> getPermissionsForDisbursementFlow(Long statusId,Long userId,Long disbursementId);
 
@@ -127,7 +127,7 @@ public interface WorkflowPermissionRepository extends CrudRepository<WorkFlowPer
           "          wst \n" +
           "          inner join report_assignments c on c.state_id=wst.from_state_id  \n" +
           "          where  \n" +
-          "          c.report_id=?3 and ((wst.is_forward_direction=true and c.assignment=?2) or (wst.is_forward_direction = false and  exists (select * from report_assignments where assignment=?2 and report_id=?3) )) \n" +
+          "          c.report_id=?3 and ((wst.is_forward_direction=true and c.assignment=?2) or (wst.is_forward_direction = false and  exists (select * from report_assignments where assignment=?2 and report_id=?3 and state_id=?1) )) \n" +
           "          order by wst.is_forward_direction desc",nativeQuery = true)
   public List<WorkFlowPermission> getPermissionsForReportFlow(Long statusId,Long userId,Long reportId);
 
