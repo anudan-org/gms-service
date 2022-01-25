@@ -1679,7 +1679,7 @@ public class GrantController {
 
         List<GrantHistory> history = new ArrayList<>();
         List<GrantSnapshot> grantSnapshotHistory = grantSnapshotService.getGrantSnapshotForGrant(grantId);
-        if (grantSnapshotHistory != null && grantSnapshotHistory.get(0).getFromStateId() == null) {
+        if (grantSnapshotHistory != null && grantSnapshotHistory.size()>0 && grantSnapshotHistory.get(0).getFromStateId() == null) {
             history = grantService.getGrantHistory(grantId);
             for (GrantHistory historyEntry : history) {
                 historyEntry.setNoteAddedByUser(userService.getUserByEmailAndOrg(historyEntry.getNoteAddedBy(),
