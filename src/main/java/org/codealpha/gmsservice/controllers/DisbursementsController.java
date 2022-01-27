@@ -456,7 +456,7 @@ public class DisbursementsController {
                                 previousOwner == null ? " -"
                                                 : previousOwner.getFirstName().concat(" ")
                                                                 .concat(previousOwner.getLastName()),
-                                transition.getAction(), "Yes", PLEASE_REVIEW,
+                                transition==null?"Request Modifications":transition.getAction(), "Yes", PLEASE_REVIEW,
                                 disbursementWithNote.getNote() != null
                                                 && !disbursementWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                                                                 : "No",
@@ -484,7 +484,7 @@ public class DisbursementsController {
                                 previousOwner == null ? " -"
                                                 : previousOwner.getFirstName().concat(" ")
                                                                 .concat(previousOwner.getLastName()),
-                                transition.getAction(), "Yes", PLEASE_REVIEW,
+                        transition==null?"Request Modifications":transition.getAction(), "Yes", PLEASE_REVIEW,
                                 disbursementWithNote.getNote() != null
                                                 && !disbursementWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                                                                 : "No",
