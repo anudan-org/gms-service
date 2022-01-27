@@ -1599,7 +1599,7 @@ public class ReportController {
                                 AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                         previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                        transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
+                        transition!=null?transition.getAction():"Request Modifications", "Yes", PLEASE_REVIEW,
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                                 : "No",
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1625,7 +1625,7 @@ public class ReportController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                        transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
+                        transition!=null?transition.getAction():"Request Modifications", "Yes", PLEASE_REVIEW,
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                                 ? "Yes"
                                 : "No",

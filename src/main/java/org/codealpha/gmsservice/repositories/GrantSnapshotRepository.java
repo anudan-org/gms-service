@@ -14,6 +14,6 @@ public interface GrantSnapshotRepository extends CrudRepository<GrantSnapshot, L
     @Query(value = "select * from grant_snapshot where grant_id=?1 order by id desc limit 1", nativeQuery = true)
     public GrantSnapshot findByMostRecentByGrantId(Long grantId);
 
-    @Query(value = "select * from grant_snapshot where grant_id=?1 order by moved_on DESC", nativeQuery = true)
+    @Query(value = "select * from grant_snapshot where grant_id=?1 order by moved_on DESC ,id desc", nativeQuery = true)
     public List<GrantSnapshot> getGrantShanpshotsForGrant(Long grantId);
 }

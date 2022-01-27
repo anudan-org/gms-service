@@ -15,6 +15,6 @@ public interface ReportSnapshotRepository extends CrudRepository<ReportSnapshot,
     @Query(value = "select * from report_snapshot where report_id=?1 order by id desc limit 1", nativeQuery = true)
     public ReportSnapshot findByMostRecentByReportId(Long reportId);
 
-    @Query(value = "select * from report_snapshot where report_id=?1 order by id DESC", nativeQuery = true)
+    @Query(value = "select * from report_snapshot where report_id=?1 order by id DESC ,id desc", nativeQuery = true)
     List<ReportSnapshot> getReportShanpshotsForReport(Long reportId);
 }

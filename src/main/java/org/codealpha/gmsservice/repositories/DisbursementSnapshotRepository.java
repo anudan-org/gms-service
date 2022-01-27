@@ -13,6 +13,6 @@ public interface DisbursementSnapshotRepository extends CrudRepository<Disbursem
     @Query(value = "select * from disbursement_snapshot where disbursement_id=?1 order by id desc limit 1", nativeQuery = true)
     public DisbursementSnapshot findByMostRecentByDisbursementId(Long disbursementId);
 
-    @Query(value = "select * from disbursement_snapshot where disbursement_id=?1 order by moved_on DESC", nativeQuery = true)
+    @Query(value = "select * from disbursement_snapshot where disbursement_id=?1 order by moved_on DESC ,id desc", nativeQuery = true)
     List<DisbursementSnapshot> getReportShanpshotsForReport(Long disbursementId);
 }
