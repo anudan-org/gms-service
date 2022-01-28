@@ -110,6 +110,8 @@ public class ReportService {
     private WorkflowPermissionService workflowPermissionService;
     @Autowired
     private AppConfigService appConfigService;
+    @Autowired
+    private WorkflowPermissionRepository workflowPermissionRepository;
 
     public Report saveReport(Report report) {
         return reportRepository.save(report);
@@ -554,6 +556,11 @@ public class ReportService {
         reportSpecificSectionRepository.delete(section);
     }
 
+    public List<WorkFlowPermission> getFlowReportFlowAuthority(Report report, Long userId){
+
+        return workflowPermissionRepository.getPermissionsForReportFlow(report.getStatus().getId(),userId,report.getId());
+    }
+
     public List<WorkFlowPermission> getFlowAuthority(Report report, Long userId) {
         List<WorkFlowPermission> permissions = new ArrayList<>();
         Optional<User> optionalUser = userRepository.findById(userId);
@@ -656,25 +663,27 @@ public class ReportService {
         } else {
             grantName = finalReport.getGrant().getName();
         }
+        currentOwner = currentOwner==null?"":currentOwner;
+        currentState=currentState==null?"":currentState;
         String message = msgConfigValue.replace(GRANT_NAME, grantName)
-                .replace(REPORT_NAME, finalReport.getName()).replace("%REPORT_LINK%", granteeUrl)
-                .replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner)
-                .replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner)
-                .replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges)
-                .replace("%HAS_CHANGES_COMMENT%", hasChangesComment).replace("%HAS_NOTES%", hasNotes)
-                .replace("%HAS_NOTES_COMMENT%", hasNotesComment)
-                .replace("%TENANT%", finalReport.getGrant().getGrantorOrganization().getName())
-                .replace("%DUE_DATE%", new SimpleDateFormat(DD_MMM_YYYY).format(finalReport.getDueDate()))
-                .replace("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
-                .replace("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
-                .replace("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replace("%GRANTEE%", finalReport.getGrant().getOrganization() != null ? finalReport.getGrant().getOrganization().getName() : finalReport.getGrant().getGrantorOrganization().getName())
-                .replace("%GRANTEE_REPORT_LINK%", granteeUrl).replace("%GRANTER_REPORT_LINK%", granterUrl)
-                .replace("%GRANTER%", finalReport.getGrant().getGrantorOrganization().getName())
-                .replace("%ENTITY_TYPE%", "report")
-                .replace("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
-                .replace("%ENTITY_NAME%", finalReport.getName() + " of grant " + grantName);
-        String subject = subConfigValue.replace(REPORT_NAME, finalReport.getName());
+                .replaceAll(REPORT_NAME, finalReport.getName()).replaceAll("%REPORT_LINK%", granteeUrl)
+                .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
+                .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
+                .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
+                .replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%", hasNotes)
+                .replaceAll("%HAS_NOTES_COMMENT%", hasNotesComment)
+                .replaceAll("%TENANT%", finalReport.getGrant().getGrantorOrganization().getName())
+                .replaceAll("%DUE_DATE%", new SimpleDateFormat(DD_MMM_YYYY).format(finalReport.getDueDate()))
+                .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
+                .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
+                .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
+                .replaceAll("%GRANTEE%", finalReport.getGrant().getOrganization() != null ? finalReport.getGrant().getOrganization().getName() : finalReport.getGrant().getGrantorOrganization().getName())
+                .replaceAll("%GRANTEE_REPORT_LINK%", granteeUrl).replaceAll("%GRANTER_REPORT_LINK%", granterUrl)
+                .replaceAll("%GRANTER%", finalReport.getGrant().getGrantorOrganization().getName())
+                .replaceAll("%ENTITY_TYPE%", "report")
+                .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
+                .replaceAll("%ENTITY_NAME%", finalReport.getName() + " of grant " + grantName);
+        String subject = subConfigValue.replaceAll(REPORT_NAME, finalReport.getName());
 
         return new String[]{subject, message};
     }
@@ -754,11 +763,11 @@ public class ReportService {
     }
 
     public String[] buildReportInvitationContent(Report report, String sub, String msg, String url) {
-        sub = sub.replace(GRANT_NAME, report.getGrant().getName());
-        sub = sub.replace(REPORT_NAME, report.getName());
-        msg = msg.replace(GRANT_NAME, report.getGrant().getName())
-                .replace("%TENANT_NAME%", report.getGrant().getGrantorOrganization().getName()).replace("%LINK%", url);
-        msg = msg.replace(REPORT_NAME, report.getName());
+        sub = sub.replaceAll(GRANT_NAME, report.getGrant().getName());
+        sub = sub.replaceAll(REPORT_NAME, report.getName());
+        msg = msg.replaceAll(GRANT_NAME, report.getGrant().getName())
+                .replaceAll("%TENANT_NAME%", report.getGrant().getGrantorOrganization().getName()).replaceAll("%LINK%", url);
+        msg = msg.replaceAll(REPORT_NAME, report.getName());
         return new String[]{sub, msg};
     }
 

@@ -80,6 +80,8 @@ end;
 $BODY$;
 
 
+truncate table messages;
+
 INSERT INTO public.messages VALUES (2, '%_for% has missing header information.', NULL);
 INSERT INTO public.messages VALUES (1, 'Planned Disbursements does not match the Grant Amount of %grantamount%.', NULL);
 INSERT INTO public.messages VALUES (3, 'Planned Disbursements is missing for this project.', NULL);
@@ -89,6 +91,15 @@ INSERT INTO public.messages VALUES (6, 'This grant is missing project KPIs.', NU
 INSERT INTO public.messages VALUES (7, 'This grant is missing project documents.', NULL);
 INSERT INTO public.messages VALUES (8, 'Disbursement record amount (%recorded_amount%) is lower than the disbursement approval amount (%requested_amount%). Unused approved amount (%unused_amount%) will not be available if you proceed.', NULL);
 INSERT INTO public.messages VALUES (9, 'Grant has KPIs specified but this report is not checking for KPIs', NULL);
+INSERT INTO public.messages VALUES (12, '<p>The following user(s) have registered but have performed no activity in Anudan Grant Management System. </p>
+<table border="1" cellspace="0" cellpadding="0">
+  <tr><td>Username</td>
+
+<td>Email Address</td>
+<td>Days Since Registration</td>
+    %SUMMARY%
+  </tr>
+</table>', 'Hygiene Check | Registered users with no activity');
 INSERT INTO public.messages VALUES (10, '<p>The following Grants have approved disbursement requests but are missing actual disbursements.</p>
 <table border="1" cellspace="0" cellpadding="0">
   <tr><td>Grant Name </td>
@@ -99,41 +110,41 @@ INSERT INTO public.messages VALUES (10, '<p>The following Grants have approved d
 </table>
 <hr>
 <p>
-</p>', 'Approved disbursement requests without actual disbursements ');
-INSERT INTO public.messages VALUES (11, '<table border="1" cellspace="0" cellpadding="0">
-  <tr><td>Invited users who have not onboarded</td>
-    %SUMMARY%
-  </tr>
-</table>', 'Invited tenant users who have never registered');
-INSERT INTO public.messages VALUES (12, '<table border="1" cellspace="0" cellpadding="0">
-  <tr><td>Active Users with no workflows</td>
-    %SUMMARY%
-  </tr>
-</table>', 'Active Users with no workflows');
-INSERT INTO public.messages VALUES (13, '<table border="1" cellspace="0" cellpadding="0">
-  <tr><td>Grants with missing KPIS</td>
+</p>', 'Hygiene Check | Approved disbursement requests without actual disbursements ');
+INSERT INTO public.messages VALUES (13, '<p>The following active grants have no KPIs.</p>
+<table border="1" cellspace="0" cellpadding="0">
+  <tr><td>Grants Name</td>
 <td>Grant Owner</td>
     %SUMMARY%
   </tr>
-</table>', 'Active Grants missing KPIs');
-INSERT INTO public.messages VALUES (14, '<table border="1" cellspace="0" cellpadding="0">
-  <tr><td>Grants with missing KPIS</td>
-<td>Grant Owner</td>
-    %SUMMARY%
-  </tr>
-</table>', 'Active Grants with KPI''s but no approved reports');
-INSERT INTO public.messages VALUES (15, '<table border="1" cellspace="0" cellpadding="0">
+</table>', 'Hygiene Check | Grants missing KPIs');
+INSERT INTO public.messages VALUES (15, '<p>The following active grants have no disbursements.</p>
+<table border="1" cellspace="0" cellpadding="0">
   <tr><td>Grants with missing Actual Disbursements</td>
-<td>Disbursement Status</td>
-<td>Disbursement Owner</td>
+<td>Grant Owner</td>
+<td>No of days Grant has been Active</td>
     %SUMMARY%
   </tr>
-</table>', 'Active Grants missing actual disbursement records');
+</table>', 'Hygiene Check | Active Grants missing recorded disbursements');
+INSERT INTO public.messages VALUES (11, '<p>The following user(s) have been invited to join the Anudan Grant Management System but have not yet registered.</p><table border="1" cellspace="0" cellpadding="0">
+  <tr><td>Email Address</td>
+<td>Date Invited</td>
+<td>Days since invitation</td>
+    %SUMMARY%
+  </tr>
+</table>', 'Hygiene Check | Unregistered Users');
+INSERT INTO public.messages VALUES (14, '<p>Hygiene Check | Grants missing approved reports</p>
+<table border="1" cellspace="0" cellpadding="0">
+  <tr><td>Grant Name</td>
+<td>Grant Owner</td>
+<td>Number of Days Grant has been Active </td>
+    %SUMMARY%
+  </tr>
+</table>', 'Hygiene Check | Grants missing approved reports');
 
 
 
-
-INSERT INTO public.hygiene_checks VALUES (3, 'select string_agg(concat(''<tr><td>'',u.email_id,''</td></tr>''),'''') summary,
+INSERT INTO public.hygiene_checks VALUES (3, 'select string_agg(concat(''<tr><td>'',u.email_id,''</td><td>'',to_char(u.created_at,''DD-MM-YYYY''),''</td><td>'',DATE_PART(''day'',now()::timestamp-u.created_at::timestamp),'' days</td></tr>''),'''') summary,
 (select string_agg(distinct a.email_id,'','') from users a
 			inner join user_roles b on b.user_id=a.id
 			inner join roles c on c.id=b.role_id
@@ -145,7 +156,7 @@ from users u
 inner join organizations b on u.organization_id=b.id
 where b.organization_type=''GRANTER'' and
 u.active=false and u.deleted=false
-group by u.organization_id', true, 'USERS', 11, 'Invited tenant users who have never registered', 'Invited tenant users who have never registered', '* */3 * * * *');
+group by u.organization_id', true, 'USERS', 11, 'Invited tenant users who have never registered', 'Invited tenant users who have never registered', '0 0 0 1 * *');
 INSERT INTO public.hygiene_checks VALUES (1, 'SELECT string_agg(concat(''<tr><td>'',X.grant_name,''</td><td>₹ '',to_char(X.approved_amount,''FM99,FM99,99,999D''),''</td><td>'',X.owner_name,''</td></tr>''),'''') summary,
 	   string_agg(distinct X.admin_emails,'','') emails_to,
 	   X.grantor_org_id
@@ -183,8 +194,24 @@ WHERE  X.approved_since_in_days :: INT > (SELECT config :: INT
 a.config_name = b.config_name
 WHERE
 a.config_name = ''MISSING_ACTUAL_DISBURSEMENTS_POST_APPROVAL'') Y)
-group by X.grantor_org_id', true, 'GRANT', 10, 'Approved disbursement requests without actual disbursements ', 'Approved disbursement requests without actual disbursements ', '* */3 * * * *');
-INSERT INTO public.hygiene_checks VALUES (4, 'select string_agg(concat(''<tr><td>'',u.first_name,'' '',u.last_name,'' ('',u.email_id,'')</td></tr>''),'''') summary,
+group by X.grantor_org_id', true, 'GRANT', 10, 'Approved disbursement requests without actual disbursements ', 'Approved disbursement requests without actual disbursements ', '0 0 0 1 * *');
+INSERT INTO public.hygiene_checks VALUES (5, 'select string_agg(concat(''<tr><td>'',gr.name,''</td><td>'',(select concat(first_name,'' '',last_name,'' ('',email_id,'')'') from users where id=wa.assignments ),''</td></tr>''),'''') summary,
+(select string_agg(distinct a.email_id,'','') from users a
+			inner join user_roles b on b.user_id=a.id
+			inner join roles c on c.id=b.role_id
+			where c.name=''Admin'' and a.active=true and a.deleted=false
+			and a.organization_id=gr.grantor_org_id
+			group by a.organization_id) emails_to,
+			 gr.grantor_org_id
+from grants gr
+inner join workflow_statuses w on w.id=gr.grant_status_id
+inner join grant_assignments wa on wa.grant_id=gr.id and wa.state_id=gr.grant_status_id
+where w.internal_status=''ACTIVE'' and gr.deleted=false and gr.id not in (
+select distinct g.id from grants g
+inner join grant_specific_sections s on s.grant_id=g.id
+inner join grant_specific_section_attributes a on a.section_id=s.id
+where a.field_type=''kpi'') group by gr.grantor_org_id', true, 'GRANT', 13, 'Active Grants missing KPIs', 'Active Grants missing KPIs', '0 0 0 1 * *');
+INSERT INTO public.hygiene_checks VALUES (4, 'select string_agg(concat(''<tr><td>'',u.first_name,'' '',u.last_name,''</td><td>'',u.email_id,''</td><td>'',date_part(''day'',now()::timestamp-u.created_at::timestamp),'' days</td></tr>''),'''') summary,
 (select string_agg(distinct a.email_id,'','') from users a
 			inner join user_roles b on b.user_id=a.id
 			inner join roles c on c.id=b.role_id
@@ -204,51 +231,8 @@ union
 select distinct da.owner from disbursement_assignments da
 inner join disbursement_snapshot ds on ds.disbursement_id=da.disbursement_id and da.owner is not null
 )
-group by o.id', true, 'USERS', 12, 'Active Users with no workflows', 'Active Users with no workflows', '* */3 * * * *');
-INSERT INTO public.hygiene_checks VALUES (5, 'select string_agg(concat(''<tr><td>'',gr.name,''</td><td>'',(select concat(first_name,'' '',last_name,'' ('',email_id,'')'') from users where id=wa.assignments ),''</td></tr>''),'''') summary,
-(select string_agg(distinct a.email_id,'','') from users a
-			inner join user_roles b on b.user_id=a.id
-			inner join roles c on c.id=b.role_id
-			where c.name=''Admin'' and a.active=true and a.deleted=false
-			and a.organization_id=gr.grantor_org_id
-			group by a.organization_id) emails_to,
-			 gr.grantor_org_id
-from grants gr
-inner join workflow_statuses w on w.id=gr.grant_status_id
-inner join grant_assignments wa on wa.grant_id=gr.id and wa.state_id=gr.grant_status_id
-where w.internal_status=''ACTIVE'' and gr.deleted=false and gr.id not in (
-select distinct g.id from grants g
-inner join grant_specific_sections s on s.grant_id=g.id
-inner join grant_specific_section_attributes a on a.section_id=s.id
-where a.field_type=''kpi'') group by gr.grantor_org_id', true, 'GRANT', 13, 'Active Grants missing KPIs', 'Active Grants missing KPIs', '* */3 * * * *');
-INSERT INTO public.hygiene_checks VALUES (6, 'select string_agg(concat(''<tr><td>'',Y.grant_name,''</td><td>'',Y.expected_reporting_date,''</td></tr>''),'''') summary,
-(select string_agg(distinct a.email_id,'','') from users a
-			inner join user_roles b on b.user_id=a.id
-			inner join roles c on c.id=b.role_id
-			where c.name=''Admin'' and a.active=true and a.deleted=false
-			and a.organization_id=Y.org
-			group by a.organization_id) emails_to,
-			y.org grantor_org_id
-from (select X.org,X.id,X.grant_name,X.start_date grant_start_date,
-get_earliest_report_date(min(X.lowest_frequency),X.start_date) expected_reporting_date ,
-(select exists (select * from reports r
-inner join workflow_statuses w on w.id=r.status_id
-where w.internal_status=''CLOSED''
-and r.grant_id=X.id and r.moved_on<=get_earliest_report_date(min(X.lowest_frequency),X.start_date)))
-from (select g.id,w.name status,g.grantor_org_id org,g.name grant_name,
-case when sa.frequency=''monthly'' then 1 else
-case when sa.frequency=''quarterly'' then 3 else
-case when sa.frequency=''half-yearly'' then 6 else 12 end
-end end lowest_frequency,
-g.start_date::date
-																									 from grants g
-inner join workflow_statuses w on w.id=g.grant_status_id
-inner join grant_string_attributes sa on sa.grant_id=g.id
-inner join grant_specific_section_attributes s on s.id=sa.section_attribute_id
-where w.internal_status=''ACTIVE'' and g.deleted=false and s.field_type=''kpi'' order by g.id) X
-group by X.id,X.grant_name,X.status,X.start_date,X.org) y
-group by y.org', true, 'GRANT', 14, 'Active Grants with KPI''s but no approved reports', 'Active Grants with KPI''s but no approved reports', '* */3 * * * *');
-INSERT INTO public.hygiene_checks VALUES (7, 'select string_agg(concat(''<tr><td>'',Y.name,''</td><td>'',Y.disbursement_status,''</td><td>'',Y.current_owner,''</td></tr>''),'''') summary,
+group by o.id', true, 'USERS', 12, 'Active Users with no workflows', 'Active Users with no workflows', '0 0 0 1 * *');
+INSERT INTO public.hygiene_checks VALUES (7, 'select string_agg(concat(''<tr><td>'',Y.name,''</td><td>'',Y.current_owner,''</td><td>'',date_part(''day'',now()::timestamp-Y.moved_on::timestamp),'' days</td></tr>''),'''') summary,
 (select string_agg(distinct a.email_id,'','') from users a
 			inner join user_roles b on b.user_id=a.id
 			inner join roles c on c.id=b.role_id
@@ -256,10 +240,11 @@ INSERT INTO public.hygiene_checks VALUES (7, 'select string_agg(concat(''<tr><td
 			and a.organization_id=Y.grantor_org_id
 			group by a.organization_id) emails_to,
 			Y.grantor_org_id
-from (select g.grantor_org_id,g.name,case when wd.name is null then ''No Disbursement Requests found'' else wd.name end disbursement_status,(select concat(o.first_name,'' '',o.last_name,'' ('',o.email_id,'')'') from disbursements m
-inner join disbursement_assignments n on n.disbursement_id=m.id and n.state_id=m.status_id
-inner join users o on o.id=n.owner
-and m.id=d.id) current_owner from grants g
+from (select g.grantor_org_id,g.name,case when wd.name is null then ''No Disbursement Requests found'' else wd.name end disbursement_status
+	  , concat(u.first_name,'' '',u.last_name,''( '',u.email_id,'')'') current_owner, g.moved_on
+	  from grants g
+	  inner join grant_assignments ga on ga.grant_id=g.id and ga.state_id=g.grant_status_id
+	  inner join users u on u.id=ga.assignments
 inner join workflow_statuses w on w.id=g.grant_status_id
 left join disbursements d on d.grant_id=g.id
 left join workflow_statuses wd on wd.id=d.status_id
@@ -271,5 +256,34 @@ where w.internal_status=''ACTIVE'' and (
 	(d.id is not null and wd.internal_status!=''CLOSED'' and ad.id is not null
 	)
 	) and now()>g.start_date + interval ''1 month''::interval order by g.id
-			   ) Y group by Y.grantor_org_id', true, 'GRANT', 15, 'Active Grants missing actual disbursement records', 'Active Grants missing actual disbursement records', '* */3 * * * *');
-
+			   ) Y group by Y.grantor_org_id', true, 'GRANT', 15, 'Active Grants missing actual disbursement records', 'Active Grants missing actual disbursement records', '0 0 0 1 * *');
+INSERT INTO public.hygiene_checks VALUES (6, 'select string_agg(concat(''<tr><td>'',Y.grant_name,''</td><td>'',Y.grant_owner,''</td><td>'',date_part(''day'',now()::timestamp-Y.moved_on::timestamp),'' days</td></tr>''),'''') summary,
+(select string_agg(distinct a.email_id,'','') from users a
+			inner join user_roles b on b.user_id=a.id
+			inner join roles c on c.id=b.role_id
+			where c.name=''Admin'' and a.active=true and a.deleted=false
+			and a.organization_id=Y.org
+			group by a.organization_id) emails_to,
+			y.org grantor_org_id
+from (select X.org,X.id,X.grant_name,X.start_date grant_start_date,X.grant_owner,X.moved_on,
+get_earliest_report_date(min(X.lowest_frequency),X.start_date) expected_reporting_date ,
+(select exists (select * from reports r
+inner join workflow_statuses w on w.id=r.status_id
+where w.internal_status=''CLOSED''
+and r.grant_id=X.id and r.moved_on<=get_earliest_report_date(min(X.lowest_frequency),X.start_date)))
+from (select g.id,w.name status,g.grantor_org_id org,g.name grant_name,
+case when sa.frequency=''monthly'' then 1 else
+case when sa.frequency=''quarterly'' then 3 else
+case when sa.frequency=''half-yearly'' then 6 else 12 end
+end end lowest_frequency,
+g.start_date::date,
+(select concat(first_name, '' '',last_name,'' ('',email_id,'')'') from users wu where wu.id=ga.assignments) grant_owner,
+g.moved_on
+from grants g
+inner join workflow_statuses w on w.id=g.grant_status_id
+inner join grant_assignments ga on ga.grant_id=g.id and ga.state_id=g.grant_status_id
+inner join grant_string_attributes sa on sa.grant_id=g.id
+inner join grant_specific_section_attributes s on s.id=sa.section_attribute_id
+where w.internal_status=''ACTIVE'' and g.deleted=false and s.field_type=''kpi'' order by g.id) X
+group by X.id,X.grant_owner,X.moved_on,X.grant_name,X.status,X.start_date,X.org) y
+group by y.org', true, 'GRANT', 14, 'Active Grants with KPI''s but no approved reports', 'Active Grants with KPI''s but no approved reports', '0 0 0 1 * *');

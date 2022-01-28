@@ -319,7 +319,7 @@ public class DisbursementsController {
                                                                                         .getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION, releaseService
-                                                                        .getCurrentRelease().getVersion()) });
+                                                                        .getCurrentRelease().getVersion()).replace("%TENANT%",disbursement.getGrant().getGrantorOrganization().getName()) });
 
                         Map<Long, Long> cleanAsigneesList = new HashMap<>();
                         for (Long ass : currentAssignments.values()) {
@@ -456,7 +456,7 @@ public class DisbursementsController {
                                 previousOwner == null ? " -"
                                                 : previousOwner.getFirstName().concat(" ")
                                                                 .concat(previousOwner.getLastName()),
-                                transition.getAction(), "Yes", PLEASE_REVIEW,
+                                transition==null?"Request Modifications":transition.getAction(), "Yes", PLEASE_REVIEW,
                                 disbursementWithNote.getNote() != null
                                                 && !disbursementWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                                                                 : "No",
@@ -484,7 +484,7 @@ public class DisbursementsController {
                                 previousOwner == null ? " -"
                                                 : previousOwner.getFirstName().concat(" ")
                                                                 .concat(previousOwner.getLastName()),
-                                transition.getAction(), "Yes", PLEASE_REVIEW,
+                        transition==null?"Request Modifications":transition.getAction(), "Yes", PLEASE_REVIEW,
                                 disbursementWithNote.getNote() != null
                                                 && !disbursementWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                                                                 : "No",
@@ -510,7 +510,8 @@ public class DisbursementsController {
                                                                         .getGrantorOrganization().getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION, releaseService
-                                                                        .getCurrentRelease().getVersion()) });
+                                                                        .getCurrentRelease().getVersion()).replace("%TENANT%",finalDisbursement.getGrant()
+                                                .getGrantorOrganization().getName()) });
                         usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent,
                                         u.getId(), finalDisbursement.getId(), DISBURSEMENT));
                         notificationsService.saveNotification(notificationContent, (finalCurrentOwner!=null)?finalCurrentOwner.getId():0l,
@@ -537,7 +538,8 @@ public class DisbursementsController {
                                                                         .getGrantorOrganization().getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION, releaseService
-                                                                        .getCurrentRelease().getVersion()) });
+                                                                        .getCurrentRelease().getVersion()).replace("%TENANT%",finalDisbursement.getGrant()
+                                                .getGrantorOrganization().getName()) });
                         usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent,
                                         u.getId(), finalDisbursement.getId(), DISBURSEMENT));
                         notificationsService.saveNotification(notificationContent, activeStatusOwner.getId(),
