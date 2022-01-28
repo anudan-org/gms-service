@@ -1454,7 +1454,8 @@ public class GrantClosureController {
                                 .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                 .getConfigValue()
-                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()) });
+                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",closure.getGrant()
+                                .getGrantorOrganization().getName()) });
 
                 assignment.setAssignment(granteeUser.getId());
             }
@@ -1492,7 +1493,8 @@ public class GrantClosureController {
                                     .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion()) });
+                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",closure.getGrant()
+                                    .getGrantorOrganization().getName()) });
 
             Map<Long, Long> cleanAsigneesList = new HashMap<>();
             for (Long ass : currentAssignments.values()) {
@@ -1626,7 +1628,8 @@ public class GrantClosureController {
                                     .getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion()) });
+                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalClosure.getGrant()
+                                    .getGrantorOrganization().getName()) });
 
             String[] notificationContent = closureService.buildEmailNotificationContent(finalClosure, currentOwner,
                     appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
@@ -1701,7 +1704,8 @@ public class GrantClosureController {
                                     .getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion()) });
+                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalClosure.getGrant()
+                                    .getGrantorOrganization().getName()) });
 
             String[] notificationContent = closureService.buildEmailNotificationContent(finalClosure, currentOwner,
                     appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
@@ -1776,7 +1780,8 @@ public class GrantClosureController {
                                         .getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                         .getConfigValue().replace(RELEASE_VERSION,
-                                        releaseService.getCurrentRelease().getVersion()) });
+                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalClosure.getGrant()
+                                        .getGrantorOrganization().getName()) });
 
                 String[] notificationContent = closureService.buildEmailNotificationContent(finalClosure, granteeUser,
                         appConfigService.getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),

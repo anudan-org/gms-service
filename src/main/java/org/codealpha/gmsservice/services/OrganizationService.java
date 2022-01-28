@@ -99,7 +99,8 @@ public class OrganizationService {
 						.getAppConfigForGranterOrg(user.getOrganization().getId(),
 								AppConfiguration.PLATFORM_EMAIL_FOOTER)
 						.getConfigValue()
-						.replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()) });
+						.replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",user.getOrganization()
+						.getName()) });
 	}
 
 	public Organization findByName(String grantee) {

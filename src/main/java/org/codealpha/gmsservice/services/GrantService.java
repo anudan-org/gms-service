@@ -1254,7 +1254,8 @@ public class GrantService {
                                     .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replaceAll(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion())});
+                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalGrant
+                                    .getGrantorOrganization().getName())});
 
             usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
                     finalGrant.getId(), GRANT));
@@ -1283,7 +1284,8 @@ public class GrantService {
                                         .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                         .getConfigValue().replaceAll(RELEASE_VERSION,
-                                        releaseService.getCurrentRelease().getVersion())});
+                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalGrant
+                                        .getGrantorOrganization().getName())});
 
                 usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
                         finalGrant.getId(), GRANT));
