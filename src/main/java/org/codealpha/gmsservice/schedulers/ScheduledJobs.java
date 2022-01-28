@@ -49,6 +49,8 @@ public class ScheduledJobs {
     AppConfigService appConfigService;
     @Autowired
     private NotificationsService notificationsService;
+    @Autowired
+    private OrganizationService organizationService;
 
     @Autowired
     private CommonEmailSevice emailSevice;
@@ -172,7 +174,8 @@ public class ScheduledJobs {
                         .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                         .getConfigValue()
-                        .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion())});
+                        .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",report.getGrant()
+                        .getGrantorOrganization().getName())});
     }
 
     private String buildLink(String environment, boolean forTenant, String tenant) {
@@ -280,7 +283,8 @@ public class ScheduledJobs {
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                                 .getConfigValue()
                                                                 .replace(RELEASE_VERSION, releaseService
-                                                                .getCurrentRelease().getVersion())});
+                                                                .getCurrentRelease().getVersion()).replace("%TENANT%",report.getGrant()
+                                                                .getGrantorOrganization().getName())});
                                     }
                                 }
 
@@ -298,7 +302,7 @@ public class ScheduledJobs {
 
                                 List<ReportAssignment> reportAssignments = reportService
                                         .getAssignmentsForReport(report);
-                                reportAssignments.removeIf(u -> userService.getUserById(u.getId()).getOrganization()
+                                reportAssignments.removeIf(u -> userService.getUserById(u.getAssignment()).getOrganization()
                                         .getOrganizationType().equalsIgnoreCase(GRANTEE));
                                 String[] ccList = new String[reportAssignments.size()];
 
@@ -337,7 +341,8 @@ public class ScheduledJobs {
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                                 .getConfigValue()
                                                                 .replace(RELEASE_VERSION, releaseService
-                                                                .getCurrentRelease().getVersion())});
+                                                                .getCurrentRelease().getVersion()).replace("%TENANT%",report.getGrant()
+                                                                .getGrantorOrganization().getName())});
                                     }
                                 }
 
@@ -426,7 +431,8 @@ public class ScheduledJobs {
                                                                 grant.getGrantorOrganization().getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION,
-                                                        releaseService.getCurrentRelease().getVersion())});
+                                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",grant
+                                                        .getGrantorOrganization().getName())});
                                     }
                                 }
 
@@ -480,7 +486,8 @@ public class ScheduledJobs {
                                                                 grant.getGrantorOrganization().getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION,
-                                                        releaseService.getCurrentRelease().getVersion())});
+                                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",grant
+                                                        .getGrantorOrganization().getName())});
                                     }
                                 }
 
@@ -570,7 +577,8 @@ public class ScheduledJobs {
                                                                         .getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION,
-                                                        releaseService.getCurrentRelease().getVersion())});
+                                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",disbursement.getGrant()
+                                                        .getGrantorOrganization().getName())});
                                     }
                                 }
 
@@ -625,7 +633,8 @@ public class ScheduledJobs {
                                                                         .getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION,
-                                                        releaseService.getCurrentRelease().getVersion())});
+                                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",disbursement.getGrant()
+                                                        .getGrantorOrganization().getName())});
                                     }
                                 }
 
@@ -727,7 +736,8 @@ public class ScheduledJobs {
                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                 .getConfigValue().replace(RELEASE_VERSION,
-                releaseService.getCurrentRelease().getVersion())});
+                releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",grant
+                .getGrantorOrganization().getName())});
     }
 
     @Scheduled(cron = "0 * * * * *")
@@ -761,7 +771,7 @@ public class ScheduledJobs {
                                         .getAppConfigForGranterOrg(grantorOrg,
                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                         .getConfigValue()
-                                        .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion())});
+                                        .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",organizationService.get(grantorOrg).getName())});
                     }
                 }catch (SQLException throwables) {
                     logger.error(throwables.getMessage(),throwables);

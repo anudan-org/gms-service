@@ -618,7 +618,8 @@ public class GrantController {
                                 .getAppConfigForGranterOrg(existingGrant.getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                 .getConfigValue().replace(RELEASE_VERSION,
-                                releaseService.getCurrentRelease().getVersion())});
+                                releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",existingGrant
+                                .getGrantorOrganization().getName())});
 
         final Grant finalGrant = existingGrant;
         User finalPrevOwner = prevOwner;
@@ -1219,7 +1220,8 @@ public class GrantController {
                                     .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion())});
+                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",grant
+                                    .getGrantorOrganization().getName())});
 
             Map<Long, Long> cleanAsigneesList = new HashMap<>();
             for (Long ass : currentAssignments.values()) {
@@ -1798,7 +1800,8 @@ public class GrantController {
                                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                 .getConfigValue()
-                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion())});
+                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",grant
+                                .getGrantorOrganization().getName())});
             } catch (UnsupportedEncodingException e) {
                 logger.error(e.getMessage(), e);
             }

@@ -1243,7 +1243,8 @@ public class ReportController {
                                 .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                 .getConfigValue()
-                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion())});
+                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",report.getGrant()
+                                .getGrantorOrganization().getName())});
 
                 assignment.setAssignment(granteeUser.getId());
             }
@@ -1281,7 +1282,8 @@ public class ReportController {
                                     .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion())});
+                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",report.getGrant()
+                                    .getGrantorOrganization().getName())});
 
             Map<Long, Long> cleanAsigneesList = new HashMap<>();
             for (Long ass : currentAssignments.values()) {
@@ -1440,7 +1442,8 @@ public class ReportController {
                                     .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion())});
+                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalReport.getGrant()
+                                    .getGrantorOrganization().getName())});
 
             String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, currentOwner,
                     appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
@@ -1515,7 +1518,8 @@ public class ReportController {
                                     .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion())});
+                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalReport.getGrant()
+                                    .getGrantorOrganization().getName())});
 
             String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, currentOwner,
                     appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
@@ -1590,7 +1594,8 @@ public class ReportController {
                                         .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                         .getConfigValue().replace(RELEASE_VERSION,
-                                        releaseService.getCurrentRelease().getVersion())});
+                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalReport.getGrant()
+                                        .getGrantorOrganization().getName())});
 
                 String notificationContent[] = reportService.buildEmailNotificationContent(finalReport, granteeUser,
                         appConfigService.getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),

@@ -938,7 +938,7 @@ public class UserController {
                 .getConfigValue();
         String mailFooter = appConfigService
                 .getAppConfigForGranterOrg(tenantOrg.getId(), AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()
-                .replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion());
+                .replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",tenantOrg.getName());
 
         return userService.sendPasswordResetMail(user, mailSubject, mailMessage, mailFooter);
     }
