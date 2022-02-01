@@ -467,7 +467,7 @@ public class GrantClosureController {
             }
         });
 
-        closure.setFlowAuthorities(closureService.getFlowAuthority(closure, userId));
+        closure.setFlowAuthorities(closureService.getClosureFlowAuthority(closure, userId));
 
         List<GrantTag> grantTags = grantService.getTagsForGrant(closure.getGrant().getId());
 
@@ -1612,7 +1612,7 @@ public class GrantClosureController {
                             AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                    transition.getAction(), YES, PLEASE_REVIEW,
+                    transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE) ? YES
                             : NO,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
@@ -1638,7 +1638,7 @@ public class GrantClosureController {
                             AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                    transition.getAction(), YES, PLEASE_REVIEW,
+                    transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE) ? YES
                             : NO,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
@@ -1662,7 +1662,7 @@ public class GrantClosureController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                        transition.getAction(), YES, PLEASE_REVIEW,
+                        transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
                                 ? YES
                                 : NO,
@@ -1688,7 +1688,7 @@ public class GrantClosureController {
                             AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                    transition.getAction(), YES, PLEASE_REVIEW,
+                    transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE) ? YES
                             : NO,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
@@ -1714,7 +1714,7 @@ public class GrantClosureController {
                             AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                    transition.getAction(), YES, PLEASE_REVIEW,
+                    transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE) ? YES
                             : NO,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
@@ -1738,7 +1738,7 @@ public class GrantClosureController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                        transition.getAction(), YES, PLEASE_REVIEW,
+                        transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
                                 ? YES
                                 : NO,
@@ -1764,7 +1764,7 @@ public class GrantClosureController {
                                 AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                         previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                        transition.getAction(), YES, PLEASE_REVIEW,
+                        transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE) ? YES
                                 : NO,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
@@ -1790,7 +1790,7 @@ public class GrantClosureController {
                                 AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                         previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                        transition.getAction(), YES, PLEASE_REVIEW,
+                        transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE) ? YES
                                 : NO,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
@@ -1816,7 +1816,7 @@ public class GrantClosureController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                        transition.getAction(), YES, PLEASE_REVIEW,
+                        transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
                                 ? YES
                                 : NO,

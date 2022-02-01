@@ -131,4 +131,43 @@ public interface WorkflowPermissionRepository extends CrudRepository<WorkFlowPer
           "          order by wst.is_forward_direction desc",nativeQuery = true)
   public List<WorkFlowPermission> getPermissionsForReportFlow(Long statusId,Long userId,Long reportId);
 
+  @Query(value = "WITH RECURSIVE wst AS ( \n" +
+          "                    SELECT \n" +
+          "                    id, \n" +
+          "                    from_state_id, \n" +
+          "                    (select name from workflow_statuses where id = c.from_state_id) from_name, \n" +
+          "                    to_state_id, \n" +
+          "                    (select name from workflow_statuses where id = c.to_state_id) to_name, \n" +
+          "                    c.action, \n" +
+          "                    c.note_required, \n" +
+          "                    c.seq_order, \n" +
+          "                    c.is_forward_direction \n" +
+          "                    FROM \n" +
+          "                    workflow_status_transitions c \n" +
+          "                    WHERE \n" +
+          "                    from_state_id = ?1 \n" +
+          "                    UNION \n" +
+          "                    SELECT \n" +
+          "                    e.id, \n" +
+          "                    e.from_state_id, \n" +
+          "                    (select name from workflow_statuses where id = e.from_state_id) from_name, \n" +
+          "                    e.to_state_id, \n" +
+          "                    (select name from workflow_statuses where id = e.to_state_id) to_name, \n" +
+          "                    e.action, \n" +
+          "                    e.note_required, \n" +
+          "                    e.seq_order, \n" +
+          "                    false as is_forward_direction \n" +
+          "                    FROM \n" +
+          "                    workflow_status_transitions e \n" +
+          "                    INNER JOIN wst s ON s.from_state_id = e.to_state_id\n" +
+          "                    ) SELECT \n" +
+          "                    wst.* \n" +
+          "                    FROM \n" +
+          "                    wst \n" +
+          "                    inner join closure_assignments c on c.state_id=wst.from_state_id  \n" +
+          "                    where  \n" +
+          "                    c.closure_id=?3 and ((wst.is_forward_direction=true and c.assignment=?2) or (wst.is_forward_direction = false and  exists (select * from closure_assignments where assignment=?2 and closure_id=?3 and state_id=?1) )) \n" +
+          "                    order by wst.is_forward_direction desc",nativeQuery = true)
+  public List<WorkFlowPermission> getPermissionsForClosureFlow(Long statusId,Long userId,Long closureId);
+
 }
