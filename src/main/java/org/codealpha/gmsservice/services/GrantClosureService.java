@@ -66,6 +66,8 @@ public class GrantClosureService {
     private UserService userService;
     @Autowired
     private ClosureReasonsRepository closureReasonsRepository;
+    @Autowired
+    private WorkflowPermissionRepository workflowPermissionRepository;
 
     public List<GranterClosureTemplate> findTemplatesAndPublishedStatusAndPrivateStatus(Long grantId, boolean isPublished, boolean isPrivate) {
         return granterClosureTemplateRepository.findByGranterIdAndPublishedAndPrivateToClosure(grantId, isPublished,
@@ -130,6 +132,11 @@ public class GrantClosureService {
             }
             assignmentsVO.setHistory(assignmentHistories);
         }
+    }
+
+    public List<WorkFlowPermission> getClosureFlowAuthority(GrantClosure closure, Long userId){
+
+        return workflowPermissionRepository.getPermissionsForClosureFlow(closure.getStatus().getId(),userId,closure.getId());
     }
 
     public List<WorkFlowPermission> getFlowAuthority(GrantClosure closure, Long userId) {
@@ -611,6 +618,15 @@ public class GrantClosureService {
         Optional<User> optionalUser = userRepository.findById(userId);
         if(optionalUser.isPresent()){
             return closureRepository.findAllAssignedClosuresForGranterUser(userId,optionalUser.get().getOrganization().getId());
+        }
+
+        return new ArrayList<>();
+    }
+
+    public List<GrantClosure> getClosuresForGranteeUser(Long userId) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if(optionalUser.isPresent()){
+            return closureRepository.findAllAssignedClosuresForGranteeUser(userId,optionalUser.get().getOrganization().getId(),"ACTIVE");
         }
 
         return new ArrayList<>();
