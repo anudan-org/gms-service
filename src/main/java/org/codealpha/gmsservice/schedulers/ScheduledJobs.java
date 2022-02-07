@@ -779,7 +779,7 @@ public class ScheduledJobs {
                     DataSourceUtils.doReleaseConnection(conn, dataSource);
                 }
             }else{
-                System.out.println("no run");
+                //System.out.println("no run");
             }
         }
     }

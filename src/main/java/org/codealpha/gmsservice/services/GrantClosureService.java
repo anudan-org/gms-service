@@ -623,6 +623,15 @@ public class GrantClosureService {
         return new ArrayList<>();
     }
 
+    public List<GrantClosure> getClosuresForGranteeUser(Long userId) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if(optionalUser.isPresent()){
+            return closureRepository.findAllAssignedClosuresForGranteeUser(userId,optionalUser.get().getOrganization().getId(),"ACTIVE");
+        }
+
+        return new ArrayList<>();
+    }
+
     public void deleteClosure(GrantClosure closure) {
 
         if(checkIfClosureMovedThroughWFAtleastOnce(closure.getId())){

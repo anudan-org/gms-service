@@ -21,7 +21,7 @@ public class GrantClosureHistory {
     private String reason;
     @OneToOne
     @JoinColumn(referencedColumnName = "id")
-    private GranterReportTemplate template;
+    private GranterClosureTemplate template;
     @OneToOne
     @JoinColumn(referencedColumnName = "id")
     private Grant grant;
@@ -65,7 +65,7 @@ public class GrantClosureHistory {
     @Column
     private String closureDetail;
     @Column
-    private boolean deleted;
+    private Boolean deleted;
     @Column
     private String linkedApprovedReports;
     @Column
@@ -169,11 +169,11 @@ public class GrantClosureHistory {
         this.seqid = seqid;
     }
 
-    public GranterReportTemplate getTemplate() {
+    public GranterClosureTemplate getTemplate() {
         return template;
     }
 
-    public void setTemplate(GranterReportTemplate template) {
+    public void setTemplate(GranterClosureTemplate template) {
         this.template = template;
     }
 
@@ -273,11 +273,11 @@ public class GrantClosureHistory {
         this.closureDetail = closureDetail;
     }
 
-    public boolean isDeleted() {
+    public Boolean isDeleted() {
         return deleted;
     }
 
-    public void setDeleted(boolean deleted) {
+    public void setDeleted(Boolean deleted) {
         this.deleted = deleted;
     }
 

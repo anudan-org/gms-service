@@ -150,7 +150,14 @@ public class GrantClosureController {
             @RequestHeader("X-TENANT-CODE") String tenantCode
     ){
 
-        List<GrantClosure> closures = closureService.getClosuresForUser(userId);
+        Organization userOrg = userService.getUserById(userId).getOrganization();
+        List<GrantClosure> closures = new ArrayList<>();
+        if(userOrg.getOrganizationType().equalsIgnoreCase("GRANTEE")){
+            closures = closureService.getClosuresForGranteeUser(userId);
+        }else if(userOrg.getOrganizationType().equalsIgnoreCase("GRANTER")){
+            closures = closureService.getClosuresForUser(userId);
+        }
+
 
         for(GrantClosure closure : closures){
             closureToReturn(closure,userId);
@@ -1572,6 +1579,7 @@ public class GrantClosureController {
 
         List<User> usersToNotify = new ArrayList<>();
         List<ClosureAssignments> assigments = closureService.getAssignmentsForClosure(closure);
+        assigments.removeIf(e -> e.getAssignment()==null);
         assigments.forEach(ass -> {
             if (usersToNotify.stream().noneMatch(u -> u.getId().longValue() == ass.getAssignment().longValue())) {
                 usersToNotify.add(userService.getUserById(ass.getAssignment()));
@@ -1584,7 +1592,8 @@ public class GrantClosureController {
                 .findAny();
         User currentOwner = null;
         String currentOwnerName = STRNOSPACE;
-        if (closureAss.isPresent()) {
+        if (closureAss.isPresent() && closureAss.get().getAssignment()!=null) {
+
             currentOwner = userService.getUserById(closureAss.get().getAssignment());
             currentOwnerName = currentOwner.getFirstName().concat(STREMPTY).concat(currentOwner.getLastName());
         }
@@ -1953,12 +1962,12 @@ public class GrantClosureController {
     }
 
     @GetMapping("/{closureId}/history/")
-    public List<GrantClosureHistory> getReportHistory(@PathVariable("closureId") Long closureId,
+    public List<GrantClosureHistory> getClosureHistory(@PathVariable("closureId") Long closureId,
                                                 @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         List<GrantClosureHistory> history = new ArrayList<>();
         List<ClosureSnapshot> closureSnapshotHistory = closureSnapshotService.getClosureSnapshotForClosure(closureId);
-        if ((closureSnapshotHistory != null && closureSnapshotHistory.get(0).getFromStateId() == null)) {
+        if ((closureSnapshotHistory.size()>0 && closureSnapshotHistory.get(0).getFromStateId() == null)) {
             history = closureService.getClosureHistory(closureId);
             for (GrantClosureHistory historyEntry : history) {
                 historyEntry.setNoteAddedByUser(userService.getUserById(historyEntry.getNoteAddedBy()));
