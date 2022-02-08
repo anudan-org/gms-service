@@ -1244,6 +1244,7 @@ public class GrantClosureController {
         files.add(new File("README.md"));
 
         User user = userService.getUserById(userId);
+        GrantClosure closure = closureService.getClosureById(closureId);
 
         // packing files
         for (Long attachmentId : downloadRequest.getAttachmentIds()) {
@@ -1254,20 +1255,20 @@ public class GrantClosureController {
             File file = null;
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
                 file = resourceLoader.getResource(FILE + uploadLocation
-                        + user.getOrganization().getCode() + CLOSURE_DOCUMENTS + closureId + "/"
+                        + user.getOrganization().getName() + CLOSURE_DOCUMENTS + closureId + "/"
                         + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType())
                         .getFile();
                 if (!file.exists()) {
                     file = resourceLoader
                             .getResource(FILE + uploadLocation
-                                    + tenantCode.toUpperCase()
+                                    + closure.getGrant().getGrantorOrganization().getCode().toUpperCase()
                                     + CLOSURE_DOCUMENTS + closureId + "/" + sectionId + "/" + attributeId + "/"
                                     + attachment.getName() + "." + attachment.getType())
                             .getFile();
                 }
             } else {
                 file = resourceLoader.getResource(
-                        FILE + uploadLocation + tenantCode + CLOSURE_DOCUMENTS + closureId + "/" + sectionId + "/"
+                        FILE + uploadLocation + closure.getGrant().getGrantorOrganization().getCode()+CLOSURE_DOCUMENTS + closureId + "/" + sectionId + "/"
                                 + attributeId + "/" + attachment.getName() + "." + attachment.getType())
                         .getFile();
                 if (!file.exists()) {
