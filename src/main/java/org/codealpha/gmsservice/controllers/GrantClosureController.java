@@ -1154,7 +1154,7 @@ public class GrantClosureController {
         User user = userService.getUserById(userId);
 
         String filePath = STRNOSPACE;
-            filePath = uploadLocation + closure.getGrant().getOrganization().getCode() + CLOSURE_DOCUMENTS + closureId
+            filePath = uploadLocation + closure.getGrant().getGrantorOrganization().getCode() + CLOSURE_DOCUMENTS + closureId
                     + "/" + attr.getSection().getId() + "/" + attr.getSectionAttribute().getId() + "/";
         File dir = new File(filePath);
         dir.mkdirs();
