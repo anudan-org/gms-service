@@ -303,7 +303,7 @@ public class DisbursementService {
         if(finalDisbursement.getGrant().getReferenceNo()!=null){
             grantName = "[".concat(finalDisbursement.getGrant().getReferenceNo()).concat("] ").concat(finalDisbursement.getGrant().getName());
         }else{
-            grantName = finalDisbursement.getGrant().getName();
+            grantName = finalDisbursement.getGrant().getReferenceNo()!=null?"[".concat(finalDisbursement.getGrant().getReferenceNo()).concat("] ").concat(finalDisbursement.getGrant().getName()):finalDisbursement.getGrant().getName();
         }
 
         String message = msgConfigValue.replaceAll("%GRANT_NAME%", grantName)

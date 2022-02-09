@@ -661,7 +661,7 @@ public class ReportService {
         if (finalReport.getGrant().getReferenceNo() != null) {
             grantName = "[".concat(finalReport.getGrant().getReferenceNo()).concat("] ").concat(finalReport.getGrant().getName());
         } else {
-            grantName = finalReport.getGrant().getName();
+            grantName =  finalReport.getGrant().getReferenceNo()!=null?"[".concat(finalReport.getGrant().getReferenceNo()).concat("] ").concat(finalReport.getGrant().getName()):finalReport.getGrant().getName();
         }
         currentOwner = currentOwner==null?"":currentOwner;
         currentState=currentState==null?"":currentState;
@@ -763,9 +763,10 @@ public class ReportService {
     }
 
     public String[] buildReportInvitationContent(Report report, String sub, String msg, String url) {
-        sub = sub.replaceAll(GRANT_NAME, report.getGrant().getName());
+        String finalGrantName = report.getGrant().getReferenceNo()!=null?"[".concat(report.getGrant().getReferenceNo()).concat("] ").concat(report.getGrant().getName()):report.getGrant().getName();
+        sub = sub.replaceAll(GRANT_NAME,finalGrantName );
         sub = sub.replaceAll(REPORT_NAME, report.getName());
-        msg = msg.replaceAll(GRANT_NAME, report.getGrant().getName())
+        msg = msg.replaceAll(GRANT_NAME, finalGrantName)
                 .replaceAll("%TENANT_NAME%", report.getGrant().getGrantorOrganization().getName()).replaceAll("%LINK%", url);
         msg = msg.replaceAll(REPORT_NAME, report.getName());
         return new String[]{sub, msg};
