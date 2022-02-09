@@ -517,8 +517,9 @@ public class GrantService {
     }
 
     public String[] buildGrantInvitationContent(Grant grant, String sub, String msg, String url) {
-        sub = sub.replaceAll(GRANT_NAME, grant.getName());
-        msg = msg.replaceAll(GRANT_NAME, grant.getName())
+        String finalGrantName = grant.getReferenceNo()!=null?"[".concat(grant.getReferenceNo()).concat("] ").concat(grant.getName()):grant.getName();
+        sub = sub.replaceAll(GRANT_NAME, finalGrantName);
+        msg = msg.replaceAll(GRANT_NAME, finalGrantName)
                 .replaceAll("%TENANT_NAME%", grant.getGrantorOrganization().getName()).replaceAll("%LINK%", url);
         return new String[]{sub, msg};
     }

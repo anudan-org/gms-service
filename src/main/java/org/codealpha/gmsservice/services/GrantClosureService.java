@@ -407,8 +407,9 @@ public class GrantClosureService {
 
 
     public String[] buildClosureInvitationContent(GrantClosure closure, String sub, String msg, String url) {
-        sub = sub.replace(GRANT_NAME, closure.getGrant().getName());
-        msg = msg.replace(GRANT_NAME, closure.getGrant().getName())
+        String finalGrantName = closure.getGrant().getReferenceNo()!=null?"[".concat(closure.getGrant().getReferenceNo()).concat("] ").concat(closure.getGrant().getName()):closure.getGrant().getName();
+        sub = sub.replace(GRANT_NAME, finalGrantName);
+        msg = msg.replace(GRANT_NAME, finalGrantName)
                 .replace(TENANT_NAME, closure.getGrant().getGrantorOrganization().getName()).replace("%LINK%", url);
         return new String[] { sub, msg };
     }
@@ -475,11 +476,12 @@ public class GrantClosureService {
         if(finalClosure.getGrant().getReferenceNo()!=null){
             grantName = "[".concat(finalClosure.getGrant().getReferenceNo()).concat("] ").concat(finalClosure.getGrant().getName());
         }else{
-            grantName = finalClosure.getGrant().getName();
+            grantName = finalClosure.getGrant().getReferenceNo()!=null?"[".concat(finalClosure.getGrant().getReferenceNo()).concat("] ").concat(finalClosure.getGrant().getName()):finalClosure.getGrant().getName();
         }
 
         String message = msgConfigValue.replace(GRANT_NAME, grantName)
                 .replace("%CLOSURE_LINK%", granteeUrl)
+                .replace("%GRANT_NAME%",grantName)
                 .replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner)
                 .replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner)
                 .replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges)
