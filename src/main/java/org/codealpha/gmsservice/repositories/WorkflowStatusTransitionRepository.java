@@ -13,5 +13,7 @@ public interface WorkflowStatusTransitionRepository extends CrudRepository<Workf
 
     public List<WorkflowStatusTransition> findByWorkflow(Workflow workflow);
 
-    public WorkflowStatusTransition findByFromState(WorkflowStatus fromState);
+    public List<WorkflowStatusTransition> findByFromState(WorkflowStatus fromState);
+
+    public List<WorkflowStatusTransition> findByToState(WorkflowStatus toState);
 }

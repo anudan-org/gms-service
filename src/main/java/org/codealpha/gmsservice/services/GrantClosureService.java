@@ -68,6 +68,8 @@ public class GrantClosureService {
     private ClosureReasonsRepository closureReasonsRepository;
     @Autowired
     private WorkflowPermissionRepository workflowPermissionRepository;
+    @Autowired
+    private ClosureSnapshotRepository closureSnapshotRepository;
 
     public List<GranterClosureTemplate> findTemplatesAndPublishedStatusAndPrivateStatus(Long grantId, boolean isPublished, boolean isPrivate) {
         return granterClosureTemplateRepository.findByGranterIdAndPublishedAndPrivateToClosure(grantId, isPublished,
@@ -134,9 +136,50 @@ public class GrantClosureService {
         }
     }
 
-    public List<WorkFlowPermission> getClosureFlowAuthority(GrantClosure closure, Long userId){
+    public List<WorkFlowPermission> getClosureFlowAuthority(GrantClosure closure, Long userId) {
+        List<WorkFlowPermission> permissions = new ArrayList<>();
+        boolean foundReturn = false;
 
-        return workflowPermissionRepository.getPermissionsForClosureFlow(closure.getStatus().getId(),userId,closure.getId());
+        List<WorkflowStatusTransition> forwardTransitions = workflowStatusTransitionRepository.findByFromState(closure.getStatus());
+        for(WorkflowStatusTransition transition: forwardTransitions){
+            WorkFlowPermission wf = new WorkFlowPermission();
+            wf.setForwardDirection(true);
+            wf.setAction(transition.getAction());
+            wf.setToStateId(transition.getToState().getId());
+            wf.setToName(transition.getToState().getName());
+            wf.setFromName(transition.getFromState().getName());
+            wf.setFromStateId(transition.getFromState().getId());
+            wf.setId(transition.getId());
+            wf.setNoteRequired(true);
+            wf.setSeqOrder(transition.getSeqOrder());
+            permissions.add(wf);
+        }
+
+            for(ClosureSnapshot snap: closureSnapshotRepository.getClosureSnapshotsForReport(closure.getId())){
+                WorkflowStatusTransition transition = workflowStatusTransitionRepository.findByFromStateAndToState(workflowStatusRepository.getById(snap.getFromStateId()),workflowStatusRepository.getById(snap.getToStateId()));
+                if(transition==null){
+                    foundReturn = true;
+                    break;
+                }else{
+                    WorkFlowPermission perm = new WorkFlowPermission();
+                    perm.setFromStateId(transition.getFromState().getId());
+                    perm.setFromName(transition.getFromState().getName());
+                    perm.setSeqOrder(transition.getSeqOrder());
+                    perm.setNoteRequired(true);
+                    perm.setId(transition.getId());
+                    perm.setToName(transition.getToState().getName());
+                    perm.setToStateId(transition.getToState().getId());
+                    perm.setAction(transition.getAction());
+                    perm.setForwardDirection(false);
+                    permissions.add(perm);
+                }
+            }
+
+            if(foundReturn){
+                Long stateId = permissions.get(permissions.size()-1).getFromStateId();
+                permissions.addAll(workflowPermissionRepository.simpleBackFlow(stateId));
+            }
+ return permissions;
     }
 
     public List<WorkFlowPermission> getFlowAuthority(GrantClosure closure, Long userId) {

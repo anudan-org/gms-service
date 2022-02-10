@@ -15,6 +15,6 @@ public interface ClosureSnapshotRepository extends CrudRepository<ClosureSnapsho
     @Query(value = "select * from closure_snapshot where closure_id=?1 order by id desc limit 1", nativeQuery = true)
     public ClosureSnapshot findByMostRecentByClosureId(Long closureId);
 
-    @Query(value = "select * from closure_snapshot where closure_id=?1 order by id DESC,id desc", nativeQuery = true)
+    @Query(value = "select * from closure_snapshot where closure_id=?1 order by moved_on DESC,id desc", nativeQuery = true)
     List<ClosureSnapshot> getClosureSnapshotsForReport(Long closureId);
 }
