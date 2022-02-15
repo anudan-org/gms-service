@@ -23,7 +23,7 @@ public class WorkflowPermissionService {
 
     public List<WorkFlowPermission> getGrantFlowPermissions(Long grantStatusId,Long userId,Long grantId) {
 
-        return workflowPermissionRepository.getPermissionsForGrantFlow(grantStatusId,userId,grantId);
+        return workflowPermissionRepository.getPermissionsForGrantFlow(grantStatusId,grantId);
     }
 
     public List<WorkFlowPermission> getFlowPermisionsOfRoleForStateTransition(Long granterOrgId, List<UserRole> userRoles, Long grantStatusId) {
