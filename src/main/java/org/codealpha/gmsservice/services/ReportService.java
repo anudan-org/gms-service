@@ -558,7 +558,7 @@ public class ReportService {
 
     public List<WorkFlowPermission> getFlowReportFlowAuthority(Report report, Long userId){
 
-        return workflowPermissionRepository.getPermissionsForReportFlow(report.getStatus().getId(),userId,report.getId());
+        return workflowPermissionRepository.getPermissionsForReportFlow(report.getStatus().getId(),report.getId());
     }
 
     public List<WorkFlowPermission> getFlowAuthority(Report report, Long userId) {

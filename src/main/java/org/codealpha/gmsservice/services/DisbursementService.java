@@ -112,7 +112,7 @@ public class DisbursementService {
 
     public Disbursement disbursementToReturn(Disbursement disbursement, Long userId) {
         List<WorkFlowPermission> permissions = workflowPermissionRepository
-                .getPermissionsForDisbursementFlow(disbursement.getStatus().getId(), userId, disbursement.getId());
+                .getPermissionsForDisbursementFlow(disbursement.getStatus().getId(), disbursement.getId());
 
         disbursement.setFlowPermissions(permissions);
         List<DisbursementAssignment> disbursementAssignments = disbursementAssignmentRepository

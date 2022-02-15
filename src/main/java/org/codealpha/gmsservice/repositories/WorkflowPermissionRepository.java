@@ -43,9 +43,9 @@ public interface WorkflowPermissionRepository extends CrudRepository<WorkFlowPer
           "\twst\n" +
           "left join grant_assignments c on c.state_id=wst.from_state_id \n" +
           "where \n" +
-          "c.grant_id=?3 and ((wst.is_forward_direction=true and c.assignments=?2) or (wst.is_forward_direction = false and  exists (select * from grant_assignments where assignments=?2 and grant_id=?3 and state_id=?1) ))\n" +
+          "c.grant_id=?2 and ((wst.is_forward_direction=true) or (wst.is_forward_direction = false and  exists (select * from grant_assignments where grant_id=?2 and state_id=?1) ))\n" +
           "order by wst.is_forward_direction desc", nativeQuery = true)
-  public List<WorkFlowPermission> getPermissionsForGrantFlow(Long grantStatusId,Long userId,Long grantId);
+  public List<WorkFlowPermission> getPermissionsForGrantFlow(Long grantStatusId,Long grantId);
 
   @Query(value = "select wst.id, wst.from_state_id, (select name from workflow_statuses where id = wst.from_state_id) from_name, wst.to_state_id, (select name from workflow_statuses where id = wst.to_state_id) to_name, wst.action, wst.note_required,wst.seq_order from workflow_status_transitions wst inner join workflows B on B.id = wst.workflow_id inner join grants G on G.grantor_org_id = B.granter_id where B.object = 'GRANT' and B.granter_id =?1 and wst.role_id in (?2) and wst.id = ?3 group by (wst.id, wst.from_state_id, wst.to_state_id, wst.action) order by wst.seq_order asc",nativeQuery = true)
   public List<WorkFlowPermission> getFlowPermisionsOfRoleForStateTransition(Long granterOrgId, List<Long> roleIds, Long grantStatusId);
@@ -88,9 +88,9 @@ public interface WorkflowPermissionRepository extends CrudRepository<WorkFlowPer
           "          wst \n" +
           "          left join disbursement_assignments c on c.state_id=wst.from_state_id  \n" +
           "          where  \n" +
-          "          c.disbursement_id=?3 and ((wst.is_forward_direction=true and c.owner=?2) or (wst.is_forward_direction = false and  exists (select * from disbursement_assignments where owner=?2 and disbursement_id=?3 and state_id=?1) )) \n" +
+          "          c.disbursement_id=?2 and ((wst.is_forward_direction=true) or (wst.is_forward_direction = false and  exists (select * from disbursement_assignments where disbursement_id=?2 and state_id=?1) )) \n" +
           "          order by wst.is_forward_direction desc",nativeQuery = true)
-  public List<WorkFlowPermission> getPermissionsForDisbursementFlow(Long statusId,Long userId,Long disbursementId);
+  public List<WorkFlowPermission> getPermissionsForDisbursementFlow(Long statusId,Long disbursementId);
 
   @Query(value = "WITH RECURSIVE wst AS ( \n" +
           "          SELECT \n" +
@@ -127,9 +127,9 @@ public interface WorkflowPermissionRepository extends CrudRepository<WorkFlowPer
           "          wst \n" +
           "          inner join report_assignments c on c.state_id=wst.from_state_id  \n" +
           "          where  \n" +
-          "          c.report_id=?3 and ((wst.is_forward_direction=true and c.assignment=?2) or (wst.is_forward_direction = false and  exists (select * from report_assignments where assignment=?2 and report_id=?3 and state_id=?1) )) \n" +
+          "          c.report_id=?2 and ((wst.is_forward_direction=true) or (wst.is_forward_direction = false and  exists (select * from report_assignments where report_id=?2 and state_id=?1) )) \n" +
           "          order by wst.is_forward_direction desc",nativeQuery = true)
-  public List<WorkFlowPermission> getPermissionsForReportFlow(Long statusId,Long userId,Long reportId);
+  public List<WorkFlowPermission> getPermissionsForReportFlow(Long statusId,Long reportId);
 
   @Query(value = "WITH RECURSIVE wst AS ( \n" +
           "                    SELECT \n" +
