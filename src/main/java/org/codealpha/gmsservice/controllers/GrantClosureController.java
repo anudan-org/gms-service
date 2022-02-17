@@ -480,6 +480,9 @@ public class GrantClosureController {
 
         closure.getGrant().setGrantTags(grantTags);
 
+
+        closure.setGrant(grantService.grantToReturn(userId,closure.getGrant()));
+
         return closure;
     }
 

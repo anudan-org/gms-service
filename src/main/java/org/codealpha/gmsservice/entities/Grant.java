@@ -190,6 +190,8 @@ public class Grant {
   @Transient
   private Boolean hasOngoingDisbursement = false;
   @Transient
+  private Double ongoingDisbursementAmount;
+  @Transient
   private int projectDocumentsCount = 0;
   @Transient
   private Double approvedDisbursementsTotal = 0d;
@@ -221,6 +223,10 @@ public class Grant {
   private String amendmentDetailsSnapshot;
   @Column
   private Boolean closureInProgress = false;
+  @Column
+  private Double refundAmount;
+  @Column
+  private String refundReason;
 
   public Boolean getClosureInProgress() {
     return closureInProgress;
@@ -668,5 +674,29 @@ public class Grant {
 
   public void setClosureId(Long closureId) {
     this.closureId = closureId;
+  }
+
+    public Double getRefundAmount() {
+        return refundAmount;
+    }
+
+    public void setRefundAmount(Double refundAmount) {
+        this.refundAmount = refundAmount;
+    }
+
+    public String getRefundReason() {
+        return refundReason;
+    }
+
+    public void setRefundReason(String refundReason) {
+        this.refundReason = refundReason;
+    }
+
+  public Double getOngoingDisbursementAmount() {
+    return ongoingDisbursementAmount;
+  }
+
+  public void setOngoingDisbursementAmount(Double ongoingDisbursementAmount) {
+    this.ongoingDisbursementAmount = ongoingDisbursementAmount;
   }
 }
