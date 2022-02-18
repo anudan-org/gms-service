@@ -208,7 +208,7 @@ jobs:
         remote_host: ${{ secrets.HOST_HOTFIX }}
         remote_port: ${{ secrets.SSH_PORT }}
         remote_user: ${{ secrets.SSH_USER }}
-        remote_key: ${{ secrets.SSH_DEPLOY_KEY1 }}             
+        remote_key: ${{ secrets.SSH_DEPLOY_KEY }}             
 
   Notify-on-email:
     runs-on: ubuntu-latest
