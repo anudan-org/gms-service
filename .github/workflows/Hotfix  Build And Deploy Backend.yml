@@ -200,7 +200,7 @@ jobs:
           ls -lrt
           pwd
     - name: copy artifacts to Hotfix server. 
-      uses: burnett01/rsync-deployments@4.1
+      uses: burnett01/rsync-deployments@5.2
       with:
         switches: -avzr --delete
         path: .
