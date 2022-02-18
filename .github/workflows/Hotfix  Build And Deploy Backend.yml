@@ -202,7 +202,7 @@ jobs:
     - name: copy artifacts to Hotfix server. 
       uses: burnett01/rsync-deployments@4.1
       with:
-        switches: -avzr -q
+        switches: -avzr --delete
         path: .
         remote_path: /home/anudan/github
         remote_host: ${{ secrets.HOST_HOTFIX }}
