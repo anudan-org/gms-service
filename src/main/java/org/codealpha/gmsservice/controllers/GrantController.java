@@ -2175,6 +2175,18 @@ public class GrantController {
                     .getFile();
             fileMap = new HashMap<>();
             fileMap.put(attachment.getType(), file);
+        }else if ("closure-document".equalsIgnoreCase(forEntity)) {
+            ClosureDocument attachment = grantClosureService.getClosureDocumentById(downloadRequest.getAttachmentIds()[0]);
+
+            String fileName = attachment.getName();
+            if(!fileName.contains(".".concat(attachment.getExtension()))){
+                fileName=fileName.concat(".".concat(attachment.getExtension()));
+            }
+
+            File file = resourceLoader.getResource(FILE + attachment.getLocation())
+                    .getFile();
+            fileMap = new HashMap<>();
+            fileMap.put(attachment.getExtension(), file);
         }
 
         if (fileMap == null) {

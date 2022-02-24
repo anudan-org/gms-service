@@ -76,6 +76,8 @@ public class GrantClosure {
     private Long ownerId;
     @Column
     private String ownerName;
+    @OneToMany(mappedBy = "closure")
+    private List<ClosureDocument> closureDocuments;
 
     public Long getOwnerId() {
         return ownerId;
@@ -299,5 +301,13 @@ public class GrantClosure {
 
     public void setNoteAdded(Date noteAdded) {
         this.noteAdded = noteAdded;
+    }
+
+    public List<ClosureDocument> getClosureDocuments() {
+        return closureDocuments;
+    }
+
+    public void setClosureDocuments(List<ClosureDocument> closureDocuments) {
+        this.closureDocuments = closureDocuments;
     }
 }

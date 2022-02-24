@@ -55,6 +55,9 @@ public class Grant {
   @ApiModelProperty(name = "stringAttributes", value = "Grant template structure with values", dataType = "List<GrantStringAttributes>")
   private List<GrantStringAttribute> stringAttributes;
 
+  @OneToMany(mappedBy = "associatedGrant")
+  private List<ActualRefund> actualRefunds;
+
   @Column(name = "name", columnDefinition = "text")
   @ApiModelProperty(name = "name", value = "Title of the grant", dataType = "String")
   private String name;
@@ -698,5 +701,13 @@ public class Grant {
 
   public void setOngoingDisbursementAmount(Double ongoingDisbursementAmount) {
     this.ongoingDisbursementAmount = ongoingDisbursementAmount;
+  }
+
+  public List<ActualRefund> getActualRefunds() {
+    return actualRefunds;
+  }
+
+  public void setActualRefunds(List<ActualRefund> actualRefunds) {
+    this.actualRefunds = actualRefunds;
   }
 }

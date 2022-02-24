@@ -70,6 +70,10 @@ public class GrantClosureService {
     private WorkflowPermissionRepository workflowPermissionRepository;
     @Autowired
     private ClosureSnapshotRepository closureSnapshotRepository;
+    @Autowired
+    private ActualRefundRepository actualRefundRepository;
+    @Autowired
+    private ClosureDocumentRepository closureDocumentRepository;
 
     public List<GranterClosureTemplate> findTemplatesAndPublishedStatusAndPrivateStatus(Long grantId, boolean isPublished, boolean isPrivate) {
         return granterClosureTemplateRepository.findByGranterIdAndPublishedAndPrivateToClosure(grantId, isPublished,
@@ -718,5 +722,17 @@ public class GrantClosureService {
 
     public List<GrantClosure> getClosuresForGrant(Long grantId) {
         return closureRepository.findByGrant(grantId);
+    }
+
+    public ActualRefund saveActualRefund(ActualRefund actualRefund) {
+        return actualRefundRepository.save(actualRefund);
+    }
+
+    public ClosureDocument saveClosureDocument(ClosureDocument doc){
+        return closureDocumentRepository.save(doc);
+    }
+
+    public ClosureDocument getClosureDocumentById(Long attachmentId) {
+        return closureDocumentRepository.findByDocId(attachmentId);
     }
 }
