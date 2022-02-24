@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
+import javax.persistence.Column;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
@@ -61,6 +62,8 @@ public class GrantVO {
     private Long grantTypeId;
     private List<GrantTag> grantTags;
     private List<GrantTagVO> tags;
+    private Double refundAmount;
+    private String refundReason;
     @JsonIgnore
     private List<GrantStringAttribute> stringAttributes;
 
@@ -76,6 +79,8 @@ public class GrantVO {
     private Boolean internal;
     private String amendmentDetailsSnapshot;
     private Boolean closureInProgress;
+    private Double ongoingDisbursementAmount;
+
     private static Logger logger = LoggerFactory.getLogger(GrantVO.class);
 
     public Long getId() {
@@ -579,5 +584,29 @@ public class GrantVO {
 
     public void setClosureId(Long closureId) {
         this.closureId = closureId;
+    }
+
+    public Double getRefundAmount() {
+        return refundAmount;
+    }
+
+    public void setRefundAmount(Double refundAmount) {
+        this.refundAmount = refundAmount;
+    }
+
+    public String getRefundReason() {
+        return refundReason;
+    }
+
+    public void setRefundReason(String refundReason) {
+        this.refundReason = refundReason;
+    }
+
+    public Double getOngoingDisbursementAmount() {
+        return ongoingDisbursementAmount;
+    }
+
+    public void setOngoingDisbursementAmount(Double ongoingDisbursementAmount) {
+        this.ongoingDisbursementAmount = ongoingDisbursementAmount;
     }
 }

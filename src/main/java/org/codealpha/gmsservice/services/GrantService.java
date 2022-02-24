@@ -790,7 +790,20 @@ public class GrantService {
         }
 
 
+        List<Long> draftAndReviewStatusIds = workflowStatusRepository.findByWorkflow(workflowRepository.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(), "DISBURSEMENT"))
+                .stream()
+                .filter(st -> (st.getInternalStatus().equalsIgnoreCase("DRAFT") || st.getInternalStatus().equalsIgnoreCase("REVIEW")))
+                .mapToLong(s->s.getId()).boxed()
+                .collect(Collectors.toList());
+        List<Disbursement> draftAndReviewDisbursements = disbursementService
+                .getDibursementsForGrantByStatuses(grant.getId(),
+                        draftAndReviewStatusIds);
+        draftAndReviewDisbursements.removeIf(d -> d.isGranteeEntry());
+        if (draftAndReviewDisbursements != null && draftAndReviewDisbursements.size() > 0) {
+            grant.setHasOngoingDisbursement(true);
+            grant.setOngoingDisbursementAmount(draftAndReviewDisbursements.get(0).getRequestedAmount());
 
+        }
         return grant;
     }
 

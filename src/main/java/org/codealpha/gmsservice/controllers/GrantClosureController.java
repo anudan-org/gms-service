@@ -196,8 +196,20 @@ public class GrantClosureController {
         closure.getGrant().setClosureInProgress(true);
         grantService.saveGrant(closure.getGrant());
 
+
         closure = closureService.saveClosure(closure);
 
+        ActualRefund actualRefund = new ActualRefund();
+        actualRefund.setAmount(null);
+        actualRefund.setAssociatedGrant(grant);
+        actualRefund.setCreatedBy(userId);
+        actualRefund.setCreatedDate(DateTime.now().toDate());
+        actualRefund.setNote("");
+        actualRefund.setRefundDate(null);
+        actualRefund = closureService.saveActualRefund(actualRefund);
+        List<ActualRefund> refunds = new ArrayList<>();
+        refunds.add(actualRefund);
+        closure = closureService.getClosureById(closure.getId());
 
 
         List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionService
@@ -480,6 +492,9 @@ public class GrantClosureController {
 
         closure.getGrant().setGrantTags(grantTags);
 
+
+        closure.setGrant(grantService.grantToReturn(userId,closure.getGrant()));
+
         return closure;
     }
 
@@ -752,6 +767,7 @@ public class GrantClosureController {
         GrantClosure closure = null;
         GrantClosure savedClosure = closureService.getClosureById(closureId);
         determineCanManage(savedClosure, userId);
+        grantService.saveGrant(closureToSave.getGrant());
         if (savedClosure.isCanManage())
             closure = processClosure(closureToSave, tenantOrg, user);
 
@@ -991,6 +1007,7 @@ public class GrantClosureController {
 
         ClosureSpecificSection section = closureService.getClosureSpecificSectionById(sectionId);
         GrantClosure closure = closureService.getClosureById(closureId);
+        grantService.saveGrant(closureToSave.getGrant());
 
         for (ClosureSpecificSectionAttribute attrib : closureService.getSpecificSectionAttributesBySection(section)) {
             for (ClosureStringAttribute stringAttrib : closureService.getClosureStringAttributesByAttribute(attrib)) {
@@ -1222,6 +1239,55 @@ public class GrantClosureController {
         return new ClosureDocInfo(attachments.get(attachments.size() - 1).getId(), closure);
     }
 
+    @PostMapping(value = "/{closureId}/upload/docs", consumes = {
+            "multipart/form-data" })
+    public GrantClosure saveUploadedFiles(
+            @PathVariable("userId") Long userId,
+            @PathVariable("closureId") Long closureId,
+            @RequestParam("file") MultipartFile[] files) {
+
+
+
+        GrantClosure closure = closureService.getClosureById(closureId);
+
+
+        User user = userService.getUserById(userId);
+
+        String filePath = STRNOSPACE;
+        filePath = uploadLocation + closure.getGrant().getGrantorOrganization().getCode() + CLOSURE_DOCUMENTS + closureId
+                +"/";
+        File dir = new File(filePath);
+        dir.mkdirs();
+
+        ClosureDocument closureDocument=null;
+
+        for (MultipartFile file : files) {
+            if (file.getOriginalFilename() != null) {
+
+                String fileName = file.getOriginalFilename();
+                closureDocument = new ClosureDocument();
+                closureDocument.setClosure(closureService.getClosureById(closureId));
+                closureDocument.setExtension(file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".")+1));
+                closureDocument.setLocation(filePath+file.getOriginalFilename());
+                closureDocument.setName(fileName);
+                closureDocument.setUploadedBy(userId);
+                closureDocument.setUploadedOn(DateTime.now().toDate());
+                closureDocument = closureService.saveClosureDocument(closureDocument);
+                File fileToCreate = new File(dir, fileName);
+                try (FileOutputStream fos = new FileOutputStream(fileToCreate)) {
+                    fos.write(file.getBytes());
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
+
+        }
+        closure = closureService.getClosureById(closureId);
+
+        closure = closureToReturn(closure, userId);
+        return closure;
+    }
+
     @PostMapping(value = "/{closureId}/attachments", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public byte[] downloadSelectedAttachments(@PathVariable("userId") Long userId,
                                               @PathVariable("closureId") Long closureId, @RequestHeader("X-TENANT-CODE") String tenantCode,
@@ -1345,6 +1411,7 @@ public class GrantClosureController {
             @PathVariable("fieldId") Long fieldId,
             @RequestHeader("X-TENANT-CODE") String tenantCode) {
         GrantClosure closure = saveClosure(closureId, closureToSave, userId, tenantCode);
+        grantService.saveGrant(closureToSave.getGrant());
 
         ClosureStringAttribute stringAttrib = closureService.getClosureStringByStringAttributeId(fieldId);
         ClosureSpecificSectionAttribute attribute = stringAttrib.getSectionAttribute();
@@ -2022,5 +2089,23 @@ public class GrantClosureController {
         }
 
         return new ResponseEntity<>(new ClosureWarnings(disbursementsInProgress,reportsInProgress,grantInAmendment), HttpStatus.OK);
+    }
+
+    @PutMapping("/{closureId}/actualRefund")
+    public ActualRefund addActualRefund(@PathVariable("userId") Long userId,
+                                        @PathVariable("closureId") Long closureId,
+                                        @RequestHeader("X-TENANT-CODE") String tenantCode,
+                                        @RequestBody ActualRefund actualRefund){
+
+        SimpleDateFormat df = new SimpleDateFormat("dd-MMM-yyyy");
+        try {
+            if(actualRefund.getRefundDateStr()!=null) {
+                actualRefund.setRefundDate(df.parse(actualRefund.getRefundDateStr()));
+            }
+        } catch (ParseException e) {
+            logger.error(e.getMessage(),e);
+        }
+        actualRefund.setAssociatedGrant(closureService.getClosureById(closureId).getGrant());
+        return closureService.saveActualRefund(actualRefund);
     }
 }
