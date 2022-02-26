@@ -36,6 +36,8 @@ public class ClosureDetailVO {
       sectionVO.setId(sec.getId());
       sectionVO.setName(sec.getSectionName());
       sectionVO.setOrder(sec.getSectionOrder());
+      sectionVO.setRefund(sec.getRefund());
+      sectionVO.setSystemGenerated(sec.getSystemGenerated());
 
       if (!sections.contains(sectionVO)) {
         sections.add(sectionVO);

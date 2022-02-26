@@ -29,3 +29,11 @@ CREATE TABLE closure_documents
 );
 
 alter table actual_refunds rename column grant_id to associated_grant_id;
+
+alter table closure_specific_sections add column is_refund boolean default false;
+
+alter table closure_specific_sections add column is_system_generated boolean default false;
+
+alter table grant_specific_sections add column is_system_generated boolean default false;
+
+alter table report_specific_sections add column is_system_generated boolean default false;

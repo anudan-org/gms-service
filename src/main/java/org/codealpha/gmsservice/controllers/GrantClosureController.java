@@ -343,6 +343,7 @@ public class GrantClosureController {
                         specificSection.setClosureId(closure.getId());
                         specificSection.setClosureTemplateId(closureTemplate.getId());
                         specificSection.setSectionName("Project Funds");
+                        specificSection.setSystemGenerated(true);
                         List<ClosureSpecificSection> closureSections = closureService.getClosureSections(closure);
                         specificSection.setSectionOrder(Collections.max(closureSections.stream()
 
@@ -723,13 +724,14 @@ public class GrantClosureController {
         return closedDisbursements;
     }
 
-    @PostMapping("/{closureId}/template/{templateId}/section/{sectionName}")
+    @PostMapping("/{closureId}/template/{templateId}/section/{sectionName}/{isRefund}")
     @ApiOperation("Create new section in grant closure")
     public ClosureSectionInfo createSection(@RequestBody GrantClosure closureToSave,
                                            @PathVariable("closureId") Long closureId,
                                            @PathVariable("templateId") Long templateId,
                                            @PathVariable("sectionName") String sectionName,
                                            @PathVariable("userId") Long userId,
+                                           @PathVariable("isRefund") Boolean isRefund,
                                            @RequestHeader("X-TENANT-CODE") String tenantCode) {
         GrantClosure closure = saveClosure(closureId, closureToSave, userId, tenantCode);
 
@@ -742,6 +744,10 @@ public class GrantClosureController {
         specificSection.setClosureId(closureId);
         specificSection.setSectionOrder(closureService
                 .getNextSectionOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(), templateId));
+        specificSection.setRefund(isRefund);
+        if(isRefund){
+            specificSection.setSystemGenerated(true);
+        }
         specificSection = closureService.saveSection(specificSection);
 
         if (closureService.checkIfClosureTemplateChanged(closure, specificSection, null)) {
@@ -1022,6 +1028,15 @@ public class GrantClosureController {
         closureService.deleteSectionAttributes(closureService.getSpecificSectionAttributesBySection(section));
         closureService.deleteSection(section);
 
+
+        if(section.getRefund()){
+            if(closureToSave.getGrant().getActualRefunds()!=null && closureToSave.getGrant().getActualRefunds().size()>0){
+                grantService.deleteActualRefundsForGrant(closureToSave.getGrant().getActualRefunds());
+            }
+            closureToSave.getGrant().setRefundAmount(null);
+            closureToSave.getGrant().setRefundReason(null);
+        }
+
         closure = closureService.getClosureById(closureId);
         if (closureService.checkIfClosureTemplateChanged(closure, section, null)) {
             GranterClosureTemplate newTemplate = closureService._createNewClosureTemplateFromExisiting(closure);
@@ -1254,7 +1269,7 @@ public class GrantClosureController {
         User user = userService.getUserById(userId);
 
         String filePath = STRNOSPACE;
-        filePath = uploadLocation + closure.getGrant().getGrantorOrganization().getCode() + CLOSURE_DOCUMENTS + closureId
+        filePath = uploadLocation + closure.getGrant().getGrantorOrganization().getCode() + CLOSURE_DOCUMENTS + closure.getId()
                 +"/";
         File dir = new File(filePath);
         dir.mkdirs();
@@ -1366,6 +1381,56 @@ public class GrantClosureController {
         return byteArrayOutputStream.toByteArray();
     }
 
+    @PostMapping(value = "/{closureId}/docs/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public byte[] downloadSelectedClosureDocAttachments(@PathVariable("userId") Long userId,
+                                              @PathVariable("closureId") Long closureId, @RequestHeader("X-TENANT-CODE") String tenantCode,
+                                              @RequestBody AttachmentDownloadRequest downloadRequest, HttpServletResponse response) throws IOException {
+
+        // setting headers
+        response.setContentType("application/zip");
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
+
+        // creating byteArray stream, make it bufforable and passing this buffor to
+        // ZipOutputStream
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+        ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+
+        // simple file list, just for tests
+
+        ArrayList<File> files = new ArrayList<>(2);
+        User user = userService.getUserById(userId);
+        GrantClosure closure = closureService.getClosureById(closureId);
+
+        // packing files
+        for (Long attachmentId : downloadRequest.getAttachmentIds()) {
+            ClosureDocument attachment = closureService
+                    .getClosureDocumentById(attachmentId);
+
+            File file = null;
+                file = resourceLoader.getResource(FILE + attachment.getLocation())
+                        .getFile();
+
+
+            // new zip entry and copying inputstream with file to zipOutputStream, after all
+            // closing streams
+            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+            try(FileInputStream fileInputStream = new FileInputStream(file)){
+                IOUtils.copy(fileInputStream, zipOutputStream);
+                zipOutputStream.closeEntry();
+            }
+        }
+
+        zipOutputStream.finish();
+        zipOutputStream.flush();
+        zipOutputStream.close();
+
+        bufferedOutputStream.close();
+        byteArrayOutputStream.close();
+        return byteArrayOutputStream.toByteArray();
+    }
+
     @PostMapping("{closureId}/attribute/{attributeId}/attachment/{attachmentId}")
     public GrantClosure deleteClosureStringAttributeAttachment(
             @RequestBody GrantClosure closureToSave,
@@ -1394,6 +1459,31 @@ public class GrantClosureController {
             closureService.saveClosureStringAttribute(stringAttribute);
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
+        }
+
+        GrantClosure closure = closureService.getClosureById(closureId);
+
+        closure = closureToReturn(closure, userId);
+        return closure;
+    }
+
+    @PostMapping("{closureId}/docs/delete/{attachmentId}")
+    public GrantClosure deleteGrantClosureDocument(
+            @RequestBody GrantClosure closureToSave,
+            @PathVariable("closureId") Long closureId,
+            @PathVariable("userId") Long userId,
+            @PathVariable("attachmentId") Long attachmentId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        saveClosure(closureId, closureToSave, userId, tenantCode);
+        ClosureDocument attch = closureService
+                .getClosureDocumentById(attachmentId);
+        closureService.deleteClosureDocument(attch);
+
+        File file = new File(attch.getLocation());
+        try {
+            Files.delete(file.toPath());
+        } catch (IOException e) {
+            logger.error(e.getMessage(),e);
         }
 
         GrantClosure closure = closureService.getClosureById(closureId);
@@ -2107,5 +2197,14 @@ public class GrantClosureController {
         }
         actualRefund.setAssociatedGrant(closureService.getClosureById(closureId).getGrant());
         return closureService.saveActualRefund(actualRefund);
+    }
+
+    @DeleteMapping("/{closureId}/actualRefund/{actualRefundId}")
+    public void addActualRefund(@PathVariable("userId") Long userId,
+                                        @PathVariable("closureId") Long closureId,
+                                        @PathVariable("actualRefundId") Long actualRefundId,
+                                        @RequestHeader("X-TENANT-CODE") String tenantCode){
+
+            closureService.deleteActualRefund(closureService.getActualRefundById(actualRefundId));
     }
 }
