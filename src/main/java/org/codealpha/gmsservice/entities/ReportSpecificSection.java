@@ -24,7 +24,8 @@ public class ReportSpecificSection {
   private Long reportTemplateId;
   @OneToMany(mappedBy = "section")
   private List<ReportSpecificSectionAttribute> attributes;
-
+  @Column
+  private Boolean isSystemGenerated;
 
 
   public Long getId() {
@@ -89,5 +90,13 @@ public class ReportSpecificSection {
 
   public void setAttributes(List<ReportSpecificSectionAttribute> attributes) {
     this.attributes = attributes;
+  }
+
+  public Boolean getSystemGenerated() {
+    return isSystemGenerated;
+  }
+
+  public void setSystemGenerated(Boolean systemGenerated) {
+    isSystemGenerated = systemGenerated;
   }
 }

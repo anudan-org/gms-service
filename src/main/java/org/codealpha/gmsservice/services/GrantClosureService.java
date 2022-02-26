@@ -735,4 +735,16 @@ public class GrantClosureService {
     public ClosureDocument getClosureDocumentById(Long attachmentId) {
         return closureDocumentRepository.findByDocId(attachmentId);
     }
+
+    public void deleteClosureDocument(ClosureDocument attch) {
+        closureDocumentRepository.delete(attch);
+    }
+
+    public ActualRefund getActualRefundById(Long actualRefundId) {
+        return actualRefundRepository.getById(actualRefundId);
+    }
+
+    public void deleteActualRefund(ActualRefund actualRefund) {
+        actualRefundRepository.delete(actualRefund);
+    }
 }

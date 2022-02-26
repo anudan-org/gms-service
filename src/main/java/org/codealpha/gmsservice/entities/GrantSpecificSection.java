@@ -21,8 +21,16 @@ public class GrantSpecificSection {
   private Long grantId;
   @Column
   private Long grantTemplateId;
+  @Column
+  private Boolean isSystemGenerated;
 
+  public Boolean getSystemGenerated() {
+    return isSystemGenerated;
+  }
 
+  public void setSystemGenerated(Boolean systemGenerated) {
+    isSystemGenerated = systemGenerated;
+  }
 
   public Long getId() {
     return id;

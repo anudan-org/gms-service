@@ -11,6 +11,8 @@ public class SectionVO implements Comparable<SectionVO> {
   private String name;
 
   private int order;
+  private Boolean isRefund;
+  private Boolean isSystemGenerated;
   
   @JsonProperty("attributes")
   private List<SectionAttributesVO> attributes;
@@ -72,4 +74,19 @@ public class SectionVO implements Comparable<SectionVO> {
     return id.compareTo(o.id);
   }
 
+  public Boolean getRefund() {
+    return isRefund;
+  }
+
+  public void setRefund(Boolean refund) {
+    isRefund = refund;
+  }
+
+  public Boolean getSystemGenerated() {
+    return isSystemGenerated;
+  }
+
+  public void setSystemGenerated(Boolean systemGenerated) {
+    isSystemGenerated = systemGenerated;
+  }
 }

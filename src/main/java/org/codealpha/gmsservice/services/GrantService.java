@@ -173,6 +173,8 @@ public class GrantService {
     private GrantSnapshotService grantSnapshotService;
     @Autowired
     private GrantClosureService closureService;
+    @Autowired
+    private ActualRefundRepository actualRefundRepository;
 
     public GrantService() {
         //Adding for sonar
@@ -2218,5 +2220,9 @@ public class GrantService {
                 }
             }
         }
+    }
+
+    public void deleteActualRefundsForGrant(List<ActualRefund> refunds){
+        actualRefundRepository.deleteAll(refunds);
     }
 }

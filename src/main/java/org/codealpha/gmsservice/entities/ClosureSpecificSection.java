@@ -24,7 +24,11 @@ public class ClosureSpecificSection {
   private Long closureTemplateId;
   @OneToMany(mappedBy = "section")
   private List<ClosureSpecificSectionAttribute> attributes;
+@Column
+private Boolean isRefund;
 
+  @Column
+  private Boolean isSystemGenerated;
 
 
   public Long getId() {
@@ -89,5 +93,21 @@ public class ClosureSpecificSection {
 
   public void setAttributes(List<ClosureSpecificSectionAttribute> attributes) {
     this.attributes = attributes;
+  }
+
+  public Boolean getRefund() {
+    return isRefund;
+  }
+
+  public void setRefund(Boolean refund) {
+    isRefund = refund;
+  }
+
+  public Boolean getSystemGenerated() {
+    return isSystemGenerated;
+  }
+
+  public void setSystemGenerated(Boolean systemGenerated) {
+    isSystemGenerated = systemGenerated;
   }
 }
