@@ -1,7 +1,9 @@
 package org.codealpha.gmsservice.models;
 
+import org.codealpha.gmsservice.entities.ActualRefund;
 import org.codealpha.gmsservice.entities.ClosureReason;
 
+import javax.persistence.Column;
 import java.util.List;
 
 public class PlainClosure {
@@ -14,6 +16,9 @@ public class PlainClosure {
     private String currentStatus;
     private String currentInternalStatus;
     private boolean external;
+    private Double grantRefundAmount;
+    private String grantRefundReason;
+    private List<ActualRefund> actualRefunds;
 
     public ClosureReason getReason() {
         return reason;
@@ -85,5 +90,29 @@ public class PlainClosure {
 
     public void setReferenceNo(String referenceNo) {
         this.referenceNo = referenceNo;
+    }
+
+    public Double getGrantRefundAmount() {
+        return grantRefundAmount;
+    }
+
+    public void setGrantRefundAmount(Double grantRefundAmount) {
+        this.grantRefundAmount = grantRefundAmount;
+    }
+
+    public String getGrantRefundReason() {
+        return grantRefundReason;
+    }
+
+    public void setGrantRefundReason(String grantRefundReason) {
+        this.grantRefundReason = grantRefundReason;
+    }
+
+    public List<ActualRefund> getActualRefunds() {
+        return actualRefunds;
+    }
+
+    public void setActualRefunds(List<ActualRefund> actualRefunds) {
+        this.actualRefunds = actualRefunds;
     }
 }

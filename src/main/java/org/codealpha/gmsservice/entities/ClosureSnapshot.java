@@ -45,6 +45,12 @@ public class ClosureSnapshot {
   private String fromStringAttributes;
   @Column
   private Date movedOn;
+  @Column
+  private Double grantRefundAmount;
+  @Column
+  private String grantRefundReason;
+  @Column
+  private String actualRefunds;
 
   public Long getId() {
     return id;
@@ -150,5 +156,29 @@ public class ClosureSnapshot {
 
   public void setReason(ClosureReason reason) {
     this.reason = reason;
+  }
+
+  public Double getGrantRefundAmount() {
+    return grantRefundAmount;
+  }
+
+  public void setGrantRefundAmount(Double grantRefundAmount) {
+    this.grantRefundAmount = grantRefundAmount;
+  }
+
+  public String getGrantRefundReason() {
+    return grantRefundReason;
+  }
+
+  public void setGrantRefundReason(String grantRefundReason) {
+    this.grantRefundReason = grantRefundReason;
+  }
+
+  public String getActualRefunds() {
+    return actualRefunds;
+  }
+
+  public void setActualRefunds(String actualRefunds) {
+    this.actualRefunds = actualRefunds;
   }
 }

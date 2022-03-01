@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
+import org.omg.CORBA.Object;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -591,7 +592,7 @@ public class GrantClosureService {
 
     }
 
-    public PlainClosure closureToPlain(GrantClosure closure) throws IOException {
+    public PlainClosure closureToPlain(GrantClosure closure, ClosureSnapshot snapshot) throws IOException {
 
 
         PlainClosure plainClosure = new PlainClosure();
@@ -599,7 +600,15 @@ public class GrantClosureService {
         plainClosure.setDescription(closure.getDescription());
         plainClosure.setName(closure.getGrant().getName());
         plainClosure.setReferenceNo(closure.getGrant().getReferenceNo());
-
+        if(snapshot!=null) {
+            plainClosure.setGrantRefundAmount(snapshot.getGrantRefundAmount());
+            plainClosure.setGrantRefundReason(snapshot.getGrantRefundReason());
+            String refundsString = snapshot.getActualRefunds();
+            if (refundsString != null && !refundsString.trim().equalsIgnoreCase("")) {
+                plainClosure.setActualRefunds(new ObjectMapper().readValue(refundsString, new TypeReference<List<ActualRefund>>() {
+                }));
+            }
+        }
         plainClosure.setCurrentInternalStatus(closure.getStatus().getInternalStatus());
         plainClosure.setCurrentStatus(closure.getStatus().getName());
 

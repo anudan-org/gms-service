@@ -2225,4 +2225,8 @@ public class GrantService {
     public void deleteActualRefundsForGrant(List<ActualRefund> refunds){
         actualRefundRepository.deleteAll(refunds);
     }
+
+    public List<ActualRefund> getActualRefundsForGrant(Long grantId){
+        return actualRefundRepository.getActualRefundsForGrant(grantId);
+    }
 }
