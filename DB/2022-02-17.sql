@@ -37,3 +37,8 @@ alter table closure_specific_sections add column is_system_generated boolean def
 alter table grant_specific_sections add column is_system_generated boolean default false;
 
 alter table report_specific_sections add column is_system_generated boolean default false;
+
+alter table closure_snapshot
+add column grant_refund_amount double precision,
+add column grant_refund_reason text,
+add column actual_refunds text;

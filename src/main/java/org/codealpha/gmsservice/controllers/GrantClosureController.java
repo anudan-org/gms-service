@@ -2033,7 +2033,7 @@ public class GrantClosureController {
         ClosureDetailVO details = new ObjectMapper().readValue(snapshot.getStringAttributes(),ClosureDetailVO.class);
         closure.setClosureDetails(details);
 
-        return closureService.closureToPlain(closure);
+        return closureService.closureToPlain(closure,snapshot);
     }
 
     @GetMapping(value = "/compare/{currentClosureId}/{origClosureId}")
@@ -2051,8 +2051,8 @@ public class GrantClosureController {
         origClosure = closureToReturn(origClosure,userId);
 
         try {
-            closuresToReturn.add(closureService.closureToPlain(currentClosure));
-            closuresToReturn.add(closureService.closureToPlain(origClosure));
+            closuresToReturn.add(closureService.closureToPlain(currentClosure,null));
+            closuresToReturn.add(closureService.closureToPlain(origClosure,null));
         }catch (Exception e){
             logger.error(e.getMessage(),e);
         }
@@ -2068,7 +2068,14 @@ public class GrantClosureController {
 
 
 
-        return closureService.closureToPlain(currenClosure);
+        ClosureSnapshot tempSnapshot = new ClosureSnapshot();
+        tempSnapshot.setGrantRefundAmount(currenClosure.getGrant().getRefundAmount());
+        tempSnapshot.setGrantRefundReason(currenClosure.getGrant().getRefundReason());
+        List<ActualRefund> actualRefunds = grantService.getActualRefundsForGrant(currenClosure.getGrant().getId());
+        if(actualRefunds!=null && actualRefunds.size()>0){
+            tempSnapshot.setActualRefunds(new ObjectMapper().writeValueAsString(actualRefunds));
+        }
+        return closureService.closureToPlain(currenClosure,tempSnapshot);
     }
 
     private void checkAndReturnHistoricalCLosure(@PathVariable("userId") Long userId, GrantClosure closure) {
@@ -2098,6 +2105,7 @@ public class GrantClosureController {
     private void saveSnapShot(GrantClosure closure, Long fromStatusId, Long toStatusId, User currentUser, User previousUser) {
 
         try {
+
             ClosureSnapshot snapshot = new ClosureSnapshot();
             snapshot.setAssignedToId(currentUser!=null?currentUser.getId():null);
             snapshot.setClosureId(closure.getId());
@@ -2113,6 +2121,13 @@ public class GrantClosureController {
             snapshot.setFromStateId(fromStatusId);
             snapshot.setToStateId(toStatusId);
             snapshot.setMovedOn(closure.getMovedOn());
+            snapshot.setGrantRefundAmount(closure.getGrant().getRefundAmount());
+            snapshot.setGrantRefundReason(closure.getGrant().getRefundReason());
+            List<ActualRefund> refunds = grantService.getActualRefundsForGrant(closure.getGrant().getId());
+            if(refunds !=null && refunds.size()>0){
+                snapshot.setActualRefunds(new ObjectMapper().writeValueAsString(refunds));
+            }
+
             closureSnapshotService.saveClosureSnapshot(snapshot);
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
