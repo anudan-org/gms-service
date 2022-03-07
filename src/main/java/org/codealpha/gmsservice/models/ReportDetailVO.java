@@ -35,6 +35,7 @@ public class ReportDetailVO {
       sectionVO.setId(sec.getId());
       sectionVO.setName(sec.getSectionName());
       sectionVO.setOrder(sec.getSectionOrder());
+      sectionVO.setSystemGenerated(sec.getSystemGenerated());
 
       if (!sections.contains(sectionVO)) {
         sections.add(sectionVO);

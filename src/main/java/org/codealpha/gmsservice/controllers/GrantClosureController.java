@@ -4,11 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
+import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
@@ -36,6 +39,7 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Month;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -75,6 +79,8 @@ public class GrantClosureController {
     public static final String NO = "No";
     public static final String STREMPTY = " ";
     public static final String DISBURSEMENTCAPS = "DISBURSEMENT";
+    public static final String PROJECT_INDICATORS = "Project Indicators";
+
 
     @Autowired
     private WorkflowStatusService workflowStatusService;
@@ -258,6 +264,15 @@ public class GrantClosureController {
         AtomicBoolean closureTemplateHasDisbursement = new AtomicBoolean(false);
         AtomicReference<ClosureStringAttribute> disbursementAttributeValue = new AtomicReference<>(new ClosureStringAttribute());
 
+        if (!granterClosureSections.stream().filter(rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS)).findFirst().isPresent()) {
+            GranterClosureSection indicatorSection = new GranterClosureSection();
+            indicatorSection.setClosureTemplate(closureTemplate);
+            indicatorSection.setDeletable(true);
+            indicatorSection.setGranter((Granter) granterOrg);
+            indicatorSection.setSectionName(PROJECT_INDICATORS);
+            indicatorSection.setSectionOrder(granterClosureSections.size());
+            granterClosureSections.add(indicatorSection);
+        }
 
         for (GranterClosureSection closureSection : granterClosureSections) {
             ClosureSpecificSection specificSection = new ClosureSpecificSection();
@@ -272,6 +287,36 @@ public class GrantClosureController {
             ClosureSpecificSection finalSpecificSection = specificSection;
             GrantClosure finalClosure = closure;
             final AtomicInteger[] attribVOOrder = { new AtomicInteger(1) };
+
+            if (specificSection.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS)) {
+                for (Map<DatePeriod, PeriodAttribWithLabel> hold : getPeriodsWithAttributes(closure.getGrant(), userId)) {
+                    hold.forEach((entry, val) -> {
+                        val.getAttributes().forEach(attribVo -> {
+                            ClosureSpecificSectionAttribute sectionAttribute = new ClosureSpecificSectionAttribute();
+                            sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
+                            sectionAttribute.setDeletable(attribVo.isDeletable());
+                            sectionAttribute.setFieldName(attribVo.getFieldName());
+                            sectionAttribute.setFieldType(attribVo.getFieldType());
+                            sectionAttribute.setGranter(finalSpecificSection.getGranter());
+                            sectionAttribute.setRequired(attribVo.isRequired());
+                            sectionAttribute.setSection(finalSpecificSection);
+                            sectionAttribute.setCanEdit(false);
+                            sectionAttribute = closureService.saveClosureSpecificSectionAttribute(sectionAttribute);
+
+                            ClosureStringAttribute stringAttribute = new ClosureStringAttribute();
+
+                            stringAttribute.setSection(finalSpecificSection);
+                            stringAttribute.setClosure(finalClosure);
+                            stringAttribute.setSectionAttribute(sectionAttribute);
+                            stringAttribute.setGrantLevelTarget(attribVo.getTarget());
+                            stringAttribute.setFrequency(attribVo.getFrequency());
+
+                            stringAttribute = closureService.saveClosureStringAttribute(stringAttribute);
+                        });
+                    });
+                }
+
+            }
 
             closureSection.getAttributes().forEach(a -> {
                 ClosureSpecificSectionAttribute sectionAttribute = new ClosureSpecificSectionAttribute();
@@ -392,6 +437,157 @@ public class GrantClosureController {
     }
 
 
+    private List<Map<DatePeriod, PeriodAttribWithLabel>> getPeriodsWithAttributes(Grant grant, Long userId) {
+
+        GrantVO grantVO = new GrantVO().build(grant, grantService.getGrantSections(grant),
+                workflowPermissionService, userService.getUserById(userId),
+                userService, grantService);
+        grant.setGrantDetails(grantVO.getGrantDetails());
+
+        List<Map<DatePeriod, PeriodAttribWithLabel>> periodsWithAttributes = new ArrayList<>();
+        Map<DatePeriod, PeriodAttribWithLabel> quarterlyPeriods = new HashMap<>();
+        Map<DatePeriod, PeriodAttribWithLabel> halfyearlyPeriods = new HashMap<>();
+        Map<DatePeriod, PeriodAttribWithLabel> monthlyPeriods = new HashMap<>();
+        Map<DatePeriod, PeriodAttribWithLabel> yearlyPeriods = new HashMap<>();
+        if (grant.getStartDate() != null && grant.getEndDate() != null) {
+            grant.getGrantDetails().getSections().forEach(sec -> {
+                if (sec.getAttributes() != null && sec.getAttributes().size() > 0) {
+                    List<SectionAttributesVO> attribs = new ArrayList<>();
+                    List order = ImmutableList.of("YEARLY", "HALF-YEARLY", "QUARTERLY", "MONTHLY");
+                    final Ordering<String> colorOrdering = Ordering.explicit(order);
+                    Comparator<SectionAttributesVO> attrComparator = Comparator
+                            .comparing(c -> order.indexOf(c.getFrequency().toUpperCase()));
+                    sec.getAttributes().removeIf(attr -> attr.getFrequency() == null);
+                    sec.getAttributes().sort(attrComparator);
+
+                    sec.getAttributes().forEach(attr -> {
+                        if (attr.getFieldType().equalsIgnoreCase("KPI")) {
+
+                            if (attr.getFrequency().equalsIgnoreCase("YEARLY")) {
+                                DateTime st = new DateTime(grant.getMinEndEndate() != null
+                                        ? new DateTime(grant.getMinEndEndate()).plusDays(1).toDate()
+                                        : grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay();
+                                DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23,
+                                        59, 59, 999);
+                                List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en,
+                                        Frequency.YEARLY);
+
+                                reportingFrequencies.forEach(rf -> {
+
+                                    List attrList = null;
+
+                                    if (yearlyPeriods.containsKey(rf)) {
+                                        attrList = yearlyPeriods.get(rf).getAttributes();
+                                    } else {
+                                        attrList = new ArrayList<SectionAttributesVO>();
+                                    }
+                                    attrList.add(attr);
+                                    yearlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(), attrList));
+
+                                });
+                            }
+
+                            if (attr.getFrequency().equalsIgnoreCase("HALF-YEARLY")) {
+                                DateTime st = new DateTime(grant.getMinEndEndate() != null
+                                        ? new DateTime(grant.getMinEndEndate()).plusDays(1).toDate()
+                                        : grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay();
+                                DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23,
+                                        59, 59, 999);
+                                List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en,
+                                        Frequency.HALF_YEARLY);
+
+                                reportingFrequencies.forEach(rf -> {
+
+                                    List attrList = null;
+                                    if (yearlyPeriods.containsKey(rf)) {
+                                        yearlyPeriods.get(rf).getAttributes().add(attr);
+                                    } else {
+
+                                        if (halfyearlyPeriods.containsKey(rf)) {
+                                            attrList = halfyearlyPeriods.get(rf).getAttributes();
+                                        } else {
+                                            attrList = new ArrayList<SectionAttributesVO>();
+                                        }
+                                        attrList.add(attr);
+                                        halfyearlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(), attrList));
+                                    }
+                                });
+                            }
+
+                            if (attr.getFrequency().equalsIgnoreCase("QUARTERLY")) {
+
+                                DateTime st = new DateTime(grant.getMinEndEndate() != null
+                                        ? new DateTime(grant.getMinEndEndate()).plusDays(1).toDate()
+                                        : grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay();
+                                DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23,
+                                        59, 59, 999);
+                                List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en,
+                                        Frequency.QUARTERLY);
+                                reportingFrequencies.forEach(rf -> {
+
+                                    List attrList = null;
+
+                                    if (yearlyPeriods.containsKey(rf)) {
+                                        yearlyPeriods.get(rf).getAttributes().add(attr);
+                                    } else if (halfyearlyPeriods.containsKey(rf)) {
+                                        halfyearlyPeriods.get(rf).getAttributes().add(attr);
+                                    } else {
+                                        if (quarterlyPeriods.containsKey(rf)) {
+                                            attrList = quarterlyPeriods.get(rf).getAttributes();
+                                        } else {
+                                            attrList = new ArrayList<SectionAttributesVO>();
+                                        }
+                                        attrList.add(attr);
+                                        quarterlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(), attrList));
+                                    }
+                                });
+
+                            }
+                        }
+
+                        if (attr.getFrequency().equalsIgnoreCase("MONTHLY")) {
+                            DateTime st = new DateTime(grant.getMinEndEndate() != null
+                                    ? new DateTime(grant.getMinEndEndate()).plusDays(1).toDate()
+                                    : grant.getStartDate(), DateTimeZone.forID(timezone)).withTimeAtStartOfDay();
+                            DateTime en = new DateTime(grant.getEnDate(), DateTimeZone.forID(timezone)).withTime(23, 59,
+                                    59, 999);
+                            List<DatePeriod> reportingFrequencies = getReportingFrequencies(st, en, Frequency.MONTHLY);
+
+                            reportingFrequencies.forEach(rf -> {
+
+                                List attrList = null;
+                                if (yearlyPeriods.containsKey(rf)) {
+                                    yearlyPeriods.get(rf).getAttributes().add(attr);
+                                } else if (halfyearlyPeriods.containsKey(rf)) {
+                                    halfyearlyPeriods.get(rf).getAttributes().add(attr);
+                                } else if (quarterlyPeriods.containsKey(rf)) {
+                                    quarterlyPeriods.get(rf).getAttributes().add(attr);
+                                } else {
+
+                                    if (monthlyPeriods.containsKey(rf)) {
+                                        attrList = monthlyPeriods.get(rf).getAttributes();
+                                    } else {
+                                        attrList = new ArrayList<SectionAttributesVO>();
+                                    }
+                                    attrList.add(attr);
+                                    monthlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(), attrList));
+                                }
+                            });
+
+                        }
+
+                    });
+                }
+            });
+        }
+
+
+        periodsWithAttributes.add(monthlyPeriods);
+        periodsWithAttributes.add(quarterlyPeriods);
+        periodsWithAttributes.add(halfyearlyPeriods);
+        periodsWithAttributes.add(yearlyPeriods);
+        return periodsWithAttributes;
+    }
     private GrantClosure closureToReturn(GrantClosure closure, Long userId) {
 
         closure.setStringAttributes(closureService.getStringAttributesForClosure(closure));
@@ -2221,5 +2417,131 @@ public class GrantClosureController {
                                         @RequestHeader("X-TENANT-CODE") String tenantCode){
 
             closureService.deleteActualRefund(closureService.getActualRefundById(actualRefundId));
+    }
+
+    private List<DatePeriod> getReportingFrequencies(DateTime st, DateTime en, Frequency frequency) {
+
+        List<DatePeriod> periods = new ArrayList<>();
+        List<DatePeriod> periodsToReturn = new ArrayList<>();
+        if (frequency == Frequency.MONTHLY) {
+
+            while (st.isBefore(en) && !st.withTime(23, 59, 59, 999).isEqual(en)) {
+                DateTime tempEn = st.dayOfMonth().withMaximumValue().withTime(23, 59, 59, 999);
+                if (tempEn.isAfter(en)) {
+                    DatePeriod dp = new DatePeriod(st.toDate(), en.toDate());
+                    dp.setLabel("Monthly Report");
+                    periods.add(dp);
+                    break;
+                }
+                DatePeriod p = new DatePeriod(st.toDate(), tempEn.toDate());
+                p.setLabel("Monthly Report");
+                periods.add(p);
+                st = tempEn.plusDays(1).withTimeAtStartOfDay();
+            }
+
+        } else if (frequency == Frequency.QUARTERLY) {
+
+            while (st.isBefore(en) && !st.withTime(23, 59, 59, 999).isEqual(en)) {
+                DatePeriodLabel qrtrEnd = endOfQuarter(st);
+                DateTime tempEn = qrtrEnd.getDateTime().dayOfMonth().withMaximumValue().withTime(23, 59, 59, 999);
+                if (tempEn.isAfter(en)) {
+                    DatePeriod dp = new DatePeriod(st.toDate(), en.toDate());
+                    dp.setLabel(endOfQuarter(st).getPeriodLabel());
+                    periods.add(dp);
+                    break;
+                }
+                DatePeriod p = new DatePeriod(st.toDate(), tempEn.toDate());
+                p.setLabel(qrtrEnd.getPeriodLabel());
+                periods.add(p);
+                st = tempEn.plusDays(1).withTimeAtStartOfDay();
+            }
+        } else if (frequency == Frequency.HALF_YEARLY) {
+
+            while (st.isBefore(en) && !st.withTime(23, 59, 59, 999).isEqual(en)) {
+                DatePeriodLabel halfYrEnd = endOfHalfYear(st);
+                DateTime tempEn = halfYrEnd.getDateTime().dayOfMonth().withMaximumValue().withTime(23, 59, 59, 999);
+                if (tempEn.isAfter(en)) {
+                    DatePeriod dp = new DatePeriod(st.toDate(), en.toDate());
+                    dp.setLabel(endOfHalfYear(st).getPeriodLabel());
+                    periods.add(dp);
+                    break;
+                }
+                DatePeriod p = new DatePeriod(st.toDate(), tempEn.toDate());
+                p.setLabel(halfYrEnd.getPeriodLabel());
+                periods.add(p);
+                st = tempEn.plusDays(1).withTimeAtStartOfDay();
+            }
+        } else if (frequency == Frequency.YEARLY) {
+
+            while (st.isBefore(en) && !st.withTime(23, 59, 59, 999).isEqual(en)) {
+                DatePeriodLabel yrEnd = endOfYear(st);
+                DateTime tempEn = yrEnd.getDateTime().dayOfMonth().withMaximumValue().withTime(23, 59, 59, 999);
+                if (tempEn.isAfter(en)) {
+                    DatePeriod dp = new DatePeriod(st.toDate(), en.toDate());
+                    dp.setLabel(endOfYear(st).getPeriodLabel());
+                    periods.add(dp);
+                    break;
+                }
+                DatePeriod p = new DatePeriod(st.toDate(), tempEn.toDate());
+                p.setLabel(yrEnd.getPeriodLabel());
+                periods.add(p);
+                st = tempEn.plusDays(1).withTimeAtStartOfDay();
+            }
+        }
+        periodsToReturn.add(periods.get(0));
+        return periodsToReturn;
+    }
+
+    private DatePeriodLabel endOfQuarter(DateTime st) {
+        if (st.getMonthOfYear() >= Month.JANUARY.getValue() && st.getMonthOfYear() <= Month.MARCH.getValue()) {
+            return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
+                    "Quarterly Report - Q4 " +(st.getYear() - 1) + "/"
+                            +(String.valueOf(st.getYear()).substring(2, 4)));
+        } else if (st.getMonthOfYear() >= Month.APRIL.getValue() && st.getMonthOfYear() <= Month.JUNE.getValue()) {
+            return new DatePeriodLabel(st.withMonthOfYear(Month.JUNE.getValue()),
+                    "Quarterly Report - Q1 " +(st.getYear()) + "/"
+                            +(String.valueOf(st.getYear() + 1).substring(2, 4)));
+        } else if (st.getMonthOfYear() >= Month.JULY.getValue() && st.getMonthOfYear() <= Month.SEPTEMBER.getValue()) {
+            return new DatePeriodLabel(st.withMonthOfYear(Month.SEPTEMBER.getValue()),
+                    "Quarterly Report - Q2 " +(st.getYear()) + "/"
+                            +(String.valueOf(st.getYear() + 1).substring(2, 4)));
+        } else if (st.getMonthOfYear() >= Month.OCTOBER.getValue()
+                && st.getMonthOfYear() <= Month.DECEMBER.getValue()) {
+            return new DatePeriodLabel(st.withMonthOfYear(Month.DECEMBER.getValue()),
+                    "Quarterly Report - Q3 " + (st.getYear()) + "/"
+                            + (String.valueOf(st.getYear() + 1).substring(2, 4)));
+        }
+        return null;
+    }
+
+    private DatePeriodLabel endOfHalfYear(DateTime st) {
+        if (st.getMonthOfYear() >= Month.APRIL.getValue() && st.getMonthOfYear() <= Month.SEPTEMBER.getValue()) {
+            return new DatePeriodLabel(st.withMonthOfYear(Month.SEPTEMBER.getValue()),
+                    "Half-Yearly Report - H1 " + (st.getYear()) + "/"
+                            + (String.valueOf(st.getYear() + 1).substring(2, 4)));
+        } else if (st.getMonthOfYear() >= Month.OCTOBER.getValue()
+                && st.getMonthOfYear() <= Month.DECEMBER.getValue()) {
+            return new DatePeriodLabel(st.plusYears(1).withMonthOfYear(Month.MARCH.getValue()),
+                    "Half-Yearly Report - H2 " + (st.getYear()) + "/"
+                            + (String.valueOf(st.getYear() + 1).substring(2, 4)));
+        } else if (st.getMonthOfYear() >= Month.JANUARY.getValue() && st.getMonthOfYear() <= Month.MARCH.getValue()) {
+            return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
+                    "Half-Yearly Report - H2 " + (st.getYear() - 1) + "/"
+                            + (String.valueOf(st.getYear()).substring(2, 4)));
+        }
+        return null;
+    }
+
+    private DatePeriodLabel endOfYear(DateTime st) {
+        if (st.getMonthOfYear() >= Month.APRIL.getValue() && st.getMonthOfYear() <= Month.DECEMBER.getValue()) {
+            return new DatePeriodLabel(st.plusYears(1).withMonthOfYear(Month.MARCH.getValue()),
+                    "Yearly Report " + (st.getYear()) + "/"
+                            + (String.valueOf(st.getYear() + 1).substring(2, 4)));
+        } else if (st.getMonthOfYear() >= Month.JANUARY.getValue() && st.getMonthOfYear() <= Month.MARCH.getValue()) {
+            return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
+                    "Yearly Report " + (st.getYear() - 1) + "/"
+                            + (String.valueOf(st.getYear()).substring(2, 4)));
+        }
+        return null;
     }
 }
