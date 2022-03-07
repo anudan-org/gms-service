@@ -1907,6 +1907,9 @@ public class ReportController {
             specificSection.setSectionName(reportSection.getSectionName());
             specificSection.setSectionOrder(reportSection.getSectionOrder());
 
+            if (specificSection.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS)) {
+                specificSection.setSystemGenerated(true);
+            }
             specificSection = reportService.saveReportSpecificSection(specificSection);
             ReportSpecificSection finalSpecificSection = specificSection;
             Report finalReport = report;
@@ -2011,6 +2014,7 @@ public class ReportController {
                         specificSection.setReportId(report.getId());
                         specificSection.setReportTemplateId(reportTemplate.getId());
                         specificSection.setSectionName("Project Funds");
+                        specificSection.setSystemGenerated(true);
                         List<ReportSpecificSection> reportSections = reportService.getReportSections(report);
                         specificSection.setSectionOrder(Collections.max(reportSections.stream()
                                 .map(rs -> rs.getSectionOrder()).collect(Collectors.toList())) + 1);
