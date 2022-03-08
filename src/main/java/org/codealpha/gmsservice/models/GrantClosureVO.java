@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.services.GrantClosureService;
+import org.codealpha.gmsservice.services.ReportService;
 import org.codealpha.gmsservice.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -250,7 +251,7 @@ public class GrantClosureVO {
         this.stringAttributes = stringAttributes;
     }
 
-    public GrantClosureVO build(GrantClosure closure, List<ClosureSpecificSection> sections, UserService userService, GrantClosureService closureService) {
+    public GrantClosureVO build(GrantClosure closure, List<ClosureSpecificSection> sections, UserService userService, GrantClosureService closureService, ReportService reportService) {
 
         PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(closure.getClass());
         GrantClosureVO vo = new GrantClosureVO();
@@ -268,7 +269,7 @@ public class GrantClosureVO {
                         }
                         closureDetailVO = closureDetailVO.buildStringAttributes(sections,
                                 (List<ClosureStringAttribute>) value, closureService,
-                                closure.getGrant() == null ? 0 : closure.getGrant().getId());
+                                closure.getGrant() == null ? 0 : closure.getGrant().getId(),reportService);
                         vo.setClosureDetails(closureDetailVO);
                     } else if (voPd!=null && (voPd.getName().equalsIgnoreCase("noteAddedBy")
                             || voPd.getName().equalsIgnoreCase("noteAddedByUser"))) {

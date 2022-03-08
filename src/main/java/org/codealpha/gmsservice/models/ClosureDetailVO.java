@@ -26,7 +26,7 @@ public class ClosureDetailVO {
     this.sections = sections;
   }
 
-  public ClosureDetailVO buildStringAttributes(List<ClosureSpecificSection> closureSections, List<ClosureStringAttribute> value, GrantClosureService closureService, Long grantId) {
+  public ClosureDetailVO buildStringAttributes(List<ClosureSpecificSection> closureSections, List<ClosureStringAttribute> value, GrantClosureService closureService, Long grantId,ReportService reportService) {
 
     SectionVO sectionVO = null;
     sections = new ArrayList<>();
@@ -64,9 +64,9 @@ public class ClosureDetailVO {
         sectionAttribute.setCanEdit(stringAttribute.getSectionAttribute().getCanEdit());
         sectionAttribute.setGrantLevelTarget(stringAttribute.getGrantLevelTarget());
         sectionAttribute.setFieldValue(stringAttribute.getValue());
-        /*if(grantId!=0) {
-          sectionAttribute.setCumulativeActuals(closureService.getApprovedClosuresActualSumForGrant(grantId, sectionAttribute.getFieldName()));
-        }*/
+        if(grantId!=0) {
+          sectionAttribute.setCumulativeActuals(reportService.getApprovedReportsActualSumForGrant(grantId, sectionAttribute.getFieldName()));
+        }
         if(sectionAttribute.getFieldType().equalsIgnoreCase("table")){
           ObjectMapper mapper = new ObjectMapper();
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){
