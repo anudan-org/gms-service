@@ -126,7 +126,7 @@ jobs:
   Anudan-config:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/dev'
-    name: Checkout application.yaml | anudan config
+    name: Checkout application.yaml | anudan config 
     steps: 
       - name: Checking out my anudan-config repo
         uses: actions/checkout@master
