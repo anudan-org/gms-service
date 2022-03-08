@@ -629,7 +629,7 @@ public class GrantClosureController {
         }
 
         GrantClosureVO closureVO = new GrantClosureVO().build(closure, closureService.getClosureSections(closure), userService,
-                closureService);
+                closureService,reportService);
         closure.setClosureDetails(closureVO.getClosureDetails());
 
         showDisbursementsForClosure(closure,userService.getUserById(userId));
