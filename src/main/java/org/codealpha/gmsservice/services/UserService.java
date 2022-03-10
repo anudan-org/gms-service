@@ -1,5 +1,6 @@
 package org.codealpha.gmsservice.services;
 
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,6 +13,8 @@ import org.codealpha.gmsservice.exceptions.UserNotFoundException;
 import org.codealpha.gmsservice.repositories.OrganizationRepository;
 import org.codealpha.gmsservice.repositories.UserRepository;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Service
 public class UserService {
 
+    private static  final Logger logger = LoggerFactory.getLogger(UserService.class);
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -110,7 +114,7 @@ public class UserService {
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
                     .host(host).port(uriComponents.getPort());
             url = uriBuilder.toUriString();
-            String key = RandomStringUtils.randomAlphabetic(40, 60);
+            String key = RandomStringUtils.random(50, 0, 0, true, true, null, new SecureRandom());
             String code = passwordEncoder
                     .encode(key.concat(user.getEmailId().concat(String.valueOf(user.getOrganization().getId()))));
             resetRequest = new PasswordResetRequest();
@@ -131,7 +135,7 @@ public class UserService {
                     mailMessage, new String[] { mailFooter });
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
         return resetRequest;
     }

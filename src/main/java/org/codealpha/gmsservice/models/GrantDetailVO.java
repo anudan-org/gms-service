@@ -10,10 +10,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.codealpha.gmsservice.entities.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PostMapping;
 
 public class GrantDetailVO {
 
+  private static final Logger logger = LoggerFactory.getLogger(GrantDetailVO.class);
   private List<SectionVO> sections;
 
   public List<SectionVO> getSections() {
@@ -80,14 +83,14 @@ public class GrantDetailVO {
             try {
               sectionAttribute.setFieldValue( mapper.writeValueAsString(tableDataList));
             } catch (JsonProcessingException e) {
-              e.printStackTrace();
+              logger.error(e.getMessage(),e);
             }
           }
           List<TableData> tableData = null;
           try {
             tableData = mapper.readValue(sectionAttribute.getFieldValue(), new TypeReference<List<TableData>>() {});
           } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
           }
           sectionAttribute.setFieldTableValue(tableData);
         } else if(sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")){
@@ -109,14 +112,14 @@ public class GrantDetailVO {
             try {
               sectionAttribute.setFieldValue( mapper.writeValueAsString(tableDataList));
             } catch (JsonProcessingException e) {
-              e.printStackTrace();
+              logger.error(e.getMessage(),e);
             }
           }
           List<TableData> tableData = null;
           try {
             tableData = mapper.readValue(sectionAttribute.getFieldValue(), new TypeReference<List<TableData>>() {});
           } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
           }
           sectionAttribute.setFieldTableValue(tableData);
         } else if(sectionAttribute.getFieldType().equalsIgnoreCase("document")){
@@ -129,7 +132,7 @@ public class GrantDetailVO {
               List<TemplateLibrary> assignedTemplates = mapper.readValue(sectionAttribute.getFieldValue(),new TypeReference<List<TemplateLibrary>>(){});
               sectionAttribute.setDocs(assignedTemplates);
             } catch (IOException e) {
-              e.printStackTrace();
+              logger.error(e.getMessage(),e);
             }
           }*/
 
@@ -140,7 +143,7 @@ public class GrantDetailVO {
               List<GrantStringAttributeAttachments> assignedTemplates = mapper.readValue(sectionAttribute.getFieldValue(),new TypeReference<List<GrantStringAttributeAttachments>>(){});
               sectionAttribute.setAttachments(assignedTemplates);
             } catch (IOException e) {
-              e.printStackTrace();
+              logger.error(e.getMessage(),e);
             }
           }
         }

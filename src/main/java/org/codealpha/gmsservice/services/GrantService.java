@@ -586,7 +586,7 @@ public class GrantService {
             return Jwts.builder().setSubject(new ObjectMapper().writeValueAsString(secureEntity))
                     .signWith(SignatureAlgorithm.HS512, SECRET).compact();
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
         return "";
     }
@@ -1645,7 +1645,7 @@ public class GrantService {
                         try {
                             grantStringAttribute.setValue(mapper.writeValueAsString(tableData));
                         } catch (JsonProcessingException e) {
-                            e.printStackTrace();
+                            logger.error(e.getMessage(),e);
                         }
 
                     } else {
@@ -2183,7 +2183,7 @@ public class GrantService {
                             disbursementAttributeValue.get().setValue(mapper.writeValueAsString(tableDataList));
                             reportService.saveReportStringAttribute(disbursementAttributeValue.get());
                         } catch (JsonProcessingException e) {
-                            e.printStackTrace();
+                            logger.error(e.getMessage(),e);
                         }
                     } else {
                         ReportSpecificSection specificSection = new ReportSpecificSection();

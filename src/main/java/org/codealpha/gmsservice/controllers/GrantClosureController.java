@@ -1330,7 +1330,7 @@ public class GrantClosureController {
             File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
             FileCopyUtils.copy(file, fileToCreate);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
         ClosureStringAttributeAttachments attachment = new ClosureStringAttributeAttachments();
         attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
@@ -1351,7 +1351,7 @@ public class GrantClosureController {
             stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
             closureService.saveClosureStringAttribute(stringAttribute);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
         GrantClosure closure = closureService.getClosureById(closureId);
         closure = closureToReturn(closure, userId);
@@ -1441,7 +1441,7 @@ public class GrantClosureController {
             closureService.saveClosure(closure);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
 
         closure = closureService.getClosureById(closureId);

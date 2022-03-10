@@ -340,7 +340,7 @@ public class GrantClosureService {
                         newAttribute.setExtras(mapper.writeValueAsString(tableData));
 
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(),e);
                     }
                 }
 

@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,6 +32,8 @@ import org.codealpha.gmsservice.models.dashboard.mydashboard.Disbursement;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.DashboardValidator;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -56,6 +59,7 @@ import org.springframework.web.util.UriComponents;
 @RequestMapping("/users")
 public class UserController {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
     @Autowired
     private OrganizationService organizationService;
     @Autowired
@@ -133,7 +137,7 @@ public class UserController {
 
             String verificationLink = scheme + "://" + host + (port != -1 ? ":" + port : "")
                     + "/grantee/verification?emailId=" + user.getEmailId() + "&code="
-                    + RandomStringUtils.randomAlphanumeric(127);
+                    + RandomStringUtils.random(127, 0, 0, true, true, null, new SecureRandom());
 
             System.out.println(verificationLink);
             commonEmailSevice.sendMail(new String[]{user.getEmailId()}, null, "Anudan.org - Verification Link",
@@ -164,9 +168,9 @@ public class UserController {
             fos.write(files[0].getBytes());
             fos.close();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
 
         User user = userService.getUserById(userId);
@@ -433,7 +437,7 @@ public class UserController {
         /*try {
             category = mapper.readValue(data,MyCategory.class);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }*/
 
         org.codealpha.gmsservice.models.dashboard.mydashboard.Summary summary = new org.codealpha.gmsservice.models.dashboard.mydashboard.Summary();

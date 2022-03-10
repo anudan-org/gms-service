@@ -48,6 +48,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -394,7 +395,7 @@ public class GrantController {
                                                 attachment.getName() + "." + attachment.getType());
                                         FileCopyUtils.copy(fileExisting, fileToCreate);
                                     } catch (IOException e) {
-                                        e.printStackTrace();
+                                        logger.error(e.getMessage(),e);
                                     }
 
                                 }
@@ -535,7 +536,7 @@ public class GrantController {
                                                 attachment.getName() + "." + attachment.getType());
                                         FileCopyUtils.copy(fileExisting, fileToCreate);
                                     } catch (IOException e) {
-                                        e.printStackTrace();
+                                        logger.error(e.getMessage(),e);
                                     }
 
                                 }
@@ -2194,7 +2195,7 @@ public class GrantController {
         }
         File file = fileMap.values().stream().collect(Collectors.toList()).get(0);
         Optional<String> first = fileMap.keySet().stream().findFirst();
-        String tempFileName = RandomStringUtils.randomAlphabetic(127) + "." + (first.isPresent() ? first.get() : "");
+        String tempFileName =  RandomStringUtils.random(127, 0, 0, true, true, null, new SecureRandom()) + "." + (first.isPresent() ? first.get() : "");
         File tempFile = new File(previewLocation + FILE_SEPARATOR + tempFileName);
         FileCopyUtils.copy(file, tempFile);
         return new PreviewData(tempFileName);

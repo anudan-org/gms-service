@@ -266,7 +266,7 @@ public class AdiminstrativeController {
                             try {
                                 attribute.setExtras(new ObjectMapper().writeValueAsString(a.getTableValue()));
                             } catch (JsonProcessingException e) {
-                                e.printStackTrace();
+                                logger.error(e.getMessage(),e);
                             }
                         }
                         attribute.setFieldName(a.getName());
@@ -546,12 +546,8 @@ public class AdiminstrativeController {
             try {
                 ScheduledTaskVO taskConfiguration = mapper.readValue(config.getConfigValue(), ScheduledTaskVO.class);
                 configVO.setScheduledTaskConfiguration(taskConfiguration);
-            } catch (JsonParseException e) {
-                e.printStackTrace();
-            } catch (JsonMappingException e) {
-                e.printStackTrace();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(),e);
             }
         }
         return configVO;
@@ -573,12 +569,8 @@ public class AdiminstrativeController {
             try {
                 ScheduledTaskVO taskConfiguration = mapper.readValue(config.getConfigValue(), ScheduledTaskVO.class);
                 configVO.setScheduledTaskConfiguration(taskConfiguration);
-            } catch (JsonParseException e) {
-                e.printStackTrace();
-            } catch (JsonMappingException e) {
-                e.printStackTrace();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(),e);
             }
         }
         return configVO;
@@ -597,7 +589,7 @@ public class AdiminstrativeController {
                 try {
                     existingConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
                 } catch (JsonProcessingException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(),e);
                 }
             } else {
                 existingConfig.setConfigValue(config.getConfigValue());
@@ -619,7 +611,7 @@ public class AdiminstrativeController {
                 try {
                     orgConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
                 } catch (JsonProcessingException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(),e);
                 }
             } else {
                 existingConfig.setConfigValue(config.getConfigValue());
@@ -637,7 +629,7 @@ public class AdiminstrativeController {
                 try {
                     existingConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
                 } catch (JsonProcessingException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(),e);
                 }
             } else {
                 existingConfig.setConfigValue(config.getConfigValue());
@@ -734,7 +726,7 @@ public class AdiminstrativeController {
             fos.write(files[0].getBytes());
             fos.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
         return libraryDoc;
     }

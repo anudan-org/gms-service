@@ -4,6 +4,8 @@ import javax.validation.constraints.NotNull;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.repositories.OrganizationRepository;
 import org.codealpha.gmsservice.services.OrganizationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,7 @@ import java.io.IOException;
 @ApiIgnore
 public class OrganizationController {
 
+	private static final Logger logger = LoggerFactory.getLogger(OrganizationController.class);
 	@Autowired
 	private OrganizationService service;
 
@@ -64,10 +67,8 @@ public class OrganizationController {
 			fos = new FileOutputStream(fileToCreate);
 			fos.write(image.getBytes());
 			fos.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 		}
 
 	}
@@ -86,10 +87,8 @@ public class OrganizationController {
 			fos = new FileOutputStream(fileToCreate);
 			fos.write(image.getBytes());
 			fos.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 		}
 
 	}

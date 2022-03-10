@@ -353,7 +353,7 @@ public class ScheduledJobs {
                 }
 
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(),e);
             }
         }
     }
@@ -645,7 +645,7 @@ public class ScheduledJobs {
                 }
 
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(),e);
             }
         }
     }
@@ -685,7 +685,7 @@ public class ScheduledJobs {
             releaseService.saveRelease(version);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
     }
 

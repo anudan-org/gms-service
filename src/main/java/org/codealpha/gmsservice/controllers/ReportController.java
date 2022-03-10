@@ -956,7 +956,7 @@ public class ReportController {
             File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
             FileCopyUtils.copy(file, fileToCreate);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
         ReportStringAttributeAttachments attachment = new ReportStringAttributeAttachments();
         attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
@@ -977,7 +977,7 @@ public class ReportController {
             stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
             stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
         Report report = reportService.getReportById(reportId);
         report = _ReportToReturn(report, userId);
@@ -1030,7 +1030,7 @@ public class ReportController {
                 fos.write(file.getBytes());
                 fos.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(),e);
             }
             ReportStringAttributeAttachments attachment = new ReportStringAttributeAttachments();
             attachment.setVersion(1);
@@ -2005,7 +2005,7 @@ public class ReportController {
                             disbursementAttributeValue.get().setValue(mapper.writeValueAsString(tableDataList));
                             reportService.saveReportStringAttribute(disbursementAttributeValue.get());
                         } catch (JsonProcessingException e) {
-                            e.printStackTrace();
+                            logger.error(e.getMessage(),e);
                         }
                     } else {
                         ReportSpecificSection specificSection = new ReportSpecificSection();

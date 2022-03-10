@@ -441,7 +441,7 @@ public class ReportService {
                     .signWith(SignatureAlgorithm.HS512, SECRET).compact();
             return secureCode;
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
         return "";
     }
@@ -837,7 +837,7 @@ public class ReportService {
                         newAttribute.setExtras(mapper.writeValueAsString(tableData));
 
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(),e);
                     }
                 }
 
