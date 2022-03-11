@@ -645,7 +645,7 @@ public class AdiminstrativeController {
             @RequestParam("docName") String docName, @RequestParam("docDescription") String docDescription) {
         User user = userService.getUserById(userId);
 
-        String filePath = uploadLocation + (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")?user.getOrganization().getName():tenantCode) + "/template-library";
+        String filePath = uploadLocation + user.getOrganization().getCode() + "/template-library";
         new File(filePath).mkdirs();
 
 

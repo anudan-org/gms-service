@@ -144,7 +144,7 @@ public class DisbursementsController {
         @PostMapping("/grant/{grantId}")
         public Disbursement createNewDisbursement(@PathVariable("userId") Long userId,
                         @PathVariable("grantId") Long grantId, @RequestHeader("X-TENANT-CODE") String tenantCode,
-                        @RequestBody Disbursement disbursementFromUI) {
+                        @RequestBody DisbursementDTO disbursementFromUI) {
 
                 Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
                 Disbursement disbursementToSave = new Disbursement();
@@ -733,8 +733,9 @@ public class DisbursementsController {
                 @RequestParam("file") MultipartFile[] files,
                 @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
+
                 Disbursement disbursement = disbursementService.getDisbursementById(disbursementId);
-                String filePath = uploadLocation + tenantCode + "/disbursement-documents/" + disbursement.getGrant().getId() + FILE_SEPARATOR + disbursementId + FILE_SEPARATOR;
+                String filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + "/disbursement-documents/" + disbursement.getGrant().getId() + FILE_SEPARATOR + disbursementId + FILE_SEPARATOR;
                 File dir = new File(filePath);
                 dir.mkdirs();
                 List<DisbursementDocument> attachments = new ArrayList<>();
