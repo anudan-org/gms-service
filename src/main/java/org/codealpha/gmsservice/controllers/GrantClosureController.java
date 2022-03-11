@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
@@ -83,6 +82,7 @@ public class GrantClosureController {
     public static final String GRANTER = "GRANTER";
     public static final String REQUEST_MODIFICATIONS = "Request Modifications";
     public static final String TENANT = "%TENANT%";
+    public static final String FILE_SEPARATOR = "/";
 
 
     @Autowired
@@ -153,7 +153,7 @@ public class GrantClosureController {
         closureService.deleteClosure(closure);
     }
 
-    @GetMapping("/")
+    @GetMapping(FILE_SEPARATOR)
     public List<GrantClosure> getGrantClosuresForUser(
             @PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode
@@ -267,7 +267,7 @@ public class GrantClosureController {
         AtomicBoolean closureTemplateHasDisbursement = new AtomicBoolean(false);
         AtomicReference<ClosureStringAttribute> disbursementAttributeValue = new AtomicReference<>(new ClosureStringAttribute());
 
-        if (!granterClosureSections.stream().filter(rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS)).findFirst().isPresent()) {
+        if (granterClosureSections.stream().noneMatch(rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS))) {
             GranterClosureSection indicatorSection = new GranterClosureSection();
             indicatorSection.setClosureTemplate(closureTemplate);
             indicatorSection.setDeletable(true);
@@ -293,30 +293,28 @@ public class GrantClosureController {
 
             if (specificSection.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS)) {
                 for (Map<DatePeriod, PeriodAttribWithLabel> hold : getPeriodsWithAttributes(closure.getGrant(), userId)) {
-                    hold.forEach((entry, val) -> {
-                        val.getAttributes().forEach(attribVo -> {
-                            ClosureSpecificSectionAttribute sectionAttribute = new ClosureSpecificSectionAttribute();
-                            sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
-                            sectionAttribute.setDeletable(attribVo.isDeletable());
-                            sectionAttribute.setFieldName(attribVo.getFieldName());
-                            sectionAttribute.setFieldType(attribVo.getFieldType());
-                            sectionAttribute.setGranter(finalSpecificSection.getGranter());
-                            sectionAttribute.setRequired(attribVo.isRequired());
-                            sectionAttribute.setSection(finalSpecificSection);
-                            sectionAttribute.setCanEdit(false);
-                            sectionAttribute = closureService.saveClosureSpecificSectionAttribute(sectionAttribute);
+                    hold.forEach((entry, val) -> val.getAttributes().forEach(attribVo -> {
+                        ClosureSpecificSectionAttribute sectionAttribute = new ClosureSpecificSectionAttribute();
+                        sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
+                        sectionAttribute.setDeletable(attribVo.isDeletable());
+                        sectionAttribute.setFieldName(attribVo.getFieldName());
+                        sectionAttribute.setFieldType(attribVo.getFieldType());
+                        sectionAttribute.setGranter(finalSpecificSection.getGranter());
+                        sectionAttribute.setRequired(attribVo.isRequired());
+                        sectionAttribute.setSection(finalSpecificSection);
+                        sectionAttribute.setCanEdit(false);
+                        sectionAttribute = closureService.saveClosureSpecificSectionAttribute(sectionAttribute);
 
-                            ClosureStringAttribute stringAttribute = new ClosureStringAttribute();
+                        ClosureStringAttribute stringAttribute = new ClosureStringAttribute();
 
-                            stringAttribute.setSection(finalSpecificSection);
-                            stringAttribute.setClosure(finalClosure);
-                            stringAttribute.setSectionAttribute(sectionAttribute);
-                            stringAttribute.setGrantLevelTarget(attribVo.getTarget());
-                            stringAttribute.setFrequency(attribVo.getFrequency());
+                        stringAttribute.setSection(finalSpecificSection);
+                        stringAttribute.setClosure(finalClosure);
+                        stringAttribute.setSectionAttribute(sectionAttribute);
+                        stringAttribute.setGrantLevelTarget(attribVo.getTarget());
+                        stringAttribute.setFrequency(attribVo.getFrequency());
 
-                            stringAttribute = closureService.saveClosureStringAttribute(stringAttribute);
-                        });
-                    });
+                        stringAttribute = closureService.saveClosureStringAttribute(stringAttribute);
+                    }));
                 }
 
             }
@@ -454,10 +452,8 @@ public class GrantClosureController {
         Map<DatePeriod, PeriodAttribWithLabel> yearlyPeriods = new HashMap<>();
         if (grant.getStartDate() != null && grant.getEndDate() != null) {
             grant.getGrantDetails().getSections().forEach(sec -> {
-                if (sec.getAttributes() != null && sec.getAttributes().size() > 0) {
-                    List<SectionAttributesVO> attribs = new ArrayList<>();
+                if (sec.getAttributes() != null && !sec.getAttributes().isEmpty()) {
                     List<String> order = ImmutableList.of("YEARLY", "HALF-YEARLY", "QUARTERLY", "MONTHLY");
-                    final Ordering<String> colorOrdering = Ordering.explicit(order);
                     Comparator<SectionAttributesVO> attrComparator = Comparator
                             .comparing(c -> order.indexOf(c.getFrequency().toUpperCase()));
                     sec.getAttributes().removeIf(attr -> attr.getFrequency() == null);
@@ -482,7 +478,7 @@ public class GrantClosureController {
                                     if (yearlyPeriods.containsKey(rf)) {
                                         attrList = yearlyPeriods.get(rf).getAttributes();
                                     } else {
-                                        attrList = new ArrayList<SectionAttributesVO>();
+                                        attrList = new ArrayList<>();
                                     }
                                     attrList.add(attr);
                                     yearlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(), attrList));
@@ -509,7 +505,7 @@ public class GrantClosureController {
                                         if (halfyearlyPeriods.containsKey(rf)) {
                                             attrList = halfyearlyPeriods.get(rf).getAttributes();
                                         } else {
-                                            attrList = new ArrayList<SectionAttributesVO>();
+                                            attrList = new ArrayList<>();
                                         }
                                         attrList.add(attr);
                                         halfyearlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(), attrList));
@@ -538,7 +534,7 @@ public class GrantClosureController {
                                         if (quarterlyPeriods.containsKey(rf)) {
                                             attrList = quarterlyPeriods.get(rf).getAttributes();
                                         } else {
-                                            attrList = new ArrayList<SectionAttributesVO>();
+                                            attrList = new ArrayList<>();
                                         }
                                         attrList.add(attr);
                                         quarterlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(), attrList));
@@ -570,7 +566,7 @@ public class GrantClosureController {
                                     if (monthlyPeriods.containsKey(rf)) {
                                         attrList = monthlyPeriods.get(rf).getAttributes();
                                     } else {
-                                        attrList = new ArrayList<SectionAttributesVO>();
+                                        attrList = new ArrayList<>();
                                     }
                                     attrList.add(attr);
                                     monthlyPeriods.put(rf, new PeriodAttribWithLabel(rf.getLabel(), attrList));
@@ -944,7 +940,7 @@ public class GrantClosureController {
         specificSection.setSectionOrder(closureService
                 .getNextSectionOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(), templateId));
         specificSection.setRefund(isRefund);
-        if(isRefund){
+        if(Boolean.TRUE.equals(isRefund)){
             specificSection.setSystemGenerated(true);
         }
         specificSection = closureService.saveSection(specificSection);
@@ -1228,8 +1224,8 @@ public class GrantClosureController {
         closureService.deleteSection(section);
 
 
-        if(section.getRefund()){
-            if(closureToSave.getGrant().getActualRefunds()!=null && closureToSave.getGrant().getActualRefunds().size()>0){
+        if(Boolean.TRUE.equals(section.getRefund())){
+            if(closureToSave.getGrant().getActualRefunds()!=null && !closureToSave.getGrant().getActualRefunds().isEmpty()){
                 grantService.deleteActualRefundsForGrant(closureToSave.getGrant().getActualRefunds());
             }
             closureToSave.getGrant().setRefundAmount(null);
@@ -1320,12 +1316,12 @@ public class GrantClosureController {
 
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
                 filePath = uploadLocation + user.getOrganization().getName().toUpperCase() + CLOSURE_DOCUMENTS
-                        + closureId + "/" + stringAttribute.getSection().getId() + "/"
-                        + stringAttribute.getSectionAttribute().getId() + "/";
+                        + closureId + FILE_SEPARATOR + stringAttribute.getSection().getId() + FILE_SEPARATOR
+                        + stringAttribute.getSectionAttribute().getId() + FILE_SEPARATOR;
             } else {
-                filePath = uploadLocation + user.getOrganization().getCode().toUpperCase() + CLOSURE_DOCUMENTS + closureId + "/"
-                        + stringAttribute.getSection().getId() + "/" + stringAttribute.getSectionAttribute().getId()
-                        + "/";
+                filePath = uploadLocation + user.getOrganization().getCode().toUpperCase() + CLOSURE_DOCUMENTS + closureId + FILE_SEPARATOR
+                        + stringAttribute.getSection().getId() + FILE_SEPARATOR + stringAttribute.getSectionAttribute().getId()
+                        + FILE_SEPARATOR;
             }
 
             File dir = new File(filePath);
@@ -1382,11 +1378,9 @@ public class GrantClosureController {
         GrantClosure closure = closureService.getClosureById(closureId);
 
         ClosureStringAttribute attr = closureService.getClosureStringByStringAttributeId(attributeId);
-        User user = userService.getUserById(userId);
-
         String filePath = STRNOSPACE;
             filePath = uploadLocation + closure.getGrant().getGrantorOrganization().getCode() + CLOSURE_DOCUMENTS + closureId
-                    + "/" + attr.getSection().getId() + "/" + attr.getSectionAttribute().getId() + "/";
+                    + FILE_SEPARATOR + attr.getSection().getId() + FILE_SEPARATOR + attr.getSectionAttribute().getId() + FILE_SEPARATOR;
         File dir = new File(filePath);
         dir.mkdirs();
         List<ClosureStringAttributeAttachments> attachments = new ArrayList<>();
@@ -1460,16 +1454,11 @@ public class GrantClosureController {
             @PathVariable("closureId") Long closureId,
             @RequestParam("file") MultipartFile[] files) {
 
-
-
         GrantClosure closure = closureService.getClosureById(closureId);
-
-
-        User user = userService.getUserById(userId);
 
         String filePath = STRNOSPACE;
         filePath = uploadLocation + closure.getGrant().getGrantorOrganization().getCode() + CLOSURE_DOCUMENTS + closure.getId()
-                +"/";
+                + FILE_SEPARATOR;
         File dir = new File(filePath);
         dir.mkdirs();
 
@@ -1534,21 +1523,21 @@ public class GrantClosureController {
             File file = null;
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
                 file = resourceLoader.getResource(FILE + uploadLocation
-                        + user.getOrganization().getName() + CLOSURE_DOCUMENTS + closureId + "/"
-                        + sectionId + "/" + attributeId + "/" + attachment.getName() + "." + attachment.getType())
+                        + user.getOrganization().getName() + CLOSURE_DOCUMENTS + closureId + FILE_SEPARATOR
+                        + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR + attachment.getName() + "." + attachment.getType())
                         .getFile();
                 if (!file.exists()) {
                     file = resourceLoader
                             .getResource(FILE + uploadLocation
                                     + closure.getGrant().getGrantorOrganization().getCode().toUpperCase()
-                                    + CLOSURE_DOCUMENTS + closureId + "/" + sectionId + "/" + attributeId + "/"
+                                    + CLOSURE_DOCUMENTS + closureId + FILE_SEPARATOR + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR
                                     + attachment.getName() + "." + attachment.getType())
                             .getFile();
                 }
             } else {
                 file = resourceLoader.getResource(
-                        FILE + uploadLocation + closure.getGrant().getGrantorOrganization().getCode()+CLOSURE_DOCUMENTS + closureId + "/" + sectionId + "/"
-                                + attributeId + "/" + attachment.getName() + "." + attachment.getType())
+                        FILE + uploadLocation + closure.getGrant().getGrantorOrganization().getCode()+CLOSURE_DOCUMENTS + closureId + FILE_SEPARATOR + sectionId + FILE_SEPARATOR
+                                + attributeId + FILE_SEPARATOR + attachment.getName() + "." + attachment.getType())
                         .getFile();
                 if (!file.exists()) {
 
@@ -1556,7 +1545,7 @@ public class GrantClosureController {
                             .getResource(FILE + uploadLocation
                                     + tenantCode
                                     .toUpperCase()
-                                    + CLOSURE_DOCUMENTS + closureId + "/" + sectionId + "/" + attributeId + "/"
+                                    + CLOSURE_DOCUMENTS + closureId + FILE_SEPARATOR + sectionId + FILE_SEPARATOR + attributeId + FILE_SEPARATOR
                                     + attachment.getName() + "." + attachment.getType())
                             .getFile();
                 }
@@ -1596,11 +1585,6 @@ public class GrantClosureController {
         ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
 
         // simple file list, just for tests
-
-        ArrayList<File> files = new ArrayList<>(2);
-        User user = userService.getUserById(userId);
-        GrantClosure closure = closureService.getClosureById(closureId);
-
         // packing files
         for (Long attachmentId : downloadRequest.getAttachmentIds()) {
             ClosureDocument attachment = closureService
@@ -2270,7 +2254,7 @@ public class GrantClosureController {
         tempSnapshot.setGrantRefundAmount(currenClosure.getGrant().getRefundAmount());
         tempSnapshot.setGrantRefundReason(currenClosure.getGrant().getRefundReason());
         List<ActualRefund> actualRefunds = grantService.getActualRefundsForGrant(currenClosure.getGrant().getId());
-        if(actualRefunds!=null && actualRefunds.size()>0){
+        if(actualRefunds!=null && !actualRefunds.isEmpty()){
             tempSnapshot.setActualRefunds(new ObjectMapper().writeValueAsString(actualRefunds));
         }
         return closureService.closureToPlain(currenClosure,tempSnapshot);
@@ -2322,7 +2306,7 @@ public class GrantClosureController {
             snapshot.setGrantRefundAmount(closure.getGrant().getRefundAmount());
             snapshot.setGrantRefundReason(closure.getGrant().getRefundReason());
             List<ActualRefund> refunds = grantService.getActualRefundsForGrant(closure.getGrant().getId());
-            if(refunds !=null && refunds.size()>0){
+            if(refunds !=null && !refunds.isEmpty()){
                 snapshot.setActualRefunds(new ObjectMapper().writeValueAsString(refunds));
             }
 
@@ -2338,7 +2322,7 @@ public class GrantClosureController {
 
         List<GrantClosureHistory> history = new ArrayList<>();
         List<ClosureSnapshot> closureSnapshotHistory = closureSnapshotService.getClosureSnapshotForClosure(closureId);
-        if ((closureSnapshotHistory.size()>0 && closureSnapshotHistory.get(0).getFromStateId() == null)) {
+        if ((!closureSnapshotHistory.isEmpty() && closureSnapshotHistory.get(0).getFromStateId() == null)) {
             history = closureService.getClosureHistory(closureId);
             for (GrantClosureHistory historyEntry : history) {
                 historyEntry.setNoteAddedByUser(userService.getUserById(historyEntry.getNoteAddedBy()));
@@ -2497,19 +2481,19 @@ public class GrantClosureController {
     private DatePeriodLabel endOfQuarter(DateTime st) {
         if (st.getMonthOfYear() >= Month.JANUARY.getValue() && st.getMonthOfYear() <= Month.MARCH.getValue()) {
             return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
-                    "Quarterly Report - Q4 " +(st.getYear() - 1) + "/"
+                    "Quarterly Report - Q4 " +(st.getYear() - 1) + FILE_SEPARATOR
                             +(String.valueOf(st.getYear()).substring(2, 4)));
         } else if (st.getMonthOfYear() >= Month.APRIL.getValue() && st.getMonthOfYear() <= Month.JUNE.getValue()) {
             return new DatePeriodLabel(st.withMonthOfYear(Month.JUNE.getValue()),
-                    "Quarterly Report - Q1 " +(st.getYear()) + "/"
+                    "Quarterly Report - Q1 " +(st.getYear()) + FILE_SEPARATOR
                             +(String.valueOf(st.getYear() + 1).substring(2, 4)));
         } else if (st.getMonthOfYear() >= Month.JULY.getValue() && st.getMonthOfYear() <= Month.SEPTEMBER.getValue()) {
             return new DatePeriodLabel(st.withMonthOfYear(Month.SEPTEMBER.getValue()),
-                    "Quarterly Report - Q2 " +(st.getYear()) + "/"
+                    "Quarterly Report - Q2 " +(st.getYear()) + FILE_SEPARATOR
                             +(String.valueOf(st.getYear() + 1).substring(2, 4)));
         } else {
             return new DatePeriodLabel(st.withMonthOfYear(Month.DECEMBER.getValue()),
-                    "Quarterly Report - Q3 " + (st.getYear()) + "/"
+                    "Quarterly Report - Q3 " + (st.getYear()) + FILE_SEPARATOR
                             + (String.valueOf(st.getYear() + 1).substring(2, 4)));
         }
     }
@@ -2517,16 +2501,16 @@ public class GrantClosureController {
     private DatePeriodLabel endOfHalfYear(DateTime st) {
         if (st.getMonthOfYear() >= Month.APRIL.getValue() && st.getMonthOfYear() <= Month.SEPTEMBER.getValue()) {
             return new DatePeriodLabel(st.withMonthOfYear(Month.SEPTEMBER.getValue()),
-                    "Half-Yearly Report - H1 " + (st.getYear()) + "/"
+                    "Half-Yearly Report - H1 " + (st.getYear()) + FILE_SEPARATOR
                             + (String.valueOf(st.getYear() + 1).substring(2, 4)));
         } else if (st.getMonthOfYear() >= Month.OCTOBER.getValue()
                 && st.getMonthOfYear() <= Month.DECEMBER.getValue()) {
             return new DatePeriodLabel(st.plusYears(1).withMonthOfYear(Month.MARCH.getValue()),
-                    "Half-Yearly Report - H2 " + (st.getYear()) + "/"
+                    "Half-Yearly Report - H2 " + (st.getYear()) + FILE_SEPARATOR
                             + (String.valueOf(st.getYear() + 1).substring(2, 4)));
         } else {
             return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
-                    "Half-Yearly Report - H2 " + (st.getYear() - 1) + "/"
+                    "Half-Yearly Report - H2 " + (st.getYear() - 1) + FILE_SEPARATOR
                             + (String.valueOf(st.getYear()).substring(2, 4)));
         }
     }
@@ -2534,11 +2518,11 @@ public class GrantClosureController {
     private DatePeriodLabel endOfYear(DateTime st) {
         if (st.getMonthOfYear() >= Month.APRIL.getValue() && st.getMonthOfYear() <= Month.DECEMBER.getValue()) {
             return new DatePeriodLabel(st.plusYears(1).withMonthOfYear(Month.MARCH.getValue()),
-                    "Yearly Report " + (st.getYear()) + "/"
+                    "Yearly Report " + (st.getYear()) + FILE_SEPARATOR
                             + (String.valueOf(st.getYear() + 1).substring(2, 4)));
         } else{
             return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
-                    "Yearly Report " + (st.getYear() - 1) + "/"
+                    "Yearly Report " + (st.getYear() - 1) + FILE_SEPARATOR
                             + (String.valueOf(st.getYear()).substring(2, 4)));
         }
     }

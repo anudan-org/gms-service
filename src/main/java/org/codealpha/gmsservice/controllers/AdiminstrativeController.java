@@ -1,14 +1,11 @@
 package org.codealpha.gmsservice.controllers;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
@@ -30,38 +27,30 @@ import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import springfox.documentation.annotations.ApiIgnore;
-
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.sql.*;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @RestController
 @RequestMapping("/admin")
 @ApiIgnore
 public class AdiminstrativeController {
 
+    public static final String DISBURSEMENT = "DISBURSEMENT";
+    public static final String ANUDAN = "ANUDAN";
+    public static final String DUE_REPORTS_REMINDER_SETTINGS = "DUE_REPORTS_REMINDER_SETTINGS";
+    public static final String ACTION_DUE_REPORTS_REMINDER_SETTINGS = "ACTION_DUE_REPORTS_REMINDER_SETTINGS";
+    public static final String COLOR_CODE = "#fdf6ff";
+    public static final String IMPLEMENTED_VIA_EXTERNAL_PARTNER = "Implemented via external partner";
+    public static final String EXTERNAL_IMPLEMENTATION = "External Implementation";
     @Autowired
     private OrganizationService organizationService;
     @Autowired
@@ -127,13 +116,6 @@ public class AdiminstrativeController {
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode,
             @ApiParam(name = "grantId", value = "Unique identifier of grant") @PathVariable("grantId") Long grantId,
             @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
-        Organization org = null;
-        if ("ANUDAN".equalsIgnoreCase(tenantCode)) {
-            org = grantService.getById(grantId).getGrantorOrganization();
-        } else {
-            org = organizationService.findOrganizationByTenantCode(tenantCode);
-        }
-
         WorkflowStatus grantStatus = workflowStatusService.findById(grantService.getById(grantId).getGrantStatus().getId());
         return workflowTransitionModelService.getWorkflowsByWorkflowStatusId(grantStatus.getWorkflow().getId());
     }
@@ -144,12 +126,7 @@ public class AdiminstrativeController {
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode,
             @ApiParam(name = "reportId", value = "Unique identifier of Report") @PathVariable("reportId") Long reportId,
             @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
-        Organization org = null;
-        if ("ANUDAN".equalsIgnoreCase(tenantCode)) {
-            org = reportService.getReportById(reportId).getGrant().getGrantorOrganization();
-        } else {
-            org = organizationService.findOrganizationByTenantCode(tenantCode);
-        }
+
         organizationService.findOrganizationByTenantCode(tenantCode);
 
         WorkflowStatus reportStatus = workflowStatusService.findById(reportService.getReportById(reportId).getStatus().getId());
@@ -162,12 +139,6 @@ public class AdiminstrativeController {
             @RequestHeader("X-TENANT-CODE") String tenantCode,
             @PathVariable("closureId") Long closureId,
             @PathVariable("userId") Long userId) {
-        Organization org = null;
-        if ("ANUDAN".equalsIgnoreCase(tenantCode)) {
-            org = closureService.getClosureById(closureId).getGrant().getGrantorOrganization();
-        } else {
-            org = organizationService.findOrganizationByTenantCode(tenantCode);
-        }
         organizationService.findOrganizationByTenantCode(tenantCode);
 
         WorkflowStatus reportStatus = workflowStatusService.findById(closureService.getClosureById(closureId).getStatus().getId());
@@ -181,12 +152,7 @@ public class AdiminstrativeController {
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode,
             @ApiParam(name = "disbursementId", value = "Unique identifier of Disbursement") @PathVariable("disbursementId") Long disbursementId,
             @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
-        Organization org = null;
-        if ("ANUDAN".equalsIgnoreCase(tenantCode)) {
-            org = disbursementService.getDisbursementById(disbursementId).getGrant().getGrantorOrganization();
-        } else {
-            org = organizationService.findOrganizationByTenantCode(tenantCode);
-        }
+
         organizationService.findOrganizationByTenantCode(tenantCode);
 
         WorkflowStatus disbursementStatus = workflowStatusService.findById(disbursementService.getDisbursementById(disbursementId).getStatus().getId());
@@ -205,38 +171,27 @@ public class AdiminstrativeController {
 
         workflow = workflowService.saveWorkflow(workflow);
 
-        Map<String, WorkflowStatus> statuses = new HashMap<>();
-        int index = 0;
         for (WorkflowTransitionDataModel transition : workFlowDataModel.getTransitions()) {
             WorkflowStatus status = new WorkflowStatus();
             status.setWorkflow(workflow);
             status.setVerb(transition.getAction());
-            if (_checkIfTerminal(transition, workFlowDataModel.getTransitions())) {
                 status.setTerminal(true);
-            }
         }
-
     }
 
-    private boolean _checkIfTerminal(WorkflowTransitionDataModel transition,
-            List<WorkflowTransitionDataModel> transitions) {
-        transitions.stream().filter(t -> t.getFrom().equalsIgnoreCase(transition.getFrom()));
-        return true;
-    }
 
     @PostMapping("/template")
     public void createTemplate(@RequestBody templateVO template, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
-        switch (template.getType()) {
-            case "report":
-                GranterReportTemplate reportTemplate = _extractReportTemplate(org, template);
-                reportTemplateService.saveReportTemplate(reportTemplate);
+        if ("report".equals(template.getType())) {
+            GranterReportTemplate reportTemplate = extractReportTemplate(org, template);
+            reportTemplateService.saveReportTemplate(reportTemplate);
         }
 
     }
 
-    private GranterReportTemplate _extractReportTemplate(Organization granter, templateVO template) {
+    private GranterReportTemplate extractReportTemplate(Organization granter, templateVO template) {
 
         reportTemplateService.markAllAsNotDefault();
         GranterReportTemplate reportTemplate = new GranterReportTemplate();
@@ -292,8 +247,7 @@ public class AdiminstrativeController {
 
         User user = userService.getUserById(userId);
 
-        List<Role> roles = getCurrentOrgRoles(user);
-        return roles;
+        return getCurrentOrgRoles(user);
     }
 
     @GetMapping("/user/{userId}/user")
@@ -302,27 +256,14 @@ public class AdiminstrativeController {
 
         User user = userService.getUserById(userId);
 
-        List<User> users = getCurrentUsers(user);
-        return users;
-    }
-
-    private List<Role> getCurrentSystemRoles(User user) {
-        List<Role> roles = roleService.getInternalRolesForOrganization(user.getOrganization());
-        for (Role role : roles) {
-            List<UserRole> userRoles = userRoleService.findUsersForRole(role);
-            if (userRoles != null && userRoles.size() > 0) {
-                role.setHasUsers(true);
-                role.setLinkedUsers(userRoles.size());
-            }
-        }
-        return roles;
+        return getCurrentUsers(user);
     }
 
     private List<Role> getCurrentOrgRoles(User user) {
         List<Role> roles = roleService.getPublicRolesForOrganization(user.getOrganization());
         for (Role role : roles) {
             List<UserRole> userRoles = userRoleService.findUsersForRole(role);
-            if (userRoles != null && userRoles.size() > 0) {
+            if (userRoles != null && !userRoles.isEmpty()) {
                 role.setHasUsers(true);
                 role.setLinkedUsers(userRoles.size());
             }
@@ -342,8 +283,8 @@ public class AdiminstrativeController {
             u.getUserRoles().removeIf(ur -> ur.getRole().isInternal());
 
         });
-        List<User> unRegisteredUsers = users.stream().filter(u -> (u.isActive() == false)).collect(Collectors.toList());
-        users.removeIf(u -> u.isActive() == false);
+        List<User> unRegisteredUsers = users.stream().filter(u -> (!u.isActive())).collect(Collectors.toList());
+        users.removeIf(u -> !u.isActive());
         users.sort(Comparator.comparing(User::getFirstName));
         users.addAll(unRegisteredUsers);
         return users;
@@ -383,8 +324,7 @@ public class AdiminstrativeController {
         Role role = roleService.getById(roleId);
         roleService.deleteRole(role);
 
-        List<Role> roles = getCurrentOrgRoles(userService.getUserById(userId));
-        return roles;
+        return getCurrentOrgRoles(userService.getUserById(userId));
     }
 
     @PostMapping("/user/{userId}/user")
@@ -460,7 +400,7 @@ public class AdiminstrativeController {
         if (newUser.isAdmin()) {
             if (existingUser.getUserRoles().stream()
                     .anyMatch(ur -> ur.getRole().getId().longValue() == adminRole.getId().longValue())) {
-
+                //Do nothing
             } else {
                 UserRole newAdminRole = new UserRole();
                 newAdminRole.setUser(existingUser);
@@ -471,15 +411,13 @@ public class AdiminstrativeController {
         } else {
             if (existingUser.getUserRoles().stream()
                     .anyMatch(ur -> ur.getRole().getId().longValue() == adminRole.getId().longValue())) {
-                UserRole roleToDelete = existingUser.getUserRoles().stream()
-                        .filter(ur -> ur.getRole().getId().longValue() == adminRole.getId().longValue()).findAny()
-                        .get();
-                // userRoleService.saveUserRoles(existingUser.getUserRoles());
-                userRoleService.deleteUserRole(roleToDelete);
-                existingUser.getUserRoles()
-                        .removeIf(ur -> ur.getRole().getId().longValue() == roleToDelete.getRole().getId().longValue());
-
-            } else {
+                Optional<UserRole> optionalUserRole = existingUser.getUserRoles().stream()
+                        .filter(ur -> ur.getRole().getId().longValue() == adminRole.getId().longValue()).findAny();
+                if(optionalUserRole.isPresent()){
+                    userRoleService.deleteUserRole(optionalUserRole.get());
+                    existingUser.getUserRoles()
+                            .removeIf(ur -> ur.getRole().getId().longValue() == optionalUserRole.get().getRole().getId().longValue());
+                }
             }
         }
 
@@ -520,7 +458,7 @@ public class AdiminstrativeController {
             buildConfigVOList(configs, configVOs);
             return configVOs;
         }
-        return null;
+        return Collections.emptyList();
     }
 
     private void buildConfigVOList(List<AppConfig> configs, List<AppConfigVO> configVOs) {
@@ -583,8 +521,8 @@ public class AdiminstrativeController {
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         if (config.getType().equalsIgnoreCase("app") && tenantOrg.getOrganizationType().equalsIgnoreCase("PLATFORM")) {
             AppConfig existingConfig = appConfigService.getAppConfigById(config.getKey());
-            if (config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS")
-                    || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")) {
+            if (config.getConfigName().equalsIgnoreCase(DUE_REPORTS_REMINDER_SETTINGS)
+                    || config.getConfigName().equalsIgnoreCase(ACTION_DUE_REPORTS_REMINDER_SETTINGS)) {
                 ObjectMapper mapper = new ObjectMapper();
                 try {
                     existingConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
@@ -595,7 +533,7 @@ public class AdiminstrativeController {
                 existingConfig.setConfigValue(config.getConfigValue());
             }
 
-            existingConfig = appConfigService.saveAppConfig(existingConfig);
+            appConfigService.saveAppConfig(existingConfig);
         } else if (config.getType().equalsIgnoreCase("app")
                 && tenantOrg.getOrganizationType().equalsIgnoreCase("GRANTER")) {
             AppConfig existingConfig = appConfigService.getAppConfigById(config.getKey());
@@ -605,8 +543,8 @@ public class AdiminstrativeController {
             orgConfig.setDescription(existingConfig.getDescription());
             orgConfig.setGranterId(orgId);
 
-            if (config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS")
-                    || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")) {
+            if (config.getConfigName().equalsIgnoreCase(DUE_REPORTS_REMINDER_SETTINGS)
+                    || config.getConfigName().equalsIgnoreCase(ACTION_DUE_REPORTS_REMINDER_SETTINGS)) {
                 ObjectMapper mapper = new ObjectMapper();
                 try {
                     orgConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
@@ -623,8 +561,8 @@ public class AdiminstrativeController {
             config.setKey(orgConfig.getId());
         } else if (config.getType().equalsIgnoreCase("org")) {
             OrgConfig existingConfig = appConfigService.getOrgConfigById(config.getKey());
-            if (config.getConfigName().equalsIgnoreCase("DUE_REPORTS_REMINDER_SETTINGS")
-                    || config.getConfigName().equalsIgnoreCase("ACTION_DUE_REPORTS_REMINDER_SETTINGS")) {
+            if (config.getConfigName().equalsIgnoreCase(DUE_REPORTS_REMINDER_SETTINGS)
+                    || config.getConfigName().equalsIgnoreCase(ACTION_DUE_REPORTS_REMINDER_SETTINGS)) {
                 ObjectMapper mapper = new ObjectMapper();
                 try {
                     existingConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
@@ -635,7 +573,7 @@ public class AdiminstrativeController {
                 existingConfig.setConfigValue(config.getConfigValue());
             }
 
-            existingConfig = appConfigService.saveOrgConfig(existingConfig);
+            appConfigService.saveOrgConfig(existingConfig);
 
         }
 
@@ -721,10 +659,8 @@ public class AdiminstrativeController {
         libraryDoc.setLocation(fileToCreate.getPath());
         libraryDoc.setGranterId(user.getOrganization().getId());
         libraryDoc = templateLibraryService.saveLibraryDoc(libraryDoc);
-        try {
-            FileOutputStream fos = new FileOutputStream(fileToCreate);
+        try(FileOutputStream fos = new FileOutputStream(fileToCreate)) {
             fos.write(files[0].getBytes());
-            fos.close();
         } catch (IOException e) {
             logger.error(e.getMessage(),e);
         }
@@ -736,7 +672,6 @@ public class AdiminstrativeController {
             @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest,
             HttpServletResponse response) throws IOException {
 
-        ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
         // setting headers
         response.setContentType("application/zip");
         response.setStatus(HttpServletResponse.SC_OK);
@@ -749,9 +684,6 @@ public class AdiminstrativeController {
         ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
 
         // simple file list, just for tests
-
-        ArrayList<File> files = new ArrayList<>(2);
-
         // packing files
         for (Long attachmentId : downloadRequest.getAttachmentIds()) {
             TemplateLibrary attachment = templateLibraryService.getTemplateLibraryDocumentById(attachmentId);
@@ -759,20 +691,19 @@ public class AdiminstrativeController {
             File file = resourceLoader.getResource("file:" + uploadLocation + attachment.getLocation()).getFile();
             // new zip entry and copying inputstream with file to zipOutputStream, after all
             // closing streams
-            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
-            FileInputStream fileInputStream = new FileInputStream(file);
+            try(FileInputStream fileInputStream = new FileInputStream(file)) {
+                zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
 
-            IOUtils.copy(fileInputStream, zipOutputStream);
-
-            fileInputStream.close();
-            zipOutputStream.closeEntry();
+                IOUtils.copy(fileInputStream, zipOutputStream);
+                zipOutputStream.closeEntry();
+            }catch(Exception e){
+                logger.error(e.getMessage(),e);
+            }
         }
 
-        if (zipOutputStream != null) {
-            zipOutputStream.finish();
-            zipOutputStream.flush();
-            IOUtils.closeQuietly(zipOutputStream);
-        }
+        zipOutputStream.finish();
+        zipOutputStream.flush();
+        IOUtils.closeQuietly(zipOutputStream);
         IOUtils.closeQuietly(bufferedOutputStream);
         IOUtils.closeQuietly(byteArrayOutputStream);
         return byteArrayOutputStream.toByteArray();
@@ -805,9 +736,8 @@ public class AdiminstrativeController {
 
     @PostMapping("/fixgrants")
     public HttpStatus fixSustainPlusGrants()
-            throws JsonParseException, JsonMappingException, IOException, URISyntaxException {
+            throws IOException {
         List<GrantToFix> grants2Fix = grantToFixRepository.getGrantsToFix();
-        String scripts = "";
         FileWriter fw = new FileWriter("c:\\sustainplus\\snapshot_fix.sql", true);
         BufferedWriter bw = new BufferedWriter(fw);
 
@@ -820,13 +750,13 @@ public class AdiminstrativeController {
             for (SectionVO section : detail.getSections()) {
                 section.getAttributes().removeIf(at -> at.getId().longValue() == 8665);
                 List<SectionAttributesVO> attributes = section.getAttributes();
-                if (attributes != null && attributes.size() > 0) {
+                if (attributes != null && !attributes.isEmpty()) {
                     for (SectionAttributesVO attribute : attributes) {
                         if (attribute.getId() == 8655) {
                             attribute.setFieldValue(
                                     "PRADAN, 3 Community Shopping Centre, Niti Bagh, New Delhi - 110049");//
                         }
-                        if (attribute.getFieldType().equalsIgnoreCase("DISBURSEMENT")) {
+                        if (attribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
                             attribute.setFieldTableValue(disbsToSet);
                             attribute.setFieldValue(mapper.writeValueAsString(disbsToSet));
                         }
@@ -834,23 +764,15 @@ public class AdiminstrativeController {
                     }
                 }
 
-                // GrantSnapshot snapshot =
-                // grantSnapshotRepository.findById(toFix.getId()).get();
-                // snapshot.setStringAttributes(mapper.writeValueAsString(detail));
-
                 String updateString = mapper.writeValueAsString(detail);
                 updateString = updateString.replaceAll("'", "''");
                 bw.write("update grant_snapshot set string_attributes='" + updateString + "' where id=" + toFix.getId()
                         + ";");
                 bw.newLine();
-                // grantSnapshotRepository.save(snapshot);
-
             }
         }
-        // bw.write("update grant_stri")
         bw.close();
-        // FileUtils.writeStringToFile(new File(new
-        // URI("c:\\sustainplus\\snapshot_fix.sql")), scripts);
+
         return HttpStatus.OK;
     }
 
@@ -863,13 +785,13 @@ public class AdiminstrativeController {
             List<Workflow> grantWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(),"GRANT");
             List<GrantType> grantTypes = grantTypeService.findGrantTypesForTenant(granter.getId());
             for(Workflow grantWf: grantWorkflows){
-                if(grantTypes.size()==0){
+                if(grantTypes.isEmpty()){
                     GrantType gt = new GrantType();
-                    gt.setColorCode("#fdf6ff");
-                    gt.setDescription("Implemented via external partner");
+                    gt.setColorCode(COLOR_CODE);
+                    gt.setDescription(IMPLEMENTED_VIA_EXTERNAL_PARTNER);
                     gt.setGranterId(granter.getId());
                     gt.setInternal(false);
-                    gt.setName("External Implementation");
+                    gt.setName(EXTERNAL_IMPLEMENTATION);
                     gt = grantTypeService.save(gt);
                     grantTypes.add(gt);
 
@@ -881,26 +803,25 @@ public class AdiminstrativeController {
                 }
                 for(GrantType gt : grantTypes){
                     List<GrantTypeWorkflowMapping> typeWfMapping = grantTypeWorkflowMappingService.findByWorkflow(grantWf.getId());
-                    if(typeWfMapping.size()==0){
+                    if(typeWfMapping.isEmpty()){
                         GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
                         gtm.setGrantTypeId(gt.getId());
-                        //gtm.setInternal(false);
                         gtm.set_default(false);
                         gtm.setWorkflowId(grantWf.getId());
-                        gtm = grantTypeWorkflowMappingService.save(gtm);
+                        grantTypeWorkflowMappingService.save(gtm);
                     }
                 }
             }
 
             List<Workflow> reportWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(),"REPORT");
             for(Workflow reportWf: reportWorkflows){
-                if(grantTypes.size()==0){
+                if(grantTypes.isEmpty()){
                     GrantType gt = new GrantType();
-                    gt.setColorCode("#fdf6ff");
-                    gt.setDescription("Implemented via external partner");
+                    gt.setColorCode(COLOR_CODE);
+                    gt.setDescription(IMPLEMENTED_VIA_EXTERNAL_PARTNER);
                     gt.setGranterId(granter.getId());
                     gt.setInternal(false);
-                    gt.setName("External Implementation");
+                    gt.setName(EXTERNAL_IMPLEMENTATION);
                     gt = grantTypeService.save(gt);
                     grantTypes.add(gt);
 
@@ -912,25 +833,25 @@ public class AdiminstrativeController {
                 }
                 for(GrantType gt : grantTypes){
                     List<GrantTypeWorkflowMapping> typeWfMapping = grantTypeWorkflowMappingService.findByWorkflow(reportWf.getId());
-                    if(typeWfMapping.size()==0){
+                    if(typeWfMapping.isEmpty()){
                         GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
                         gtm.setGrantTypeId(gt.getId());
                         gtm.set_default(false);
                         gtm.setWorkflowId(reportWf.getId());
-                        gtm = grantTypeWorkflowMappingService.save(gtm);
+                        grantTypeWorkflowMappingService.save(gtm);
                     }
                 }
             }
 
-            List<Workflow> disbursementWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(),"DISBURSEMENT");
+            List<Workflow> disbursementWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(), DISBURSEMENT);
             for(Workflow disbWf: disbursementWorkflows){
-                if(grantTypes.size()==0){
+                if(grantTypes.isEmpty()){
                     GrantType gt = new GrantType();
-                    gt.setColorCode("#fdf6ff");
-                    gt.setDescription("Implemented via external partner");
+                    gt.setColorCode(COLOR_CODE);
+                    gt.setDescription(IMPLEMENTED_VIA_EXTERNAL_PARTNER);
                     gt.setGranterId(granter.getId());
                     gt.setInternal(false);
-                    gt.setName("External Implementation");
+                    gt.setName(EXTERNAL_IMPLEMENTATION);
                     gt = grantTypeService.save(gt);
                     grantTypes.add(gt);
 
@@ -942,12 +863,12 @@ public class AdiminstrativeController {
                 }
                 for(GrantType gt : grantTypes){
                     List<GrantTypeWorkflowMapping> typeWfMapping = grantTypeWorkflowMappingService.findByWorkflow(disbWf.getId());
-                    if(typeWfMapping.size()==0){
+                    if(typeWfMapping.isEmpty()){
                         GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
                         gtm.setGrantTypeId(gt.getId());
                         gtm.set_default(false);
                         gtm.setWorkflowId(disbWf.getId());
-                        gtm = grantTypeWorkflowMappingService.save(gtm);
+                        grantTypeWorkflowMappingService.save(gtm);
                     }
                 }
             }
@@ -970,11 +891,7 @@ public class AdiminstrativeController {
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         List<OrgTag> tags = orgTagService.getOrgTags(tenantOrg.getId());
         for(OrgTag tag : tags){
-            if(grantService.isTagInUse(tag.getId())){
-                tag.setUsed(true);
-            }else{
-                tag.setUsed(false);
-            }
+            tag.setUsed(grantService.isTagInUse(tag.getId()));
         }
         return tags;
     }
@@ -998,7 +915,7 @@ public class AdiminstrativeController {
 
     @PostMapping("/{id}/workflow/validate/{object}/{fromStateId}/{toStateId}")
     public WorkflowValidationResult getGrantValidations(@PathVariable("id")Long objectId,
-                                                        @PathVariable("object")String _object,
+                                                        @PathVariable("object")String object,
                                                         @PathVariable("fromStateId")Long fromStateId,
                                                         @PathVariable("toStateId")Long toStateId,
                                                         @RequestBody(required = false) List<ColumnData> meta){
@@ -1008,36 +925,31 @@ public class AdiminstrativeController {
         if(transition==null){
             return validationResult;
         }
-        List<WorkflowValidation> validationsToRun = workflowValidationService.getActiveValidationsByObject(_object.toUpperCase());
+        List<WorkflowValidation> validationsToRun = workflowValidationService.getActiveValidationsByObject(object.toUpperCase());
         if(!validationsToRun.isEmpty()){
-            Connection conn = null;
-            try {
-                List<WarningMessage> wfValidationMessages = new ArrayList<>();
-                EntityManagerFactoryInfo info = (EntityManagerFactoryInfo) entityManager.getEntityManagerFactory();
-                conn = info.getDataSource().getConnection();
 
+            PreparedStatement ps = null;
+
+            List<WarningMessage> wfValidationMessages = new ArrayList<>();
+            EntityManagerFactoryInfo info = (EntityManagerFactoryInfo) entityManager.getEntityManagerFactory();
+            try(Connection conn=info.getDataSource().getConnection()) {
                 for (WorkflowValidation validation : validationsToRun) {
                     String query = null;
-                    if(_object.equalsIgnoreCase("GRANT")){
+                    if(object.equalsIgnoreCase("GRANT")){
                         query = validation.getValidationQuery().replaceAll("%grantId%",String.valueOf(objectId));
-                    }else if(_object.equalsIgnoreCase("REPORT")){
+                    }else if(object.equalsIgnoreCase("REPORT")){
                         query = validation.getValidationQuery().replaceAll("%reportId%",String.valueOf(objectId));
-                    }else if(_object.equalsIgnoreCase("DISBURSEMENT")){
+                    }else if(object.equalsIgnoreCase(DISBURSEMENT)){
                         query = validation.getValidationQuery().replaceAll("%disbursementId%",String.valueOf(objectId));
                     }
 
-                    /*if(meta!=null && meta.size()>0){
-                        for(ColumnData p : meta){
-                            query = query.replaceAll("%"+p.getName()+"%",p.getValue());
-                        }
-                    }*/
-                    PreparedStatement ps = conn.prepareStatement(query);
+                    ps = conn.prepareStatement(query);
                     ResultSet result = ps.executeQuery();
                     ResultSetMetaData rsMetaData = result.getMetaData();
 
 
                     while (result.next()){
-                        if(result.getBoolean(1)==true){
+                        if(result.getBoolean(1)){
 
 
                             String msg = validation.getMessage();
@@ -1048,10 +960,10 @@ public class AdiminstrativeController {
                         }
                     }
                 }
-                boolean canMove = transition.getAllowTransitionOnValidationWarning()==null?true:transition.getAllowTransitionOnValidationWarning();
-                if(!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).size()>0){
+                boolean canMove = transition.getAllowTransitionOnValidationWarning() == null || transition.getAllowTransitionOnValidationWarning();
+                if(!canMove && !wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).isEmpty()){
                     canMove = false;
-                }else if(!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).size()==0){
+                }else if(!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).isEmpty()){
                     canMove = true;
                 }
                 validationResult.setCanMove(canMove);
@@ -1061,7 +973,7 @@ public class AdiminstrativeController {
                 logger.error(e.getMessage(),e);
             }finally {
                 try {
-                    conn.close();
+                    ps.close();
                 } catch (SQLException e) {
                     logger.error(e.getMessage(),e);
                 }
