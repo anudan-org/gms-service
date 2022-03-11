@@ -928,7 +928,7 @@ public class AdiminstrativeController {
         List<WorkflowValidation> validationsToRun = workflowValidationService.getActiveValidationsByObject(object.toUpperCase());
         if(!validationsToRun.isEmpty()){
 
-            PreparedStatement ps = null;
+
 
             List<WarningMessage> wfValidationMessages = new ArrayList<>();
             EntityManagerFactoryInfo info = (EntityManagerFactoryInfo) entityManager.getEntityManagerFactory();
@@ -943,20 +943,19 @@ public class AdiminstrativeController {
                         query = validation.getValidationQuery().replaceAll("%disbursementId%",String.valueOf(objectId));
                     }
 
-                    ps = conn.prepareStatement(query);
-                    ResultSet result = ps.executeQuery();
-                    ResultSetMetaData rsMetaData = result.getMetaData();
+                    try(PreparedStatement ps = conn.prepareStatement(query)){
+                        ResultSet result = ps.executeQuery();
+                        ResultSetMetaData rsMetaData = result.getMetaData();
+                        while (result.next()){
+                            if(result.getBoolean(1)){
 
 
-                    while (result.next()){
-                        if(result.getBoolean(1)){
-
-
-                            String msg = validation.getMessage();
-                            for(int i=1;i<=rsMetaData.getColumnCount();i++){
-                                msg = msg.replaceAll("%"+rsMetaData.getColumnName(i)+"%",result.getString(i));
+                                String msg = validation.getMessage();
+                                for(int i=1;i<=rsMetaData.getColumnCount();i++){
+                                    msg = msg.replaceAll("%"+rsMetaData.getColumnName(i)+"%",result.getString(i));
+                                }
+                                wfValidationMessages.add(new WarningMessage(validation.getType(),msg));
                             }
-                            wfValidationMessages.add(new WarningMessage(validation.getType(),msg));
                         }
                     }
                 }
