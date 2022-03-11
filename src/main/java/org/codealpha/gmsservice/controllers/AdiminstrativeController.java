@@ -970,12 +970,6 @@ public class AdiminstrativeController {
 
             }catch (Exception e){
                 logger.error(e.getMessage(),e);
-            }finally {
-                try {
-                    ps.close();
-                } catch (SQLException e) {
-                    logger.error(e.getMessage(),e);
-                }
             }
         }
 
