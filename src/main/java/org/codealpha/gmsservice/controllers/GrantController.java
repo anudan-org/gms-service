@@ -7,8 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.io.FileDeleteStrategy;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -86,6 +84,7 @@ public class GrantController {
     public static final String TYPE_GRANT = "&type=grant";
     public static final String LIBRARY = "library";
     public static final String CLOSURE = "closure";
+    public static final String TENANT = "%TENANT%";
 
     @Autowired
     DataSource dataSource;
@@ -619,7 +618,7 @@ public class GrantController {
                                 .getAppConfigForGranterOrg(existingGrant.getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                 .getConfigValue().replace(RELEASE_VERSION,
-                                releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",existingGrant
+                                releaseService.getCurrentRelease().getVersion()).replace(TENANT,existingGrant
                                 .getGrantorOrganization().getName())});
 
         final Grant finalGrant = existingGrant;
@@ -1221,7 +1220,7 @@ public class GrantController {
                                     .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",grant
+                                    releaseService.getCurrentRelease().getVersion()).replace(TENANT,grant
                                     .getGrantorOrganization().getName())});
 
             Map<Long, Long> cleanAsigneesList = new HashMap<>();
@@ -1380,8 +1379,9 @@ public class GrantController {
         dir.mkdirs();
         List<GrantStringAttributeAttachments> attachments = new ArrayList<>();
         for (MultipartFile file : files) {
-            if (file != null && file.getOriginalFilename() != null) {
-                String fileName = file.getOriginalFilename();
+            String fileName = file.getOriginalFilename();
+            if (file != null && fileName != null) {
+
 
                 File fileToCreate = new File(dir, fileName);
                 try (FileOutputStream fos = new FileOutputStream(fileToCreate)) {
@@ -1391,14 +1391,14 @@ public class GrantController {
                 }
                 GrantStringAttributeAttachments attachment = new GrantStringAttributeAttachments();
                 attachment.setVersion(1);
-                attachment.setType(FilenameUtils.getExtension(file.getOriginalFilename()));
-                attachment.setTitle(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), "") : "temp"
+                attachment.setType(FilenameUtils.getExtension(fileName));
+                attachment.setTitle(fileName != null ? fileName.replace("." + FilenameUtils.getExtension(fileName), "") : "temp"
                         );
                 attachment.setLocation(filePath);
-                attachment.setName(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), "") : "temp"
+                attachment.setName(fileName != null ? fileName.replace("." + FilenameUtils.getExtension(fileName), "") : "temp"
                         );
                 attachment.setGrantStringAttribute(attr);
-                attachment.setDescription(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), "") : "temp"
+                attachment.setDescription(fileName != null ? fileName.replace("." + FilenameUtils.getExtension(fileName), "") : "temp"
                         );
                 attachment.setCreatedOn(new Date());
                 attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
@@ -1463,7 +1463,7 @@ public class GrantController {
 
         // packing files
         for (Long attachmentId : downloadRequest.getAttachmentIds()) {
-            Map<String, File> fileMap = getAttachment(grantId, tenantCode, attachmentId);
+            Map<String, File> fileMap = getAttachment(attachmentId);
             File file = fileMap.values().stream().collect(Collectors.toList()).get(0);
             try (FileInputStream fileInputStream = new FileInputStream(file)) {
                 zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
@@ -1483,11 +1483,9 @@ public class GrantController {
         return byteArrayOutputStream.toByteArray();
     }
 
-    private Map<String, File> getAttachment(Long grantId, String tenantCode, Long attachmentId) throws IOException {
+    private Map<String, File> getAttachment(Long attachmentId) throws IOException {
         GrantStringAttributeAttachments attachment = grantService
                 .getStringAttributeAttachmentsByAttachmentId(attachmentId);
-        Long sectionId = attachment.getGrantStringAttribute().getSectionAttribute().getSection().getId();
-        Long attributeId = attachment.getGrantStringAttribute().getSectionAttribute().getId();
         String fileName = attachment.getName();
         if(!fileName.contains(".".concat(attachment.getType()))){
             fileName=fileName.concat(".".concat(attachment.getType()));
@@ -1682,7 +1680,7 @@ public class GrantController {
 
         List<GrantHistory> history = new ArrayList<>();
         List<GrantSnapshot> grantSnapshotHistory = grantSnapshotService.getGrantSnapshotForGrant(grantId);
-        if (grantSnapshotHistory != null && grantSnapshotHistory.size()>0 && grantSnapshotHistory.get(0).getFromStateId() == null) {
+        if (grantSnapshotHistory != null && !grantSnapshotHistory.isEmpty() && grantSnapshotHistory.get(0).getFromStateId() == null) {
             history = grantService.getGrantHistory(grantId);
             for (GrantHistory historyEntry : history) {
                 historyEntry.setNoteAddedByUser(userService.getUserByEmailAndOrg(historyEntry.getNoteAddedBy(),
@@ -1801,7 +1799,7 @@ public class GrantController {
                                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                 .getConfigValue()
-                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",grant
+                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT,grant
                                 .getGrantorOrganization().getName())});
             } catch (UnsupportedEncodingException e) {
                 logger.error(e.getMessage(), e);
@@ -1868,24 +1866,24 @@ public class GrantController {
         List<GrantDocument> attachments = new ArrayList<>();
         for (MultipartFile file : files) {
             String fileName = file.getOriginalFilename();
+            if(fileName!=null) {
 
-            File fileToCreate = new File(dir, fileName);
-            try (FileOutputStream fos = new FileOutputStream(fileToCreate)) {
-                fos.write(file.getBytes());
-            } catch (IOException e) {
-                logger.error(e.getMessage(), e);
+                File fileToCreate = new File(dir, fileName);
+                try (FileOutputStream fos = new FileOutputStream(fileToCreate)) {
+                    fos.write(file.getBytes());
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
+                GrantDocument attachment = new GrantDocument();
+                attachment.setExtension(FilenameUtils.getExtension(fileName));
+                attachment.setName(fileName.replace("." + FilenameUtils.getExtension(fileName), ""));
+                attachment.setLocation(filePath + fileName);
+                attachment.setUploadedOn(new Date());
+                attachment.setUploadedBy(userId);
+                attachment.setGrantId(grantId);
+                attachment = grantService.saveGrantDocument(attachment);
+                attachments.add(attachment);
             }
-            GrantDocument attachment = new GrantDocument();
-            attachment.setExtension(FilenameUtils.getExtension(file.getOriginalFilename()));
-            String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp";
-            attachment.setName(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(filename), "") : "temp"
-                    );
-            attachment.setLocation(filePath + (file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp"));
-            attachment.setUploadedOn(new Date());
-            attachment.setUploadedBy(userId);
-            attachment.setGrantId(grantId);
-            attachment = grantService.saveGrantDocument(attachment);
-            attachments.add(attachment);
         }
 
         updateProjectDocuments(grantId, tenantCode, userId);
@@ -2116,20 +2114,16 @@ public class GrantController {
 
         Map<String, File> fileMap = null;
         if (GRANT.equalsIgnoreCase(forEntity)) {
-            fileMap = getAttachment(id, tenantCode, downloadRequest.getAttachmentIds()[0]);
+            fileMap = getAttachment(downloadRequest.getAttachmentIds()[0]);
         } else if (PROJECT.equalsIgnoreCase(forEntity)) {
             GrantDocument doc = grantService.getGrantDocumentById(downloadRequest.getAttachmentIds()[0]);
             fileMap = new HashMap<>();
-            String fileName = doc.getName();
-            if(!fileName.contains(".".concat(doc.getExtension()))){
-                fileName=fileName.concat(".".concat(doc.getExtension()));
-            }
+
             File file = resourceLoader.getResource(FILE + doc.getLocation()).getFile();
             fileMap.put(doc.getExtension(), file);
         } else if (REPORT.equalsIgnoreCase(forEntity)) {
             ReportStringAttributeAttachments attachment = reportService.getStringAttributeAttachmentsByAttachmentId(downloadRequest.getAttachmentIds()[0]);
-            Long sectionId = attachment.getReportStringAttribute().getSectionAttribute().getSection().getId();
-            Long attributeId = attachment.getReportStringAttribute().getSectionAttribute().getId();
+
 
             String fileName = attachment.getName();
             if(!fileName.contains(".".concat(attachment.getType()))){
@@ -2164,8 +2158,6 @@ public class GrantController {
             fileMap.put(attachment.getType(), file);
         }else if (CLOSURE.equalsIgnoreCase(forEntity)) {
             ClosureStringAttributeAttachments attachment = grantClosureService.getStringAttributeAttachmentsByAttachmentId(downloadRequest.getAttachmentIds()[0]);
-            Long sectionId = attachment.getClosureStringAttribute().getSectionAttribute().getSection().getId();
-            Long attributeId = attachment.getClosureStringAttribute().getSectionAttribute().getId();
 
             String fileName = attachment.getName();
             if(!fileName.contains(".".concat(attachment.getType()))){
@@ -2178,11 +2170,6 @@ public class GrantController {
             fileMap.put(attachment.getType(), file);
         }else if ("closure-document".equalsIgnoreCase(forEntity)) {
             ClosureDocument attachment = grantClosureService.getClosureDocumentById(downloadRequest.getAttachmentIds()[0]);
-
-            String fileName = attachment.getName();
-            if(!fileName.contains(".".concat(attachment.getExtension()))){
-                fileName=fileName.concat(".".concat(attachment.getExtension()));
-            }
 
             File file = resourceLoader.getResource(FILE + attachment.getLocation())
                     .getFile();

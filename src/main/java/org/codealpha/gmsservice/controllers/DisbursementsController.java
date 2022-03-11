@@ -49,6 +49,7 @@ public class DisbursementsController {
         public static final String DISBURSEMENT = "DISBURSEMENT";
         public static final String PLEASE_REVIEW = "Please review.";
         public static final String RELEASE_VERSION = "%RELEASE_VERSION%";
+        public static final String TENANT = "%TENANT%";
         private static Logger logger = LoggerFactory.getLogger(DisbursementsController.class);
         @Autowired
         private GrantService grantService;
@@ -319,7 +320,7 @@ public class DisbursementsController {
                                                                                         .getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION, releaseService
-                                                                        .getCurrentRelease().getVersion()).replace("%TENANT%",disbursement.getGrant().getGrantorOrganization().getName()) });
+                                                                        .getCurrentRelease().getVersion()).replace(TENANT,disbursement.getGrant().getGrantorOrganization().getName()) });
 
                         Map<Long, Long> cleanAsigneesList = new HashMap<>();
                         for (Long ass : currentAssignments.values()) {
@@ -510,7 +511,7 @@ public class DisbursementsController {
                                                                         .getGrantorOrganization().getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION, releaseService
-                                                                        .getCurrentRelease().getVersion()).replace("%TENANT%",finalDisbursement.getGrant()
+                                                                        .getCurrentRelease().getVersion()).replace(TENANT,finalDisbursement.getGrant()
                                                 .getGrantorOrganization().getName()) });
                         usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent,
                                         u.getId(), finalDisbursement.getId(), DISBURSEMENT));
@@ -538,7 +539,7 @@ public class DisbursementsController {
                                                                         .getGrantorOrganization().getId(),
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION, releaseService
-                                                                        .getCurrentRelease().getVersion()).replace("%TENANT%",finalDisbursement.getGrant()
+                                                                        .getCurrentRelease().getVersion()).replace(TENANT,finalDisbursement.getGrant()
                                                 .getGrantorOrganization().getName()) });
                         usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent,
                                         u.getId(), finalDisbursement.getId(), DISBURSEMENT));
@@ -750,7 +751,7 @@ public class DisbursementsController {
                         }
                         DisbursementDocument attachment = new DisbursementDocument();
                         attachment.setExtension(FilenameUtils.getExtension(file.getOriginalFilename()));
-                        attachment.setName((file.getOriginalFilename()!=null)?file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), ""):""
+                        attachment.setName((fileName!=null)?fileName.replace("." + FilenameUtils.getExtension(fileName), ""):""
                                 );
                         attachment.setLocation(filePath + file.getOriginalFilename());
                         attachment.setUploadedOn(new Date());

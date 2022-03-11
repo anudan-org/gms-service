@@ -80,6 +80,9 @@ public class GrantClosureController {
     public static final String STREMPTY = " ";
     public static final String DISBURSEMENTCAPS = "DISBURSEMENT";
     public static final String PROJECT_INDICATORS = "Project Indicators";
+    public static final String GRANTER = "GRANTER";
+    public static final String REQUEST_MODIFICATIONS = "Request Modifications";
+    public static final String TENANT = "%TENANT%";
 
 
     @Autowired
@@ -158,9 +161,9 @@ public class GrantClosureController {
 
         Organization userOrg = userService.getUserById(userId).getOrganization();
         List<GrantClosure> closures = new ArrayList<>();
-        if(userOrg.getOrganizationType().equalsIgnoreCase("GRANTEE")){
+        if(userOrg.getOrganizationType().equalsIgnoreCase(GRANTEE)){
             closures = closureService.getClosuresForGranteeUser(userId);
-        }else if(userOrg.getOrganizationType().equalsIgnoreCase("GRANTER")){
+        }else if(userOrg.getOrganizationType().equalsIgnoreCase(GRANTER)){
             closures = closureService.getClosuresForUser(userId);
         }
 
@@ -453,7 +456,7 @@ public class GrantClosureController {
             grant.getGrantDetails().getSections().forEach(sec -> {
                 if (sec.getAttributes() != null && sec.getAttributes().size() > 0) {
                     List<SectionAttributesVO> attribs = new ArrayList<>();
-                    List order = ImmutableList.of("YEARLY", "HALF-YEARLY", "QUARTERLY", "MONTHLY");
+                    List<String> order = ImmutableList.of("YEARLY", "HALF-YEARLY", "QUARTERLY", "MONTHLY");
                     final Ordering<String> colorOrdering = Ordering.explicit(order);
                     Comparator<SectionAttributesVO> attrComparator = Comparator
                             .comparing(c -> order.indexOf(c.getFrequency().toUpperCase()));
@@ -474,7 +477,7 @@ public class GrantClosureController {
 
                                 reportingFrequencies.forEach(rf -> {
 
-                                    List attrList = null;
+                                    List<SectionAttributesVO> attrList = null;
 
                                     if (yearlyPeriods.containsKey(rf)) {
                                         attrList = yearlyPeriods.get(rf).getAttributes();
@@ -498,7 +501,7 @@ public class GrantClosureController {
 
                                 reportingFrequencies.forEach(rf -> {
 
-                                    List attrList = null;
+                                    List<SectionAttributesVO> attrList = null;
                                     if (yearlyPeriods.containsKey(rf)) {
                                         yearlyPeriods.get(rf).getAttributes().add(attr);
                                     } else {
@@ -525,7 +528,7 @@ public class GrantClosureController {
                                         Frequency.QUARTERLY);
                                 reportingFrequencies.forEach(rf -> {
 
-                                    List attrList = null;
+                                    List<SectionAttributesVO> attrList = null;
 
                                     if (yearlyPeriods.containsKey(rf)) {
                                         yearlyPeriods.get(rf).getAttributes().add(attr);
@@ -555,7 +558,7 @@ public class GrantClosureController {
 
                             reportingFrequencies.forEach(rf -> {
 
-                                List attrList = null;
+                                List<SectionAttributesVO> attrList = null;
                                 if (yearlyPeriods.containsKey(rf)) {
                                     yearlyPeriods.get(rf).getAttributes().add(attr);
                                 } else if (halfyearlyPeriods.containsKey(rf)) {
@@ -1088,7 +1091,7 @@ public class GrantClosureController {
 
                     closureStringAttribute.setTarget(sectionAttributesVO.getTarget());
                     closureStringAttribute.setFrequency(sectionAttributesVO.getFrequency());
-                    if ((user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE) && !grantTypeService.findById(closure.getGrant().getGrantTypeId()).isInternal()) || (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER") && grantTypeService.findById(closure.getGrant().getGrantTypeId()).isInternal())) {
+                    if ((user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE) && !grantTypeService.findById(closure.getGrant().getGrantTypeId()).isInternal()) || (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTER) && grantTypeService.findById(closure.getGrant().getGrantTypeId()).isInternal())) {
                         closureStringAttribute.setActualTarget(sectionAttributesVO.getActualTarget());
                     }
                     if (sectionAttribute.getFieldType().equalsIgnoreCase("table")
@@ -1401,12 +1404,12 @@ public class GrantClosureController {
             }
             ClosureStringAttributeAttachments attachment = new ClosureStringAttributeAttachments();
             attachment.setVersion(1);
-            attachment.setType(FilenameUtils.getExtension(file.getOriginalFilename()));
-            attachment.setTitle(file.getOriginalFilename()!=null?file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), STRNOSPACE):"");
+            attachment.setType(FilenameUtils.getExtension(fileName));
+            attachment.setTitle(fileName!=null?fileName.replace("." + FilenameUtils.getExtension(fileName), STRNOSPACE):"");
             attachment.setLocation(filePath);
-            attachment.setName(file.getOriginalFilename()!=null?file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), STRNOSPACE):"");
+            attachment.setName(fileName!=null?fileName.replace("." + FilenameUtils.getExtension(fileName), STRNOSPACE):"");
             attachment.setClosureStringAttribute(attr);
-            attachment.setDescription(file.getOriginalFilename()!=null?file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), STRNOSPACE):"");
+            attachment.setDescription(fileName!=null?fileName.replace("." + FilenameUtils.getExtension(fileName), STRNOSPACE):"");
             attachment.setCreatedOn(new Date());
             attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
             attachment = closureService.saveClosureStringAttributeAttachment(attachment);
@@ -1473,13 +1476,12 @@ public class GrantClosureController {
         ClosureDocument closureDocument=null;
 
         for (MultipartFile file : files) {
-            if (file.getOriginalFilename() != null) {
-
-                String fileName = file.getOriginalFilename();
+            String fileName = file.getOriginalFilename();
+            if (fileName != null) {
                 closureDocument = new ClosureDocument();
                 closureDocument.setClosure(closureService.getClosureById(closureId));
-                closureDocument.setExtension(file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".")+1));
-                closureDocument.setLocation(filePath+file.getOriginalFilename());
+                closureDocument.setExtension(fileName.substring(fileName.lastIndexOf(".")+1));
+                closureDocument.setLocation(filePath+fileName);
                 closureDocument.setName(fileName);
                 closureDocument.setUploadedBy(userId);
                 closureDocument.setUploadedOn(DateTime.now().toDate());
@@ -1815,7 +1817,7 @@ public class GrantClosureController {
                                 .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                 .getConfigValue()
-                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",closure.getGrant()
+                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT,closure.getGrant()
                                 .getGrantorOrganization().getName()) });
 
                 assignment.setAssignment(granteeUser.getId());
@@ -1854,7 +1856,7 @@ public class GrantClosureController {
                                     .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",closure.getGrant()
+                                    releaseService.getCurrentRelease().getVersion()).replace(TENANT,closure.getGrant()
                                     .getGrantorOrganization().getName()) });
 
             Map<Long, Long> cleanAsigneesList = new HashMap<>();
@@ -1975,7 +1977,7 @@ public class GrantClosureController {
                             AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                    transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
+                    transition==null? REQUEST_MODIFICATIONS :transition.getAction(), YES, PLEASE_REVIEW,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE) ? YES
                             : NO,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
@@ -1991,7 +1993,7 @@ public class GrantClosureController {
                                     .getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalClosure.getGrant()
+                                    releaseService.getCurrentRelease().getVersion()).replace(TENANT,finalClosure.getGrant()
                                     .getGrantorOrganization().getName()) });
 
             String[] notificationContent = closureService.buildEmailNotificationContent(finalClosure, currentOwner,
@@ -2001,7 +2003,7 @@ public class GrantClosureController {
                             AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                    transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
+                    transition==null? REQUEST_MODIFICATIONS :transition.getAction(), YES, PLEASE_REVIEW,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE) ? YES
                             : NO,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
@@ -2025,7 +2027,7 @@ public class GrantClosureController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                        transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
+                        transition==null? REQUEST_MODIFICATIONS :transition.getAction(), YES, PLEASE_REVIEW,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
                                 ? YES
                                 : NO,
@@ -2051,7 +2053,7 @@ public class GrantClosureController {
                             AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                    transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
+                    transition==null? REQUEST_MODIFICATIONS :transition.getAction(), YES, PLEASE_REVIEW,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE) ? YES
                             : NO,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
@@ -2067,7 +2069,7 @@ public class GrantClosureController {
                                     .getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalClosure.getGrant()
+                                    releaseService.getCurrentRelease().getVersion()).replace(TENANT,finalClosure.getGrant()
                                     .getGrantorOrganization().getName()) });
 
             String[] notificationContent = closureService.buildEmailNotificationContent(finalClosure, currentOwner,
@@ -2077,7 +2079,7 @@ public class GrantClosureController {
                             AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                    transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
+                    transition==null? REQUEST_MODIFICATIONS :transition.getAction(), YES, PLEASE_REVIEW,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE) ? YES
                             : NO,
                     closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
@@ -2101,7 +2103,7 @@ public class GrantClosureController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                        transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
+                        transition==null? REQUEST_MODIFICATIONS :transition.getAction(), YES, PLEASE_REVIEW,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
                                 ? YES
                                 : NO,
@@ -2127,7 +2129,7 @@ public class GrantClosureController {
                                 AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                         previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                        transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
+                        transition==null? REQUEST_MODIFICATIONS :transition.getAction(), YES, PLEASE_REVIEW,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE) ? YES
                                 : NO,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
@@ -2143,7 +2145,7 @@ public class GrantClosureController {
                                         .getAppConfigForGranterOrg(finalClosure.getGrant().getGrantorOrganization().getId(),
                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                         .getConfigValue().replace(RELEASE_VERSION,
-                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalClosure.getGrant()
+                                        releaseService.getCurrentRelease().getVersion()).replace(TENANT,finalClosure.getGrant()
                                         .getGrantorOrganization().getName()) });
 
                 String[] notificationContent = closureService.buildEmailNotificationContent(finalClosure, granteeUser,
@@ -2153,7 +2155,7 @@ public class GrantClosureController {
                                 AppConfiguration.CLOSURE_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                         previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                        transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
+                        transition==null? REQUEST_MODIFICATIONS :transition.getAction(), YES, PLEASE_REVIEW,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE) ? YES
                                 : NO,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
@@ -2179,7 +2181,7 @@ public class GrantClosureController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(STREMPTY).concat(previousOwner.getLastName()),
-                        transition==null?"Request Modifications":transition.getAction(), YES, PLEASE_REVIEW,
+                        transition==null? REQUEST_MODIFICATIONS :transition.getAction(), YES, PLEASE_REVIEW,
                         closureWithNote.getNote() != null && !closureWithNote.getNote().trim().equalsIgnoreCase(STRNOSPACE)
                                 ? YES
                                 : NO,
@@ -2398,7 +2400,7 @@ public class GrantClosureController {
                                         @RequestHeader("X-TENANT-CODE") String tenantCode,
                                         @RequestBody ActualRefund actualRefund){
 
-        SimpleDateFormat df = new SimpleDateFormat("dd-MMM-yyyy");
+        SimpleDateFormat df = new SimpleDateFormat(DD_MMM_YYYY);
         try {
             if(actualRefund.getRefundDateStr()!=null) {
                 actualRefund.setRefundDate(df.parse(actualRefund.getRefundDateStr()));
@@ -2505,13 +2507,11 @@ public class GrantClosureController {
             return new DatePeriodLabel(st.withMonthOfYear(Month.SEPTEMBER.getValue()),
                     "Quarterly Report - Q2 " +(st.getYear()) + "/"
                             +(String.valueOf(st.getYear() + 1).substring(2, 4)));
-        } else if (st.getMonthOfYear() >= Month.OCTOBER.getValue()
-                && st.getMonthOfYear() <= Month.DECEMBER.getValue()) {
+        } else {
             return new DatePeriodLabel(st.withMonthOfYear(Month.DECEMBER.getValue()),
                     "Quarterly Report - Q3 " + (st.getYear()) + "/"
                             + (String.valueOf(st.getYear() + 1).substring(2, 4)));
         }
-        return null;
     }
 
     private DatePeriodLabel endOfHalfYear(DateTime st) {
@@ -2524,12 +2524,11 @@ public class GrantClosureController {
             return new DatePeriodLabel(st.plusYears(1).withMonthOfYear(Month.MARCH.getValue()),
                     "Half-Yearly Report - H2 " + (st.getYear()) + "/"
                             + (String.valueOf(st.getYear() + 1).substring(2, 4)));
-        } else if (st.getMonthOfYear() >= Month.JANUARY.getValue() && st.getMonthOfYear() <= Month.MARCH.getValue()) {
+        } else {
             return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
                     "Half-Yearly Report - H2 " + (st.getYear() - 1) + "/"
                             + (String.valueOf(st.getYear()).substring(2, 4)));
         }
-        return null;
     }
 
     private DatePeriodLabel endOfYear(DateTime st) {
@@ -2537,11 +2536,10 @@ public class GrantClosureController {
             return new DatePeriodLabel(st.plusYears(1).withMonthOfYear(Month.MARCH.getValue()),
                     "Yearly Report " + (st.getYear()) + "/"
                             + (String.valueOf(st.getYear() + 1).substring(2, 4)));
-        } else if (st.getMonthOfYear() >= Month.JANUARY.getValue() && st.getMonthOfYear() <= Month.MARCH.getValue()) {
+        } else{
             return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
                     "Yearly Report " + (st.getYear() - 1) + "/"
                             + (String.valueOf(st.getYear()).substring(2, 4)));
         }
-        return null;
     }
 }
