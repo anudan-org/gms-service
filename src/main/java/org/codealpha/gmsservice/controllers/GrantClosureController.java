@@ -630,7 +630,7 @@ public class GrantClosureController {
         }
 
         GrantClosureVO closureVO = new GrantClosureVO().build(closure, closureService.getClosureSections(closure), userService,
-                closureService, reportService);
+                 reportService);
         closure.setClosureDetails(closureVO.getClosureDetails());
 
         showDisbursementsForClosure(closure, userService.getUserById(userId));
@@ -1805,7 +1805,7 @@ public class GrantClosureController {
                                 .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT, closure.getGrant()
                                 .getGrantorOrganization().getName())});
 
-                assignment.setAssignment(granteeUser.getId());
+                assignment.setAssignment(granteeUser!=null?granteeUser.getId():null);
             }
 
             closureService.saveAssignmentForClosure(assignment);
