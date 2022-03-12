@@ -1,7 +1,6 @@
 package org.codealpha.gmsservice.models;
 
 import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.services.GrantClosureService;
 import org.codealpha.gmsservice.services.ReportService;
 import org.codealpha.gmsservice.services.UserService;
 import org.slf4j.Logger;

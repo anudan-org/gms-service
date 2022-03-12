@@ -28,7 +28,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
