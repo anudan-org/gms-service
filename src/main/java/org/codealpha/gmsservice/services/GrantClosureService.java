@@ -140,7 +140,7 @@ public class GrantClosureService {
         }
     }
 
-    public List<WorkFlowPermission> getClosureFlowAuthority(GrantClosure closure, Long userId) {
+    public List<WorkFlowPermission> getClosureFlowAuthority(GrantClosure closure) {
         List<WorkFlowPermission> permissions = new ArrayList<>();
         boolean foundReturn = false;
 
@@ -195,8 +195,8 @@ public class GrantClosureService {
                         && (ass.getAssignment() == null ? 0 : ass.getAssignment().longValue()) == userId)
                 )
 
-                || (optionalUser.isPresent()?optionalUser.get().getOrganization().getOrganizationType().equalsIgnoreCase(
-                "GRANTEE") && closure.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"):null)) {
+                || Boolean.TRUE.equals((optionalUser.isPresent()?optionalUser.get().getOrganization().getOrganizationType().equalsIgnoreCase(
+                "GRANTEE") && closure.getStatus().getInternalStatus().equalsIgnoreCase("ACTIVE"):null))) {
 
             List<WorkflowStatusTransition> allowedTransitions = workflowStatusTransitionRepository
                     .findByWorkflow(workflowStatusRepository.getById(closure.getStatus().getId()).getWorkflow()).stream()
@@ -286,7 +286,7 @@ public class GrantClosureService {
         return false;
     }
 
-    public GranterClosureTemplate _createNewClosureTemplateFromExisiting(GrantClosure closure) {
+    public GranterClosureTemplate createNewClosureTemplateFromExisiting(GrantClosure closure) {
         GranterClosureTemplate currentClosureTemplate = findByTemplateId(closure.getTemplate().getId());
         GranterClosureTemplate newTemplate = null;
         if (!currentClosureTemplate.isPublished()) {
@@ -441,7 +441,7 @@ public class GrantClosureService {
     }
 
     public boolean checkIfClosureMovedThroughWFAtleastOnce(Long closureId) {
-        return closureRepository.findClosuresThatMovedAtleastOnce(closureId).size() > 0;
+        return !closureRepository.findClosuresThatMovedAtleastOnce(closureId).isEmpty();
     }
 
     public ClosureAssignments getClosureAssignmentById(Long id) {
@@ -528,7 +528,7 @@ public class GrantClosureService {
 
         String message = msgConfigValue.replace(GRANT_NAME, grantName)
                 .replace("%CLOSURE_LINK%", granteeUrl)
-                .replace("%GRANT_NAME%",grantName)
+                .replace(GRANT_NAME,grantName)
                 .replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner)
                 .replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner)
                 .replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges)
@@ -553,9 +553,7 @@ public class GrantClosureService {
         if (assignments == null) {
             return "";
         }
-        newAssignments.sort(Comparator.comparing(ClosureAssignments::getId, (a, b) -> {
-            return a.compareTo(b);
-        }));
+        newAssignments.sort(Comparator.comparing(ClosureAssignments::getId, Comparator.naturalOrder()));
         String[] table = {
                 "<table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>Current State Owners</b></td><td><b>Previous State Owners</b></td></tr>" };
         newAssignments.forEach(a -> {
@@ -617,12 +615,12 @@ public class GrantClosureService {
             plainClosure.setCurrentOwner(owner.getFirstName()+" "+owner.getLastName());
         }
 
-        if(closure.getClosureDetails().getSections()!=null && closure.getClosureDetails().getSections().size()>0){
+        if(closure.getClosureDetails().getSections()!=null && !closure.getClosureDetails().getSections().isEmpty()){
             List<PlainSection> plainSections = new ArrayList<>();
 
             for(SectionVO section : closure.getClosureDetails().getSections()){
                 List<PlainAttribute> plainAttributes = new ArrayList<>();
-                if(section.getAttributes()!=null && section.getAttributes().size()>0) {
+                if(section.getAttributes()!=null && !section.getAttributes().isEmpty()) {
                     ObjectMapper mapper = new ObjectMapper();
                     for (SectionAttributesVO attribute : section.getAttributes()) {
                         PlainAttribute plainAttribute = new PlainAttribute();

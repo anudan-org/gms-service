@@ -765,7 +765,7 @@ public class AdiminstrativeController {
                 }
 
                 String updateString = mapper.writeValueAsString(detail);
-                updateString = updateString.replaceAll("'", "''");
+                updateString = updateString.replace("'", "''");
                 bw.write("update grant_snapshot set string_attributes='" + updateString + "' where id=" + toFix.getId()
                         + ";");
                 bw.newLine();
@@ -936,11 +936,11 @@ public class AdiminstrativeController {
                 for (WorkflowValidation validation : validationsToRun) {
                     String query = null;
                     if(object.equalsIgnoreCase("GRANT")){
-                        query = validation.getValidationQuery().replaceAll("%grantId%",String.valueOf(objectId));
+                        query = validation.getValidationQuery().replace("%grantId%",String.valueOf(objectId));
                     }else if(object.equalsIgnoreCase("REPORT")){
-                        query = validation.getValidationQuery().replaceAll("%reportId%",String.valueOf(objectId));
+                        query = validation.getValidationQuery().replace("%reportId%",String.valueOf(objectId));
                     }else if(object.equalsIgnoreCase(DISBURSEMENT)){
-                        query = validation.getValidationQuery().replaceAll("%disbursementId%",String.valueOf(objectId));
+                        query = validation.getValidationQuery().replace("%disbursementId%",String.valueOf(objectId));
                     }
 
                     try(PreparedStatement ps = conn.prepareStatement(query)){
@@ -952,7 +952,7 @@ public class AdiminstrativeController {
 
                                 String msg = validation.getMessage();
                                 for(int i=1;i<=rsMetaData.getColumnCount();i++){
-                                    msg = msg.replaceAll("%"+rsMetaData.getColumnName(i)+"%",result.getString(i));
+                                    msg = msg.replace("%"+rsMetaData.getColumnName(i)+"%",result.getString(i));
                                 }
                                 wfValidationMessages.add(new WarningMessage(validation.getType(),msg));
                             }
