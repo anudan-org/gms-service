@@ -1,10 +1,8 @@
 package org.codealpha.gmsservice.services;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.models.*;
+import org.codealpha.gmsservice.models.GrantVO;
+import org.codealpha.gmsservice.models.PlainDisbursement;
 import org.codealpha.gmsservice.repositories.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -15,14 +13,13 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 @Service
 public class DisbursementService {
 
+    public static final String TD = "</td>";
     @Autowired
     private DisbursementRepository disbursementRepository;
     @Autowired
@@ -71,14 +68,12 @@ public class DisbursementService {
         List<WorkflowStatusTransition> supportedTransitions = workflowStatusTransitionRepository
                 .findByWorkflow(currentWorkflow);
         for (WorkflowStatusTransition supportedTransition : supportedTransitions) {
-            if (!statuses.stream()
-                    .filter(s -> s.getId().longValue() == supportedTransition.getFromState().getId().longValue())
-                    .findFirst().isPresent()) {
+            if (statuses.stream()
+                    .noneMatch(s -> s.getId().longValue() == supportedTransition.getFromState().getId().longValue())) {
                 statuses.add(supportedTransition.getFromState());
             }
-            if (!statuses.stream()
-                    .filter(s -> s.getId().longValue() == supportedTransition.getToState().getId().longValue())
-                    .findFirst().isPresent()) {
+            if (statuses.stream()
+                    .noneMatch(s -> s.getId().longValue() == supportedTransition.getToState().getId().longValue())) {
                 statuses.add(supportedTransition.getToState());
             }
         }
@@ -97,9 +92,12 @@ public class DisbursementService {
                 assignment.setDisbursementId(disbursementToSave.getId());
                 assignment.setStateId(status.getId());
 
-                if(status.getTerminal()){
-                    GrantAssignments activeStateOwner =  grantService.getGrantWorkflowAssignments(disbursementToSave.getGrant()).stream().filter(ass -> ass.getStateId().longValue()==finalDisbursement.getGrant().getGrantStatus().getId().longValue()).findFirst().get();
-                    assignment.setOwner(activeStateOwner.getAssignments());
+                if(Boolean.TRUE.equals(status.getTerminal())){
+                    Optional<GrantAssignments> grantAssignment = grantService.getGrantWorkflowAssignments(disbursementToSave.getGrant()).stream().filter(ass -> ass.getStateId().longValue() == finalDisbursement.getGrant().getGrantStatus().getId().longValue()).findFirst();
+                    if(grantAssignment.isPresent()) {
+                        GrantAssignments activeStateOwner = grantAssignment.get();
+                        assignment.setOwner(activeStateOwner.getAssignments());
+                    }
                 }
             assignment = disbursementAssignmentRepository.save(assignment);
             assignmentList.add(assignment);
@@ -122,7 +120,7 @@ public class DisbursementService {
             if(ass.getOwner()!=null && ass.getOwner()!=0) {
                 ass.setAssignmentUser(userService.getUserById(ass.getOwner()));
             }
-            if (disbursementRepository.findDisbursementsThatMovedAtleastOnce(ass.getDisbursementId()).size() > 0) {
+            if (!disbursementRepository.findDisbursementsThatMovedAtleastOnce(ass.getDisbursementId()).isEmpty()) {
                 List<DisbursementAssignmentHistory> assignmentHistories = assignmentHistoryRepository
                         .findByDisbursementIdAndStateIdOrderByUpdatedOnDesc(ass.getDisbursementId(), ass.getStateId());
                 for (DisbursementAssignmentHistory assHist : assignmentHistories) {
@@ -162,7 +160,7 @@ public class DisbursementService {
                 .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("ACTIVE")
                         || ws.getInternalStatus().equalsIgnoreCase("CLOSED"))
                 .collect(Collectors.toList());
-        List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+        List<Long> statusIds = activeAndClosedStatuses.stream().mapToLong(WorkflowStatus::getId).boxed()
                 .collect(Collectors.toList());
 
         List<ActualDisbursement> approvedActualDisbursements = getApprovedActualDisbursements(disbursement, statusIds,false);
@@ -240,7 +238,7 @@ public class DisbursementService {
             disbursements = disbursementRepository.getClosedDisbursementsForUser(org.getId());
         }
         for (Disbursement d : disbursements) {
-            d = disbursementToReturn(d, user.getId());
+            disbursementToReturn(d, user.getId());
         }
         return disbursements;
     }
@@ -263,15 +261,15 @@ public class DisbursementService {
     }
 
     public DisbursementAssignment getDisbursementAssignmentById(Long id) {
-        return disbursementAssignmentRepository.findById(id).get();
+        Optional<DisbursementAssignment> disbursementAssignment = disbursementAssignmentRepository.findById(id);
+        return disbursementAssignment.isPresent()?disbursementAssignment.get():null;
     }
 
     public DisbursementAssignment saveAssignmentForDisbursement(DisbursementAssignment assignment) {
         return disbursementAssignmentRepository.save(assignment);
     }
 
-    public String[] buildEmailNotificationContent(Disbursement finalDisbursement, User user, String userName,
-            String action, String date, String subConfigValue, String msgConfigValue, String currentState,
+    public String[] buildEmailNotificationContent(Disbursement finalDisbursement, User user, String subConfigValue, String msgConfigValue, String currentState,
             String currentOwner, String previousState, String previousOwner, String previousAction, String hasChanges,
             String hasChangesComment, String hasNotes, String hasNotesComment, String link, User owner,
             Integer noOfDays, Map<Long, Long> previousApprover, List<DisbursementAssignment> newApprover) {
@@ -306,22 +304,22 @@ public class DisbursementService {
             grantName = finalDisbursement.getGrant().getReferenceNo()!=null?"[".concat(finalDisbursement.getGrant().getReferenceNo()).concat("] ").concat(finalDisbursement.getGrant().getName()):finalDisbursement.getGrant().getName();
         }
 
-        String message = msgConfigValue.replaceAll("%GRANT_NAME%", grantName)
-                .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
-                .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
-                .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
-                .replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%", hasNotes)
-                .replaceAll("%HAS_NOTES_COMMENT%", hasNotesComment)
-                .replaceAll("%TENANT%", finalDisbursement.getGrant().getGrantorOrganization().getName())
-                .replaceAll("%DISBURSEMENT_LINK%", url)
-                .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
-                .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
-                .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replaceAll("%GRANTEE%", finalDisbursement.getGrant().getOrganization()!=null?finalDisbursement.getGrant().getOrganization().getName():finalDisbursement.getGrant().getGrantorOrganization().getName())
-                .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
-                .replaceAll("%ENTITY_TYPE%", "Approval Request Note of ")
-                .replaceAll("%ENTITY_NAME%", grantName);
-        String subject = subConfigValue.replaceAll("%GRANT_NAME%", grantName);
+        String message = msgConfigValue.replace("%GRANT_NAME%", grantName)
+                .replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner)
+                .replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner)
+                .replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges)
+                .replace("%HAS_CHANGES_COMMENT%", hasChangesComment).replace("%HAS_NOTES%", hasNotes)
+                .replace("%HAS_NOTES_COMMENT%", hasNotesComment)
+                .replace("%TENANT%", finalDisbursement.getGrant().getGrantorOrganization().getName())
+                .replace("%DISBURSEMENT_LINK%", url)
+                .replace("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
+                .replace("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
+                .replace("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
+                .replace("%GRANTEE%", finalDisbursement.getGrant().getOrganization()!=null?finalDisbursement.getGrant().getOrganization().getName():finalDisbursement.getGrant().getGrantorOrganization().getName())
+                .replace("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
+                .replace("%ENTITY_TYPE%", "Approval Request Note of ")
+                .replace("%ENTITY_NAME%", grantName);
+        String subject = subConfigValue.replace("%GRANT_NAME%", grantName);
 
         return new String[] { subject, message };
     }
@@ -331,25 +329,23 @@ public class DisbursementService {
             return "";
         }
 
-        newAssignments.sort(Comparator.comparing(DisbursementAssignment::getId, (a, b) -> {
-            return a.compareTo(b);
-        }));
+        newAssignments.sort(Comparator.comparing(DisbursementAssignment::getId, Comparator.naturalOrder()));
 
         String[] table = {
                 "<table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>Current State Owners</b></td><td><b>Previous State Owners</b></td></tr>" };
         newAssignments.forEach(a -> {
-            Long prevAss = assignments.keySet().stream().filter(b -> b == a.getStateId()).findFirst().get();
+            Long prevAss = assignments.keySet().stream().filter(b -> b.longValue() == a.getStateId().longValue()).findFirst().get();
 
             table[0] = table[0].concat("<tr>").concat("<td width='30%'>")
-                    .concat(workflowStatusRepository.findById(a.getStateId()).get().getName()).concat("</td>")
+                    .concat(workflowStatusRepository.findById(a.getStateId()).get().getName()).concat(TD)
                     .concat("<td>")
                     .concat(userService.getUserById(a.getOwner()).getFirstName().concat(" ")
                             .concat(userService.getUserById(a.getOwner()).getLastName()))
-                    .concat("</td>")
+                    .concat(TD)
 
                     .concat("<td>")
                     .concat(userService.getUserById(assignments.get(prevAss)).getFirstName().concat(" ")
-                            .concat(userService.getUserById(assignments.get(prevAss)).getLastName()).concat("</td>")
+                            .concat(userService.getUserById(assignments.get(prevAss)).getLastName()).concat(TD)
                             .concat("</tr>"));
         });
 
@@ -379,7 +375,8 @@ public class DisbursementService {
     }
 
     public ActualDisbursement getActualDisbursementById(Long actualDisbursementId) {
-        return actualDisbursementRepository.findById(actualDisbursementId).get();
+        Optional<ActualDisbursement> actualDisbursement = actualDisbursementRepository.findById(actualDisbursementId);
+        return actualDisbursement.isPresent()?actualDisbursement.get():null;
     }
 
     public void deleteActualDisbursement(ActualDisbursement actualDisbursement) {
@@ -404,7 +401,7 @@ public class DisbursementService {
     }
 
     public boolean checkIfDisbursementMovedThroughWFAtleastOnce(Long id) {
-        return disbursementRepository.findDisbursementsThatMovedAtleastOnce(id).size() > 0;
+        return !disbursementRepository.findDisbursementsThatMovedAtleastOnce(id).isEmpty();
     }
 
     public List<Disbursement> getAllDisbursementsForGrant(Long grantId) {
@@ -420,7 +417,8 @@ public class DisbursementService {
     }
 
     public DisbursementDocument getDisbursementDocumentById(Long attachmentId) {
-        return disbursementDocumentRepository.findById(attachmentId).get();
+        Optional<DisbursementDocument> disbursementDocument = disbursementDocumentRepository.findById(attachmentId);
+        return disbursementDocument.isPresent()?disbursementDocument.get():null;
     }
 
     public void deleteDisbursementDocument(DisbursementDocument doc) {
@@ -452,7 +450,6 @@ public class DisbursementService {
     }
 
     public PlainDisbursement disbursementToPlain(Disbursement currentDisbursement) {
-        SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy");
         PlainDisbursement plainDisbursement = new PlainDisbursement();
         plainDisbursement.setRequestedAmount(currentDisbursement.getRequestedAmount());
         plainDisbursement.setCommentary(currentDisbursement.getReason());

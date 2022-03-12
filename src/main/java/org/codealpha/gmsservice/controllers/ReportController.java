@@ -78,6 +78,7 @@ public class ReportController {
     public static final String PLEASE_REVIEW = "Please review.";
     public static final String TENANT = "%TENANT%";
     public static final String PATH_SEPARATOR = "/";
+    public static final String UTF_8 = "UTF-8";
     private static Logger logger = LoggerFactory.getLogger(ReportController.class);
 
     @Autowired
@@ -190,7 +191,7 @@ public class ReportController {
 
                 reports = new ArrayList<>();
 
-                for (Map.Entry<Long,ReportCard> entry : reportsHolder.entrySet()) {
+                for (Map.Entry<Long, ReportCard> entry : reportsHolder.entrySet()) {
                     ReportCard r = entry.getValue();
                     List<ReportCard> otherReports = reportService.getReportCardsForGrant(r.getGrant());
                     otherReports.removeIf(a -> a.getId().longValue() == r.getId().longValue());
@@ -292,7 +293,7 @@ public class ReportController {
             }
         }
 
-        if(reports!=null) {
+        if (reports != null) {
             reports.removeIf(r -> r.getId().longValue() == reportId.longValue());
         }
 
@@ -418,7 +419,7 @@ public class ReportController {
             }
         });
         report.setSecurityCode(reportService.buildHashCode(report));
-        report.setFlowAuthorities(reportService.getFlowReportFlowAuthority(report, userId));
+        report.setFlowAuthorities(reportService.getFlowReportFlowAuthority(report));
 
         List<GrantTag> grantTags = grantService.getTagsForGrant(report.getGrant().getId());
 
@@ -688,7 +689,7 @@ public class ReportController {
                     .getTenantWorkflowStatuses(REPORT, report.getGrant().getGrantorOrganization().getId())
                     .stream().filter(s -> s.getInternalStatus().equalsIgnoreCase(CLOSED)).findFirst();
             approvedReports = reportService.findByGrantAndStatus(report.getGrant(),
-                    optionalWorkflowStatus.isPresent()?optionalWorkflowStatus.get():null,
+                    optionalWorkflowStatus.isPresent() ? optionalWorkflowStatus.get() : null,
                     report.getId());
             if (approvedReports == null || approvedReports.isEmpty()) {
                 try {
@@ -864,8 +865,8 @@ public class ReportController {
 
         stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
 
-        if (Boolean.TRUE.equals(reportService._checkIfReportTemplateChanged(report, reportSection, newSectionAttribute))) {
-            reportService._createNewReportTemplateFromExisiting(report);
+        if (Boolean.TRUE.equals(reportService.checkIfReportTemplateChanged(report, reportSection, newSectionAttribute))) {
+            reportService.createNewReportTemplateFromExisiting(report);
         }
 
         report = reportToReturn(report, userId);
@@ -896,8 +897,8 @@ public class ReportController {
         stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
 
         Report report = reportService.getReportById(reportId);
-        if (Boolean.TRUE.equals(reportService._checkIfReportTemplateChanged(report, currentAttribute.getSection(), currentAttribute))) {
-            reportService._createNewReportTemplateFromExisiting(report);
+        if (Boolean.TRUE.equals(reportService.checkIfReportTemplateChanged(report, currentAttribute.getSection(), currentAttribute))) {
+            reportService.createNewReportTemplateFromExisiting(report);
         }
 
         report = reportToReturn(report, userId);
@@ -922,7 +923,7 @@ public class ReportController {
         String filePath = null;
         try {
             file = resourceLoader
-                    .getResource(FILE  + URLDecoder.decode(libraryDoc.getLocation(), "UTF-8"))
+                    .getResource(FILE + URLDecoder.decode(libraryDoc.getLocation(), UTF_8))
                     .getFile();
 
             User user = userService.getUserById(userId);
@@ -942,7 +943,7 @@ public class ReportController {
             File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
             FileCopyUtils.copy(file, fileToCreate);
         } catch (IOException e) {
-            logger.error(e.getMessage(),e);
+            logger.error(e.getMessage(), e);
         }
         ReportStringAttributeAttachments attachment = new ReportStringAttributeAttachments();
         attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
@@ -963,7 +964,7 @@ public class ReportController {
             stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
             reportService.saveReportStringAttribute(stringAttribute);
         } catch (JsonProcessingException e) {
-            logger.error(e.getMessage(),e);
+            logger.error(e.getMessage(), e);
         }
         Report report = reportService.getReportById(reportId);
         report = reportToReturn(report, userId);
@@ -1004,7 +1005,7 @@ public class ReportController {
         List<ReportStringAttributeAttachments> attachments = new ArrayList<>();
         for (MultipartFile file : files) {
             String fileName = file.getOriginalFilename();
-            if(fileName!=null) {
+            if (fileName != null) {
                 File fileToCreate = new File(dir, fileName);
                 try (FileOutputStream fos = new FileOutputStream(fileToCreate)) {
                     fos.write(file.getBytes());
@@ -1047,15 +1048,15 @@ public class ReportController {
             ReportStringAttribute finalAttr = attr;
             ReportStringAttribute finalAttr1 = finalAttr;
             Optional<ReportStringAttribute> optionalAttr = report.getStringAttributes().stream().filter(g -> g.getId().longValue() == finalAttr1.getId().longValue()).findFirst();
-            finalAttr = optionalAttr.isPresent()?optionalAttr
-                    .get():null;
-            if(finalAttr!=null) {
+            finalAttr = optionalAttr.isPresent() ? optionalAttr
+                    .get() : null;
+            if (finalAttr != null) {
                 finalAttr.setValue(mapper.writeValueAsString(currentAttachments));
             }
             reportService.saveReport(report);
 
         } catch (IOException e) {
-            logger.error(e.getMessage(),e);
+            logger.error(e.getMessage(), e);
         }
 
         report = reportService.getReportById(reportId);
@@ -1086,8 +1087,8 @@ public class ReportController {
                 .getNextSectionOrder(organizationService.findOrganizationByTenantCode(tenantCode).getId(), templateId));
         specificSection = reportService.saveSection(specificSection);
 
-        if (Boolean.TRUE.equals(reportService._checkIfReportTemplateChanged(report, specificSection, null))) {
-            reportService._createNewReportTemplateFromExisiting(report);
+        if (Boolean.TRUE.equals(reportService.checkIfReportTemplateChanged(report, specificSection, null))) {
+            reportService.createNewReportTemplateFromExisiting(report);
         }
 
         report = reportToReturn(report, userId);
@@ -1121,8 +1122,8 @@ public class ReportController {
         reportService.deleteSection(section);
 
         report = reportService.getReportById(reportId);
-        if (Boolean.TRUE.equals(reportService._checkIfReportTemplateChanged(report, section, null))) {
-            reportService._createNewReportTemplateFromExisiting(report);
+        if (Boolean.TRUE.equals(reportService.checkIfReportTemplateChanged(report, section, null))) {
+            reportService.createNewReportTemplateFromExisiting(report);
         }
         report = reportToReturn(report, userId);
         return report;
@@ -1171,37 +1172,42 @@ public class ReportController {
                 User existingUser = userService.getUserByEmailAndOrg(customAss, report.getGrant().getOrganization());
 
                 String code = Base64.getEncoder().encodeToString(String.valueOf(report.getId()).getBytes());
+                try {
+                    if (existingUser != null && existingUser.isActive()) {
+                        granteeUser = existingUser;
+                        url = new StringBuilder(url).append("/home/?action=login&org=").append(URLEncoder.encode(report.getGrant().getOrganization().getName(), UTF_8)).append("&r=").append(code).append(EMAIL).append(granteeUser.getEmailId()).append(TYPE_REPORT).toString();
+                    } else if (existingUser != null && !existingUser.isActive()) {
+                        granteeUser = existingUser;
+                        url = new StringBuilder(url).append("/home/?action=registration&org=")
+                                .append(URLEncoder.encode(report.getGrant().getOrganization().getName(), UTF_8))
+                                .append("&r=").append(code)
+                                .append(EMAIL).append(granteeUser.getEmailId()).append(TYPE_REPORT).toString();
 
-                if (existingUser != null && existingUser.isActive()) {
-                    granteeUser = existingUser;
-                    url += "/home/?action=login&org=" + URLEncoder.encode(report.getGrant().getOrganization().getName()) + "&r=" + code + EMAIL + granteeUser.getEmailId() + TYPE_REPORT;
-                } else if (existingUser != null && !existingUser.isActive()) {
-                    granteeUser = existingUser;
-                    url += "/home/?action=registration&org="
-                            + URLEncoder.encode(report.getGrant().getOrganization().getName()) + "&r=" + code
-                            + EMAIL + granteeUser.getEmailId() + TYPE_REPORT;
+                    } else {
+                        granteeUser = new User();
+                        Role newRole = roleService.findByOrganizationAndName(report.getGrant().getOrganization(), "Admin");
 
-                } else {
-                    granteeUser = new User();
-                    Role newRole = roleService.findByOrganizationAndName(report.getGrant().getOrganization(), "Admin");
+                        UserRole userRole = new UserRole();
+                        userRole.setRole(newRole);
+                        userRole.setUser(granteeUser);
 
-                    UserRole userRole = new UserRole();
-                    userRole.setRole(newRole);
-                    userRole.setUser(granteeUser);
-
-                    List<UserRole> userRoles = new ArrayList<>();
-                    userRoles.add(userRole);
-                    granteeUser.setUserRoles(userRoles);
-                    granteeUser.setFirstName("");
-                    granteeUser.setLastName("");
-                    granteeUser.setEmailId(customAss);
-                    granteeUser.setOrganization(report.getGrant().getOrganization());
-                    granteeUser.setActive(false);
-                    granteeUser = userService.save(granteeUser);
-                    userRoleService.saveUserRole(userRole);
-                    url = url + "/home/?action=registration&org="
-                            + URLEncoder.encode(report.getGrant().getOrganization().getName()) + "&r=" + code
-                            + EMAIL + granteeUser.getEmailId() + TYPE_REPORT;
+                        List<UserRole> userRoles = new ArrayList<>();
+                        userRoles.add(userRole);
+                        granteeUser.setUserRoles(userRoles);
+                        granteeUser.setFirstName("");
+                        granteeUser.setLastName("");
+                        granteeUser.setEmailId(customAss);
+                        granteeUser.setOrganization(report.getGrant().getOrganization());
+                        granteeUser.setActive(false);
+                        granteeUser = userService.save(granteeUser);
+                        userRoleService.saveUserRole(userRole);
+                        url = new StringBuilder(url).append("/home/?action=registration&org=")
+                                .append(URLEncoder.encode(report.getGrant().getOrganization().getName(), UTF_8))
+                                .append("&r=").append(code)
+                                .append(EMAIL).append(granteeUser.getEmailId()).append(TYPE_REPORT).toString();
+                    }
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
                 }
 
                 String[] notifications = reportService.buildReportInvitationContent(report,
@@ -1216,7 +1222,7 @@ public class ReportController {
                                 .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                 .getConfigValue()
-                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT,report.getGrant()
+                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT, report.getGrant()
                                 .getGrantorOrganization().getName())});
 
                 assignment.setAssignment(granteeUser.getId());
@@ -1255,7 +1261,7 @@ public class ReportController {
                                     .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion()).replace(TENANT,report.getGrant()
+                                            releaseService.getCurrentRelease().getVersion()).replace(TENANT, report.getGrant()
                                     .getGrantorOrganization().getName())});
 
             Map<Long, Long> cleanAsigneesList = new HashMap<>();
@@ -1395,7 +1401,7 @@ public class ReportController {
                             AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                    transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
+                    transition != null ? transition.getAction() : "", "Yes", PLEASE_REVIEW,
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                             : "No",
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1411,7 +1417,7 @@ public class ReportController {
                                     .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion()).replace(TENANT,finalReport.getGrant()
+                                            releaseService.getCurrentRelease().getVersion()).replace(TENANT, finalReport.getGrant()
                                     .getGrantorOrganization().getName())});
 
             String[] notificationContent = reportService.buildEmailNotificationContent(finalReport, currentOwner,
@@ -1421,7 +1427,7 @@ public class ReportController {
                             AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                    transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
+                    transition != null ? transition.getAction() : "", "Yes", PLEASE_REVIEW,
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                             : "No",
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1445,7 +1451,7 @@ public class ReportController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                        transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
+                        transition != null ? transition.getAction() : "", "Yes", PLEASE_REVIEW,
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                                 ? "Yes"
                                 : "No",
@@ -1471,7 +1477,7 @@ public class ReportController {
                             AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                    transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
+                    transition != null ? transition.getAction() : "", "Yes", PLEASE_REVIEW,
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                             : "No",
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1487,7 +1493,7 @@ public class ReportController {
                                     .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion()).replace(TENANT,finalReport.getGrant()
+                                            releaseService.getCurrentRelease().getVersion()).replace(TENANT, finalReport.getGrant()
                                     .getGrantorOrganization().getName())});
 
             String[] notificationContent = reportService.buildEmailNotificationContent(finalReport, currentOwner,
@@ -1497,7 +1503,7 @@ public class ReportController {
                             AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                     workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                     previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                    transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
+                    transition != null ? transition.getAction() : "", "Yes", PLEASE_REVIEW,
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                             : "No",
                     reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1521,7 +1527,7 @@ public class ReportController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                        transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
+                        transition != null ? transition.getAction() : "", "Yes", PLEASE_REVIEW,
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                                 ? "Yes"
                                 : "No",
@@ -1547,7 +1553,7 @@ public class ReportController {
                                 AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                         previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                        transition!=null?transition.getAction():"", "Yes", PLEASE_REVIEW,
+                        transition != null ? transition.getAction() : "", "Yes", PLEASE_REVIEW,
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                                 : "No",
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1563,7 +1569,7 @@ public class ReportController {
                                         .getAppConfigForGranterOrg(finalReport.getGrant().getGrantorOrganization().getId(),
                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                         .getConfigValue().replace(RELEASE_VERSION,
-                                        releaseService.getCurrentRelease().getVersion()).replace(TENANT,finalReport.getGrant()
+                                                releaseService.getCurrentRelease().getVersion()).replace(TENANT, finalReport.getGrant()
                                         .getGrantorOrganization().getName())});
 
                 String[] notificationContent = reportService.buildEmailNotificationContent(finalReport, granteeUser,
@@ -1573,7 +1579,7 @@ public class ReportController {
                                 AppConfiguration.REPORT_STATE_CHANGED_MAIL_MESSAGE).getConfigValue(),
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName, previousState.getName(),
                         previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                        transition!=null?transition.getAction():"Request Modifications", "Yes", PLEASE_REVIEW,
+                        transition != null ? transition.getAction() : "Request Modifications", "Yes", PLEASE_REVIEW,
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("") ? "Yes"
                                 : "No",
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
@@ -1599,7 +1605,7 @@ public class ReportController {
                         workflowStatusService.findById(toStateId).getName(), finalCurrentOwnerName,
                         previousState.getName(),
                         previousOwner.getFirstName().concat(" ").concat(previousOwner.getLastName()),
-                        transition!=null?transition.getAction():"Request Modifications", "Yes", PLEASE_REVIEW,
+                        transition != null ? transition.getAction() : "Request Modifications", "Yes", PLEASE_REVIEW,
                         reportWithNote.getNote() != null && !reportWithNote.getNote().trim().equalsIgnoreCase("")
                                 ? "Yes"
                                 : "No",
@@ -1652,7 +1658,6 @@ public class ReportController {
             }
 
         }
-
 
 
         return report;
@@ -1740,12 +1745,12 @@ public class ReportController {
         reportService.deleteSectionAttribute(attribute);
         Optional<ReportStringAttribute> optionalReportStringAttribute = report.getStringAttributes().stream()
                 .filter(g -> g.getId().longValue() == stringAttrib.getId().longValue()).findFirst();
-        ReportStringAttribute rsa2Delete = optionalReportStringAttribute.isPresent()?optionalReportStringAttribute.get():null;
+        ReportStringAttribute rsa2Delete = optionalReportStringAttribute.isPresent() ? optionalReportStringAttribute.get() : null;
         report.getStringAttributes().remove(rsa2Delete);
         report = reportService.saveReport(report);
 
-        if (Boolean.TRUE.equals(reportService._checkIfReportTemplateChanged(report, attribute.getSection(), null))) {
-            reportService._createNewReportTemplateFromExisiting(report);
+        if (Boolean.TRUE.equals(reportService.checkIfReportTemplateChanged(report, attribute.getSection(), null))) {
+            reportService.createNewReportTemplateFromExisiting(report);
         }
         report = reportToReturn(report, userId);
         return report;
@@ -1841,8 +1846,8 @@ public class ReportController {
             if (Boolean.TRUE.equals(status.getTerminal())) {
                 final Report finalReport = report;
                 Optional<GrantAssignments> optional = grantService.getGrantWorkflowAssignments(report.getGrant()).stream().filter(ass -> ass.getStateId().longValue() == finalReport.getGrant().getGrantStatus().getId().longValue()).findFirst();
-                GrantAssignments activeStateOwner = optional.isPresent()?optional.get():null;
-                if(activeStateOwner!=null) {
+                GrantAssignments activeStateOwner = optional.isPresent() ? optional.get() : null;
+                if (activeStateOwner != null) {
                     assignment.setAssignment(activeStateOwner.getAssignments());
                 }
             }
@@ -1970,7 +1975,7 @@ public class ReportController {
                             disbursementAttributeValue.get().setValue(mapper.writeValueAsString(tableDataList));
                             reportService.saveReportStringAttribute(disbursementAttributeValue.get());
                         } catch (JsonProcessingException e) {
-                            logger.error(e.getMessage(),e);
+                            logger.error(e.getMessage(), e);
                         }
                     } else {
                         ReportSpecificSection specificSection = new ReportSpecificSection();
@@ -2240,17 +2245,17 @@ public class ReportController {
     private DatePeriodLabel endOfQuarter(DateTime st) {
         if (st.getMonthOfYear() >= Month.JANUARY.getValue() && st.getMonthOfYear() <= Month.MARCH.getValue()) {
             return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
-                    "Quarterly Report - Q4 " +(st.getYear() - 1) + PATH_SEPARATOR
-                            +(String.valueOf(st.getYear()).substring(2, 4)));
+                    "Quarterly Report - Q4 " + (st.getYear() - 1) + PATH_SEPARATOR
+                            + (String.valueOf(st.getYear()).substring(2, 4)));
         } else if (st.getMonthOfYear() >= Month.APRIL.getValue() && st.getMonthOfYear() <= Month.JUNE.getValue()) {
             return new DatePeriodLabel(st.withMonthOfYear(Month.JUNE.getValue()),
-                    "Quarterly Report - Q1 " +(st.getYear()) + PATH_SEPARATOR
-                            +(String.valueOf(st.getYear() + 1).substring(2, 4)));
+                    "Quarterly Report - Q1 " + (st.getYear()) + PATH_SEPARATOR
+                            + (String.valueOf(st.getYear() + 1).substring(2, 4)));
         } else if (st.getMonthOfYear() >= Month.JULY.getValue() && st.getMonthOfYear() <= Month.SEPTEMBER.getValue()) {
             return new DatePeriodLabel(st.withMonthOfYear(Month.SEPTEMBER.getValue()),
-                    "Quarterly Report - Q2 " +(st.getYear()) + PATH_SEPARATOR
-                            +(String.valueOf(st.getYear() + 1).substring(2, 4)));
-        } else{
+                    "Quarterly Report - Q2 " + (st.getYear()) + PATH_SEPARATOR
+                            + (String.valueOf(st.getYear() + 1).substring(2, 4)));
+        } else {
             return new DatePeriodLabel(st.withMonthOfYear(Month.DECEMBER.getValue()),
                     "Quarterly Report - Q3 " + (st.getYear()) + PATH_SEPARATOR
                             + (String.valueOf(st.getYear() + 1).substring(2, 4)));
@@ -2267,7 +2272,7 @@ public class ReportController {
             return new DatePeriodLabel(st.plusYears(1).withMonthOfYear(Month.MARCH.getValue()),
                     "Half-Yearly Report - H2 " + (st.getYear()) + PATH_SEPARATOR
                             + (String.valueOf(st.getYear() + 1).substring(2, 4)));
-        } else{
+        } else {
             return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
                     "Half-Yearly Report - H2 " + (st.getYear() - 1) + PATH_SEPARATOR
                             + (String.valueOf(st.getYear()).substring(2, 4)));
@@ -2279,7 +2284,7 @@ public class ReportController {
             return new DatePeriodLabel(st.plusYears(1).withMonthOfYear(Month.MARCH.getValue()),
                     "Yearly Report " + (st.getYear()) + PATH_SEPARATOR
                             + (String.valueOf(st.getYear() + 1).substring(2, 4)));
-        } else{
+        } else {
             return new DatePeriodLabel(st.withMonthOfYear(Month.MARCH.getValue()),
                     "Yearly Report " + (st.getYear() - 1) + PATH_SEPARATOR
                             + (String.valueOf(st.getYear()).substring(2, 4)));
@@ -2294,65 +2299,65 @@ public class ReportController {
         response.setContentType("application/zip");
         response.setStatus(HttpServletResponse.SC_OK);
         response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
-
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
-        ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+        try (
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+                ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);) {
 
-        ArrayList<File> files = new ArrayList<>(2);
-        files.add(new File("README.md"));
 
-        User user = userService.getUserById(userId);
+            ArrayList<File> files = new ArrayList<>(2);
+            files.add(new File("README.md"));
 
-        for (Long attachmentId : downloadRequest.getAttachmentIds()) {
-            ReportStringAttributeAttachments attachment = reportService
-                    .getStringAttributeAttachmentsByAttachmentId(attachmentId);
-            Long sectionId = attachment.getReportStringAttribute().getSectionAttribute().getSection().getId();
-            Long attributeId = attachment.getReportStringAttribute().getSectionAttribute().getId();
-            File file = null;
-            if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
-                file = resourceLoader.getResource(FILE + uploadLocation
-                        + user.getOrganization().getName().toUpperCase() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR
-                        + sectionId + PATH_SEPARATOR + attributeId + PATH_SEPARATOR + attachment.getName() + "." + attachment.getType())
-                        .getFile();
-                if (!file.exists()) {
-                    file = resourceLoader
-                            .getResource(FILE + uploadLocation
-                                    + reportService.getReportById(reportId).getGrant().getGrantorOrganization()
-                                    .getCode().toUpperCase()
-                                    + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + sectionId + PATH_SEPARATOR + attributeId + PATH_SEPARATOR
-                                    + attachment.getName() + "." + attachment.getType())
+            User user = userService.getUserById(userId);
+
+            for (Long attachmentId : downloadRequest.getAttachmentIds()) {
+                ReportStringAttributeAttachments attachment = reportService
+                        .getStringAttributeAttachmentsByAttachmentId(attachmentId);
+                Long sectionId = attachment.getReportStringAttribute().getSectionAttribute().getSection().getId();
+                Long attributeId = attachment.getReportStringAttribute().getSectionAttribute().getId();
+                File file = null;
+                if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
+                    file = resourceLoader.getResource(FILE + uploadLocation
+                            + user.getOrganization().getName().toUpperCase() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR
+                            + sectionId + PATH_SEPARATOR + attributeId + PATH_SEPARATOR + attachment.getName() + "." + attachment.getType())
                             .getFile();
+                    if (!file.exists()) {
+                        file = resourceLoader
+                                .getResource(FILE + uploadLocation
+                                        + reportService.getReportById(reportId).getGrant().getGrantorOrganization()
+                                        .getCode().toUpperCase()
+                                        + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + sectionId + PATH_SEPARATOR + attributeId + PATH_SEPARATOR
+                                        + attachment.getName() + "." + attachment.getType())
+                                .getFile();
+                    }
+                } else {
+                    file = resourceLoader.getResource(
+                            FILE + uploadLocation + tenantCode + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + sectionId + PATH_SEPARATOR
+                                    + attributeId + PATH_SEPARATOR + attachment.getName() + "." + attachment.getType())
+                            .getFile();
+                    if (!file.exists()) {
+
+                        file = resourceLoader
+                                .getResource(FILE + uploadLocation
+                                        + reportService.getReportById(reportId).getGrant().getOrganization().getName()
+                                        .toUpperCase()
+                                        + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + sectionId + PATH_SEPARATOR + attributeId + PATH_SEPARATOR
+                                        + attachment.getName() + "." + attachment.getType())
+                                .getFile();
+                    }
                 }
-            } else {
-                file = resourceLoader.getResource(
-                        FILE + uploadLocation + tenantCode + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + sectionId + PATH_SEPARATOR
-                                + attributeId + PATH_SEPARATOR + attachment.getName() + "." + attachment.getType())
-                        .getFile();
-                if (!file.exists()) {
-
-                    file = resourceLoader
-                            .getResource(FILE + uploadLocation
-                                    + reportService.getReportById(reportId).getGrant().getOrganization().getName()
-                                    .toUpperCase()
-                                    + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + sectionId + PATH_SEPARATOR + attributeId + PATH_SEPARATOR
-                                    + attachment.getName() + "." + attachment.getType())
-                            .getFile();
+                zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+                try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                    IOUtils.copy(fileInputStream, zipOutputStream);
+                    zipOutputStream.closeEntry();
                 }
             }
-            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
-            try(FileInputStream fileInputStream = new FileInputStream(file)){
-                IOUtils.copy(fileInputStream, zipOutputStream);
-                zipOutputStream.closeEntry();
-            }
-        }
 
             zipOutputStream.finish();
             zipOutputStream.flush();
-            IOUtils.closeQuietly(zipOutputStream);
-        
-        IOUtils.closeQuietly(bufferedOutputStream);
-        IOUtils.closeQuietly(byteArrayOutputStream);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
         return byteArrayOutputStream.toByteArray();
     }
 
@@ -2396,14 +2401,14 @@ public class ReportController {
         reportService.deleteStringAttributeAttachments(Arrays.asList(attch));
 
         String fileName = attch.getName();
-        if(!fileName.contains(".".concat(attch.getType()))){
+        if (!fileName.contains(".".concat(attch.getType()))) {
             fileName = fileName.concat(".".concat(attch.getType()));
         }
         File file = new File(attch.getLocation() + fileName);
         try {
             Files.delete(file.toPath());
         } catch (IOException e) {
-           logger.error(e.getMessage(),e);
+            logger.error(e.getMessage(), e);
         }
         ReportStringAttribute stringAttribute = reportService.findReportStringAttributeById(attributeId);
         List<ReportStringAttributeAttachments> stringAttributeAttachments = reportService

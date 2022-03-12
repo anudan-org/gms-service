@@ -21,7 +21,7 @@ public class WorkflowPermissionService {
     @Autowired
     private WorkflowActionPermissionRepository workflowActionPermissionRepository;
 
-    public List<WorkFlowPermission> getGrantFlowPermissions(Long grantStatusId,Long userId,Long grantId) {
+    public List<WorkFlowPermission> getGrantFlowPermissions(Long grantStatusId,Long grantId) {
 
         return workflowPermissionRepository.getPermissionsForGrantFlow(grantStatusId,grantId);
     }

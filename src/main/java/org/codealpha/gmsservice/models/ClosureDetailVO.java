@@ -29,7 +29,7 @@ public class ClosureDetailVO {
     this.sections = sections;
   }
 
-  public ClosureDetailVO buildStringAttributes(List<ClosureSpecificSection> closureSections, List<ClosureStringAttribute> value, GrantClosureService closureService, Long grantId,ReportService reportService) {
+  public ClosureDetailVO buildStringAttributes(List<ClosureSpecificSection> closureSections, List<ClosureStringAttribute> value, Long grantId,ReportService reportService) {
 
     SectionVO sectionVO = null;
     sections = new ArrayList<>();

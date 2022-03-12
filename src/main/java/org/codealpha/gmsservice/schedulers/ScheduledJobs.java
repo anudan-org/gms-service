@@ -561,8 +561,7 @@ public class ScheduledJobs {
                                             .getMinutes() > afterNoOfHour) {
                                         User user = userService.getUserById(disbursementtAssignment.getOwner());
                                         String[] messageMetadata = disbursementService.buildEmailNotificationContent(
-                                                disbursement, user, user.getFirstName() + " " + user.getLastName(), "",
-                                                null, taskConfiguration.getSubjectDisbursement(),
+                                                disbursement, user,  taskConfiguration.getSubjectDisbursement(),
                                                 taskConfiguration.getMessageDisbursement(), "", "", "", "", "", "", "",
                                                 "", "",
                                                 buildLink(environment, true,
@@ -618,8 +617,7 @@ public class ScheduledJobs {
                                             .getMinutes() > afterNoOfHour) {
                                         User user = userService.getUserById(disbursementAssignment.getOwner());
                                         String[] messageMetadata = disbursementService.buildEmailNotificationContent(
-                                                disbursement, user, user.getFirstName() + " " + user.getLastName(), "",
-                                                null, taskConfiguration.getSubjectDisbursement(),
+                                                disbursement, user, taskConfiguration.getSubjectDisbursement(),
                                                 taskConfiguration.getMessageDisbursement(), "", "", "", "", "", "", "", "", "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),

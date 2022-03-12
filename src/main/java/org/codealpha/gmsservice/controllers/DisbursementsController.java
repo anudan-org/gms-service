@@ -289,7 +289,7 @@ public class DisbursementsController {
                         List<DisbursementAssignment> newAssignments = disbursementService
                                         .getDisbursementAssignments(disbursement);
                         String[] notifications = disbursementService.buildEmailNotificationContent(disbursement,
-                                        userService.getUserById(userId), null, null, null,
+                                        userService.getUserById(userId),
                                         appConfigService.getAppConfigForGranterOrg(
                                                         disbursement.getGrant().getGrantorOrganization().getId(),
                                                         AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT)
@@ -329,7 +329,7 @@ public class DisbursementsController {
                                 cleanAsigneesList.put(ass.getOwner(), ass.getOwner());
                         }
                         final String[] finaNotifications = disbursementService.buildEmailNotificationContent(
-                                        disbursement, userService.getUserById(userId), null, null, null,
+                                        disbursement, userService.getUserById(userId),
                                         appConfigService.getAppConfigForGranterOrg(
                                                         disbursement.getGrant().getGrantorOrganization().getId(),
                                                         AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT)
@@ -437,8 +437,7 @@ public class DisbursementsController {
                                 .findByFromAndToStates(previousState, toStatus);
 
                 String[] emailNotificationContent = disbursementService.buildEmailNotificationContent(finalDisbursement,
-                                user, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(),
-                                new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                                user,
                                 appConfigService.getAppConfigForGranterOrg(
                                                 finalDisbursement.getGrant().getGrantorOrganization().getId(),
                                                 AppConfiguration.DISBURSEMENT_STATE_CHANGED_MAIL_SUBJECT)
@@ -465,8 +464,7 @@ public class DisbursementsController {
                                                                 : "",
                                 "", null, null, null, null);
                 String[] notificationContent = disbursementService.buildEmailNotificationContent(finalDisbursement,
-                                user, user.getFirstName().concat(" ").concat(user.getLastName()), toStatus.getVerb(),
-                                new SimpleDateFormat("dd-MMM-yyyy").format(DateTime.now().toDate()),
+                                user,
                                 appConfigService.getAppConfigForGranterOrg(
                                                 finalDisbursement.getGrant().getGrantorOrganization().getId(),
                                                 AppConfiguration.DISBURSEMENT_STATE_CHANGED_MAIL_SUBJECT)

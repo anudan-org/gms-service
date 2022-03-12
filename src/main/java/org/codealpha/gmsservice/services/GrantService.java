@@ -53,6 +53,9 @@ public class GrantService {
     public static final String TDCLOSE = "</td>";
     public static final String TDOPEN = "<td>";
     public static final String TROPEN = "<tr>";
+    public static final String DRAFT = "DRAFT";
+    public static final String TENANT = "%TENANT%";
+    public static final String DISBURSEMENT_CAPS = "DISBURSEMENT";
 
 
     @Autowired
@@ -305,7 +308,7 @@ public class GrantService {
     }
 
     public String buildNotificationContent(Grant grant, WorkflowStatus status, String configValue) {
-        return configValue.replaceAll(GRANT_NAME, grant.getName()).replaceAll("%GRANT_STATUS%", status.getVerb());
+        return configValue.replace(GRANT_NAME, grant.getName()).replace("%GRANT_STATUS%", status.getVerb());
     }
 
     public List<GrantSpecificSection> getGrantSections(Grant grant) {
@@ -462,27 +465,27 @@ public class GrantService {
         }
 
         String grantName = "";
-        if ((finalGrant.getGrantStatus().getInternalStatus().equalsIgnoreCase("DRAFT") || finalGrant.getGrantStatus().getInternalStatus().equalsIgnoreCase("REVIEW")) && finalGrant.getOrigGrantId() != null) {
+        if ((finalGrant.getGrantStatus().getInternalStatus().equalsIgnoreCase(DRAFT) || finalGrant.getGrantStatus().getInternalStatus().equalsIgnoreCase("REVIEW")) && finalGrant.getOrigGrantId() != null) {
             grantName = "Amendment in-progress [" + getById(finalGrant.getOrigGrantId()).getReferenceNo() + "] " + finalGrant.getName();
         } else {
             grantName = finalGrant.getReferenceNo() != null ? "[".concat(finalGrant.getReferenceNo()).concat("] ").concat(finalGrant.getName()) : finalGrant.getName();
         }
-        String message = msgConfigValue.replaceAll(GRANT_NAME, grantName)
-                .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
-                .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
-                .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
-                .replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%", hasNotes)
-                .replaceAll("%HAS_NOTES_COMMENT%", hasNotesComment)
-                .replaceAll("%TENANT%", finalGrant.getGrantorOrganization().getName()).replaceAll("%GRANT_LINK%", url)
-                .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
-                .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
-                .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replaceAll("%GRANTEE%",
+        String message = msgConfigValue.replace(GRANT_NAME, grantName)
+                .replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner)
+                .replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner)
+                .replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges)
+                .replace("%HAS_CHANGES_COMMENT%", hasChangesComment).replace("%HAS_NOTES%", hasNotes)
+                .replace("%HAS_NOTES_COMMENT%", hasNotesComment)
+                .replace(TENANT, finalGrant.getGrantorOrganization().getName()).replace("%GRANT_LINK%", url)
+                .replace("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
+                .replace("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
+                .replace("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
+                .replace("%GRANTEE%",
                         finalGrant.getOrganization() != null ? finalGrant.getOrganization().getName() : "")
-                .replaceAll("%APPROVER_TYPE%", "Approver").replaceAll("%ENTITY_TYPE%", "grant")
-                .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
-                .replaceAll("%ENTITY_NAME%", finalGrant.getName());
-        String subject = subConfigValue.replaceAll(GRANT_NAME, grantName);
+                .replace("%APPROVER_TYPE%", "Approver").replace("%ENTITY_TYPE%", "grant")
+                .replace("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
+                .replace("%ENTITY_NAME%", finalGrant.getName());
+        String subject = subConfigValue.replace(GRANT_NAME, grantName);
 
         return new String[]{subject, message};
     }
@@ -520,9 +523,9 @@ public class GrantService {
 
     public String[] buildGrantInvitationContent(Grant grant, String sub, String msg, String url) {
         String finalGrantName = grant.getReferenceNo()!=null?"[".concat(grant.getReferenceNo()).concat("] ").concat(grant.getName()):grant.getName();
-        sub = sub.replaceAll(GRANT_NAME, finalGrantName);
-        msg = msg.replaceAll(GRANT_NAME, finalGrantName)
-                .replaceAll("%TENANT_NAME%", grant.getGrantorOrganization().getName()).replaceAll("%LINK%", url);
+        sub = sub.replace(GRANT_NAME, finalGrantName);
+        msg = msg.replace(GRANT_NAME, finalGrantName)
+                .replace("%TENANT_NAME%", grant.getGrantorOrganization().getName()).replace("%LINK%", url);
         return new String[]{sub, msg};
     }
 
@@ -632,7 +635,7 @@ public class GrantService {
                         user.getUserRoles(), grant.getGrantStatus().getId(), userId, grant.getId()));
 
         grant.setFlowAuthorities(workflowPermissionService.getGrantFlowPermissions(grant.getGrantStatus().getId(),
-                userId, grant.getId()));
+                 grant.getId()));
 
         grant.setGrantTemplate(granterGrantTemplateService.findByTemplateId(grant.getTemplateId()));
 
@@ -681,7 +684,7 @@ public class GrantService {
         }
 
         grant.setSecurityCode(buildHashCode(grant));
-        List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses("DISBURSEMENT",
+        List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses(DISBURSEMENT_CAPS,
                 grant.getGrantorOrganization().getId());
 
         List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream()
@@ -754,7 +757,7 @@ public class GrantService {
             List<Disbursement> existingDisbursements = disbursementService
                     .getAllDisbursementsForGrant(grant.getOrigGrantId());
             if (existingDisbursements != null && !existingDisbursements.isEmpty()) {
-                existingDisbursements.removeIf(d -> !d.getStatus().getInternalStatus().equalsIgnoreCase("DRAFT"));
+                existingDisbursements.removeIf(d -> !d.getStatus().getInternalStatus().equalsIgnoreCase(DRAFT));
                 if (!existingDisbursements.isEmpty()) {
 
                     Comparator<Disbursement> endDateComparator = Comparator.comparing(Disbursement::getMovedOn);
@@ -792,16 +795,16 @@ public class GrantService {
         }
 
 
-        List<Long> draftAndReviewStatusIds = workflowStatusRepository.findByWorkflow(workflowRepository.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(), "DISBURSEMENT"))
+        List<Long> draftAndReviewStatusIds = workflowStatusRepository.findByWorkflow(workflowRepository.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(), DISBURSEMENT_CAPS))
                 .stream()
-                .filter(st -> (st.getInternalStatus().equalsIgnoreCase("DRAFT") || st.getInternalStatus().equalsIgnoreCase("REVIEW")))
-                .mapToLong(s->s.getId()).boxed()
+                .filter(st -> (st.getInternalStatus().equalsIgnoreCase(DRAFT) || st.getInternalStatus().equalsIgnoreCase("REVIEW")))
+                .mapToLong(WorkflowStatus::getId).boxed()
                 .collect(Collectors.toList());
         List<Disbursement> draftAndReviewDisbursements = disbursementService
                 .getDibursementsForGrantByStatuses(grant.getId(),
                         draftAndReviewStatusIds);
-        draftAndReviewDisbursements.removeIf(d -> d.isGranteeEntry());
-        if (draftAndReviewDisbursements != null && draftAndReviewDisbursements.size() > 0) {
+        draftAndReviewDisbursements.removeIf(Disbursement::isGranteeEntry);
+        if (draftAndReviewDisbursements != null && !draftAndReviewDisbursements.isEmpty()) {
             grant.setHasOngoingDisbursement(true);
             grant.setOngoingDisbursementAmount(draftAndReviewDisbursements.get(0).getRequestedAmount());
 
@@ -812,7 +815,7 @@ public class GrantService {
     private List<ActualDisbursement> getPastApprovedActualDisbursementsForGrant(Grant grant, boolean includeCurrent) {
         List<Disbursement> disbs = disbursementService.getAllDisbursementsForGrant(grant.getId());
         List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
-        List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses("DISBURSEMENT",
+        List<WorkflowStatus> workflowStatuses = workflowStatusRepository.getAllTenantStatuses(DISBURSEMENT_CAPS,
                 grant.getGrantorOrganization().getId());
 
         List<WorkflowStatus> activeAndClosedStatuses = workflowStatuses.stream()
@@ -1269,8 +1272,8 @@ public class GrantService {
                             new String[]{appConfigService
                                     .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                    .getConfigValue().replaceAll(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalGrant
+                                    .getConfigValue().replace(RELEASE_VERSION,
+                                    releaseService.getCurrentRelease().getVersion()).replace(TENANT,finalGrant
                                     .getGrantorOrganization().getName())});
 
             usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
@@ -1299,8 +1302,8 @@ public class GrantService {
                                 new String[]{appConfigService
                                         .getAppConfigForGranterOrg(finalGrant.getGrantorOrganization().getId(),
                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                        .getConfigValue().replaceAll(RELEASE_VERSION,
-                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",finalGrant
+                                        .getConfigValue().replace(RELEASE_VERSION,
+                                        releaseService.getCurrentRelease().getVersion()).replace(TENANT,finalGrant
                                         .getGrantorOrganization().getName())});
 
                 usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent, u.getId(),
@@ -1318,7 +1321,7 @@ public class GrantService {
                         user.getUserRoles(), grant.getGrantStatus().getId(), userId, grantId));
 
         grant.setFlowAuthorities(workflowPermissionService.getGrantFlowPermissions(grant.getGrantStatus().getId(),
-                userId, grant.getId()));
+                 grant.getId()));
         GrantVO grantVO = new GrantVO().build(grant, getGrantSections(grant), workflowPermissionService,
                 user,
                 userService, this);
@@ -1423,7 +1426,7 @@ public class GrantService {
                         user.getUserRoles(), grant.getGrantStatus().getId(), userId, grant.getId()));
 
         grant.setFlowAuthorities(workflowPermissionService.getGrantFlowPermissions(grant.getGrantStatus().getId(),
-                userId, grant.getId()));
+                 grant.getId()));
 
         for (Submission submission : grant.getSubmissions()) {
             submission.setActionAuthorities(workflowPermissionService
@@ -1680,7 +1683,7 @@ public class GrantService {
             referenceCode = "A" + grant.getAmendmentNo() + "-" + prevRefNo;
         } else {
             String code = grant.getOrganization() == null ? grant.getGrantorOrganization().getName() : grant.getOrganization().getName();
-            referenceCode = code.replaceAll(" ", "").substring(0, 4).toUpperCase() + "-"
+            referenceCode = code.replace(" ", "").substring(0, 4).toUpperCase() + "-"
                     + stFormat.format(grant.getStartDate()) + "-" + enFormat.format(grant.getEndDate()) + ("-" + (sNo + 1));
         }
         grant.setReferenceNo(referenceCode);

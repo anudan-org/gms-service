@@ -1,10 +1,10 @@
 package org.codealpha.gmsservice.repositories;
 
-import java.util.List;
 import org.codealpha.gmsservice.entities.WorkFlowPermission;
-import org.codealpha.gmsservice.entities.WorkflowActionPermission;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+
+import java.util.List;
 
 public interface WorkflowPermissionRepository extends CrudRepository<WorkFlowPermission, Long> {
 
@@ -211,7 +211,7 @@ public interface WorkflowPermissionRepository extends CrudRepository<WorkFlowPer
           "union\n" +
           "select id, from_state_id,(select name from workflow_statuses where id=from_state_id),\n" +
           " to_state_id,(select name from workflow_statuses where id=to_state_id) to_name,action,true note_required,seq_order,true is_forward_direction,0 as assignment from workflow_status_transitions where from_state_id=?1 and exists (select * from closure_assignments where state_id=?1 and assignment=?2 and closure_id=?3)) Y order by is_forward_direction desc, seq_order desc",nativeQuery = true)
-  public List<WorkFlowPermission> getPermissionfForClosureWorkflowAtBranchMergeState(Long statusId,Long UserId,Long closureId,Long prevStatusId);
+  public List<WorkFlowPermission> getPermissionfForClosureWorkflowAtBranchMergeState(Long statusId,Long userId,Long closureId,Long prevStatusId);
 
   @Query(value = "select * from (WITH RECURSIVE wst AS ( \n" +
           "                                        SELECT \n" +

@@ -1,6 +1,5 @@
 package org.codealpha.gmsservice.controllers;
 
-import javax.validation.constraints.NotNull;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.repositories.OrganizationRepository;
 import org.codealpha.gmsservice.services.OrganizationService;
@@ -12,8 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.validation.constraints.NotNull;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -40,12 +39,6 @@ public class OrganizationController {
 		return service.get(organizationId);
 	}
 
-	@GetMapping("/")
-	public void getAll() {
-		System.out.println(repository.findAll());
-	}
-
-
 	@PostMapping("/")
 	public Organization saveOrganization(@RequestBody Organization org){
 		org = service.save(org);
@@ -62,11 +55,8 @@ public class OrganizationController {
 
 		File fileToCreate = new File(dir, "logo.png");
 
-		FileOutputStream fos = null;
-		try {
-			fos = new FileOutputStream(fileToCreate);
+		try(FileOutputStream fos = new FileOutputStream(fileToCreate)) {
 			fos.write(image.getBytes());
-			fos.close();
 		} catch (IOException e) {
 			logger.error(e.getMessage(),e);
 		}
@@ -82,11 +72,8 @@ public class OrganizationController {
 
 		File fileToCreate = new File(dir, "logo.png");
 
-		FileOutputStream fos = null;
-		try {
-			fos = new FileOutputStream(fileToCreate);
+		try(FileOutputStream fos = new FileOutputStream(fileToCreate)) {
 			fos.write(image.getBytes());
-			fos.close();
 		} catch (IOException e) {
 			logger.error(e.getMessage(),e);
 		}

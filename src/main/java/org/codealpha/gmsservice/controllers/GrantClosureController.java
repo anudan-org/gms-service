@@ -1796,7 +1796,7 @@ public class GrantClosureController {
                         appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.CLOSURE_INVITE_MESSAGE).getConfigValue(),
                         url);
-                commonEmailSevice.sendMail(new String[]{!granteeUser.isDeleted() ? granteeUser.getEmailId() : null},
+                commonEmailSevice.sendMail(new String[]{(granteeUser!=null && !granteeUser.isDeleted()) ? granteeUser.getEmailId() : null},
                         null, notifications[0], notifications[1],
                         new String[]{appConfigService
                                 .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),

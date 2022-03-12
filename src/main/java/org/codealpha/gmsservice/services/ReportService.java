@@ -167,7 +167,7 @@ public class ReportService {
             if (Boolean.TRUE.equals(status.getTerminal())) {
                 assignment.setAssignment(anchorAssignment != null ? anchorAssignment.getAssignments() : null);
             }
-            assignment = _saveAssignmentForReport(assignment);
+            assignment = saveReportAssignment(assignment);
             assignments.add(assignment);
 
         }
@@ -183,14 +183,14 @@ public class ReportService {
 
         List<ReportAssignment> assignments = new ArrayList<>();
         for (WorkflowStatus status : statuses) {
-            if (!status.getTerminal()) {
+            if (Boolean.FALSE.equals(status.getTerminal())) {
                 assignment = new ReportAssignment();
                 if (status.getInternalStatus().equalsIgnoreCase(ACTIVE)) {
                     assignment.setAssignment(granteeUserId);
                     assignment.setAnchor(false);
                     assignment.setReportId(report.getId());
                     assignment.setStateId(status.getId());
-                    assignment = _saveAssignmentForReport(assignment);
+                    assignment = saveReportAssignment(assignment);
                     assignments.add(assignment);
                 }
 
@@ -199,7 +199,7 @@ public class ReportService {
         return assignments;
     }
 
-    private ReportAssignment _saveAssignmentForReport(ReportAssignment assignment) {
+    private ReportAssignment saveReportAssignment(ReportAssignment assignment) {
         return reportAssignmentRepository.save(assignment);
     }
 
@@ -377,9 +377,7 @@ public class ReportService {
         report.getReportDetails().getSections().forEach(sec -> {
             List<Long> attribIds = new ArrayList<>();
             if (sec.getAttributes() != null) {
-                sec.getAttributes().forEach(a -> {
-                    attribIds.add(a.getId());
-                });
+                sec.getAttributes().forEach(a -> attribIds.add(a.getId()));
             }
 
             map.put(sec.getId(), attribIds);
@@ -388,9 +386,7 @@ public class ReportService {
         List<Long> templateIds = new ArrayList<>();
         if (report.getGrant() != null) {
             granterReportTemplateRepository.findByGranterId(report.getGrant().getGrantorOrganization().getId())
-                    .forEach(t -> {
-                        templateIds.add(t.getId());
-                    });
+                    .forEach(t -> templateIds.add(t.getId()));
         }
         secureEntity.setGrantTemplateIds(templateIds);
 
@@ -402,9 +398,7 @@ public class ReportService {
                     .forEach(w -> {
                         grantWorkflowIds.add(w.getId());
                         List<Long> wfStatusIds = new ArrayList<>();
-                        workflowStatusRepository.findByWorkflow(w).forEach(ws -> {
-                            wfStatusIds.add(ws.getId());
-                        });
+                        workflowStatusRepository.findByWorkflow(w).forEach(ws -> wfStatusIds.add(ws.getId()));
                         grantWorkflowStatusIds.put(w.getId(), wfStatusIds);
 
                         List<WorkflowStatusTransition> transitions = workflowStatusTransitionRepository
@@ -430,16 +424,13 @@ public class ReportService {
         List<Long> tLibraryIds = new ArrayList<>();
         if (report.getGrant() != null) {
             templateLibraryRepository.findByGranterId(report.getGrant().getGrantorOrganization().getId())
-                    .forEach(tl -> {
-                        tLibraryIds.add(tl.getId());
-                    });
+                    .forEach(tl -> tLibraryIds.add(tl.getId()));
         }
         secureEntity.setTemplateLibraryIds(tLibraryIds);
 
         try {
-            String secureCode = Jwts.builder().setSubject(new ObjectMapper().writeValueAsString(secureEntity))
+            return Jwts.builder().setSubject(new ObjectMapper().writeValueAsString(secureEntity))
                     .signWith(SignatureAlgorithm.HS512, SECRET).compact();
-            return secureCode;
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(),e);
         }
@@ -449,7 +440,6 @@ public class ReportService {
     public SecureReportEntity unBuildGrantHashCode(Report grant) {
         String grantSecureCode = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(grant.getSecurityCode()).getBody()
                 .getSubject();
-        SecureReportEntity secureHash = null;
         ObjectMapper mapper = new ObjectMapper();
         try {
             return mapper.readValue(grantSecureCode, SecureReportEntity.class);
@@ -556,7 +546,7 @@ public class ReportService {
         reportSpecificSectionRepository.delete(section);
     }
 
-    public List<WorkFlowPermission> getFlowReportFlowAuthority(Report report, Long userId){
+    public List<WorkFlowPermission> getFlowReportFlowAuthority(Report report){
 
         return workflowPermissionRepository.getPermissionsForReportFlow(report.getStatus().getId(),report.getId());
     }
@@ -565,17 +555,16 @@ public class ReportService {
         List<WorkFlowPermission> permissions = new ArrayList<>();
         Optional<User> optionalUser = userRepository.findById(userId);
         if ((reportAssignmentRepository.findByReportId(report.getId()).stream()
-                .filter(ass -> ass.getStateId().longValue() == report.getStatus().getId().longValue()
-                        && (ass.getAssignment() == null ? 0 : ass.getAssignment().longValue()) == userId)
-                .findFirst().isPresent())
-                || (optionalUser.isPresent()?optionalUser.get().getOrganization().getOrganizationType().equalsIgnoreCase(
-                GRANTEE) && report.getStatus().getInternalStatus().equalsIgnoreCase(ACTIVE):null)) {
+                .anyMatch(ass -> ass.getStateId().longValue() == report.getStatus().getId().longValue()
+                        && (ass.getAssignment() == null ? 0 : ass.getAssignment().longValue()) == userId))
+                || Boolean.TRUE.equals((optionalUser.isPresent()?optionalUser.get().getOrganization().getOrganizationType().equalsIgnoreCase(
+                GRANTEE) && report.getStatus().getInternalStatus().equalsIgnoreCase(ACTIVE):null))) {
 
             List<WorkflowStatusTransition> allowedTransitions = workflowStatusTransitionRepository
                     .findByWorkflow(workflowStatusRepository.getById(report.getStatus().getId()).getWorkflow()).stream()
                     .filter(st -> st.getFromState().getId().longValue() == report.getStatus().getId().longValue())
                     .collect(Collectors.toList());
-            if (allowedTransitions != null && allowedTransitions.size() > 0) {
+            if (allowedTransitions != null && !allowedTransitions.isEmpty()) {
                 allowedTransitions.forEach(tr -> {
                     WorkFlowPermission workFlowPermission = new WorkFlowPermission();
                     workFlowPermission.setAction(tr.getAction());
@@ -666,24 +655,24 @@ public class ReportService {
         currentOwner = currentOwner==null?"":currentOwner;
         currentState=currentState==null?"":currentState;
         String message = msgConfigValue.replace(GRANT_NAME, grantName)
-                .replaceAll(REPORT_NAME, finalReport.getName()).replaceAll("%REPORT_LINK%", granteeUrl)
-                .replaceAll("%CURRENT_STATE%", currentState).replaceAll("%CURRENT_OWNER%", currentOwner)
-                .replaceAll("%PREVIOUS_STATE%", previousState).replaceAll("%PREVIOUS_OWNER%", previousOwner)
-                .replaceAll("%PREVIOUS_ACTION%", previousAction).replaceAll("%HAS_CHANGES%", hasChanges)
-                .replaceAll("%HAS_CHANGES_COMMENT%", hasChangesComment).replaceAll("%HAS_NOTES%", hasNotes)
-                .replaceAll("%HAS_NOTES_COMMENT%", hasNotesComment)
-                .replaceAll("%TENANT%", finalReport.getGrant().getGrantorOrganization().getName())
-                .replaceAll("%DUE_DATE%", new SimpleDateFormat(DD_MMM_YYYY).format(finalReport.getDueDate()))
-                .replaceAll("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
-                .replaceAll("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
-                .replaceAll("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
-                .replaceAll("%GRANTEE%", finalReport.getGrant().getOrganization() != null ? finalReport.getGrant().getOrganization().getName() : finalReport.getGrant().getGrantorOrganization().getName())
-                .replaceAll("%GRANTEE_REPORT_LINK%", granteeUrl).replaceAll("%GRANTER_REPORT_LINK%", granterUrl)
-                .replaceAll("%GRANTER%", finalReport.getGrant().getGrantorOrganization().getName())
-                .replaceAll("%ENTITY_TYPE%", "report")
-                .replaceAll("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
-                .replaceAll("%ENTITY_NAME%", finalReport.getName() + " of grant " + grantName);
-        String subject = subConfigValue.replaceAll(REPORT_NAME, finalReport.getName());
+                .replace(REPORT_NAME, finalReport.getName()).replace("%REPORT_LINK%", granteeUrl)
+                .replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner)
+                .replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner)
+                .replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges)
+                .replace("%HAS_CHANGES_COMMENT%", hasChangesComment).replace("%HAS_NOTES%", hasNotes)
+                .replace("%HAS_NOTES_COMMENT%", hasNotesComment)
+                .replace("%TENANT%", finalReport.getGrant().getGrantorOrganization().getName())
+                .replace("%DUE_DATE%", new SimpleDateFormat(DD_MMM_YYYY).format(finalReport.getDueDate()))
+                .replace("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
+                .replace("%OWNER_EMAIL%", owner == null ? "" : owner.getEmailId())
+                .replace("%NO_DAYS%", noOfDays == null ? "" : String.valueOf(noOfDays))
+                .replace("%GRANTEE%", finalReport.getGrant().getOrganization() != null ? finalReport.getGrant().getOrganization().getName() : finalReport.getGrant().getGrantorOrganization().getName())
+                .replace("%GRANTEE_REPORT_LINK%", granteeUrl).replace("%GRANTER_REPORT_LINK%", granterUrl)
+                .replace("%GRANTER%", finalReport.getGrant().getGrantorOrganization().getName())
+                .replace("%ENTITY_TYPE%", "report")
+                .replace("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
+                .replace("%ENTITY_NAME%", finalReport.getName() + " of grant " + grantName);
+        String subject = subConfigValue.replace(REPORT_NAME, finalReport.getName());
 
         return new String[]{subject, message};
     }
@@ -692,9 +681,7 @@ public class ReportService {
         if (assignments == null) {
             return "";
         }
-        newAssignments.sort(Comparator.comparing(ReportAssignment::getId, (a, b) -> {
-            return a.compareTo(b);
-        }));
+        newAssignments.sort(Comparator.comparing(ReportAssignment::getId, Comparator.naturalOrder()));
         String[] table = {
                 "<table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>Current State Owners</b></td><td><b>Previous State Owners</b></td></tr>"};
         newAssignments.forEach(a -> {
@@ -757,18 +744,18 @@ public class ReportService {
     }
 
     public List<GranterReportTemplate> findByGranterIdAndPublishedStatusAndPrivateStatus(Long id,
-                                                                                         boolean publishedStatus, boolean _private) {
+                                                                                         boolean publishedStatus, boolean isPrivate) {
         return granterReportTemplateRepository.findByGranterIdAndPublishedAndPrivateToReport(id, publishedStatus,
-                _private);
+                isPrivate);
     }
 
     public String[] buildReportInvitationContent(Report report, String sub, String msg, String url) {
         String finalGrantName = report.getGrant().getReferenceNo()!=null?"[".concat(report.getGrant().getReferenceNo()).concat("] ").concat(report.getGrant().getName()):report.getGrant().getName();
-        sub = sub.replaceAll(GRANT_NAME,finalGrantName );
-        sub = sub.replaceAll(REPORT_NAME, report.getName());
-        msg = msg.replaceAll(GRANT_NAME, finalGrantName)
-                .replaceAll("%TENANT_NAME%", report.getGrant().getGrantorOrganization().getName()).replaceAll("%LINK%", url);
-        msg = msg.replaceAll(REPORT_NAME, report.getName());
+        sub = sub.replace(GRANT_NAME,finalGrantName );
+        sub = sub.replace(REPORT_NAME, report.getName());
+        msg = msg.replace(GRANT_NAME, finalGrantName)
+                .replace("%TENANT_NAME%", report.getGrant().getGrantorOrganization().getName()).replace("%LINK%", url);
+        msg = msg.replace(REPORT_NAME, report.getName());
         return new String[]{sub, msg};
     }
 
@@ -783,7 +770,7 @@ public class ReportService {
         return optional.isPresent()?optional.get():null;
     }
 
-    public GranterReportTemplate _createNewReportTemplateFromExisiting(Report report) {
+    public GranterReportTemplate createNewReportTemplateFromExisiting(Report report) {
         GranterReportTemplate currentReportTemplate = findByTemplateId(report.getTemplate().getId());
         GranterReportTemplate newTemplate = null;
         if (!currentReportTemplate.isPublished()) {
@@ -870,8 +857,8 @@ public class ReportService {
         return reportAssignmentRepository.getActionDueReportsForGranterOrg(granterId);
     }
 
-    public Boolean _checkIfReportTemplateChanged(Report report, ReportSpecificSection newSection,
-                                                 ReportSpecificSectionAttribute newAttribute) {
+    public Boolean checkIfReportTemplateChanged(Report report, ReportSpecificSection newSection,
+                                                ReportSpecificSectionAttribute newAttribute) {
         GranterReportTemplate currentReportTemplate = findByTemplateId(report.getTemplate().getId());
         for (GranterReportSection reportSection : currentReportTemplate.getSections()) {
             if (!reportSection.getSectionName().equalsIgnoreCase(newSection.getSectionName())) {
@@ -922,7 +909,7 @@ public class ReportService {
 
     public void setAssignmentHistory(ReportAssignmentsVO assignmentsVO) {
 
-        if (reportRepository.findReportsThatMovedAtleastOnce(assignmentsVO.getReportId()).size() > 0) {
+        if (!reportRepository.findReportsThatMovedAtleastOnce(assignmentsVO.getReportId()).isEmpty()) {
             List<ReportAssignmentHistory> assignmentHistories = assignmentHistoryRepository
                     .findByReportIdAndStateIdOrderByUpdatedOnDesc(assignmentsVO.getReportId(),
                             assignmentsVO.getStateId());
@@ -942,7 +929,7 @@ public class ReportService {
     }
 
     public boolean checkIfReportMovedThroughWFAtleastOnce(Long reportId) {
-        return reportRepository.findReportsThatMovedAtleastOnce(reportId).size() > 0;
+        return !reportRepository.findReportsThatMovedAtleastOnce(reportId).isEmpty();
     }
 
     public void deleteStringAttributes(List<ReportStringAttribute> strAttribs) {
@@ -1083,7 +1070,6 @@ public class ReportService {
         ObjectMapper mapper = new ObjectMapper();
         report.getGrant().setGrantDetails(grantVO.getGrantDetails());
 
-        List<Report> approvedReports = null;
         List<TableData> approvedDisbursements = new ArrayList<>();
         AtomicInteger installmentNumber = new AtomicInteger();
 
@@ -1119,16 +1105,11 @@ public class ReportService {
 
     private List<ReportAssignment> determineCanManage(Report report, Long userId) {
         List<ReportAssignment> reportAssignments = getAssignmentsForReport(report);
-        if ((reportAssignments.stream()
-                .filter(ass -> (ass.getAssignment() == null ? 0L : ass.getAssignment().longValue()) == userId
-                        .longValue() && ass.getStateId().longValue() == report.getStatus().getId().longValue())
-                .findAny().isPresent())
+        report.setCanManage((reportAssignments.stream()
+                .anyMatch(ass -> (ass.getAssignment() == null ? 0L : ass.getAssignment().longValue()) == userId
+                        .longValue() && ass.getStateId().longValue() == report.getStatus().getId().longValue()))
                 || (report.getStatus().getInternalStatus().equalsIgnoreCase(ACTIVE) && userService.getUserById(userId)
-                .getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE))) {
-            report.setCanManage(true);
-        } else {
-            report.setCanManage(false);
-        }
+                .getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)));
 
         return reportAssignments;
     }
@@ -1139,17 +1120,17 @@ public class ReportService {
 
         List<WorkflowStatus> closedStatuses = workflowStatuses.stream()
                 .filter(ws -> ws.getInternalStatus().equalsIgnoreCase(CLOSED)).collect(Collectors.toList());
-        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(s -> s.getId()).boxed()
+        List<Long> closedStatusIds = closedStatuses.stream().mapToLong(WorkflowStatus::getId).boxed()
                 .collect(Collectors.toList());
 
         List<WorkflowStatus> draftStatuses = workflowStatuses.stream()
                 .filter(ws -> ws.getInternalStatus().equalsIgnoreCase("DRAFT")).collect(Collectors.toList());
-        List<Long> draftStatusIds = draftStatuses.stream().mapToLong(s -> s.getId()).boxed()
+        List<Long> draftStatusIds = draftStatuses.stream().mapToLong(WorkflowStatus::getId).boxed()
                 .collect(Collectors.toList());
 
         List<ActualDisbursement> finalActualDisbursements = new ArrayList<>();
         report.getReportDetails().getSections().forEach(s -> {
-            if (s.getAttributes() != null && s.getAttributes().size() > 0) {
+            if (s.getAttributes() != null && !s.getAttributes().isEmpty()) {
                 s.getAttributes().forEach(a -> {
                     if (a.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
                         List<Disbursement> closedDisbursements = getDisbursementsByStatusIds(report.getGrant(), closedStatusIds); //disbursementService
@@ -1158,11 +1139,10 @@ public class ReportService {
                             List<TableData> tableDataList = new ArrayList<>();
                             if (closedDisbursements != null) {
                                 closedDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
-                                AtomicInteger index = new AtomicInteger(1);
                                 closedDisbursements.forEach(cd -> {
                                     List<ActualDisbursement> ads = disbursementService
                                             .getActualDisbursementsForDisbursement(cd);
-                                    if (ads != null && ads.size() > 0) {
+                                    if (ads != null && !ads.isEmpty()) {
                                         finalActualDisbursements.addAll(ads);
                                     }
 
@@ -1170,7 +1150,7 @@ public class ReportService {
                             }
 
 
-                            if (draftDisbursements != null && draftDisbursements.size() > 0) {
+                            if (draftDisbursements != null && !draftDisbursements.isEmpty()) {
                                 if (!currentUser.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
                                     draftDisbursements.removeIf(dd -> ((dd.getReportId() != null
                                             && dd.getReportId().longValue() != report.getId().longValue() && dd.isGranteeEntry()) || (dd.getReportId() != null
@@ -1178,11 +1158,10 @@ public class ReportService {
                                 }
                                 if (draftDisbursements != null) {
                                     draftDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
-                                    AtomicInteger index = new AtomicInteger(1);
                                     draftDisbursements.forEach(cd -> {
                                         List<ActualDisbursement> ads = disbursementService
                                                 .getActualDisbursementsForDisbursement(cd);
-                                        if (ads != null && ads.size() > 0) {
+                                        if (ads != null && !ads.isEmpty()) {
                                             finalActualDisbursements.addAll(ads);
                                         }
 
@@ -1192,7 +1171,7 @@ public class ReportService {
 
 
                             finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getId));
-                            if (finalActualDisbursements.size() > 0) {
+                            if (!finalActualDisbursements.isEmpty()) {
                                 AtomicInteger index = new AtomicInteger(1);
                                 finalActualDisbursements.forEach(ad -> {
                                     TableData td = new TableData();
@@ -1255,7 +1234,6 @@ public class ReportService {
                             List<TableData> tableDataList = new ArrayList<>();
 
                             if (closedDisbursements != null) {
-                                AtomicInteger index = new AtomicInteger(1);
                                 closedDisbursements.removeIf(
                                         cd -> new DateTime(cd.getMovedOn(), DateTimeZone.forID(timezone)).isAfter(
                                                 new DateTime(report.getMovedOn(), DateTimeZone.forID(timezone))));
@@ -1264,7 +1242,7 @@ public class ReportService {
 
                                         List<ActualDisbursement> ads = disbursementService
                                                 .getActualDisbursementsForDisbursement(cd);
-                                        if (ads != null && ads.size() > 0) {
+                                        if (ads != null && !ads.isEmpty()) {
                                             finalActualDisbursements.addAll(ads);
                                         }
                                     });
@@ -1272,7 +1250,7 @@ public class ReportService {
                             }
 
                             finalActualDisbursements.sort(Comparator.comparing(ActualDisbursement::getOrderPosition));
-                            if (finalActualDisbursements.size() > 0) {
+                            if (!finalActualDisbursements.isEmpty()) {
                                 AtomicInteger index = new AtomicInteger(1);
                                 finalActualDisbursements.forEach(ad -> {
                                     TableData td = new TableData();
