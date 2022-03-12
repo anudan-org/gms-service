@@ -3,8 +3,10 @@ package org.codealpha.gmsservice.models;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.services.GrantClosureService;
+import org.codealpha.gmsservice.entities.ClosureSpecificSection;
+import org.codealpha.gmsservice.entities.ClosureStringAttribute;
+import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
+import org.codealpha.gmsservice.entities.GrantStringAttributeAttachments;
 import org.codealpha.gmsservice.services.ReportService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +63,6 @@ public class ClosureDetailVO {
         sectionAttribute.setFieldName(stringAttribute.getSectionAttribute().getFieldName());
         sectionAttribute
                 .setFieldType(stringAttribute.getSectionAttribute().getFieldType());
-        //sectionAttribute.setDeletable(stringAttribute.getSectionAttribute().getDeletable());
         sectionAttribute.setRequired(stringAttribute.getSectionAttribute().getRequired());
         sectionAttribute.setAttributeOrder(stringAttribute.getSectionAttribute().getAttributeOrder());
         sectionAttribute.setCanEdit(stringAttribute.getSectionAttribute().getCanEdit());
@@ -156,7 +157,7 @@ public class ClosureDetailVO {
         if (sectionAttributes == null) {
           sectionAttributes = new ArrayList<>();
         }
-        if (sectionAttributes.size()>0 && !sectionAttributes.contains(sectionAttribute)) {
+        if (!sectionAttributes.isEmpty() && !sectionAttributes.contains(sectionAttribute)) {
           sectionAttributes.add(sectionAttribute);
         }
         sectionVO.setAttributes(sectionAttributes);
