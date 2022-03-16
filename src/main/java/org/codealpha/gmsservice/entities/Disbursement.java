@@ -1,12 +1,11 @@
 package org.codealpha.gmsservice.entities;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
 @Entity(name = "disbursements")
-public class Disbursement implements Serializable {
+public class Disbursement {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

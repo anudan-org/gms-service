@@ -2,11 +2,10 @@ package org.codealpha.gmsservice.models;
 
 import org.codealpha.gmsservice.entities.*;
 
-import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
-public class DisbursementDTO implements Serializable {
+public class DisbursementDTO {
 
     private Long id;
     private Double requestedAmount;

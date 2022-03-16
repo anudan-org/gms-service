@@ -1,7 +1,5 @@
 package org.codealpha.gmsservice.models;
 
-import javax.persistence.*;
-
 public class OrgTagDTO {
     private Long id;
     private String name;

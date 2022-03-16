@@ -1,10 +1,7 @@
 package org.codealpha.gmsservice.models;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.codealpha.gmsservice.entities.*;
 
-import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
 
