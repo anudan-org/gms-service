@@ -1,16 +1,14 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.Grant;
-
 public class GrantAssignmentModel {
-    private Grant grant;
+    private GrantDTO grant;
     private GrantAssignmentsVO[] assignments;
 
-    public Grant getGrant() {
+    public GrantDTO getGrant() {
         return grant;
     }
 
-    public void setGrant(Grant grant) {
+    public void setGrant(GrantDTO grant) {
         this.grant = grant;
     }
 

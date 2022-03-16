@@ -1,18 +1,16 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.Grant;
-
 import java.util.List;
 
 public class GrantInvite {
-    private Grant grant;
+    private GrantDTO grant;
     private List<InviteEntry> invites;
 
-    public Grant getGrant() {
+    public GrantDTO getGrant() {
         return grant;
     }
 
-    public void setGrant(Grant grant) {
+    public void setGrant(GrantDTO grant) {
         this.grant = grant;
     }
 

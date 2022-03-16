@@ -33,7 +33,10 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -161,7 +164,7 @@ public class AdiminstrativeController {
 
     @PostMapping("/workflow")
     public void createBasicWorkflow(@RequestBody WorkFlowDataModel workFlowDataModel,
-            @RequestHeader("X-TENANT-CODE") String tenantCode) {
+                                    @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Workflow workflow = new Workflow();
         workflow.setObject(WorkflowObject.valueOf(workFlowDataModel.getType()));
         workflow.setName(workFlowDataModel.getName());
@@ -175,7 +178,7 @@ public class AdiminstrativeController {
             WorkflowStatus status = new WorkflowStatus();
             status.setWorkflow(workflow);
             status.setVerb(transition.getAction());
-                status.setTerminal(true);
+            status.setTerminal(true);
         }
     }
 
@@ -221,7 +224,7 @@ public class AdiminstrativeController {
                             try {
                                 attribute.setExtras(new ObjectMapper().writeValueAsString(a.getTableValue()));
                             } catch (JsonProcessingException e) {
-                                logger.error(e.getMessage(),e);
+                                logger.error(e.getMessage(), e);
                             }
                         }
                         attribute.setFieldName(a.getName());
@@ -243,7 +246,7 @@ public class AdiminstrativeController {
 
     @GetMapping("/user/{userId}/role")
     public List<Role> getRolesForOrg(@RequestHeader("X-TENANT-CODE") String tenantCode,
-            @PathVariable("userId") Long userId) {
+                                     @PathVariable("userId") Long userId) {
 
         User user = userService.getUserById(userId);
 
@@ -252,7 +255,7 @@ public class AdiminstrativeController {
 
     @GetMapping("/user/{userId}/user")
     public List<User> getUsersForOrg(@RequestHeader("X-TENANT-CODE") String tenantCode,
-            @PathVariable("userId") Long userId) {
+                                     @PathVariable("userId") Long userId) {
 
         User user = userService.getUserById(userId);
 
@@ -292,7 +295,7 @@ public class AdiminstrativeController {
 
     @PutMapping("/user/{userId}/role")
     public Role saveRole(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
-            @RequestBody Role newRole) {
+                         @RequestBody RoleDTO newRole) {
         Role role = null;
         if (newRole.getId() == 0) {
             role = new Role();
@@ -319,7 +322,7 @@ public class AdiminstrativeController {
 
     @DeleteMapping("/user/{userId}/role/{roleId}")
     public List<Role> deleteRole(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
-            @PathVariable("roleId") Long roleId) {
+                                 @PathVariable("roleId") Long roleId) {
 
         Role role = roleService.getById(roleId);
         roleService.deleteRole(role);
@@ -329,7 +332,7 @@ public class AdiminstrativeController {
 
     @PostMapping("/user/{userId}/user")
     public User createUser(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
-            @RequestBody User newUser) {
+                           @RequestBody UserDTO newUser) {
 
         User adminUser = userService.getUserById(userId);
         Organization org = adminUser.getOrganization();
@@ -360,7 +363,7 @@ public class AdiminstrativeController {
 
     @DeleteMapping("/user/{userId}/user/{userIdToDelete}")
     public List<User> deleteyUser(@RequestHeader("X-TENANT-CODE") String tenantCode,
-            @PathVariable("userId") Long userId, @PathVariable("userIdToDelete") Long userIdToDelete) {
+                                  @PathVariable("userId") Long userId, @PathVariable("userIdToDelete") Long userIdToDelete) {
 
         User userToDelete = userService.getUserById(userIdToDelete);
         userToDelete.setDeleted(true);
@@ -372,7 +375,7 @@ public class AdiminstrativeController {
 
     @GetMapping("/user/{userId}/user/{userIdToUndelete}/undelete")
     public List<User> unDeleteUser(@RequestHeader("X-TENANT-CODE") String tenantCode,
-            @PathVariable("userId") Long userId, @PathVariable("userIdToUndelete") Long userIdToUndelete) {
+                                   @PathVariable("userId") Long userId, @PathVariable("userIdToUndelete") Long userIdToUndelete) {
 
         User userToUndelete = userService.getUserById(userIdToUndelete);
         userToUndelete.setDeleted(false);
@@ -384,7 +387,7 @@ public class AdiminstrativeController {
 
     @PutMapping("/user/{userId}/user")
     public User modifyUser(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
-            @RequestBody User newUser) {
+                           @RequestBody UserDTO newUser) {
 
         Organization org = userService.getUserById(userId).getOrganization();
 
@@ -413,7 +416,7 @@ public class AdiminstrativeController {
                     .anyMatch(ur -> ur.getRole().getId().longValue() == adminRole.getId().longValue())) {
                 Optional<UserRole> optionalUserRole = existingUser.getUserRoles().stream()
                         .filter(ur -> ur.getRole().getId().longValue() == adminRole.getId().longValue()).findAny();
-                if(optionalUserRole.isPresent()){
+                if (optionalUserRole.isPresent()) {
                     userRoleService.deleteUserRole(optionalUserRole.get());
                     existingUser.getUserRoles()
                             .removeIf(ur -> ur.getRole().getId().longValue() == optionalUserRole.get().getRole().getId().longValue());
@@ -445,7 +448,7 @@ public class AdiminstrativeController {
 
     @GetMapping("/settings/{userId}/{orgId}")
     public List<AppConfigVO> getAppConfigsForOrg(@PathVariable("orgId") Long orgId,
-            @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
+                                                 @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
         Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
         if (org.getOrganizationType().equalsIgnoreCase("PLATFORM")) {
             List<AppConfig> configs = appConfigService.getAllAppConfigForGrantorOrg(0L);
@@ -485,7 +488,7 @@ public class AdiminstrativeController {
                 ScheduledTaskVO taskConfiguration = mapper.readValue(config.getConfigValue(), ScheduledTaskVO.class);
                 configVO.setScheduledTaskConfiguration(taskConfiguration);
             } catch (IOException e) {
-                logger.error(e.getMessage(),e);
+                logger.error(e.getMessage(), e);
             }
         }
         return configVO;
@@ -508,7 +511,7 @@ public class AdiminstrativeController {
                 ScheduledTaskVO taskConfiguration = mapper.readValue(config.getConfigValue(), ScheduledTaskVO.class);
                 configVO.setScheduledTaskConfiguration(taskConfiguration);
             } catch (IOException e) {
-                logger.error(e.getMessage(),e);
+                logger.error(e.getMessage(), e);
             }
         }
         return configVO;
@@ -516,7 +519,7 @@ public class AdiminstrativeController {
 
     @PostMapping("/settings/{userId}/{orgId}")
     public AppConfigVO saveSetting(@RequestBody AppConfigVO config, @PathVariable("orgId") Long orgId,
-            @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
+                                   @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
 
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         if (config.getType().equalsIgnoreCase("app") && tenantOrg.getOrganizationType().equalsIgnoreCase("PLATFORM")) {
@@ -527,7 +530,7 @@ public class AdiminstrativeController {
                 try {
                     existingConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
                 } catch (JsonProcessingException e) {
-                    logger.error(e.getMessage(),e);
+                    logger.error(e.getMessage(), e);
                 }
             } else {
                 existingConfig.setConfigValue(config.getConfigValue());
@@ -549,7 +552,7 @@ public class AdiminstrativeController {
                 try {
                     orgConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
                 } catch (JsonProcessingException e) {
-                    logger.error(e.getMessage(),e);
+                    logger.error(e.getMessage(), e);
                 }
             } else {
                 existingConfig.setConfigValue(config.getConfigValue());
@@ -567,7 +570,7 @@ public class AdiminstrativeController {
                 try {
                     existingConfig.setConfigValue(mapper.writeValueAsString(config.getScheduledTaskConfiguration()));
                 } catch (JsonProcessingException e) {
-                    logger.error(e.getMessage(),e);
+                    logger.error(e.getMessage(), e);
                 }
             } else {
                 existingConfig.setConfigValue(config.getConfigValue());
@@ -582,7 +585,7 @@ public class AdiminstrativeController {
 
     @PostMapping("/{userId}/encryptpasswords/{tenant}")
     public HttpStatus encryptAllPasswords(@PathVariable("tenant") String tenant,
-            @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
+                                          @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
 
         List<User> tenantUsers = userService
                 .getAllTenantUsers(organizationService.findOrganizationByTenantCode(tenant));
@@ -598,7 +601,7 @@ public class AdiminstrativeController {
 
     @GetMapping("/user/{userId}/validate/{emailId}")
     public EmailValidationReponse validateEmail(@RequestHeader("X-TENANT-CODE") String tenantCode,
-            @PathVariable("userId") Long userId, @PathVariable("emailId") String emailIdToValidate) {
+                                                @PathVariable("userId") Long userId, @PathVariable("emailId") String emailIdToValidate) {
         Organization userOrg = userService.getUserById(userId).getOrganization();
 
         User existingUser = userService.getUserByEmailAndOrg(emailIdToValidate, userOrg);
@@ -607,7 +610,7 @@ public class AdiminstrativeController {
 
     @PostMapping("/user/{userId}/role/validate")
     public EmailValidationReponse validateRole(@RequestHeader("X-TENANT-CODE") String tenantCode,
-            @PathVariable("userId") Long userId, @RequestBody NewRoleModel roleToValidate) {
+                                               @PathVariable("userId") Long userId, @RequestBody NewRoleModel roleToValidate) {
         Organization userOrg = userService.getUserById(userId).getOrganization();
 
         Role existingRole = roleService.findByNameAndOrganization(userOrg, roleToValidate.getRoleName());
@@ -620,7 +623,7 @@ public class AdiminstrativeController {
 
     @GetMapping("/user/{userId}/reinvite/{newUserId}")
     public User reSendInvite(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
-            @PathVariable("newUserId") Long newUserId) {
+                             @PathVariable("newUserId") Long newUserId) {
         User adminUser = userService.getUserById(userId);
         Organization org = adminUser.getOrganization();
         User userToReinvite = userService.getUserById(newUserId);
@@ -632,22 +635,21 @@ public class AdiminstrativeController {
 
     @GetMapping("/user/{userId}/document-library")
     public List<TemplateLibrary> getLibraryDocuments(@RequestHeader("X-TENANT-CODE") String tenantCode,
-            @PathVariable("userId") Long userId) {
+                                                     @PathVariable("userId") Long userId) {
         User user = userService.getUserById(userId);
 
         return templateLibraryService.getTemplateLibraryForOrganization(user.getOrganization().getId());
 
     }
 
-    @PostMapping(value = "/user/{userId}/document-library", consumes = { "multipart/form-data" })
+    @PostMapping(value = "/user/{userId}/document-library", consumes = {"multipart/form-data"})
     public TemplateLibrary saveLibraryDocuments(@RequestHeader("X-TENANT-CODE") String tenantCode,
-            @PathVariable("userId") Long userId, @RequestParam("file") MultipartFile[] files,
-            @RequestParam("docName") String docName, @RequestParam("docDescription") String docDescription) {
+                                                @PathVariable("userId") Long userId, @RequestParam("file") MultipartFile[] files,
+                                                @RequestParam("docName") String docName, @RequestParam("docDescription") String docDescription) {
         User user = userService.getUserById(userId);
 
         String filePath = uploadLocation + user.getOrganization().getCode() + "/template-library";
         new File(filePath).mkdirs();
-
 
 
         File fileToCreate = new File(new File(filePath), files[0].getOriginalFilename());
@@ -659,18 +661,18 @@ public class AdiminstrativeController {
         libraryDoc.setLocation(fileToCreate.getPath());
         libraryDoc.setGranterId(user.getOrganization().getId());
         libraryDoc = templateLibraryService.saveLibraryDoc(libraryDoc);
-        try(FileOutputStream fos = new FileOutputStream(fileToCreate)) {
+        try (FileOutputStream fos = new FileOutputStream(fileToCreate)) {
             fos.write(files[0].getBytes());
         } catch (IOException e) {
-            logger.error(e.getMessage(),e);
+            logger.error(e.getMessage(), e);
         }
         return libraryDoc;
     }
 
     @PostMapping(value = "/user/{userId}/document-library/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public byte[] downloadSelectedAttachments(@PathVariable("userId") Long userId,
-            @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest,
-            HttpServletResponse response) throws IOException {
+                                              @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest,
+                                              HttpServletResponse response) throws IOException {
 
         // setting headers
         response.setContentType("application/zip");
@@ -691,13 +693,13 @@ public class AdiminstrativeController {
             File file = resourceLoader.getResource("file:" + uploadLocation + attachment.getLocation()).getFile();
             // new zip entry and copying inputstream with file to zipOutputStream, after all
             // closing streams
-            try(FileInputStream fileInputStream = new FileInputStream(file)) {
+            try (FileInputStream fileInputStream = new FileInputStream(file)) {
                 zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
 
                 IOUtils.copy(fileInputStream, zipOutputStream);
                 zipOutputStream.closeEntry();
-            }catch(Exception e){
-                logger.error(e.getMessage(),e);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
             }
         }
 
@@ -711,7 +713,7 @@ public class AdiminstrativeController {
 
     @PostMapping(value = "/user/{userId}/document-library/delete")
     public void downloadSelectedAttachments(@PathVariable("userId") Long userId,
-            @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest) {
+                                            @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest) {
 
         for (Long attachmentId : downloadRequest.getAttachmentIds()) {
             TemplateLibrary attachment = templateLibraryService.getTemplateLibraryDocumentById(attachmentId);
@@ -721,7 +723,7 @@ public class AdiminstrativeController {
 
     @GetMapping(value = "/user/{userId}/reference-orgs")
     public List<Organization> getReferenceOrgs(@PathVariable("userId") Long userId,
-            @RequestHeader("X-TENANT-CODE") String tenantCode) {
+                                               @RequestHeader("X-TENANT-CODE") String tenantCode) {
         AppConfig config = appConfigService.getSpecialAppConfigForGranterOrg(
                 userService.getUserById(userId).getOrganization().getId(), AppConfiguration.REFERENCE_ORG);
 
@@ -739,53 +741,55 @@ public class AdiminstrativeController {
             throws IOException {
         List<GrantToFix> grants2Fix = grantToFixRepository.getGrantsToFix();
         FileWriter fw = new FileWriter("c:\\sustainplus\\snapshot_fix.sql", true);
-        BufferedWriter bw = new BufferedWriter(fw);
 
-        for (GrantToFix toFix : grants2Fix) {
-            ObjectMapper mapper = new ObjectMapper();
-            List<TableData> disbsToSet = mapper.readValue(toFix.getValue(), new TypeReference<List<TableData>>() {
-            });
+        try (BufferedWriter bw = new BufferedWriter(fw);) {
+            for (GrantToFix toFix : grants2Fix) {
+                ObjectMapper mapper = new ObjectMapper();
+                List<TableData> disbsToSet = mapper.readValue(toFix.getValue(), new TypeReference<List<TableData>>() {
+                });
 
-            GrantDetailVO detail = mapper.readValue(toFix.getStringAttributes(), GrantDetailVO.class);
-            for (SectionVO section : detail.getSections()) {
-                section.getAttributes().removeIf(at -> at.getId().longValue() == 8665);
-                List<SectionAttributesVO> attributes = section.getAttributes();
-                if (attributes != null && !attributes.isEmpty()) {
-                    for (SectionAttributesVO attribute : attributes) {
-                        if (attribute.getId() == 8655) {
-                            attribute.setFieldValue(
-                                    "PRADAN, 3 Community Shopping Centre, Niti Bagh, New Delhi - 110049");//
+                GrantDetailVO detail = mapper.readValue(toFix.getStringAttributes(), GrantDetailVO.class);
+                for (SectionVO section : detail.getSections()) {
+                    section.getAttributes().removeIf(at -> at.getId().longValue() == 8665);
+                    List<SectionAttributesVO> attributes = section.getAttributes();
+                    if (attributes != null && !attributes.isEmpty()) {
+                        for (SectionAttributesVO attribute : attributes) {
+                            if (attribute.getId() == 8655) {
+                                attribute.setFieldValue(
+                                        "PRADAN, 3 Community Shopping Centre, Niti Bagh, New Delhi - 110049");//
+                            }
+                            if (attribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
+                                attribute.setFieldTableValue(disbsToSet);
+                                attribute.setFieldValue(mapper.writeValueAsString(disbsToSet));
+                            }
+
                         }
-                        if (attribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
-                            attribute.setFieldTableValue(disbsToSet);
-                            attribute.setFieldValue(mapper.writeValueAsString(disbsToSet));
-                        }
-
                     }
-                }
 
-                String updateString = mapper.writeValueAsString(detail);
-                updateString = updateString.replace("'", "''");
-                bw.write("update grant_snapshot set string_attributes='" + updateString + "' where id=" + toFix.getId()
-                        + ";");
-                bw.newLine();
+                    String updateString = mapper.writeValueAsString(detail);
+                    updateString = updateString.replace("'", "''");
+                    bw.write("update grant_snapshot set string_attributes='" + updateString + "' where id=" + toFix.getId()
+                            + ";");
+                    bw.newLine();
+                }
             }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         }
-        bw.close();
 
         return HttpStatus.OK;
     }
 
     @GetMapping("/create-grant-types")
-    public boolean createGrantTypes(){
+    public boolean createGrantTypes() {
 
         List<Granter> granters = granterService.getAllGranters();
         granters.removeIf(g -> g.getCode().equalsIgnoreCase("TEMPORG"));
-        for(Organization granter:granters){
-            List<Workflow> grantWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(),"GRANT");
+        for (Organization granter : granters) {
+            List<Workflow> grantWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(), "GRANT");
             List<GrantType> grantTypes = grantTypeService.findGrantTypesForTenant(granter.getId());
-            for(Workflow grantWf: grantWorkflows){
-                if(grantTypes.isEmpty()){
+            for (Workflow grantWf : grantWorkflows) {
+                if (grantTypes.isEmpty()) {
                     GrantType gt = new GrantType();
                     gt.setColorCode(COLOR_CODE);
                     gt.setDescription(IMPLEMENTED_VIA_EXTERNAL_PARTNER);
@@ -796,14 +800,14 @@ public class AdiminstrativeController {
                     grantTypes.add(gt);
 
                     List<Grant> grants = grantService.getAllGrantsForGranter(granter.getId());
-                    for(Grant grant: grants){
+                    for (Grant grant : grants) {
                         grant.setGrantTypeId(gt.getId());
                         grantService.saveGrant(grant);
                     }
                 }
-                for(GrantType gt : grantTypes){
+                for (GrantType gt : grantTypes) {
                     List<GrantTypeWorkflowMapping> typeWfMapping = grantTypeWorkflowMappingService.findByWorkflow(grantWf.getId());
-                    if(typeWfMapping.isEmpty()){
+                    if (typeWfMapping.isEmpty()) {
                         GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
                         gtm.setGrantTypeId(gt.getId());
                         gtm.set_default(false);
@@ -813,9 +817,9 @@ public class AdiminstrativeController {
                 }
             }
 
-            List<Workflow> reportWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(),"REPORT");
-            for(Workflow reportWf: reportWorkflows){
-                if(grantTypes.isEmpty()){
+            List<Workflow> reportWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(), "REPORT");
+            for (Workflow reportWf : reportWorkflows) {
+                if (grantTypes.isEmpty()) {
                     GrantType gt = new GrantType();
                     gt.setColorCode(COLOR_CODE);
                     gt.setDescription(IMPLEMENTED_VIA_EXTERNAL_PARTNER);
@@ -826,14 +830,14 @@ public class AdiminstrativeController {
                     grantTypes.add(gt);
 
                     List<Grant> grants = grantService.getAllGrantsForGranter(granter.getId());
-                    for(Grant grant: grants){
+                    for (Grant grant : grants) {
                         grant.setGrantTypeId(gt.getId());
                         grantService.saveGrant(grant);
                     }
                 }
-                for(GrantType gt : grantTypes){
+                for (GrantType gt : grantTypes) {
                     List<GrantTypeWorkflowMapping> typeWfMapping = grantTypeWorkflowMappingService.findByWorkflow(reportWf.getId());
-                    if(typeWfMapping.isEmpty()){
+                    if (typeWfMapping.isEmpty()) {
                         GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
                         gtm.setGrantTypeId(gt.getId());
                         gtm.set_default(false);
@@ -844,8 +848,8 @@ public class AdiminstrativeController {
             }
 
             List<Workflow> disbursementWorkflows = workflowService.getAllWorkflowsForGranterByType(granter.getId(), DISBURSEMENT);
-            for(Workflow disbWf: disbursementWorkflows){
-                if(grantTypes.isEmpty()){
+            for (Workflow disbWf : disbursementWorkflows) {
+                if (grantTypes.isEmpty()) {
                     GrantType gt = new GrantType();
                     gt.setColorCode(COLOR_CODE);
                     gt.setDescription(IMPLEMENTED_VIA_EXTERNAL_PARTNER);
@@ -856,14 +860,14 @@ public class AdiminstrativeController {
                     grantTypes.add(gt);
 
                     List<Grant> grants = grantService.getAllGrantsForGranter(granter.getId());
-                    for(Grant grant: grants){
+                    for (Grant grant : grants) {
                         grant.setGrantTypeId(gt.getId());
                         grantService.saveGrant(grant);
                     }
                 }
-                for(GrantType gt : grantTypes){
+                for (GrantType gt : grantTypes) {
                     List<GrantTypeWorkflowMapping> typeWfMapping = grantTypeWorkflowMappingService.findByWorkflow(disbWf.getId());
-                    if(typeWfMapping.isEmpty()){
+                    if (typeWfMapping.isEmpty()) {
                         GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
                         gtm.setGrantTypeId(gt.getId());
                         gtm.set_default(false);
@@ -877,7 +881,7 @@ public class AdiminstrativeController {
     }
 
     @PostMapping("/tags/{name}")
-    public OrgTag createOrgTag(@PathVariable("name") String tagName,@RequestHeader("X-TENANT-CODE") String tenantCode){
+    public OrgTag createOrgTag(@PathVariable("name") String tagName, @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         OrgTag tag = new OrgTag();
         tag.setName(tagName);
@@ -887,17 +891,17 @@ public class AdiminstrativeController {
     }
 
     @GetMapping("/user/{userId}/tags")
-    public List<OrgTag> getOrgTags(@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode){
+    public List<OrgTag> getOrgTags(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         List<OrgTag> tags = orgTagService.getOrgTags(tenantOrg.getId());
-        for(OrgTag tag : tags){
+        for (OrgTag tag : tags) {
             tag.setUsed(grantService.isTagInUse(tag.getId()));
         }
         return tags;
     }
 
     @PutMapping("/user/{userId}/tags")
-    public OrgTag updateOrgTag(@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode,@RequestBody OrgTag tag){
+    public OrgTag updateOrgTag(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody OrgTagDTO tag) {
         OrgTag existingTag = orgTagService.getOrgTagById(tag.getId());
         existingTag.setUsed(tag.getUsed());
         existingTag.setName(tag.getName());
@@ -908,68 +912,67 @@ public class AdiminstrativeController {
     }
 
     @DeleteMapping("/user/{userId}/tags/{tagId}")
-    public void deleteOrgTag(@PathVariable("userId") Long userId,@RequestHeader("X-TENANT-CODE") String tenantCode,@PathVariable Long tagId){
+    public void deleteOrgTag(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable Long tagId) {
         OrgTag existingTag = orgTagService.getOrgTagById(tagId);
         orgTagService.delete(existingTag);
     }
 
     @PostMapping("/{id}/workflow/validate/{object}/{fromStateId}/{toStateId}")
-    public WorkflowValidationResult getGrantValidations(@PathVariable("id")Long objectId,
-                                                        @PathVariable("object")String object,
-                                                        @PathVariable("fromStateId")Long fromStateId,
-                                                        @PathVariable("toStateId")Long toStateId,
-                                                        @RequestBody(required = false) List<ColumnData> meta){
+    public WorkflowValidationResult getGrantValidations(@PathVariable("id") Long objectId,
+                                                        @PathVariable("object") String object,
+                                                        @PathVariable("fromStateId") Long fromStateId,
+                                                        @PathVariable("toStateId") Long toStateId,
+                                                        @RequestBody(required = false) List<ColumnData> meta) {
         WorkflowValidationResult validationResult = new WorkflowValidationResult();
-        WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(workflowStatusService.getById(fromStateId),workflowStatusService.getById(toStateId));
+        WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(workflowStatusService.getById(fromStateId), workflowStatusService.getById(toStateId));
 
-        if(transition==null){
+        if (transition == null) {
             return validationResult;
         }
         List<WorkflowValidation> validationsToRun = workflowValidationService.getActiveValidationsByObject(object.toUpperCase());
-        if(!validationsToRun.isEmpty()){
-
+        if (!validationsToRun.isEmpty()) {
 
 
             List<WarningMessage> wfValidationMessages = new ArrayList<>();
             EntityManagerFactoryInfo info = (EntityManagerFactoryInfo) entityManager.getEntityManagerFactory();
-            try(Connection conn=info.getDataSource().getConnection()) {
+            try (Connection conn = info.getDataSource().getConnection()) {
                 for (WorkflowValidation validation : validationsToRun) {
                     String query = null;
-                    if(object.equalsIgnoreCase("GRANT")){
-                        query = validation.getValidationQuery().replace("%grantId%",String.valueOf(objectId));
-                    }else if(object.equalsIgnoreCase("REPORT")){
-                        query = validation.getValidationQuery().replace("%reportId%",String.valueOf(objectId));
-                    }else if(object.equalsIgnoreCase(DISBURSEMENT)){
-                        query = validation.getValidationQuery().replace("%disbursementId%",String.valueOf(objectId));
+                    if (object.equalsIgnoreCase("GRANT")) {
+                        query = validation.getValidationQuery().replace("%grantId%", String.valueOf(objectId));
+                    } else if (object.equalsIgnoreCase("REPORT")) {
+                        query = validation.getValidationQuery().replace("%reportId%", String.valueOf(objectId));
+                    } else if (object.equalsIgnoreCase(DISBURSEMENT)) {
+                        query = validation.getValidationQuery().replace("%disbursementId%", String.valueOf(objectId));
                     }
 
-                    try(PreparedStatement ps = conn.prepareStatement(query)){
+                    try (PreparedStatement ps = conn.prepareStatement(query)) {
                         ResultSet result = ps.executeQuery();
                         ResultSetMetaData rsMetaData = result.getMetaData();
-                        while (result.next()){
-                            if(result.getBoolean(1)){
+                        while (result.next()) {
+                            if (result.getBoolean(1)) {
 
 
                                 String msg = validation.getMessage();
-                                for(int i=1;i<=rsMetaData.getColumnCount();i++){
-                                    msg = msg.replace("%"+rsMetaData.getColumnName(i)+"%",result.getString(i));
+                                for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+                                    msg = msg.replace("%" + rsMetaData.getColumnName(i) + "%", result.getString(i));
                                 }
-                                wfValidationMessages.add(new WarningMessage(validation.getType(),msg));
+                                wfValidationMessages.add(new WarningMessage(validation.getType(), msg));
                             }
                         }
                     }
                 }
                 boolean canMove = transition.getAllowTransitionOnValidationWarning() == null || transition.getAllowTransitionOnValidationWarning();
-                if(!canMove && !wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).isEmpty()){
+                if (!canMove && !wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).isEmpty()) {
                     canMove = false;
-                }else if(!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).isEmpty()){
+                } else if (!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).isEmpty()) {
                     canMove = true;
                 }
                 validationResult.setCanMove(canMove);
                 validationResult.setMessages(wfValidationMessages);
 
-            }catch (Exception e){
-                logger.error(e.getMessage(),e);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
             }
         }
 

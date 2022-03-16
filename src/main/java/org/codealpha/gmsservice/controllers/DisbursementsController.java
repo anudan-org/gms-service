@@ -2,12 +2,14 @@ package org.codealpha.gmsservice.controllers;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SerializationUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,6 +85,8 @@ public class DisbursementsController {
         private String uploadLocation;
         @Autowired
         private ResourceLoader resourceLoader;
+        @Autowired
+        private ModelMapper mapper;
 
         @GetMapping("/active-grants")
         public List<Grant> getActiveGrantsOwnedByUser(@PathVariable("userId") Long userId,
@@ -167,7 +171,7 @@ public class DisbursementsController {
 
         @PostMapping(FILE_SEPARATOR)
         public Disbursement saveDisbursement(@RequestHeader("X-TENANT-CODE") String tenantCode,
-                        @PathVariable("userId") Long userId, @RequestBody Disbursement disbursementToSave) {
+                        @PathVariable("userId") Long userId, @RequestBody DisbursementDTO disbursementToSave) {
 
                 Disbursement existingDisbursement = disbursementService.getDisbursementById(disbursementToSave.getId());
                 existingDisbursement.setRequestedAmount(disbursementToSave.getRequestedAmount());
@@ -264,7 +268,7 @@ public class DisbursementsController {
                                         .stream().forEach(a -> currentAssignments.put(a.getStateId(), a.getOwner()));
                 }
 
-                Disbursement disbursement = saveDisbursement(tenantCode, userId, assignmentModel.getDisbursement());
+                Disbursement disbursement = saveDisbursement(tenantCode, userId, mapper.map (assignmentModel.getDisbursement(),DisbursementDTO.class));
 
                 for (DisbursementAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
                         DisbursementAssignment assignment = null;
@@ -381,7 +385,7 @@ public class DisbursementsController {
                                                   @ApiParam(name = "toStateId", value = "Unique identifier of the ending state of the disbursement in the workflow") @PathVariable("toState") Long toStateId,
                                                   @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-                saveDisbursement(tenantCode, userId, disbursementWithNote.getDisbursement());
+                saveDisbursement(tenantCode, userId, mapper.map(disbursementWithNote.getDisbursement(),DisbursementDTO.class));
 
                 Disbursement disbursement = disbursementService.getDisbursementById(disbursementId);
                 Disbursement finalDisbursement = disbursement;

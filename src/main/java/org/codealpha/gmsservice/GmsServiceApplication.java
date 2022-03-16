@@ -4,6 +4,7 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.concurrent.Executor;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -100,6 +101,11 @@ public class GmsServiceApplication {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public ModelMapper mapper(){
+        return new ModelMapper();
     }
 
 }

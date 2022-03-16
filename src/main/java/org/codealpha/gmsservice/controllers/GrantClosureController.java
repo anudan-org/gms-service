@@ -16,6 +16,7 @@ import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -132,6 +133,8 @@ public class GrantClosureController {
     private NotificationsService notificationsService;
     @Autowired
     private ClosureSnapshotService closureSnapshotService;
+    @Autowired
+    private ModelMapper modelMapper;
 
     @GetMapping("/{closureId}")
     public GrantClosure getClosure(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,
@@ -922,7 +925,7 @@ public class GrantClosureController {
 
     @PostMapping("/{closureId}/template/{templateId}/section/{sectionName}/{isRefund}")
     @ApiOperation("Create new section in grant closure")
-    public ClosureSectionInfo createSection(@RequestBody GrantClosure closureToSave,
+    public ClosureSectionInfo createSection(@RequestBody GrantClosureDTO closureToSave,
                                             @PathVariable("closureId") Long closureId,
                                             @PathVariable("templateId") Long templateId,
                                             @PathVariable("sectionName") String sectionName,
@@ -959,7 +962,7 @@ public class GrantClosureController {
     @ApiOperation("Save closure")
     public GrantClosure saveClosure(
             @PathVariable("closureId") Long closureId,
-            @RequestBody GrantClosure closureToSave,
+            @RequestBody GrantClosureDTO closureToSave,
             @PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
@@ -971,7 +974,7 @@ public class GrantClosureController {
         determineCanManage(savedClosure, userId);
         grantService.saveGrant(closureToSave.getGrant());
         if (savedClosure.isCanManage())
-            closure = processClosure(closureToSave, tenantOrg, user);
+            closure = processClosure(modelMapper.map(closureToSave,GrantClosure.class), tenantOrg, user);
 
         if (closure != null) {
             closure.getGrant().setClosureInProgress(true);
@@ -1162,7 +1165,7 @@ public class GrantClosureController {
 
     @PostMapping("/{closureId}/section/{sectionId}/field")
     public ClosureFieldInfo createFieldInSection(
-            @RequestBody GrantClosure closureToSave,
+            @RequestBody GrantClosureDTO closureToSave,
             @PathVariable("closureId") Long closureId,
             @PathVariable("sectionId") Long sectionId,
             @PathVariable("userId") Long userId,
@@ -1200,7 +1203,7 @@ public class GrantClosureController {
     }
 
     @PutMapping("/{closureId}/template/{templateId}/section/{sectionId}")
-    public GrantClosure deleteSection(@RequestBody GrantClosure closureToSave,
+    public GrantClosure deleteSection(@RequestBody GrantClosureDTO closureToSave,
                                       @PathVariable("closureId") Long closureId,
                                       @PathVariable("templateId") Long templateId,
                                       @PathVariable("sectionId") Long sectionId,
@@ -1295,7 +1298,7 @@ public class GrantClosureController {
 
     @PostMapping("/{closureId}/field/{fieldId}/template/{templateId}")
     public ClosureDocInfo createDocumentForClosureSectionField(
-            @RequestBody GrantClosure closureToSave,
+            @RequestBody GrantClosureDTO closureToSave,
             @PathVariable("userId") Long userId,
             @PathVariable("closureId") Long closureId,
             @PathVariable("fieldId") Long fieldId,
@@ -1615,7 +1618,7 @@ public class GrantClosureController {
 
     @PostMapping("{closureId}/attribute/{attributeId}/attachment/{attachmentId}")
     public GrantClosure deleteClosureStringAttributeAttachment(
-            @RequestBody GrantClosure closureToSave,
+            @RequestBody GrantClosureDTO closureToSave,
             @PathVariable("closureId") Long closureId,
             @PathVariable("userId") Long userId,
             @PathVariable("attachmentId") Long attachmentId,
@@ -1651,7 +1654,7 @@ public class GrantClosureController {
 
     @PostMapping("{closureId}/docs/delete/{attachmentId}")
     public GrantClosure deleteGrantClosureDocument(
-            @RequestBody GrantClosure closureToSave,
+            @RequestBody GrantClosureDTO closureToSave,
             @PathVariable("closureId") Long closureId,
             @PathVariable("userId") Long userId,
             @PathVariable("attachmentId") Long attachmentId,
@@ -1676,7 +1679,7 @@ public class GrantClosureController {
 
     @PostMapping("/{closureId}/section/{sectionId}/field/{fieldId}")
     public GrantClosure deleteField(
-            @RequestBody GrantClosure closureToSave,
+            @RequestBody GrantClosureDTO closureToSave,
             @PathVariable("userId") Long userId,
             @PathVariable("closureId") Long closureId,
             @PathVariable("sectionId") Long sectionId,
@@ -2382,7 +2385,7 @@ public class GrantClosureController {
     public ActualRefund addActualRefund(@PathVariable("userId") Long userId,
                                         @PathVariable("closureId") Long closureId,
                                         @RequestHeader("X-TENANT-CODE") String tenantCode,
-                                        @RequestBody ActualRefund actualRefund) {
+                                        @RequestBody ActualRefundDTO actualRefund) {
 
         SimpleDateFormat df = new SimpleDateFormat(DD_MMM_YYYY);
         try {
@@ -2393,7 +2396,7 @@ public class GrantClosureController {
             logger.error(e.getMessage(), e);
         }
         actualRefund.setAssociatedGrant(closureService.getClosureById(closureId).getGrant());
-        return closureService.saveActualRefund(actualRefund);
+        return closureService.saveActualRefund(modelMapper.map(actualRefund,ActualRefund.class));
     }
 
     @DeleteMapping("/{closureId}/actualRefund/{actualRefundId}")
