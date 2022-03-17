@@ -1,7 +1,5 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.Organization;
-
 public class GranterDTO extends OrganizationDTO {
 	protected Long id;
 	private String hostUrl;

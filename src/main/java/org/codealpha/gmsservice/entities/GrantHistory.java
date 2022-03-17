@@ -6,8 +6,6 @@ import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.GrantAssignmentsVO;
 import org.codealpha.gmsservice.models.GrantDetailVO;
-import org.codealpha.gmsservice.services.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.persistence.*;
 import java.text.SimpleDateFormat;

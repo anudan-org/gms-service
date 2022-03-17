@@ -4,16 +4,18 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import javax.persistence.*;
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.codealpha.gmsservice.constants.GrantStatus;
-import org.codealpha.gmsservice.models.*;
+import org.codealpha.gmsservice.models.GrantAssignmentsVO;
+import org.codealpha.gmsservice.models.GrantDetailVO;
+import org.codealpha.gmsservice.models.GrantTagVO;
+import org.codealpha.gmsservice.models.TableData;
+
+import javax.persistence.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author Developer code-alpha.org

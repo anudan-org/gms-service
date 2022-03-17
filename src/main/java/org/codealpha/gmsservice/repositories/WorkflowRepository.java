@@ -1,9 +1,6 @@
 package org.codealpha.gmsservice.repositories;
 
-import org.codealpha.gmsservice.constants.WorkflowObject;
-import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Workflow;
-import org.hibernate.jdbc.Work;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 

@@ -1,16 +1,12 @@
 package org.codealpha.gmsservice.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.beans.PropertyDescriptor;
-import java.util.Date;
-import java.util.List;
-import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.GrantKpi;
-import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.WorkFlowPermission;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
-import org.codealpha.gmsservice.services.WorkflowPermissionService;
-import org.springframework.beans.BeanUtils;
+
+import java.util.Date;
+import java.util.List;
 
 public class KpiSubmissionVO {
 

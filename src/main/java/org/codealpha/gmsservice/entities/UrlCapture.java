@@ -1,7 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
 import javax.persistence.*;
-import java.lang.reflect.Method;
 
 @Entity
 public class UrlCapture {

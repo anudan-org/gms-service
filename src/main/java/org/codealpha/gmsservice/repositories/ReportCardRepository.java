@@ -1,9 +1,6 @@
 package org.codealpha.gmsservice.repositories;
 
-import org.codealpha.gmsservice.entities.Grant;
-import org.codealpha.gmsservice.entities.Report;
 import org.codealpha.gmsservice.entities.ReportCard;
-import org.codealpha.gmsservice.entities.WorkflowStatus;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 

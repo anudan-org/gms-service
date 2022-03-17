@@ -1,18 +1,11 @@
 package org.codealpha.gmsservice.repositories;
 
-import java.util.Date;
-import java.util.List;
-
 import org.codealpha.gmsservice.entities.Grant;
-import org.codealpha.gmsservice.entities.Granter;
-import org.codealpha.gmsservice.services.OrganizationService;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
-import javax.persistence.ColumnResult;
-import javax.persistence.EntityResult;
-import javax.persistence.NamedNativeQuery;
-import javax.persistence.SqlResultSetMapping;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author Developer code-alpha.org

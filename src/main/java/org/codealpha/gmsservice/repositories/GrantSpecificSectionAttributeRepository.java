@@ -2,8 +2,6 @@ package org.codealpha.gmsservice.repositories;
 
 import org.codealpha.gmsservice.entities.GrantSpecificSection;
 import org.codealpha.gmsservice.entities.GrantSpecificSectionAttribute;
-import org.codealpha.gmsservice.entities.GranterGrantSection;
-import org.codealpha.gmsservice.entities.GranterGrantSectionAttribute;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 

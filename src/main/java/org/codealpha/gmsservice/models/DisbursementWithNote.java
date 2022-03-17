@@ -1,7 +1,6 @@
 package org.codealpha.gmsservice.models;
 
 import org.codealpha.gmsservice.entities.Disbursement;
-import org.codealpha.gmsservice.entities.Report;
 
 public class DisbursementWithNote {
     private Disbursement disbursement;

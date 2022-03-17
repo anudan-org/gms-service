@@ -1,8 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
-import java.util.Date;
-
 import javax.persistence.*;
+import java.util.Date;
 
 /**
  * @author Developer code-alpha.org

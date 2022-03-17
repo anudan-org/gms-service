@@ -1,6 +1,5 @@
 package org.codealpha.gmsservice.repositories;
 
-import org.codealpha.gmsservice.entities.GrantSnapshot;
 import org.codealpha.gmsservice.entities.ReportSnapshot;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;

@@ -1,9 +1,5 @@
 package org.codealpha.gmsservice.services;
 
-import java.security.SecureRandom;
-import java.util.List;
-import java.util.Optional;
-
 import org.apache.commons.lang3.RandomStringUtils;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.PasswordResetRequest;
@@ -21,6 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.security.SecureRandom;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {

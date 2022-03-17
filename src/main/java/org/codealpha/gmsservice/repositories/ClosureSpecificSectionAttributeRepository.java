@@ -2,8 +2,6 @@ package org.codealpha.gmsservice.repositories;
 
 import org.codealpha.gmsservice.entities.ClosureSpecificSection;
 import org.codealpha.gmsservice.entities.ClosureSpecificSectionAttribute;
-import org.codealpha.gmsservice.entities.ReportSpecificSection;
-import org.codealpha.gmsservice.entities.ReportSpecificSectionAttribute;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 

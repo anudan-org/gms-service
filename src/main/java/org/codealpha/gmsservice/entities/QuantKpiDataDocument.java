@@ -1,11 +1,11 @@
 package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
-import java.util.Objects;
+
 import javax.persistence.*;
+import java.util.Objects;
 
 @Entity
 public class QuantKpiDataDocument {

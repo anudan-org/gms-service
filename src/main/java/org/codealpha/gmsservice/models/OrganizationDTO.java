@@ -2,8 +2,6 @@ package org.codealpha.gmsservice.models;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.codealpha.gmsservice.entities.Grantee;
-import org.codealpha.gmsservice.entities.Granter;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Transient;

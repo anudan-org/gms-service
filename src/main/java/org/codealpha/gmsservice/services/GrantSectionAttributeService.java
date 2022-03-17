@@ -2,7 +2,6 @@ package org.codealpha.gmsservice.services;
 
 import org.codealpha.gmsservice.entities.GrantSectionAttribute;
 import org.codealpha.gmsservice.repositories.GrantSectionAttributeRepository;
-import org.codealpha.gmsservice.repositories.GranterGrantSectionAttributeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

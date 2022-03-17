@@ -1,11 +1,12 @@
 package org.codealpha.gmsservice.services;
 
-import java.util.Optional;
 import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.models.UIConfig;
 import org.codealpha.gmsservice.repositories.GranterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 /**
  * @author Developer code-alpha.org

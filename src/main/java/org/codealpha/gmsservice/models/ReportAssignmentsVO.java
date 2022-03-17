@@ -1,10 +1,10 @@
 package org.codealpha.gmsservice.models;
 
-import java.util.List;
-
 import org.codealpha.gmsservice.entities.ReportAssignmentHistory;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
+
+import java.util.List;
 
 public class ReportAssignmentsVO {
 

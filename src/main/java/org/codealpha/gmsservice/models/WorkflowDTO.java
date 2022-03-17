@@ -5,7 +5,6 @@ import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.WorkflowStatus;
 import org.codealpha.gmsservice.entities.WorkflowStatusTransition;
 
-import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
 

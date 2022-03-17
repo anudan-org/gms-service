@@ -1,6 +1,5 @@
 package org.codealpha.gmsservice.repositories.dashboard;
 
-import org.codealpha.gmsservice.entities.dashboard.GranterReportStatus;
 import org.codealpha.gmsservice.entities.dashboard.GranterReportSummaryStatus;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;

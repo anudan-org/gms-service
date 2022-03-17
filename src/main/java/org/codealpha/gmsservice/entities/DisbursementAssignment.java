@@ -1,9 +1,8 @@
 package org.codealpha.gmsservice.entities;
 
+import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
-
-import javax.persistence.*;
 
 @Entity(name = "disbursement_assignments")
 public class DisbursementAssignment {

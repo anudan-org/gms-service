@@ -1,7 +1,6 @@
 package org.codealpha.gmsservice.repositories;
 
 import org.codealpha.gmsservice.entities.ClosureSnapshot;
-import org.codealpha.gmsservice.entities.ClosureSnapshot;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 

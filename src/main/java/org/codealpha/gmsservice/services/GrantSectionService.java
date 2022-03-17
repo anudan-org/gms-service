@@ -1,10 +1,11 @@
 package org.codealpha.gmsservice.services;
 
-import java.util.List;
 import org.codealpha.gmsservice.entities.GrantSection;
 import org.codealpha.gmsservice.repositories.GrantSectionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class GrantSectionService {

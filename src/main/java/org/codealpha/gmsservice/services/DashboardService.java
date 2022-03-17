@@ -1,26 +1,11 @@
 package org.codealpha.gmsservice.services;
 
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.Month;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.entities.dashboard.*;
-import org.codealpha.gmsservice.models.*;
-import org.codealpha.gmsservice.repositories.ActualDisbursementRepository;
-import org.codealpha.gmsservice.repositories.DisbursementRepository;
-import org.codealpha.gmsservice.repositories.GrantAssignmentHistoryRepository;
-import org.codealpha.gmsservice.repositories.GrantRepository;
-import org.codealpha.gmsservice.repositories.ReportsCountPerGrantRepository;
-import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
+import org.codealpha.gmsservice.models.Tenant;
+import org.codealpha.gmsservice.repositories.*;
 import org.codealpha.gmsservice.repositories.dashboard.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -29,6 +14,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.text.SimpleDateFormat;
+import java.time.Month;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 //Edited comment for testing
 

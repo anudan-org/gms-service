@@ -3,11 +3,12 @@ package org.codealpha.gmsservice.controllers;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.codealpha.gmsservice.validators.NotificationValidator;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.codealpha.gmsservice.services.NotificationsService;
 import org.codealpha.gmsservice.entities.Notifications;
+import org.codealpha.gmsservice.services.NotificationsService;
+import org.codealpha.gmsservice.validators.NotificationValidator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 

@@ -1,7 +1,5 @@
 package org.codealpha.gmsservice.controllers;
 
-import java.time.LocalDateTime;
-import java.util.Date;
 import org.codealpha.gmsservice.entities.Grantee;
 import org.codealpha.gmsservice.repositories.GranteeRepository;
 import org.joda.time.DateTime;

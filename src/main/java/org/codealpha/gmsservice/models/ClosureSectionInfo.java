@@ -1,7 +1,6 @@
 package org.codealpha.gmsservice.models;
 
 import org.codealpha.gmsservice.entities.GrantClosure;
-import org.codealpha.gmsservice.entities.Report;
 
 public class ClosureSectionInfo {
     private Long sectionId;

@@ -1,6 +1,5 @@
 package org.codealpha.gmsservice.repositories;
 
-import org.codealpha.gmsservice.entities.Workflow;
 import org.codealpha.gmsservice.entities.WorkflowValidation;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;

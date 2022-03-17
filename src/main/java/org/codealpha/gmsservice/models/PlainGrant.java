@@ -1,7 +1,6 @@
 package org.codealpha.gmsservice.models;
 
 import java.util.List;
-import java.util.Map;
 
 public class PlainGrant {
     private String name;

@@ -1,7 +1,6 @@
 package org.codealpha.gmsservice.repositories;
 
 import org.codealpha.gmsservice.entities.GranterClosureTemplate;
-import org.codealpha.gmsservice.entities.GranterReportTemplate;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;

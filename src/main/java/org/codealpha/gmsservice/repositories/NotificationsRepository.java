@@ -2,6 +2,7 @@ package org.codealpha.gmsservice.repositories;
 
 import org.codealpha.gmsservice.entities.Notifications;
 import org.springframework.data.repository.CrudRepository;
+
 import java.util.List;
 
 

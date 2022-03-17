@@ -1,11 +1,11 @@
 package org.codealpha.gmsservice.models;
 
-import java.util.List;
-import java.util.Objects;
-import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.GrantCard;
 import org.codealpha.gmsservice.entities.GranterGrantTemplate;
 import org.codealpha.gmsservice.entities.TemplateLibrary;
+
+import java.util.List;
+import java.util.Objects;
 
 public class Tenant {
 

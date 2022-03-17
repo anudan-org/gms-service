@@ -1,7 +1,5 @@
 package org.codealpha.gmsservice.models;
 
-import org.springframework.http.HttpStatus;
-
 /**
  * @author Developer code-alpha.org
  **/

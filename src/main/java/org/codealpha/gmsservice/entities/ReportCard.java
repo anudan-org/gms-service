@@ -2,7 +2,6 @@ package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.ReportAssignmentsVO;

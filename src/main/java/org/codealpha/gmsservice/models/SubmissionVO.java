@@ -1,27 +1,17 @@
 package org.codealpha.gmsservice.models;
 
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import org.codealpha.gmsservice.entities.AppConfig;
-import org.codealpha.gmsservice.entities.Grant;
-import org.codealpha.gmsservice.entities.GrantDocumentKpiData;
-import org.codealpha.gmsservice.entities.GrantQualitativeKpiData;
-import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
-import org.codealpha.gmsservice.entities.Submission;
-import org.codealpha.gmsservice.entities.SubmissionNote;
-import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.entities.WorkFlowPermission;
-import org.codealpha.gmsservice.entities.WorkflowActionPermission;
-import org.codealpha.gmsservice.entities.WorkflowStatus;
+import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 public class SubmissionVO {
 

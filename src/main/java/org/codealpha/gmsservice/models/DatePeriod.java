@@ -1,7 +1,5 @@
 package org.codealpha.gmsservice.models;
 
-import org.joda.time.DateTime;
-
 import java.util.Date;
 import java.util.Objects;
 

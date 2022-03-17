@@ -1,9 +1,6 @@
 package org.codealpha.gmsservice.services;
 
-import org.codealpha.gmsservice.entities.GrantSnapshot;
-import org.codealpha.gmsservice.entities.Report;
 import org.codealpha.gmsservice.entities.ReportSnapshot;
-import org.codealpha.gmsservice.repositories.GrantSnapshotRepository;
 import org.codealpha.gmsservice.repositories.ReportSnapshotRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
