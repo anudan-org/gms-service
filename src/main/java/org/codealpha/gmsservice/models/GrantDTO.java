@@ -1,7 +1,7 @@
 package org.codealpha.gmsservice.models;
 
 import org.codealpha.gmsservice.constants.GrantStatus;
-import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.entities.User;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -9,22 +9,22 @@ import java.util.List;
 
 public class GrantDTO {
   private Long id;
-  private Organization organization;
-  private Granter grantorOrganization;
-  private List<GrantStringAttribute> stringAttributes;
-  private List<ActualRefund> actualRefunds;
+  private OrganizationDTO organization;
+  private GranterDTO grantorOrganization;
+  private List<GrantStringAttributeDTO> stringAttributes;
+  private List<ActualRefundDTO> actualRefunds;
   private String name;
   private String description;
   private Long templateId;
-  private GranterGrantTemplate grantTemplate;
+  private GranterGrantTemplateDTO grantTemplate;
   private Double amount;
   private Date createdAt;
   private String createdBy;
   private Date updatedAt;
   private String updatedBy;
-  private WorkflowStatus grantStatus;
+  private WorkflowStatusDTO grantStatus;
   private GrantStatus statusName;
-  private WorkflowStatus substatus;
+  private WorkflowStatusDTO substatus;
   private Date startDate;
   private String stDate;
   private Date endDate;
@@ -34,14 +34,13 @@ public class GrantDTO {
   private Date noteAdded;
   private String noteAddedBy;
   private User noteAddedByUser;
-  private List<Submission> submissions;
-  private WorkflowActionPermission actionAuthorities;
-  private List<WorkFlowPermission> flowAuthorities;
+  private WorkflowActionPermissionDTO actionAuthorities;
+  private List<WorkFlowPermissionDTO> flowAuthorities;
   private GrantDetailVO grantDetails;
   private Long currentAssignment;
-  private List<GrantAssignments> workflowAssignment;
+  private List<GrantAssignmentsDTO> workflowAssignment;
   List<GrantAssignmentsVO> workflowAssignments;
-  private List<GrantTag> grantTags;
+  private List<GrantTagsDTO> grantTags;
   private List<GrantTagVO> tags;
   private String securityCode;
   private Date movedOn;
@@ -84,13 +83,6 @@ public class GrantDTO {
     this.id = id;
   }
 
-  public Organization getOrganization() {
-    return organization;
-  }
-
-  public void setOrganization(Organization organization) {
-    this.organization = organization;
-  }
 
   public String getName() {
     return name;
@@ -108,12 +100,8 @@ public class GrantDTO {
     this.description = description;
   }
 
-  public Organization getGrantorOrganization() {
+  public GranterDTO getGrantorOrganization() {
     return grantorOrganization;
-  }
-
-  public void setGrantorOrganization(Granter grantorOrganization) {
-    this.grantorOrganization = grantorOrganization;
   }
 
   public GrantStatus getStatusName() {
@@ -124,13 +112,6 @@ public class GrantDTO {
     this.statusName = status;
   }
 
-  public WorkflowStatus getSubstatus() {
-    return substatus;
-  }
-
-  public void setSubstatus(WorkflowStatus substatus) {
-    this.substatus = substatus;
-  }
 
   public Date getStartDate() {
     return startDate;
@@ -148,45 +129,6 @@ public class GrantDTO {
     this.endDate = endDate;
   }
 
-  public List<Submission> getSubmissions() {
-    return submissions;
-  }
-
-  public void setSubmissions(List<Submission> submissions) {
-    this.submissions = submissions;
-  }
-
-  public WorkflowStatus getGrantStatus() {
-    return grantStatus;
-  }
-
-  public void setGrantStatus(WorkflowStatus status) {
-    this.grantStatus = status;
-  }
-
-  public List<GrantStringAttribute> getStringAttributes() {
-    return stringAttributes;
-  }
-
-  public void setStringAttributes(List<GrantStringAttribute> stringAttributes) {
-    this.stringAttributes = stringAttributes;
-  }
-
-  public WorkflowActionPermission getActionAuthorities() {
-    return actionAuthorities;
-  }
-
-  public void setActionAuthorities(WorkflowActionPermission actionAuthorities) {
-    this.actionAuthorities = actionAuthorities;
-  }
-
-  public List<WorkFlowPermission> getFlowAuthorities() {
-    return flowAuthorities;
-  }
-
-  public void setFlowAuthorities(List<WorkFlowPermission> flowAuthorities) {
-    this.flowAuthorities = flowAuthorities;
-  }
 
   public GrantDetailVO getGrantDetails() {
     return grantDetails;
@@ -244,14 +186,6 @@ public class GrantDTO {
     this.templateId = templateId;
   }
 
-  public GranterGrantTemplate getGrantTemplate() {
-    return grantTemplate;
-  }
-
-  public void setGrantTemplate(GranterGrantTemplate grantTemplate) {
-    this.grantTemplate = grantTemplate;
-  }
-
   public Date getCreatedAt() {
     return createdAt;
   }
@@ -290,14 +224,6 @@ public class GrantDTO {
 
   public void setCurrentAssignment(Long currentAssignment) {
     this.currentAssignment = currentAssignment;
-  }
-
-  public List<GrantAssignments> getWorkflowAssignment() {
-    return workflowAssignment;
-  }
-
-  public void setWorkflowAssignment(List<GrantAssignments> workflowAssignment) {
-    this.workflowAssignment = workflowAssignment;
   }
 
   public String getNote() {
@@ -468,14 +394,6 @@ public class GrantDTO {
     this.grantTypeId = grantTypeId;
   }
 
-  public List<GrantTag> getGrantTags() {
-    return grantTags;
-  }
-
-  public void setGrantTags(List<GrantTag> grantTags) {
-    this.grantTags = grantTags;
-  }
-
   public List<GrantAssignmentsVO> getWorkflowAssignments() {
     return workflowAssignments;
   }
@@ -540,11 +458,87 @@ public class GrantDTO {
     this.ongoingDisbursementAmount = ongoingDisbursementAmount;
   }
 
-  public List<ActualRefund> getActualRefunds() {
+  public OrganizationDTO getOrganization() {
+    return organization;
+  }
+
+  public void setOrganization(OrganizationDTO organization) {
+    this.organization = organization;
+  }
+
+  public void setGrantorOrganization(GranterDTO grantorOrganization) {
+    this.grantorOrganization = grantorOrganization;
+  }
+
+  public List<GrantStringAttributeDTO> getStringAttributes() {
+    return stringAttributes;
+  }
+
+  public void setStringAttributes(List<GrantStringAttributeDTO> stringAttributes) {
+    this.stringAttributes = stringAttributes;
+  }
+
+  public List<ActualRefundDTO> getActualRefunds() {
     return actualRefunds;
   }
 
-  public void setActualRefunds(List<ActualRefund> actualRefunds) {
+  public void setActualRefunds(List<ActualRefundDTO> actualRefunds) {
     this.actualRefunds = actualRefunds;
+  }
+
+  public GranterGrantTemplateDTO getGrantTemplate() {
+    return grantTemplate;
+  }
+
+  public void setGrantTemplate(GranterGrantTemplateDTO grantTemplate) {
+    this.grantTemplate = grantTemplate;
+  }
+
+  public WorkflowStatusDTO getGrantStatus() {
+    return grantStatus;
+  }
+
+  public void setGrantStatus(WorkflowStatusDTO grantStatus) {
+    this.grantStatus = grantStatus;
+  }
+
+  public WorkflowStatusDTO getSubstatus() {
+    return substatus;
+  }
+
+  public void setSubstatus(WorkflowStatusDTO substatus) {
+    this.substatus = substatus;
+  }
+
+  public WorkflowActionPermissionDTO getActionAuthorities() {
+    return actionAuthorities;
+  }
+
+  public void setActionAuthorities(WorkflowActionPermissionDTO actionAuthorities) {
+    this.actionAuthorities = actionAuthorities;
+  }
+
+  public List<WorkFlowPermissionDTO> getFlowAuthorities() {
+    return flowAuthorities;
+  }
+
+  public void setFlowAuthorities(List<WorkFlowPermissionDTO> flowAuthorities) {
+    this.flowAuthorities = flowAuthorities;
+  }
+
+  public List<GrantAssignmentsDTO> getWorkflowAssignment() {
+    return workflowAssignment;
+  }
+
+  public void setWorkflowAssignment(List<GrantAssignmentsDTO> workflowAssignment) {
+    this.workflowAssignment = workflowAssignment;
+  }
+
+  public List<GrantTagsDTO> getGrantTags() {
+    return grantTags;
+  }
+
+  public void setGrantTags(List<GrantTagsDTO> grantTags) {
+    this.grantTags = grantTags;
   }
 }

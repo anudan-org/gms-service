@@ -1531,12 +1531,12 @@ public class GrantService {
         return grant;
     }
 
-    private Grantee processNewGranteeOrgIfPresent(Grant grantToSave) {
-        Grantee newGrantee = null;
+    private Organization processNewGranteeOrgIfPresent(Grant grantToSave) {
+        Organization newGrantee = null;
         if (grantToSave.getOrganization() != null) {
             if (grantToSave.getOrganization().getId() < 0) {
                 newGrantee = (Grantee) grantToSave.getOrganization();
-                newGrantee = granteeService.saveGrantee(newGrantee);
+                newGrantee = granteeService.saveGrantee((Grantee)newGrantee);
                 Role role = new Role();
                 role.setCreatedBy("System");
                 role.setCreatedAt(DateTime.now().toDate());
@@ -1548,7 +1548,7 @@ public class GrantService {
                 role.setInternal(false);
                 roleService.saveRole(role);
             } else {
-                newGrantee = (Grantee) grantToSave.getOrganization();
+                newGrantee = grantToSave.getOrganization();
             }
         }
         return newGrantee;
