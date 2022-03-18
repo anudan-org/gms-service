@@ -1,16 +1,15 @@
 package org.codealpha.gmsservice.models;
 
 public class WorkflowActionPermissionDTO {
-  private Long Id;
+  private Long id;
   private String permissionsString;
-  private String[] permissions;
 
   public Long getId() {
-    return Id;
+    return id;
   }
 
   public void setId(Long id) {
-    Id = id;
+    this.id = id;
   }
 
 
@@ -26,7 +25,4 @@ public class WorkflowActionPermissionDTO {
     return permissionsString;
   }
 
-  public void setPermissions(String[] permissions) {
-    this.permissions = permissions;
-  }
 }

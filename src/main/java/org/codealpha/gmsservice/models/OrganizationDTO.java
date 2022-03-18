@@ -34,7 +34,7 @@ public abstract class OrganizationDTO {
     private String instagram;
 
 
-    public OrganizationDTO() {
+    protected OrganizationDTO() {
     }
 
     public Long getId() {

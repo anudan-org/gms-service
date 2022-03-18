@@ -1,12 +1,12 @@
 package org.codealpha.gmsservice.models;
 
 public class GranterDTO extends OrganizationDTO {
-	protected Long id;
 	private String hostUrl;
 	private String imageName;
 	private String navbarColor;
 	private String navbarTextColor;
 
+	@Override
 	public Long getId() {
 		return id;
 	}

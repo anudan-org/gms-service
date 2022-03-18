@@ -1996,7 +1996,7 @@ public class GrantController {
             logger.error(e.getMessage(), e);
         }
 
-        updateProjectDocuments(grantId, tenantCode, userId);
+        updateProjectDocuments(grantId, userId);
 
     }
 

@@ -1535,7 +1535,7 @@ public class GrantService {
         Organization newGrantee = null;
         if (grantToSave.getOrganization() != null) {
             if (grantToSave.getOrganization().getId() < 0) {
-                newGrantee = (Grantee) grantToSave.getOrganization();
+                newGrantee = grantToSave.getOrganization();
                 newGrantee = granteeService.saveGrantee((Grantee)newGrantee);
                 Role role = new Role();
                 role.setCreatedBy("System");

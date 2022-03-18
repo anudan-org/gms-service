@@ -2,8 +2,6 @@ package org.codealpha.gmsservice.models;
 
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.RolesPermission;
-import org.codealpha.gmsservice.entities.WorkflowStatePermission;
-import org.codealpha.gmsservice.entities.WorkflowStatusTransition;
 
 import java.util.Date;
 import java.util.List;
@@ -18,8 +16,6 @@ public class RoleDTO {
   private String createdBy;
   private Date updatedAt;
   private String updatedBy;
-  private List<WorkflowStatePermission> statePermissionList;
-  private List<WorkflowStatusTransition> statusTransitionList;
   List<RolesPermission> permissions;
   private boolean hasUsers;
   private int linkedUsers;
