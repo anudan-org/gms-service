@@ -642,7 +642,7 @@ public class ReportService {
                         StandardCharsets.UTF_8.toString())
                         + "&r=" + code + EMAIL_TYPE_REPORT;
             } catch (UnsupportedEncodingException ex) {
-                ex.printStackTrace();
+                logger.error(e.getMessage(),e);
             }
         }
 

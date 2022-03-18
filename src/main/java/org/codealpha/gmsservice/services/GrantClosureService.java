@@ -515,7 +515,7 @@ public class GrantClosureService {
                         StandardCharsets.UTF_8.toString())
                         + R + code + EMAIL_TYPE_CLOSURE;
             } catch (UnsupportedEncodingException ex) {
-                ex.printStackTrace();
+                logger.error(e.getMessage(), e);
             }
         }
 

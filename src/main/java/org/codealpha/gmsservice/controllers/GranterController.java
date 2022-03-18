@@ -152,7 +152,7 @@ public class GranterController {
 
 			Files.write(file.toPath(),System.lineSeparator().concat(slug.toLowerCase()).concat(".").getBytes(), StandardOpenOption.APPEND);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 		}
 
 		String filePath = uploadLocation + slug.toUpperCase() + "/logo/";

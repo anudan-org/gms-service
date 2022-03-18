@@ -574,7 +574,7 @@ public class GrantController {
             grant.setAmendmentDetailsSnapshot(new ObjectMapper().writeValueAsString(grant.getGrantDetails()));
             grant = grantService.saveGrant(grant);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         List<WorkflowStatus> wfStatuses = workflowStatusService.findByWorkflow(existingGrant.getGrantStatus().getWorkflow());
@@ -903,7 +903,7 @@ public class GrantController {
                         newAttribute.setExtras(mapper.writeValueAsString(tableData));
 
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                     }
                 }
 
@@ -1281,7 +1281,7 @@ public class GrantController {
             File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
             FileCopyUtils.copy(file, fileToCreate);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         GrantStringAttributeAttachments attachment = new GrantStringAttributeAttachments();
         attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
@@ -1302,7 +1302,7 @@ public class GrantController {
             stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
             grantService.saveGrantStringAttribute(stringAttribute);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         Grant grant = grantService.getById(grantId);
         grant = grantService.grantToReturn(userId, grant);
@@ -1434,7 +1434,7 @@ public class GrantController {
             grantService.saveGrant(grant);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         grant = grantService.getById(grantId);

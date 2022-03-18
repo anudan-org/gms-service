@@ -384,7 +384,7 @@ public class GrantClosureController {
                             disbursementAttributeValue.get().setValue(mapper.writeValueAsString(tableDataList));
                             closureService.saveClosureStringAttribute(disbursementAttributeValue.get());
                         } catch (JsonProcessingException e) {
-                            e.printStackTrace();
+                            logger.error(e.getMessage(),e);
                         }
                     } else {
                         ClosureSpecificSection specificSection = new ClosureSpecificSection();
