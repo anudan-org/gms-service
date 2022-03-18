@@ -2,7 +2,7 @@ package org.codealpha.gmsservice.controllers;
 
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.text.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.entities.dashboard.*;
@@ -161,7 +161,7 @@ public class UserController {
     public void setUserProfilePic(@PathVariable("userId")Long userId,
                                   @RequestParam("file") MultipartFile[] files,
                                   @RequestHeader("X-TENANT-CODE") String tenantCode){
-        String filePath = uploadLocation + tenantCode + "/users/" + userId;
+        String filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + "/users/" + userId;
         File dir = new File(filePath);
         dir.mkdirs();
         String fileName = files[0].getOriginalFilename();
@@ -620,7 +620,7 @@ public class UserController {
         }
         Double disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGranter(tenantOrg.getId(), status);
         Filter categoryFilter = new Filter();
-        categoryFilter.setName(WordUtils.capitalizeFully(status + GRANTS));
+        categoryFilter.setName(StringUtils.capitalize(status + GRANTS));
         categoryFilter.setTotalGrants(activeGrantSummaryCommitted.getGrantCount());
         SimpleDateFormat sd = new SimpleDateFormat("yyyy");
         categoryFilter.setPeriod(sd.format(activeGrantSummaryCommitted.getPeriodStart()) + "-"
@@ -742,7 +742,7 @@ public class UserController {
         }
         Double disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGrantee(granteeOrg.getId(), status);
         Filter categoryFilter = new Filter();
-        categoryFilter.setName(WordUtils.capitalizeFully(status + GRANTS));
+        categoryFilter.setName(StringUtils.capitalize(status + GRANTS));
         categoryFilter.setTotalGrants(activeGrantSummaryCommitted.getGrantCount());
         SimpleDateFormat sd = new SimpleDateFormat("yyyy");
         categoryFilter.setDonors(granteeService.getDonorsByState(granteeOrg.getId(),status));

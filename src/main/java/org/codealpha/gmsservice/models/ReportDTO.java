@@ -11,14 +11,12 @@ import java.util.List;
 
 public class ReportDTO {
 
+    public static final String YYYY_MM_DD = "yyyy-MM-dd";
     private Long id;
     private String name;
     private Date startDate;
-    private String stDate;
     private Date endDate;
-    private String enDate;
     private Date dueDate;
-    private String dDate;
     private WorkflowStatus status;
     private Date createdAt;
     private Long createdBy;
@@ -245,34 +243,25 @@ public class ReportDTO {
         if (startDate == null) {
             return "";
         }
-        return new SimpleDateFormat("yyyy-MM-dd").format(startDate);
+        return new SimpleDateFormat(YYYY_MM_DD).format(startDate);
     }
 
-    public void setStDate(String stDate) {
-        this.stDate = stDate;
-    }
 
     public String getEnDate() {
         if (endDate == null) {
             return "";
         }
-        return new SimpleDateFormat("yyyy-MM-dd").format(endDate);
+        return new SimpleDateFormat(YYYY_MM_DD).format(endDate);
     }
 
-    public void setEnDate(String enDate) {
-        this.enDate = enDate;
-    }
 
     public String getdDate() {
         if (dueDate == null) {
             return "";
         }
-        return new SimpleDateFormat("yyyy-MM-dd").format(dueDate);
+        return new SimpleDateFormat(YYYY_MM_DD).format(dueDate);
     }
 
-    public void setdDate(String dDate) {
-        this.dDate = dDate;
-    }
 
     public List<WorkFlowPermission> getFlowAuthorities() {
         return flowAuthorities;
