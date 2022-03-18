@@ -932,7 +932,7 @@ public class ReportController {
             User user = userService.getUserById(userId);
 
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
-                filePath = uploadLocation + reportToSave.getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS
+                filePath = uploadLocation + modelMapper.map(reportToSave,Report.class).getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS
                         + reportId + PATH_SEPARATOR + stringAttribute.getSection().getId() + PATH_SEPARATOR
                         + stringAttribute.getSectionAttribute().getId() + PATH_SEPARATOR;
             } else {
@@ -999,7 +999,7 @@ public class ReportController {
             filePath = uploadLocation + report.getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS + reportId
                     + PATH_SEPARATOR + attr.getSection().getId() + PATH_SEPARATOR + attr.getSectionAttribute().getId() + PATH_SEPARATOR;
         } else {
-            filePath = uploadLocation + tenantCode + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + attr.getSection().getId()
+            filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + attr.getSection().getId()
                     + PATH_SEPARATOR + attr.getSectionAttribute().getId() + PATH_SEPARATOR;
         }
         File dir = new File(filePath);

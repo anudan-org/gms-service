@@ -1,6 +1,5 @@
 package org.codealpha.gmsservice.controllers;
 
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.codealpha.gmsservice.constants.WorkflowObject;

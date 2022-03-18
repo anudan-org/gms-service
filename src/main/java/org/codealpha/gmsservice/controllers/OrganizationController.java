@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -51,7 +52,7 @@ public class OrganizationController {
 
 	@PostMapping(value="/logo",consumes = {"multipart/form-data" })
 	public void saveOrganizationLogo(@RequestParam("file") MultipartFile image,
-											 @RequestHeader("X-TENANT-CODE") String tenantCode){
+									 @RequestHeader("X-TENANT-CODE") String tenantCode, HttpServletRequest request){
 		String filePath = uploadLocation + tenantCode + "/logo/";
 		File dir = new File(filePath);
 		dir.mkdirs();
