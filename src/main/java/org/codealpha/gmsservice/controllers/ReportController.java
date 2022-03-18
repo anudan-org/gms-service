@@ -936,7 +936,7 @@ public class ReportController {
                         + reportId + PATH_SEPARATOR + stringAttribute.getSection().getId() + PATH_SEPARATOR
                         + stringAttribute.getSectionAttribute().getId() + PATH_SEPARATOR;
             } else {
-                filePath = uploadLocation + tenantCode + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR
+                filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR
                         + stringAttribute.getSection().getId() + PATH_SEPARATOR + stringAttribute.getSectionAttribute().getId()
                         + PATH_SEPARATOR;
             }
