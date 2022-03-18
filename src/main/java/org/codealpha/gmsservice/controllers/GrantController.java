@@ -1273,7 +1273,7 @@ public class GrantController {
         String filePath = null;
         try {
             file = resourceLoader.getResource(FILE + uploadLocation + libraryDoc.getLocation()).getFile();
-            filePath = uploadLocation + tenantCode + GRANT_DOCUMENTS + grantId + FILE_SEPARATOR
+            filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + GRANT_DOCUMENTS + grantId + FILE_SEPARATOR
                     + stringAttribute.getSection().getId() + FILE_SEPARATOR + stringAttribute.getSectionAttribute().getId() + FILE_SEPARATOR;
 
             File dir = new File(filePath);
@@ -1376,7 +1376,7 @@ public class GrantController {
         Grant grant = grantService.getById(grantId);
 
         GrantStringAttribute attr = grantService.findGrantStringAttributeById(attributeId);
-        String filePath = uploadLocation + tenantCode + GRANT_DOCUMENTS + grantId + FILE_SEPARATOR + attr.getSection().getId()
+        String filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + GRANT_DOCUMENTS + grantId + FILE_SEPARATOR + attr.getSection().getId()
                 + FILE_SEPARATOR + attr.getSectionAttribute().getId() + FILE_SEPARATOR;
         File dir = new File(filePath);
         dir.mkdirs();
@@ -1863,7 +1863,7 @@ public class GrantController {
             @RequestParam("file") MultipartFile[] files,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        String filePath = uploadLocation + tenantCode + GRANT_DOCUMENTS + grantId + FILE_SEPARATOR;
+        String filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + GRANT_DOCUMENTS + grantId + FILE_SEPARATOR;
         File dir = new File(filePath);
         dir.mkdirs();
         List<GrantDocument> attachments = new ArrayList<>();
@@ -1889,12 +1889,12 @@ public class GrantController {
             }
         }
 
-        updateProjectDocuments(grantId, tenantCode, userId);
+        updateProjectDocuments(grantId, userId);
 
         return attachments;
     }
 
-    private void updateProjectDocuments(Long grantId, String tenantCode, Long userId) {
+    private void updateProjectDocuments(Long grantId,Long userId) {
         List<Long> projectGrantIds = grantService.getAllGrantIdsForProject(grantId);
         List<GrantDocument> projectDocs = grantService.getGrantsDocuments(grantId);
         if (projectGrantIds != null && !projectGrantIds.isEmpty()) {
@@ -1917,7 +1917,7 @@ public class GrantController {
                     for (GrantDocument d : projectDocs) {
                         GrantDocument newDoc = new GrantDocument();
                         newDoc.setName(d.getName());
-                        File dir = new File(uploadLocation + tenantCode + GRANT_DOCUMENTS + id);
+                        File dir = new File(uploadLocation + userService.getUserById(userId).getOrganization().getCode() + GRANT_DOCUMENTS + id);
                         dir.mkdirs();
                         newDoc.setLocation(dir.getPath() + FILE_SEPARATOR + d.getName() + "." + d.getExtension());
                         newDoc.setExtension(d.getExtension());

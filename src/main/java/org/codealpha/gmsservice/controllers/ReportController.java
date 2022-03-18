@@ -16,6 +16,7 @@ import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,6 +134,8 @@ public class ReportController {
     private WorkflowValidationService workflowValidationService;
     @PersistenceContext
     private EntityManager entityManager;
+    @Autowired
+    private ModelMapper modelMapper;
 
     @GetMapping(PATH_SEPARATOR)
     public List<ReportCard> getAllReports(@PathVariable("userId") Long userId,
@@ -652,7 +655,7 @@ public class ReportController {
     @ApiOperation("Save report")
     public Report saveReport(
             @ApiParam(name = "grantId", value = "Unique identifier of report") @PathVariable("reportId") Long reportId,
-            @ApiParam(name = "reportToSave", value = "Report to save in edit mode, passed in Body of request") @RequestBody Report reportToSave,
+            @ApiParam(name = "reportToSave", value = "Report to save in edit mode, passed in Body of request") @RequestBody ReportDTO reportToSave,
             @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
@@ -662,9 +665,9 @@ public class ReportController {
         Report savedReports = reportService.getReportById(reportId);
         determineCanManage(savedReports, userId);
         if (savedReports.getCanManage())
-            processReport(reportToSave, tenantOrg, user);
+            processReport(modelMapper.map(reportToSave,Report.class), tenantOrg, user);
 
-        report = reportToReturn(reportToSave, userId);
+        report = reportToReturn(modelMapper.map(reportToSave,Report.class), userId);
         return report;
     }
 
@@ -836,7 +839,7 @@ public class ReportController {
     @PostMapping("/{reportId}/section/{sectionId}/field")
     @ApiOperation("Added new field to section")
     public ReportFieldInfo createFieldInSection(
-            @ApiParam(name = "reportToSave", value = "Report to save if in edit mode passed in Body of request") @RequestBody Report reportToSave,
+            @ApiParam(name = "reportToSave", value = "Report to save if in edit mode passed in Body of request") @RequestBody ReportDTO reportToSave,
             @ApiParam(name = "reportId", value = "Unique identifier of the grant") @PathVariable("reportId") Long reportId,
             @ApiParam(name = "sectionId", value = "Unique identifier of the section to which the field is being added") @PathVariable("sectionId") Long sectionId,
             @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,
@@ -908,7 +911,7 @@ public class ReportController {
     @PostMapping("/{reportId}/field/{fieldId}/template/{templateId}")
     @ApiOperation(value = "Attach document to field", notes = "Valid for Document field types only")
     public ReportDocInfo createDocumentForReportSectionField(
-            @ApiParam(name = "reportToSave", value = "Report to save in edit mode, passed in Body of request") @RequestBody Report reportToSave,
+            @ApiParam(name = "reportToSave", value = "Report to save in edit mode, passed in Body of request") @RequestBody ReportDTO reportToSave,
             @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
             @ApiParam(name = "fieldId", value = "Unique identifier of the field to which document is being attached") @PathVariable("fieldId") Long fieldId,
@@ -1067,7 +1070,7 @@ public class ReportController {
 
     @PostMapping("/{reportId}/template/{templateId}/section/{sectionName}")
     @ApiOperation("Create new section in grant")
-    public ReportSectionInfo createSection(@RequestBody Report reportToSave,
+    public ReportSectionInfo createSection(@RequestBody ReportDTO reportToSave,
                                            @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
                                            @ApiParam(name = "templateId", value = "Unique identifier of the report template") @PathVariable("templateId") Long templateId,
                                            @ApiParam(name = "sectionName", value = "Name of the new section") @PathVariable("sectionName") String sectionName,
@@ -1098,7 +1101,7 @@ public class ReportController {
 
     @PutMapping("/{reportId}/template/{templateId}/section/{sectionId}")
     @ApiOperation("Delete existing section in report")
-    public Report deleteSection(@RequestBody Report reportToSave,
+    public Report deleteSection(@RequestBody ReportDTO reportToSave,
                                 @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
                                 @ApiParam(name = "templateId", value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId,
                                 @ApiParam(name = "sectionId", value = "Unique identifier of the section being deleted") @PathVariable("sectionId") Long sectionId,
@@ -1724,7 +1727,7 @@ public class ReportController {
     @PostMapping("/{reportId}/section/{sectionId}/field/{fieldId}")
     @ApiOperation("Delete field in a section")
     public Report deleteField(
-            @ApiParam(name = "reportToSave", value = "Report to save if in edit mode, passed in Body of request") @RequestBody Report reportToSave,
+            @ApiParam(name = "reportToSave", value = "Report to save if in edit mode, passed in Body of request") @RequestBody ReportDTO reportToSave,
             @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
             @ApiParam(name = "sectionId", value = "Unique identifier of the section being modified") @PathVariable("sectionId") Long sectionId,
@@ -2389,7 +2392,7 @@ public class ReportController {
     @PostMapping("{reportId}/attribute/{attributeId}/attachment/{attachmentId}")
     @ApiOperation("Delete attachment from document field")
     public Report deleteReportStringAttributeAttachment(
-            @ApiParam(name = "reportToSave", value = "Report to save in edit mode, pass in Body of request") @RequestBody Report reportToSave,
+            @ApiParam(name = "reportToSave", value = "Report to save in edit mode, pass in Body of request") @RequestBody ReportDTO reportToSave,
             @ApiParam(name = "reportId", value = "Unique identifier of the report") @PathVariable("reportId") Long reportId,
             @ApiParam(name = "userId", value = "Unique identifier og logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "attachmentId", value = "Unique identifier of the document attachment being deleted") @PathVariable("attachmentId") Long attachmentId,

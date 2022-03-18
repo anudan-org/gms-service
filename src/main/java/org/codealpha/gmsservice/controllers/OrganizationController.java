@@ -1,8 +1,10 @@
 package org.codealpha.gmsservice.controllers;
 
 import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.models.OrganizationDTO;
 import org.codealpha.gmsservice.repositories.OrganizationRepository;
 import org.codealpha.gmsservice.services.OrganizationService;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,9 @@ public class OrganizationController {
 	@org.springframework.beans.factory.annotation.Value("${spring.upload-file-location}")
 	private String uploadLocation;
 
+	@Autowired
+	private ModelMapper modelMapper;
+
 
 	@GetMapping("/{organizationId}")
 	public Organization get(@NotNull @PathVariable("organizationId") Long organizationId) {
@@ -40,10 +45,8 @@ public class OrganizationController {
 	}
 
 	@PostMapping("/")
-	public Organization saveOrganization(@RequestBody Organization org){
-		org = service.save(org);
-
-		return org;
+	public Organization saveOrganization(@RequestBody OrganizationDTO org){
+		return service.save(modelMapper.map(org,Organization.class));
 	}
 
 	@PostMapping(value="/logo",consumes = {"multipart/form-data" })

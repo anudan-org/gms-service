@@ -1,16 +1,14 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.Report;
-
 public class ReportAssignmentModel {
-    private Report report;
+    private ReportDTO report;
     private ReportAssignmentsVO[] assignments;
 
-    public Report getReport() {
+    public ReportDTO getReport() {
         return report;
     }
 
-    public void setReport(Report report) {
+    public void setReport(ReportDTO report) {
         this.report = report;
     }
 
