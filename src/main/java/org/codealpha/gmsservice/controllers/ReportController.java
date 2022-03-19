@@ -639,7 +639,7 @@ public class ReportController {
         List<ReportAssignment> reportAssignments = reportService.getAssignmentsForReport(report);
         boolean b = false;
         for (ReportAssignment ass : reportAssignments) {
-            if ((ass.getAssignment() == null ? 0L : ass) == userId && ass.getStateId().longValue() == report.getStatus().getId().longValue()) {
+            if ((ass.getAssignment() == null ? 0L : ass.getAssignment()) == userId && ass.getStateId().longValue() == report.getStatus().getId().longValue()) {
                 b = true;
                 break;
             }
