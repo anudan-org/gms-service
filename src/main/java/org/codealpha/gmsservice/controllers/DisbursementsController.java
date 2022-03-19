@@ -737,7 +737,7 @@ public class DisbursementsController {
                         try(FileOutputStream fos = new FileOutputStream(fileToCreate)) {
                                 fos.write(file.getBytes());
                         } catch (IOException e) {
-                                e.printStackTrace();
+                                logger.error(e.getMessage(), e);
                         }
                         DisbursementDocument attachment = new DisbursementDocument();
                         attachment.setExtension(FilenameUtils.getExtension(file.getOriginalFilename()));
@@ -755,37 +755,42 @@ public class DisbursementsController {
         }
 
         @PostMapping(value = "/{disbursementId}/documents/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-        public byte[] downloadProjectDocuments(@PathVariable("userId") Long userId, @PathVariable("disbursementId") Long disbursementId,
-                                               @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest,
-                                               HttpServletResponse response) throws IOException {
+        public byte[] downloadDisbursementDocuments(@PathVariable("userId") Long userId, @PathVariable("disbursementId") Long disbursementId,
+                                                    @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest,
+                                                    HttpServletResponse response) throws IOException {
 
                 response.setContentType("application/zip");
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
-                
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
-                ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
 
-                for (Long attachmentId : downloadRequest.getAttachmentIds()) {
-                        DisbursementDocument attachment = disbursementService.getDisbursementDocumentById(attachmentId);
-                        File file = resourceLoader.getResource("file:" + attachment.getLocation()).getFile();
-                        try(FileInputStream fileInputStream = new FileInputStream(file)) {
-                                zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
-                                IOUtils.copy(fileInputStream, zipOutputStream);
-                                zipOutputStream.closeEntry();
-                        }catch (Exception e){
-                                logger.error(e.getMessage(),e);
+
+                try (
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+                        ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);) {
+                        for (Long attachmentId : downloadRequest.getAttachmentIds()) {
+                                DisbursementDocument attachment = disbursementService.getDisbursementDocumentById(attachmentId);
+                                File file = resourceLoader.getResource("file:" + attachment.getLocation()).getFile();
+                                processZipFile(zipOutputStream, file);
                         }
-                }
 
                         zipOutputStream.finish();
                         zipOutputStream.flush();
-                        IOUtils.closeQuietly(zipOutputStream);
-                
-                IOUtils.closeQuietly(bufferedOutputStream);
-                IOUtils.closeQuietly(byteArrayOutputStream);
-                return byteArrayOutputStream.toByteArray();
+                        return byteArrayOutputStream.toByteArray();
+                } catch (Exception e) {
+                        logger.error(e.getMessage(), e);
+                }
+                return new byte[0];
+        }
+
+        private void processZipFile(ZipOutputStream zipOutputStream, File file) {
+                try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                        zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+                        IOUtils.copy(fileInputStream, zipOutputStream);
+                        zipOutputStream.closeEntry();
+                } catch (Exception e) {
+                        logger.error(e.getMessage(), e);
+                }
         }
 
         @DeleteMapping(value = "/{disbursementId}/document/{documentId}")
