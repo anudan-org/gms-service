@@ -1,31 +1,12 @@
 package org.codealpha.gmsservice.security;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.io.IOUtils;
-import org.codealpha.gmsservice.constants.AppConfiguration;
-import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
-import org.codealpha.gmsservice.models.GrantAssignmentModel;
-import org.codealpha.gmsservice.models.GrantAssignmentsVO;
-import org.codealpha.gmsservice.models.GrantVO;
 import org.codealpha.gmsservice.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 @Component
 public class ApiInterceptor extends HandlerInterceptorAdapter {

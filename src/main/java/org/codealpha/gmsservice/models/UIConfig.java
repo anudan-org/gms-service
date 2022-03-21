@@ -1,12 +1,11 @@
 package org.codealpha.gmsservice.models;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.codealpha.gmsservice.entities.*;
-import springfox.documentation.annotations.ApiIgnore;
+
+import java.util.List;
 
 /**
  * @author Developer code-alpha.org

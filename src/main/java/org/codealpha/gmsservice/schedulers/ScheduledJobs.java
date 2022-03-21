@@ -2,7 +2,6 @@ package org.codealpha.gmsservice.schedulers;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.ArrayUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.AppRelease;
@@ -41,6 +40,7 @@ public class ScheduledJobs {
     public static final String LOCAL = "local";
     public static final String HTTPS = "https://";
     public static final String ACTIVE = "ACTIVE";
+    public static final String TENANT = "%TENANT%";
     @Autowired
     private GranterService granterService;
     @Autowired
@@ -174,7 +174,7 @@ public class ScheduledJobs {
                         .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                         .getConfigValue()
-                        .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",report.getGrant()
+                        .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT,report.getGrant()
                         .getGrantorOrganization().getName())});
     }
 
@@ -283,7 +283,7 @@ public class ScheduledJobs {
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                                 .getConfigValue()
                                                                 .replace(RELEASE_VERSION, releaseService
-                                                                .getCurrentRelease().getVersion()).replace("%TENANT%",report.getGrant()
+                                                                .getCurrentRelease().getVersion()).replace(TENANT,report.getGrant()
                                                                 .getGrantorOrganization().getName())});
                                     }
                                 }
@@ -341,7 +341,7 @@ public class ScheduledJobs {
                                                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                                 .getConfigValue()
                                                                 .replace(RELEASE_VERSION, releaseService
-                                                                .getCurrentRelease().getVersion()).replace("%TENANT%",report.getGrant()
+                                                                .getCurrentRelease().getVersion()).replace(TENANT,report.getGrant()
                                                                 .getGrantorOrganization().getName())});
                                     }
                                 }
@@ -353,7 +353,7 @@ public class ScheduledJobs {
                 }
 
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(),e);
             }
         }
     }
@@ -431,7 +431,7 @@ public class ScheduledJobs {
                                                                 grant.getGrantorOrganization().getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION,
-                                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",grant
+                                                        releaseService.getCurrentRelease().getVersion()).replace(TENANT,grant
                                                         .getGrantorOrganization().getName())});
                                     }
                                 }
@@ -486,7 +486,7 @@ public class ScheduledJobs {
                                                                 grant.getGrantorOrganization().getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION,
-                                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",grant
+                                                        releaseService.getCurrentRelease().getVersion()).replace(TENANT,grant
                                                         .getGrantorOrganization().getName())});
                                     }
                                 }
@@ -561,8 +561,7 @@ public class ScheduledJobs {
                                             .getMinutes() > afterNoOfHour) {
                                         User user = userService.getUserById(disbursementtAssignment.getOwner());
                                         String[] messageMetadata = disbursementService.buildEmailNotificationContent(
-                                                disbursement, user, user.getFirstName() + " " + user.getLastName(), "",
-                                                null, taskConfiguration.getSubjectDisbursement(),
+                                                disbursement, user,  taskConfiguration.getSubjectDisbursement(),
                                                 taskConfiguration.getMessageDisbursement(), "", "", "", "", "", "", "",
                                                 "", "",
                                                 buildLink(environment, true,
@@ -577,7 +576,7 @@ public class ScheduledJobs {
                                                                         .getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION,
-                                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",disbursement.getGrant()
+                                                        releaseService.getCurrentRelease().getVersion()).replace(TENANT,disbursement.getGrant()
                                                         .getGrantorOrganization().getName())});
                                     }
                                 }
@@ -618,8 +617,7 @@ public class ScheduledJobs {
                                             .getMinutes() > afterNoOfHour) {
                                         User user = userService.getUserById(disbursementAssignment.getOwner());
                                         String[] messageMetadata = disbursementService.buildEmailNotificationContent(
-                                                disbursement, user, user.getFirstName() + " " + user.getLastName(), "",
-                                                null, taskConfiguration.getSubjectDisbursement(),
+                                                disbursement, user, taskConfiguration.getSubjectDisbursement(),
                                                 taskConfiguration.getMessageDisbursement(), "", "", "", "", "", "", "", "", "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
@@ -633,7 +631,7 @@ public class ScheduledJobs {
                                                                         .getId(),
                                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                                         .getConfigValue().replace(RELEASE_VERSION,
-                                                        releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",disbursement.getGrant()
+                                                        releaseService.getCurrentRelease().getVersion()).replace(TENANT,disbursement.getGrant()
                                                         .getGrantorOrganization().getName())});
                                     }
                                 }
@@ -645,7 +643,7 @@ public class ScheduledJobs {
                 }
 
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(),e);
             }
         }
     }
@@ -685,7 +683,7 @@ public class ScheduledJobs {
             releaseService.saveRelease(version);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
     }
 
@@ -736,7 +734,7 @@ public class ScheduledJobs {
                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                 .getConfigValue().replace(RELEASE_VERSION,
-                releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",grant
+                releaseService.getCurrentRelease().getVersion()).replace(TENANT,grant
                 .getGrantorOrganization().getName())});
     }
 
@@ -763,23 +761,21 @@ public class ScheduledJobs {
                             continue;
                         }
                         String msg = check.getMessage();
-                        msg = msg.replaceAll("%SUMMARY%",result.getString("summary"));
-                        String[] _to = result.getString("emails_to").split(",");
+                        msg = msg.replace("%SUMMARY%",result.getString("summary"));
+                        String[] toEmails = result.getString("emails_to").split(",");
                         long grantorOrg = result.getLong("grantor_org_id");
-                        emailSevice.sendMail(_to,null,check.getSubject(),msg,
+                        emailSevice.sendMail(toEmails,null,check.getSubject(),msg,
                                 new String[]{appConfigService
                                         .getAppConfigForGranterOrg(grantorOrg,
                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                         .getConfigValue()
-                                        .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",organizationService.get(grantorOrg).getName())});
+                                        .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT,organizationService.get(grantorOrg).getName())});
                     }
                 }catch (SQLException throwables) {
                     logger.error(throwables.getMessage(),throwables);
                 }finally {
                     DataSourceUtils.doReleaseConnection(conn, dataSource);
                 }
-            }else{
-                //System.out.println("no run");
             }
         }
     }

@@ -3,7 +3,6 @@ package org.codealpha.gmsservice.models;
 import org.codealpha.gmsservice.entities.ActualRefund;
 import org.codealpha.gmsservice.entities.ClosureReason;
 
-import javax.persistence.Column;
 import java.util.List;
 
 public class PlainClosure {

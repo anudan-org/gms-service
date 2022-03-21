@@ -1,11 +1,7 @@
 package org.codealpha.gmsservice.services;
 
-import java.util.List;
-import java.util.Optional;
-
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
-import org.codealpha.gmsservice.controllers.AdiminstrativeController;
 import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
@@ -17,6 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Developer code-alpha.org

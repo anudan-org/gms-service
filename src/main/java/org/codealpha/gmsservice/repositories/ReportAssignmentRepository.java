@@ -4,7 +4,6 @@ import org.codealpha.gmsservice.entities.ReportAssignment;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
-import java.util.Date;
 import java.util.List;
 
 public interface ReportAssignmentRepository extends CrudRepository<ReportAssignment,Long> {

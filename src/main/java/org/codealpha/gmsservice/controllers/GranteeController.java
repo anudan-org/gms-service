@@ -1,10 +1,10 @@
 package org.codealpha.gmsservice.controllers;
 
-import java.time.LocalDateTime;
-import java.util.Date;
 import org.codealpha.gmsservice.entities.Grantee;
+import org.codealpha.gmsservice.models.GranteeDTO;
 import org.codealpha.gmsservice.repositories.GranteeRepository;
 import org.joda.time.DateTime;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,13 +23,15 @@ public class GranteeController {
 
 	@Autowired
 	private GranteeRepository repository;
+	@Autowired
+	private ModelMapper modelMapper;
 
 	@PostMapping(value = "/")
-	public void create(@RequestBody Grantee grantee) {
+	public void create(@RequestBody GranteeDTO grantee) {
 
 		grantee.setCreatedAt(DateTime.now().toDate());
 		grantee.setCreatedBy("Admin");
-		repository.save(grantee);
+		repository.save(modelMapper.map(grantee,Grantee.class));
 
 		System.out.println(repository.findAll());
 	}

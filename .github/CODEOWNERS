@@ -1,0 +1,12 @@
+.github/**                     @karni-prabhu
+DB/**                          @ranjitsocial
+gradle/**                      @ranjitsocial
+src/**                         @ranjitsocial
+.DS_Store                      @ranjitsocial
+.gitignore                     @ranjitsocial
+README.md                      @ranjitsocial
+build.gradle                   @ranjitsocial
+gradlew                        @ranjitsocial
+gradlew.bat                    @ranjitsocial
+settings.gradle                @ranjitsocial
+sonar-project.properties       @ranjitsocial

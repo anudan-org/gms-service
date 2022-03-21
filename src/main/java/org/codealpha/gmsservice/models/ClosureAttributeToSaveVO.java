@@ -1,18 +1,15 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.GrantClosure;
-import org.codealpha.gmsservice.entities.Report;
-
 public class ClosureAttributeToSaveVO {
 
-    private GrantClosure closure;
+    private GrantClosureDTO closure;
     private SectionAttributesVO attr;
 
-    public GrantClosure getClosure() {
+    public GrantClosureDTO getClosure() {
         return closure;
     }
 
-    public void setClosure(GrantClosure closure) {
+    public void setClosure(GrantClosureDTO closure) {
         this.closure = closure;
     }
 

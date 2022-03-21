@@ -1,20 +1,19 @@
 package org.codealpha.gmsservice.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.beans.PropertyDescriptor;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KPIStatus;
 import org.codealpha.gmsservice.constants.KpiType;
 import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.Grant;
 import org.codealpha.gmsservice.entities.GrantKpi;
-import org.codealpha.gmsservice.entities.Submission;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.springframework.beans.BeanUtils;
+
+import java.beans.PropertyDescriptor;
+import java.util.Date;
+import java.util.List;
 
 public class GrantKpiVO {
 

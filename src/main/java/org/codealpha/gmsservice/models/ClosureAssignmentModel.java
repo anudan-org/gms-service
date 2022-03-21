@@ -1,17 +1,14 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.GrantClosure;
-import org.codealpha.gmsservice.entities.Report;
-
 public class ClosureAssignmentModel {
-    private GrantClosure closure;
+    private GrantClosureDTO closure;
     private ClosureAssignmentsVO[] assignments;
 
-    public GrantClosure getClosure() {
+    public GrantClosureDTO getClosure() {
         return closure;
     }
 
-    public void setClosure(GrantClosure closure) {
+    public void setClosure(GrantClosureDTO closure) {
         this.closure = closure;
     }
 

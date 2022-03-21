@@ -1,53 +1,49 @@
 package org.codealpha.gmsservice.controllers;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.transaction.Transactional;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.text.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.entities.dashboard.*;
 import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
-import org.codealpha.gmsservice.models.*;
-import org.codealpha.gmsservice.models.dashboard.*;
+import org.codealpha.gmsservice.models.ErrorMessage;
+import org.codealpha.gmsservice.models.ResetPwdData;
+import org.codealpha.gmsservice.models.UserCheck;
+import org.codealpha.gmsservice.models.UserVO;
 import org.codealpha.gmsservice.models.dashboard.Detail;
 import org.codealpha.gmsservice.models.dashboard.Filter;
 import org.codealpha.gmsservice.models.dashboard.Summary;
-import org.codealpha.gmsservice.models.dashboard.mydashboard.*;
+import org.codealpha.gmsservice.models.dashboard.*;
 import org.codealpha.gmsservice.models.dashboard.mydashboard.Disbursement;
+import org.codealpha.gmsservice.models.dashboard.mydashboard.*;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.DashboardValidator;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.transaction.Transactional;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.security.SecureRandom;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Developer code-alpha.org
@@ -56,6 +52,21 @@ import org.springframework.web.util.UriComponents;
 @RequestMapping("/users")
 public class UserController {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    public static final String ACTIVE = "ACTIVE";
+    public static final String CLOSED = "CLOSED";
+    public static final String CEO = "CEO";
+    public static final String GRANTS = " Grants";
+    public static final String OVERDUE = "overdue";
+    public static final String OVERDUE_TITLE = "Overdue";
+    public static final String REPORTS = "Reports";
+    public static final String GRANTEE = "GRANTEE";
+    public static final String GRANTER = "GRANTER";
+    public static final String YOU_HAVE_ENTERED_AN_INVALID_PREVIOUS_PASSWORD = "You have entered an invalid previous password";
+    public static final String COMMITTED = "Committed";
+    public static final String DISBURSED = "Disbursed";
+    public static final String DISBURSEMENTS = "Disbursements";
+    public static final String PLATFORM = "PLATFORM";
     @Autowired
     private OrganizationService organizationService;
     @Autowired
@@ -97,9 +108,7 @@ public class UserController {
 
     @GetMapping(value = "/{userId}")
     public User get(@PathVariable(name = "userId") Long id, @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        User user = userService.getUserById(id);
-
-        return user;
+        return userService.getUserById(id);
     }
 
     @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -109,7 +118,7 @@ public class UserController {
 
         Organization org = null;
         if (tenantCode.equalsIgnoreCase("ANUDAN")) {
-            org = organizationService.findByNameAndOrganizationType(user.getOrganizationName(), "GRANTEE");
+            org = organizationService.findByNameAndOrganizationType(user.getOrganizationName(), GRANTEE);
         } else {
             org = organizationService.findOrganizationByTenantCode(tenantCode);
         }
@@ -133,9 +142,8 @@ public class UserController {
 
             String verificationLink = scheme + "://" + host + (port != -1 ? ":" + port : "")
                     + "/grantee/verification?emailId=" + user.getEmailId() + "&code="
-                    + RandomStringUtils.randomAlphanumeric(127);
+                    + RandomStringUtils.random(127, 0, 0, true, true, null, new SecureRandom());
 
-            System.out.println(verificationLink);
             commonEmailSevice.sendMail(new String[]{user.getEmailId()}, null, "Anudan.org - Verification Link",
                     verificationLink, null);
         } else {
@@ -153,20 +161,15 @@ public class UserController {
     public void setUserProfilePic(@PathVariable("userId")Long userId,
                                   @RequestParam("file") MultipartFile[] files,
                                   @RequestHeader("X-TENANT-CODE") String tenantCode){
-        String filePath = uploadLocation + tenantCode + "/users/" + userId;
+        String filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + "/users/" + userId;
         File dir = new File(filePath);
         dir.mkdirs();
         String fileName = files[0].getOriginalFilename();
         File fileToCreate = new File(dir, fileName);
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(fileToCreate);
+        try (FileOutputStream fos = new FileOutputStream(fileToCreate)) {
             fos.write(files[0].getBytes());
-            fos.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         User user = userService.getUserById(userId);
@@ -196,7 +199,6 @@ public class UserController {
 
         userOrg = organizationService.save(userOrg);
         savedUser.setOrganization(userOrg);
-        //savedUser.setUserProfile(user.getUserProfile());
         savedUser = userService.save(savedUser);
         return savedUser;
     }
@@ -218,16 +220,15 @@ public class UserController {
         Organization tenantOrg = null;
         tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         List<GrantCard> grants = null;
-        switch (userOrg.getType()) {
-            case "GRANTEE":
-                grants = granteeService.getGrantCardsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getUserRoles());
-                return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
-            case "GRANTER":
-                grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId(),forStatus);
-                return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
+        if (GRANTEE.equalsIgnoreCase(userOrg.getType())) {
+            grants = granteeService.getGrantCardsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getUserRoles());
+            return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
+        } else if (GRANTER.equalsIgnoreCase(userOrg.getType())) {
+            grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId(), forStatus);
+            return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
         }
 
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        return new ResponseEntity<>(new DashboardService(), HttpStatus.OK);
     }
 
     @GetMapping("/{userId}/dashboard/in-progress")
@@ -238,19 +239,19 @@ public class UserController {
         Organization userOrg = user.getOrganization();
         Organization tenantOrg = null;
         tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
-        List<Grant> grants = null;
         switch (userOrg.getType()) {
-            case "GRANTEE":
+            case GRANTEE:
                 return new ResponseEntity<>(
                         granterService.getActiveGrantsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getId()),
                         HttpStatus.OK);
-            case "GRANTER":
+            case GRANTER:
                 return new ResponseEntity<>(
                         granterService.getInProgressGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId()),
                         HttpStatus.OK);
+            default:
+                return new ResponseEntity<>(0l, HttpStatus.OK);
         }
 
-        return new ResponseEntity<>(null, HttpStatus.OK);
     }
 
     @GetMapping("/{userId}/dashboard/active")
@@ -261,19 +262,18 @@ public class UserController {
         Organization userOrg = user.getOrganization();
         Organization tenantOrg = null;
         tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
-        List<Grant> grants = null;
         switch (userOrg.getType()) {
-            case "GRANTEE":
+            case GRANTEE:
                 return new ResponseEntity<>(
                         granterService.getActiveGrantsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getId()),
                         HttpStatus.OK);
-            case "GRANTER":
+            case GRANTER:
                 return new ResponseEntity<>(
                         granterService.getActiveGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId()),
                         HttpStatus.OK);
+            default:
+                return new ResponseEntity<>(0l, HttpStatus.OK);
         }
-
-        return new ResponseEntity<>(null, HttpStatus.OK);
     }
 
     @GetMapping("/{userId}/dashboard/closed")
@@ -284,19 +284,17 @@ public class UserController {
         Organization userOrg = user.getOrganization();
         Organization tenantOrg = null;
         tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
-        List<Grant> grants = null;
-        switch (userOrg.getType()) {
-            case "GRANTEE":
-                return new ResponseEntity<>(
-                        granterService.getClosedGrantsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getId()),
-                        HttpStatus.OK);
-            case "GRANTER":
-                return new ResponseEntity<>(
-                        granterService.getClosedGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId()),
-                        HttpStatus.OK);
+        if (GRANTEE.equalsIgnoreCase(userOrg.getType())) {
+            return new ResponseEntity<>(
+                    granterService.getClosedGrantsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getId()),
+                    HttpStatus.OK);
+        } else if (GRANTER.equalsIgnoreCase(userOrg.getType())) {
+            return new ResponseEntity<>(
+                    granterService.getClosedGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId()),
+                    HttpStatus.OK);
         }
 
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        return new ResponseEntity<>(0l, HttpStatus.OK);
     }
 
     @PostMapping("/{id}/validate-pwd")
@@ -307,7 +305,7 @@ public class UserController {
         if (passwordEncoder.matches(pwd, user.getPassword())) {
             return new ResponseEntity<>(new ErrorMessage(true, ""), HttpStatus.OK);
         } else {
-            throw new ResourceNotFoundException("You have entered an invalid previous password");
+            throw new ResourceNotFoundException(YOU_HAVE_ENTERED_AN_INVALID_PREVIOUS_PASSWORD);
         }
     }
 
@@ -329,11 +327,11 @@ public class UserController {
         User user = userService.getUserById(userId);
         if (user.isPlain()) {
             if (!user.getPassword().equalsIgnoreCase(pwds[0])) {
-                throw new ResourceNotFoundException("You have entered an invalid previous password");
+                throw new ResourceNotFoundException(YOU_HAVE_ENTERED_AN_INVALID_PREVIOUS_PASSWORD);
             }
         } else {
             if (!passwordEncoder.matches(pwds[0], user.getPassword())) {
-                throw new ResourceNotFoundException("You have entered an invalid previous password");
+                throw new ResourceNotFoundException(YOU_HAVE_ENTERED_AN_INVALID_PREVIOUS_PASSWORD);
             }
         }
 
@@ -355,11 +353,7 @@ public class UserController {
         }
 
         User user = userService.getUserByEmailAndOrg(userdata.getEmail(), org);
-        if (user != null && user.isActive()) {
-            return true;
-        }
-
-        return false;
+        return user != null && user.isActive();
     }
 
     @GetMapping("/{userId}/dashboard/summary")
@@ -380,18 +374,18 @@ public class UserController {
 
         List<Filter> categoryFilters = new ArrayList<>();
 
-        Filter activeFilter = getFilterForGrantsByStatus(tenantOrg, "ACTIVE");
+        Filter activeFilter = getFilterForGrantsByStatus(tenantOrg, ACTIVE);
         if (activeFilter != null) {
             categoryFilters.add(activeFilter);
         }
-        Filter closedFilter = getFilterForGrantsByStatus(tenantOrg, "CLOSED");
+        Filter closedFilter = getFilterForGrantsByStatus(tenantOrg, CLOSED);
         if (closedFilter != null) {
             categoryFilters.add(closedFilter);
         }
 
-        dashboardCategory = new Category("CEO", categorySummary, categoryFilters);
+        dashboardCategory = new Category(CEO, categorySummary, categoryFilters);
 
-        return new ResponseEntity(dashboardCategory, HttpStatus.OK);
+        return new ResponseEntity<>(dashboardCategory, HttpStatus.OK);
     }
 
     @GetMapping("/{userId}/dashboard/summary/grantee/{granteeOrgId}")
@@ -408,33 +402,26 @@ public class UserController {
 
         List<Filter> categoryFilters = new ArrayList<>();
 
-        Filter activeFilter = getFilterForGranteeGrantsByStatus(granteeOrg, "ACTIVE");
+        Filter activeFilter = getFilterForGranteeGrantsByStatus(granteeOrg, ACTIVE);
         if (activeFilter != null) {
             categoryFilters.add(activeFilter);
         }
-        Filter closedFilter = getFilterForGranteeGrantsByStatus(granteeOrg, "CLOSED");
+        Filter closedFilter = getFilterForGranteeGrantsByStatus(granteeOrg, CLOSED);
         if (closedFilter != null) {
             categoryFilters.add(closedFilter);
         }
 
-        dashboardCategory = new Category("CEO", categorySummary, categoryFilters);
+        dashboardCategory = new Category(CEO, categorySummary, categoryFilters);
 
-        return new ResponseEntity(dashboardCategory, HttpStatus.OK);
+        return new ResponseEntity<>(dashboardCategory, HttpStatus.OK);
     }
 
     @GetMapping("/{userId}/dashboard/mysummary")
-    public ResponseEntity<Category> getMyDashboardSummary(@RequestHeader("X-TENANT-CODE") String tenantCode,
+    public ResponseEntity<MyCategory> getMyDashboardSummary(@RequestHeader("X-TENANT-CODE") String tenantCode,
                                                        @PathVariable("userId") Long userId) {
 
-        String data = "{ \"name\": \"My Dashboard\", \"summary\": { \"ActionsPending\": { \"Grants\": 3, \"Reports\": 4, \"DisbursementApprovals\": 5 }, \"UpcomingGrants\": { \"DraftGrants\": 3, \"Grantsinmyworkflow\": 4, \"GrantAmount\": 5 } }, \"filters\": [ { \"name\": \"Active Grants\", \"totalGrants\": 12, \"granteeOrgs\": 8, \"grantswithnoapprovedreports\": 4, \"grantswithnokpis\": 12, \"period\": \"2019-2024\", \"disbursedAmount\": 2000000, \"committedAmount\": 800000, \"details\": [ { \"name\": \"Disbursements\", \"summary\": { \"disbursement\": [ { \"name\": \"2019 - 2020\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"142.03\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"1841.22\", \"count\": 25 } ] }, { \"name\": \"2020 - 2021\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"348.28\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"10264.48\", \"count\": 30 } ] }, { \"name\": \"2021 - 2022\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"0.40\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"496.10\", \"count\": 4 } ] } ] } }, { \"name\": \"Reports\", \"summary\": { \"summary\": [ { \"name\": \"Due\", \"value\": 30 }, { \"name\": \"Overdue\", \"value\": 212 } ], \"statusSummary\": [ { \"name\": \"My approved reports on schedule\", \"value\": 10 }, { \"name\": \"Reports approved after their due dates\", \"value\": 12 } ] } } ] }, { \"name\": \"Closed Grants\", \"totalGrants\": 5, \"granteeOrgs\": 3, \"grantswithnoapprovedreports\": 4, \"grantswithnokpis\": 4, \"period\": \"2019-2024\", \"disbursedAmount\": 4000000, \"committedAmount\": 3500000, \"details\": [ { \"name\": \"Disbursements\", \"summary\": { \"disbursement\": [ { \"name\": \"2019 - 2020\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"142.03\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"1841.22\", \"count\": 25 } ] }, { \"name\": \"2020 - 2021\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"348.28\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"10264.48\", \"count\": 30 } ] }, { \"name\": \"2021 - 2022\", \"values\": [ { \"name\": \"Disbursed\", \"value\": \"0.40\", \"count\": 0 }, { \"name\": \"Committed\", \"value\": \"496.10\", \"count\": 4 } ] } ] } }, { \"name\": \"Reports\", \"summary\": { \"summary\": [ { \"name\": \"Due\", \"value\": 10 }, { \"name\": \"Overdue\", \"value\": 34 } ], \"statusSummary\": [ { \"name\": \"My approved reports on schedule\", \"value\": 4 }, { \"name\": \"Reports approved after their due dates\", \"value\": 3 } ] } } ] } ] }";
-        ObjectMapper mapper = new ObjectMapper();
         MyCategory category = new MyCategory();
         category.setCanShowDashboard(grantService.isUserPartOfActiveWorkflow(userId));
-        /*try {
-            category = mapper.readValue(data,MyCategory.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
 
         org.codealpha.gmsservice.models.dashboard.mydashboard.Summary summary = new org.codealpha.gmsservice.models.dashboard.mydashboard.Summary();
 
@@ -444,18 +431,18 @@ public class UserController {
         summary.setUpcomingDisbursements(getUpcomingDisbursements(userId));
 
         List<org.codealpha.gmsservice.models.dashboard.mydashboard.Filter> filters = new ArrayList<>();
-        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter activeGrantFilter = getFilter("ACTIVE",userId);
-        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter closedGrantFilter = getFilter("CLOSED",userId);
-        if(activeGrantFilter.getTotalGrants()>0) {
+        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter activeGrantFilter = getFilter(ACTIVE, userId);
+        org.codealpha.gmsservice.models.dashboard.mydashboard.Filter closedGrantFilter = getFilter(CLOSED, userId);
+        if (activeGrantFilter.getTotalGrants() > 0) {
             filters.add(activeGrantFilter);
         }
-        if(closedGrantFilter.getTotalGrants()>0){
-             filters.add(closedGrantFilter);
+        if (closedGrantFilter.getTotalGrants() > 0) {
+            filters.add(closedGrantFilter);
         }
 
         category.setSummary(summary);
         category.setFilters(filters);
-        return new ResponseEntity(category,HttpStatus.OK);
+        return new ResponseEntity<>(category, HttpStatus.OK);
     }
 
     private org.codealpha.gmsservice.models.dashboard.mydashboard.Filter getFilter(String status,Long userId) {
@@ -469,8 +456,8 @@ public class UserController {
         grantFilter.setGranteeOrgs(grantService.getGranteeOrgsCountByUserAndStatus(userId,status));
         grantFilter.setGrantswithnoapprovedreports(grantService.getGrantsWithNoApprovedReportsByUserAndStatus(userId,status));
         Long noKpis = grantService.getGrantsWithNoAKPIsByUserAndStatus(userId,status);
-        grantFilter.setGrantswithnokpis(noKpis==null?0:noKpis);
-        grantFilter.setName(org.apache.commons.text.WordUtils.capitalizeFully(status+" Grants"));
+        grantFilter.setGrantswithnokpis(noKpis == null ? 0 : noKpis);
+        grantFilter.setName(org.apache.commons.text.WordUtils.capitalizeFully(status + GRANTS));
         GranterGrantSummaryCommitted grantSummaryCommitted =  dashboardService.getDisbursementPeriodsForUserAndStatus(userId,status);
         if(grantSummaryCommitted!=null){
             SimpleDateFormat sd = new SimpleDateFormat("yyyy");
@@ -488,60 +475,53 @@ public class UserController {
         Map<Integer, String> periodsMap = dashboardService
                 .getGrantsCommittedPeriodsForUserAndStatus(userService.getUserById(userId), status);
 
-        List<String> periods = periodsMap.entrySet().stream().map(p -> new String(p.getValue()))
-                .collect(Collectors.toList());
-        String[] strings = {"Committed", "Disbursed"};
-
         List<Disbursement> disbursalSummaryList = new ArrayList<>();
-        for (Integer period : periodsMap.keySet()) {
+        for (Integer period : Collections.unmodifiableSet(periodsMap.keySet())) {
             Double[] disbursalTotalAndCount = dashboardService.getDisbursedAmountForUserAndPeriodAndStatus(period,
                     userService.getUserById(userId), status);
             Long[] committedTotalAndCount = dashboardService.getCommittedAmountForUserAndPeriodAndStatus(period,
                     userService.getUserById(userId), status);
             disbursalSummaryList.add(new Disbursement(periodsMap.get(period), new Value[]{
-                    new Value("Disbursed",
-                            String.valueOf(new BigDecimal(disbursalTotalAndCount[0] / 100000.00).setScale(2,
+                    new Value(DISBURSED,
+                            String.valueOf(BigDecimal.valueOf(disbursalTotalAndCount[0] / 100000.00).setScale(2,
                                     RoundingMode.HALF_UP))),
-                    new Value("Committed",
+                    new Value(COMMITTED,
                             String.valueOf(new BigDecimal(Double.toString(committedTotalAndCount[0] / 100000.00))
                                     .setScale(2, RoundingMode.HALF_UP)))}));
         }
 
-        Summary__1 summary__1 = new Summary__1();
-        summary__1.setDisbursement(disbursalSummaryList);
+        Summary__1 summary1 = new Summary__1();
+        summary1.setDisbursement(disbursalSummaryList);
         org.codealpha.gmsservice.models.dashboard.mydashboard.Detail detail = new org.codealpha.gmsservice.models.dashboard.mydashboard.Detail();
-        detail.setName("Disbursements");
-        detail.setSummary(summary__1);
+        detail.setName(DISBURSEMENTS);
+        detail.setSummary(summary1);
         details.add(detail);
 
         //report status
-        List<GranterReportStatus> reportStatuses = new ArrayList<>();
         List<Summary__2> reportSummaryList = new ArrayList<>();
-        reportStatuses = dashboardService.getReportStatusSummaryForUserAndStatus(userId, status);
-        if (reportStatuses != null && reportStatuses.size() > 0) {
+        List<GranterReportStatus> reportStatuses = dashboardService.getReportStatusSummaryForUserAndStatus(userId, status);
+        if (reportStatuses != null && !reportStatuses.isEmpty()) {
             for (GranterReportStatus reportStatus : reportStatuses) {
                 reportSummaryList
                         .add(new Summary__2(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
             }
 
-            if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny()
-                    .isPresent()) {
+            if (reportSummaryList.stream().noneMatch(l -> l.getName().equalsIgnoreCase("due"))) {
                 reportSummaryList.add(new Summary__2("Due", Long.valueOf(0)));
             }
 
-            if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny()
-                    .isPresent()) {
-                reportSummaryList.add(new Summary__2("Overdue", Long.valueOf(0)));
+            if (reportSummaryList.stream().noneMatch(l -> l.getName().equalsIgnoreCase(OVERDUE))) {
+                reportSummaryList.add(new Summary__2(OVERDUE_TITLE, Long.valueOf(0)));
             }
         }
 
-        List<String> dueOverdueOrder = Arrays.asList(new String[]{"Due","Overdue"});
-        reportSummaryList.sort(Comparator.comparing(c -> {
-            return dueOverdueOrder.indexOf(c.getName());
-        }));
+        List<String> dueOverdueOrder = Arrays.asList("Due", OVERDUE_TITLE);
+        reportSummaryList.sort(Comparator.comparing(c ->
+            dueOverdueOrder.indexOf(c.getName())
+        ));
 
-        Summary__1 summary__reports = new Summary__1();
-        summary__reports.setSummary(reportSummaryList);
+        Summary__1 summaryReports = new Summary__1();
+        summaryReports.setSummary(reportSummaryList);
 
 
 
@@ -549,11 +529,11 @@ public class UserController {
         List<StatusSummary> statusSummaryList = new ArrayList<>();
         statusSummaryList.add(new StatusSummary("On schedule",reportService.approvedReportsInTimeForUser(userId)));
         statusSummaryList.add(new StatusSummary("After due date",reportService.approvedReportsNotInTimeForUser(userId)));
-        summary__reports.setStatusSummary(statusSummaryList);
+        summaryReports.setStatusSummary(statusSummaryList);
 
         org.codealpha.gmsservice.models.dashboard.mydashboard.Detail reportSummaryDetail = new org.codealpha.gmsservice.models.dashboard.mydashboard.Detail();
-        reportSummaryDetail.setName("Reports");
-        reportSummaryDetail.setSummary(summary__reports);
+        reportSummaryDetail.setName(REPORTS);
+        reportSummaryDetail.setSummary(summaryReports);
         details.add(reportSummaryDetail);
 
         return details;
@@ -631,8 +611,8 @@ public class UserController {
     }
 
     private Filter getFilterForGrantsByStatus(Organization tenantOrg, String status) {
-        GranterGrantSummaryCommitted activeGrantSummaryCommitted = "ACTIVE".equalsIgnoreCase(status)?dashboardService
-                .getActiveStatusGrantCommittedSummaryForGranter(tenantOrg.getId(), status):
+        GranterGrantSummaryCommitted activeGrantSummaryCommitted = ACTIVE.equalsIgnoreCase(status) ? dashboardService
+                .getActiveStatusGrantCommittedSummaryForGranter(tenantOrg.getId(), status) :
                 dashboardService
                         .getClosedGrantCommittedSummaryForGranter(tenantOrg.getId(), status);
         if (activeGrantSummaryCommitted == null) {
@@ -640,46 +620,43 @@ public class UserController {
         }
         Double disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGranter(tenantOrg.getId(), status);
         Filter categoryFilter = new Filter();
-        categoryFilter.setName(WordUtils.capitalizeFully(status + " Grants"));
-        categoryFilter.setTotalGrants(Long.valueOf(activeGrantSummaryCommitted.getGrantCount()));
+        categoryFilter.setName(StringUtils.capitalize(status + GRANTS));
+        categoryFilter.setTotalGrants(activeGrantSummaryCommitted.getGrantCount());
         SimpleDateFormat sd = new SimpleDateFormat("yyyy");
         categoryFilter.setPeriod(sd.format(activeGrantSummaryCommitted.getPeriodStart()) + "-"
                 + sd.format(activeGrantSummaryCommitted.getPeriodEnd()));
-        categoryFilter.setCommittedAmount(Long.valueOf(activeGrantSummaryCommitted.getCommittedAmount()));
+        categoryFilter.setCommittedAmount(activeGrantSummaryCommitted.getCommittedAmount());
         categoryFilter.setDisbursedAmount(disbursedAmount.longValue());
         List<GranterReportStatus> reportStatuses = null;
         List<GranterReportSummaryStatus> reportsByStatuses = null;
         List<DetailedSummary> reportSummaryList = new ArrayList<>();
         List<DetailedSummary> reportStatusSummaryList = new ArrayList<>();
-        if (status.equalsIgnoreCase("ACTIVE")) {
+        if (status.equalsIgnoreCase(ACTIVE)) {
             reportStatuses = dashboardService.getReportStatusSummaryForGranterAndStatus(tenantOrg.getId(), status);
-            if (reportStatuses != null && reportStatuses.size() > 0) {
+            if (reportStatuses != null && !reportStatuses.isEmpty()) {
                 for (GranterReportStatus reportStatus : reportStatuses) {
                     reportSummaryList
                             .add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
                 }
 
-                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny()
-                        .isPresent()) {
+                if (reportSummaryList.stream().noneMatch(l -> l.getName().equalsIgnoreCase("due"))) {
                     reportSummaryList.add(new ReportSummary("Due", Long.valueOf(0)));
                 }
 
-                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny()
-                        .isPresent()) {
-                    reportSummaryList.add(new ReportSummary("Overdue", Long.valueOf(0)));
+                if (reportSummaryList.stream().noneMatch(l -> l.getName().equalsIgnoreCase(OVERDUE))) {
+                    reportSummaryList.add(new ReportSummary(OVERDUE_TITLE, Long.valueOf(0)));
                 }
             }
 
-            List<String> dueOverdueOrder = Arrays.asList(new String[]{"Due","Overdue"});
-            reportSummaryList.sort(Comparator.comparing(c -> {
-                return dueOverdueOrder.indexOf(c.getName());
-            }));
+            List<String> dueOverdueOrder = Arrays.asList("Due", OVERDUE_TITLE);
+            reportSummaryList.sort(Comparator.comparing(c ->
+                dueOverdueOrder.indexOf(c.getName())
+            ));
 
             reportsByStatuses = dashboardService.getReportByStatusForGranter(tenantOrg.getId());
 
-            if (reportsByStatuses != null && reportsByStatuses.size() > 0) {
+            if (reportsByStatuses != null && !reportsByStatuses.isEmpty()) {
 
-                List<Workflow> granterReportWorkflows = workflowService.getAllWorkflowsForGranterByType(tenantOrg.getId(),"REPORT");
                 List<Workflow> workflows = workflowService.getAllWorkflowsForGranterByType(tenantOrg.getId(),"REPORT");
                 for(Workflow wf : workflows){
                     List<GrantTypeWorkflowMapping> mappings = grantTypeWorkflowMappingService.findByWorkflow(wf.getId());
@@ -687,18 +664,18 @@ public class UserController {
                         List<TransitionStatusOrder> orderedTransitions = dashboardService.getStatusTransitionOrderByWorflowAndGrantType(wf.getId(),mapping.getGrantTypeId());
                         orderedTransitions.add(0, dashboardService.getStatusTransitionOrderForTerminalState(wf.getId(),mapping.getGrantTypeId()));
 
-                        List<String> statusOrder = orderedTransitions.stream().map(a -> a.getState()).collect(Collectors.toList());
+                        List<String> statusOrder = orderedTransitions.stream().map(TransitionStatusOrder::getState).collect(Collectors.toList());
                         Comparator<GranterReportSummaryStatus> comparator = Comparator
-                                .comparing(c -> {
-                                            return statusOrder.indexOf(c.getStatus());
-                                        }
+                                .comparing(c ->
+                                            statusOrder.indexOf(c.getStatus())
+
                                 );
 
                         reportsByStatuses.sort(comparator);
 
                         for(TransitionStatusOrder order : orderedTransitions){
                             Optional<GranterReportSummaryStatus> optionalReportStatus = reportsByStatuses.stream().filter(r -> r.getStatusId().longValue()==order.getFromStateId().longValue() && r.getGrantTypeId().longValue()==mapping.getGrantTypeId().longValue() && r.getWorkflowId().longValue()==wf.getId().longValue()).findFirst();
-                            GranterReportSummaryStatus reportStatus = optionalReportStatus.isPresent()?optionalReportStatus.get():initNewGranterReportSummaryStatus(tenantOrg,order);
+                            GranterReportSummaryStatus reportStatus = optionalReportStatus.isPresent() ? optionalReportStatus.get() : initNewGranterReportSummaryStatus(tenantOrg, order);
 
 
                             reportStatusSummaryList
@@ -708,10 +685,10 @@ public class UserController {
                     }
                 }
             }
-        } else if (status.equalsIgnoreCase("CLOSED")) {
+        } else if (status.equalsIgnoreCase(CLOSED)) {
             reportStatuses = dashboardService.findGrantCountsByReportNumbersAndStatusForGranter(tenantOrg.getId(),
                     status);
-            if (reportStatuses != null && reportStatuses.size() > 0) {
+            if (reportStatuses != null && !reportStatuses.isEmpty()) {
                 for (GranterReportStatus reportStatus : reportStatuses) {
                     reportSummaryList
                             .add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
@@ -723,40 +700,37 @@ public class UserController {
 
         Map<Integer, String> periodsMap = dashboardService
                 .getActiveGrantsCommittedPeriodsForGranterAndStatus(tenantOrg.getId(), status);
-        List<String> periods = periodsMap.entrySet().stream().map(p -> new String(p.getValue()))
-                .collect(Collectors.toList());
-        String[] strings = {"Committed", "Disbursed"};
 
-        for (Integer period : periodsMap.keySet()) {
+        periodsMap.keySet().forEach(period -> {
             Double[] disbursalTotalAndCount = dashboardService.getDisbursedAmountForGranterAndPeriodAndStatus(period,
                     tenantOrg.getId(), status);
             Long[] committedTotalAndCount = dashboardService.getCommittedAmountForGranterAndPeriodAndStatus(period,
                     tenantOrg.getId(), status);
             disbursalSummaryList.add(new DisbursalSummary(periodsMap.get(period), new DisbursementData[]{
-                    new DisbursementData("Disbursed",
-                            String.valueOf(new BigDecimal(disbursalTotalAndCount[0] / 100000.00).setScale(2,
+                    new DisbursementData(DISBURSED,
+                            String.valueOf(BigDecimal.valueOf(disbursalTotalAndCount[0] / 100000.00).setScale(2,
                                     RoundingMode.HALF_UP)),
                             0l),
-                    new DisbursementData("Committed",
+                    new DisbursementData(COMMITTED,
                             String.valueOf(new BigDecimal(Double.toString(committedTotalAndCount[0] / 100000.00))
                                     .setScale(2, RoundingMode.HALF_UP)),
                             committedTotalAndCount[1])}));
-        }
+        });
 
         List<Detail> filterDetails = new ArrayList<>();
         Map<String, List<DetailedSummary>> reportSummaryMap = new HashMap<>();
         Map<String, List<DetailedSummary>> disbursementSummaryMap = new HashMap<>();
         reportSummaryMap.put("summary", reportSummaryList);
         reportSummaryMap.put("statusSummary", reportStatusSummaryList);
-        filterDetails.add(new Detail("Reports", reportSummaryMap));
+        filterDetails.add(new Detail(REPORTS, reportSummaryMap));
         disbursementSummaryMap.put("disbursement", disbursalSummaryList);
-        filterDetails.add(new Detail("Disbursements", disbursementSummaryMap));
+        filterDetails.add(new Detail(DISBURSEMENTS, disbursementSummaryMap));
         categoryFilter.setDetails(filterDetails);
 
-        List<String> detailsOrder = Arrays.asList(new String[]{"Disbursements","Reports"});
-        categoryFilter.getDetails().sort(Comparator.comparing(c->{
-            return detailsOrder.indexOf(c.getName());
-        }));
+        List<String> detailsOrder = Arrays.asList(DISBURSEMENTS, REPORTS);
+        categoryFilter.getDetails().sort(Comparator.comparing(c->
+            detailsOrder.indexOf(c.getName())
+        ));
         return categoryFilter;
     }
 
@@ -768,49 +742,46 @@ public class UserController {
         }
         Double disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGrantee(granteeOrg.getId(), status);
         Filter categoryFilter = new Filter();
-        categoryFilter.setName(WordUtils.capitalizeFully(status + " Grants"));
-        categoryFilter.setTotalGrants(Long.valueOf(activeGrantSummaryCommitted.getGrantCount()));
+        categoryFilter.setName(StringUtils.capitalize(status + GRANTS));
+        categoryFilter.setTotalGrants(activeGrantSummaryCommitted.getGrantCount());
         SimpleDateFormat sd = new SimpleDateFormat("yyyy");
         categoryFilter.setDonors(granteeService.getDonorsByState(granteeOrg.getId(),status));
         categoryFilter.setPeriod(sd.format(activeGrantSummaryCommitted.getPeriodStart()) + "-"
                 + sd.format(activeGrantSummaryCommitted.getPeriodEnd()));
-        categoryFilter.setCommittedAmount(Long.valueOf(activeGrantSummaryCommitted.getCommittedAmount()));
+        categoryFilter.setCommittedAmount(activeGrantSummaryCommitted.getCommittedAmount());
         categoryFilter.setDisbursedAmount(disbursedAmount.longValue());
         List<GranterReportStatus> reportStatuses = null;
         List<GranteeReportStatus> reportAprrovedStatuses = null;
         List<DetailedSummary> reportSummaryList = new ArrayList<>();
         List<DetailedSummary> reportStatusSummaryList = new ArrayList<>();
-        if (status.equalsIgnoreCase("ACTIVE")) {
+        if (status.equalsIgnoreCase(ACTIVE)) {
             reportStatuses = dashboardService.getReportStatusSummaryForGranteeAndStatus(granteeOrg.getId(), status);
-            if (reportStatuses != null && reportStatuses.size() > 0) {
+            if (reportStatuses != null && !reportStatuses.isEmpty()) {
                 for (GranterReportStatus reportStatus : reportStatuses) {
                     reportSummaryList
                             .add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
                 }
 
-                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny()
-                        .isPresent()) {
+                if (reportSummaryList.stream().noneMatch(l -> l.getName().equalsIgnoreCase("due"))) {
                     reportSummaryList.add(new ReportSummary("Due", Long.valueOf(0)));
                 }
 
-                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny()
-                        .isPresent()) {
-                    reportSummaryList.add(new ReportSummary("Overdue", Long.valueOf(0)));
+                if (reportSummaryList.stream().noneMatch(l -> l.getName().equalsIgnoreCase(OVERDUE))) {
+                    reportSummaryList.add(new ReportSummary(OVERDUE_TITLE, Long.valueOf(0)));
                 }
 
-                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("submitted")).findAny()
-                        .isPresent()) {
+                if (reportSummaryList.stream().noneMatch(l -> l.getName().equalsIgnoreCase("submitted"))) {
                     reportSummaryList.add(new ReportSummary("Submitted", Long.valueOf(0)));
                 }
             }
 
-            List<String> dueOverdueOrder = Arrays.asList(new String[]{"Due","Overdue"});
-            reportSummaryList.sort(Comparator.comparing(c -> {
-                return dueOverdueOrder.indexOf(c.getName());
-            }));
+            List<String> dueOverdueOrder = Arrays.asList("Due", OVERDUE_TITLE);
+            reportSummaryList.sort(Comparator.comparing(c ->
+                dueOverdueOrder.indexOf(c.getName())
+            ));
 
             reportAprrovedStatuses = dashboardService.getReportApprovedStatusSummaryForGranteeAndStatusByGranter(granteeOrg.getId(), status);
-            if (reportAprrovedStatuses != null && reportAprrovedStatuses.size() > 0) {
+            if (reportAprrovedStatuses != null && !reportAprrovedStatuses.isEmpty()) {
                 for (GranteeReportStatus reportStatus : reportAprrovedStatuses) {
                     reportStatusSummaryList
                             .add(new ReportSummary(reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount())));
@@ -818,32 +789,29 @@ public class UserController {
             }
 
 
-        } else if (status.equalsIgnoreCase("CLOSED")) {
+        } else if (status.equalsIgnoreCase(CLOSED)) {
             reportStatuses = dashboardService.getReportStatusSummaryForGranteeAndStatus(granteeOrg.getId(),
                     status);
-            if (reportStatuses != null && reportStatuses.size() > 0) {
+            if (reportStatuses != null && !reportStatuses.isEmpty()) {
                 for (GranterReportStatus reportStatus : reportStatuses) {
                     reportSummaryList
                             .add(new ReportSummary(reportStatus.getStatus(), Long.valueOf(reportStatus.getCount())));
                 }
 
-                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("due")).findAny()
-                        .isPresent()) {
+                if (reportSummaryList.stream().noneMatch(l -> l.getName().equalsIgnoreCase("due"))) {
                     reportSummaryList.add(new ReportSummary("Due", Long.valueOf(0)));
                 }
 
-                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("overdue")).findAny()
-                        .isPresent()) {
-                    reportSummaryList.add(new ReportSummary("Overdue", Long.valueOf(0)));
+                if (reportSummaryList.stream().noneMatch(l -> l.getName().equalsIgnoreCase(OVERDUE))) {
+                    reportSummaryList.add(new ReportSummary(OVERDUE_TITLE, Long.valueOf(0)));
                 }
 
-                if (!reportSummaryList.stream().filter(l -> l.getName().equalsIgnoreCase("submitted")).findAny()
-                        .isPresent()) {
+                if (reportSummaryList.stream().noneMatch(l -> l.getName().equalsIgnoreCase("submitted"))) {
                     reportSummaryList.add(new ReportSummary("Submitted", Long.valueOf(0)));
                 }
 
                 reportAprrovedStatuses = dashboardService.getReportApprovedStatusSummaryForGranteeAndStatusByGranter(granteeOrg.getId(), status);
-                if (reportAprrovedStatuses != null && reportAprrovedStatuses.size() > 0) {
+                if (reportAprrovedStatuses != null && !reportAprrovedStatuses.isEmpty()) {
                     for (GranteeReportStatus reportStatus : reportAprrovedStatuses) {
                         reportStatusSummaryList
                                 .add(new ReportSummary(reportStatus.getInternalStatus(), Long.valueOf(reportStatus.getCount())));
@@ -857,17 +825,16 @@ public class UserController {
 
         List<Detail> filterDetails = new ArrayList<>();
         Map<String, List<DetailedSummary>> reportSummaryMap = new HashMap<>();
-        Map<String, List<DetailedSummary>> disbursementSummaryMap = new HashMap<>();
         reportSummaryMap.put("summary", reportSummaryList);
         reportSummaryMap.put("approvedSummary", reportStatusSummaryList);
-        filterDetails.add(new Detail("Reports", reportSummaryMap));
+        filterDetails.add(new Detail(REPORTS, reportSummaryMap));
 
         categoryFilter.setDetails(filterDetails);
 
-        List<String> detailsOrder = Arrays.asList(new String[]{"Reports"});
-        categoryFilter.getDetails().sort(Comparator.comparing(c->{
-            return detailsOrder.indexOf(c.getName());
-        }));
+        List<String> detailsOrder = Arrays.asList(REPORTS);
+        categoryFilter.getDetails().sort(Comparator.comparing(c->
+            detailsOrder.indexOf(c.getName())
+        ));
         return categoryFilter;
     }
 
@@ -889,58 +856,63 @@ public class UserController {
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         User user = null;
         PasswordResetRequest response = new PasswordResetRequest();
-        if (tenantOrg.getOrganizationType().equalsIgnoreCase("PLATFORM")) {
+        if (tenantOrg.getOrganizationType().equalsIgnoreCase(PLATFORM)) {
             List<User> users = userService.getUsersByEmail(emailId);
             if (users.size() == 1) {
                 user = users.get(0);
             } else {
                 response.setMessage("Multiple organizations found for this user.");
-                return new ResponseEntity(response, HttpStatus.EXPECTATION_FAILED);
+                return new ResponseEntity<>(response, HttpStatus.EXPECTATION_FAILED);
             }
 
-        } else if (tenantOrg.getOrganizationType().equalsIgnoreCase("GRANTER")) {
+        } else if (tenantOrg.getOrganizationType().equalsIgnoreCase(GRANTER)) {
             user = userService.getUserByEmailAndOrg(emailId, tenantOrg);
         }
 
         if (user != null && user.isActive() && !user.isDeleted()) {
             response = sendPasswordResetLink(user);
-            response.setMessage("Password reset email sent to " + user.getEmailId());
-            response.setStatus("registered");
-            return new ResponseEntity(response, HttpStatus.OK);
+            if(response!=null){
+                response.setMessage("Password reset email sent to " + user.getEmailId());
+                response.setStatus("registered");
+            }
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } else if (user != null && !user.isActive()) {
             response.setOrg(user.getOrganization().getName());
             response.setStatus("unregistered");
-            return new ResponseEntity(response, HttpStatus.OK);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } else if (user != null && user.isActive() && user.isDeleted()) {
             response.setOrg(user.getOrganization().getName());
             response.setStatus("inactive");
-            return new ResponseEntity(response, HttpStatus.OK);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } else {
             response.setMessage("Invalid email address.");
-            return new ResponseEntity(response, HttpStatus.EXPECTATION_FAILED);
+            return new ResponseEntity<>(response, HttpStatus.EXPECTATION_FAILED);
         }
     }
 
     private PasswordResetRequest sendPasswordResetLink(User user) {
         Organization tenantOrg = null;
-        if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")
-                || user.getOrganization().getOrganizationType().equalsIgnoreCase("PLATFORM")) {
+        if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)
+                || user.getOrganization().getOrganizationType().equalsIgnoreCase(PLATFORM)) {
             tenantOrg = organizationService.findOrganizationByTenantCode("ANUDAN");
-        } else if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
+        } else if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTER)) {
             tenantOrg = user.getOrganization();
         }
 
-        String mailSubject = appConfigService
-                .getAppConfigForGranterOrg(tenantOrg.getId(), AppConfiguration.FORGOT_PASSWORD_MAIL_SUBJECT)
-                .getConfigValue();
-        String mailMessage = appConfigService
-                .getAppConfigForGranterOrg(tenantOrg.getId(), AppConfiguration.FORGOT_PASSWORD_MAIL_MESSAGE)
-                .getConfigValue();
-        String mailFooter = appConfigService
-                .getAppConfigForGranterOrg(tenantOrg.getId(), AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()
-                .replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",tenantOrg.getName());
+        if (tenantOrg != null) {
+            String mailSubject = appConfigService
+                    .getAppConfigForGranterOrg(tenantOrg.getId(), AppConfiguration.FORGOT_PASSWORD_MAIL_SUBJECT)
+                    .getConfigValue();
+            String mailMessage = appConfigService
+                    .getAppConfigForGranterOrg(tenantOrg.getId(), AppConfiguration.FORGOT_PASSWORD_MAIL_MESSAGE)
+                    .getConfigValue();
+            String mailFooter = appConfigService
+                    .getAppConfigForGranterOrg(tenantOrg.getId(), AppConfiguration.PLATFORM_EMAIL_FOOTER).getConfigValue()
+                    .replace("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()).replace("%TENANT%", tenantOrg.getName());
 
-        return userService.sendPasswordResetMail(user, mailSubject, mailMessage, mailFooter);
+            return userService.sendPasswordResetMail(user, mailSubject, mailMessage, mailFooter);
+        }
+        return null;
     }
 
     @PostMapping("/set-password")
@@ -950,16 +922,16 @@ public class UserController {
         User user = null;
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         Organization userOrg = null;
-        if (tenantOrg.getOrganizationType().equalsIgnoreCase("PLATFORM")) {
-            userOrg = organizationService.findByNameAndOrganizationType(resetPwdData.getOrg(), "GRANTEE");
+        if (tenantOrg.getOrganizationType().equalsIgnoreCase(PLATFORM)) {
+            userOrg = organizationService.findByNameAndOrganizationType(resetPwdData.getOrg(), GRANTEE);
 
-        } else if (tenantOrg.getOrganizationType().equalsIgnoreCase("GRANTER")) {
+        } else if (tenantOrg.getOrganizationType().equalsIgnoreCase(GRANTER)) {
             userOrg = tenantOrg;
         }
         user = userService.getUserByEmailAndOrg(resetPwdData.getEmail(), userOrg);
 
         PasswordResetRequest resetRequest = passwordResetRequestService
-                .findByUnvalidatedUserIdAndKeyAndOrgId(user.getId(), resetPwdData.getKey(), userOrg.getId());
+                .findByUnvalidatedUserIdAndKeyAndOrgId(user.getId(), resetPwdData.getKey(), userOrg!=null?userOrg.getId():0l);
         if (resetRequest != null) {
             if (passwordEncoder.matches(
                     resetPwdData.getKey()
@@ -973,67 +945,59 @@ public class UserController {
                     resetRequest.setValidatedOn(DateTime.now().toDate());
                     passwordResetRequestService.savePasswordResetRequest(resetRequest);
                 } else {
-                    return new ResponseEntity(null, HttpStatus.METHOD_NOT_ALLOWED);
+                    return new ResponseEntity<>(new User(), HttpStatus.METHOD_NOT_ALLOWED);
                 }
 
             } else {
-                return new ResponseEntity(null, HttpStatus.METHOD_NOT_ALLOWED);
+                return new ResponseEntity<>(new User(), HttpStatus.METHOD_NOT_ALLOWED);
             }
         } else {
-            return new ResponseEntity(null, HttpStatus.METHOD_NOT_ALLOWED);
+            return new ResponseEntity<>(new User(), HttpStatus.METHOD_NOT_ALLOWED);
         }
-        return new ResponseEntity(user, HttpStatus.OK);
+        return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/pendinggrants")
     public List<GrantCard> getPendingDetailedGrantsForUser(@PathVariable("userId")Long userId){
-        List<GrantCard> grants = grantService.getDetailedActionDueGrantsForUser(userId);
-
-        return grants;
+        return grantService.getDetailedActionDueGrantsForUser(userId);
     }
     @GetMapping("/{userId}/dashboard/mysummary/pendingreports")
     public List<ReportCard> getPendingDetailedReportForUser(@PathVariable("userId")Long userId){
-        List<ReportCard> reports = grantService.getDetailedActionDueReportsForUser(userId);
-
-        return reports;
+        return grantService.getDetailedActionDueReportsForUser(userId);
     }
     @GetMapping("/{userId}/dashboard/mysummary/pendingdisbursements")
     public List<org.codealpha.gmsservice.entities.Disbursement> getPendingDetaileddisbursementsForUser(@PathVariable("userId")Long userId){
         List<org.codealpha.gmsservice.entities.Disbursement> disbursements=  disbursementService.getDetailedPendingActionDisbursements(userId);
         for(org.codealpha.gmsservice.entities.Disbursement disbursement: disbursements){
-            disbursement = disbursementService.disbursementToReturn(disbursement,userId);
+            disbursementService.disbursementToReturn(disbursement,userId);
         }
         return disbursements;
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftgrants")
     public List<GrantCard> getUpcomingDetailedGrantsForUser(@PathVariable("userId")Long userId){
-        List<GrantCard> grants =  grantService.getDetailedUpComingDraftGrants(userId);
-
-        return grants;
+        return grantService.getDetailedUpComingDraftGrants(userId);
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/grants/{status}")
     public List<Grant> getGrantsForUserByStatus(@PathVariable("userId")Long userId,@PathVariable("status")String status){
         List<Grant> grants =  grantService.getgrantsByStatusForUser(userId,status.toUpperCase());
         for(Grant grant : grants){
-            grant = grantService.grantToReturn(userId,grant);
+            grantService.grantToReturn(userId, grant);
         }
         return grants;
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftreports")
     public List<ReportCard> getUpcomingDetailedReportsForUser(@PathVariable("userId")Long userId){
-        List<ReportCard> reports = reportService.getDetailedUpComingDraftReports(userId);
-
-        return reports;
+        return reportService.getDetailedUpComingDraftReports(userId);
     }
 
     @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftdisbursements")
     public List<org.codealpha.gmsservice.entities.Disbursement> getUpcomingDetailedDisbursementsForUser(@PathVariable("userId")Long userId){
         List<org.codealpha.gmsservice.entities.Disbursement> disbursements=  disbursementService.getDetailedUpComingDraftDisbursements(userId);
         for(org.codealpha.gmsservice.entities.Disbursement disbursement: disbursements){
-            disbursement = disbursementService.disbursementToReturn(disbursement,userId);
+            disbursementService.disbursementToReturn(disbursement,userId);
         }
         return disbursements;
     }

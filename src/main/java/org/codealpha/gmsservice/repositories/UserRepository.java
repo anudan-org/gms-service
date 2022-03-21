@@ -1,12 +1,12 @@
 package org.codealpha.gmsservice.repositories;
 
-import java.util.List;
-
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.User;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 /**
  * @author Developer code-alpha.org

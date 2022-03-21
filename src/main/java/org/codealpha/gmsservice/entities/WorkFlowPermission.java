@@ -1,10 +1,8 @@
 package org.codealpha.gmsservice.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.Transient;
 
 @Entity
 public class WorkFlowPermission {
@@ -28,6 +26,13 @@ public class WorkFlowPermission {
   @Column
   private Boolean isForwardDirection;
 
+  public Boolean getNoteRequired() {
+    return noteRequired;
+  }
+
+  public void setNoteRequired(Boolean noteRequired) {
+    this.noteRequired = noteRequired;
+  }
 
   public Long getId() {
     return id;
@@ -77,13 +82,7 @@ public class WorkFlowPermission {
     this.action = action;
   }
 
-  public boolean isNoteRequired() {
-    return noteRequired;
-  }
 
-  public void setNoteRequired(boolean noteRequired) {
-    this.noteRequired = noteRequired;
-  }
 
   public Integer getSeqOrder() {
     return seqOrder;
@@ -93,13 +92,8 @@ public class WorkFlowPermission {
     this.seqOrder = seqOrder;
   }
 
-  public Boolean getNoteRequired() {
-    return noteRequired;
-  }
 
-  public void setNoteRequired(Boolean noteRequired) {
-    this.noteRequired = noteRequired;
-  }
+
 
   public Boolean getForwardDirection() {
     return isForwardDirection;

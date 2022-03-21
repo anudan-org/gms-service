@@ -1,19 +1,24 @@
 package org.codealpha.gmsservice.models;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.codealpha.gmsservice.entities.GrantDocumentAttributes;
+import org.codealpha.gmsservice.entities.GrantSpecificSection;
+import org.codealpha.gmsservice.entities.GrantStringAttribute;
+import org.codealpha.gmsservice.entities.GrantStringAttributeAttachments;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.codealpha.gmsservice.entities.*;
-import org.springframework.web.bind.annotation.PostMapping;
-
 public class GrantDetailVO {
 
+  private static final Logger logger = LoggerFactory.getLogger(GrantDetailVO.class);
   private List<SectionVO> sections;
 
   public List<SectionVO> getSections() {
@@ -57,7 +62,6 @@ public class GrantDetailVO {
         sectionAttribute.setFieldName(stringAttribute.getSectionAttribute().getFieldName());
         sectionAttribute
             .setFieldType(stringAttribute.getSectionAttribute().getFieldType());
-        //sectionAttribute.setDeletable(stringAttribute.getSectionAttribute().getDeletable());
         sectionAttribute.setRequired(stringAttribute.getSectionAttribute().getRequired());
         sectionAttribute.setAttributeOrder(stringAttribute.getSectionAttribute().getAttributeOrder());
 
@@ -80,14 +84,14 @@ public class GrantDetailVO {
             try {
               sectionAttribute.setFieldValue( mapper.writeValueAsString(tableDataList));
             } catch (JsonProcessingException e) {
-              e.printStackTrace();
+              logger.error(e.getMessage(),e);
             }
           }
           List<TableData> tableData = null;
           try {
             tableData = mapper.readValue(sectionAttribute.getFieldValue(), new TypeReference<List<TableData>>() {});
           } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
           }
           sectionAttribute.setFieldTableValue(tableData);
         } else if(sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")){
@@ -109,29 +113,19 @@ public class GrantDetailVO {
             try {
               sectionAttribute.setFieldValue( mapper.writeValueAsString(tableDataList));
             } catch (JsonProcessingException e) {
-              e.printStackTrace();
+              logger.error(e.getMessage(),e);
             }
           }
           List<TableData> tableData = null;
           try {
             tableData = mapper.readValue(sectionAttribute.getFieldValue(), new TypeReference<List<TableData>>() {});
           } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
           }
           sectionAttribute.setFieldTableValue(tableData);
         } else if(sectionAttribute.getFieldType().equalsIgnoreCase("document")){
 
           ObjectMapper mapper = new ObjectMapper();
-          /*if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
-            sectionAttribute.setDocs(new ArrayList<>());
-          }else{
-            try {
-              List<TemplateLibrary> assignedTemplates = mapper.readValue(sectionAttribute.getFieldValue(),new TypeReference<List<TemplateLibrary>>(){});
-              sectionAttribute.setDocs(assignedTemplates);
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
-          }*/
 
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
             sectionAttribute.setAttachments(new ArrayList<>());
@@ -140,7 +134,7 @@ public class GrantDetailVO {
               List<GrantStringAttributeAttachments> assignedTemplates = mapper.readValue(sectionAttribute.getFieldValue(),new TypeReference<List<GrantStringAttributeAttachments>>(){});
               sectionAttribute.setAttachments(assignedTemplates);
             } catch (IOException e) {
-              e.printStackTrace();
+              logger.error(e.getMessage(),e);
             }
           }
         }
@@ -189,7 +183,7 @@ public class GrantDetailVO {
         if (sectionAttributes == null) {
           sectionAttributes = new ArrayList<>();
         }
-        if (sectionAttributes.size()>0 && !sectionAttributes.contains(sectionAttribute)) {
+        if (!sectionAttributes.isEmpty() && !sectionAttributes.contains(sectionAttribute)) {
           sectionAttributes.add(sectionAttribute);
         }
         sectionVO.setAttributes(sectionAttributes);

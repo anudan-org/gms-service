@@ -1,10 +1,5 @@
 package org.codealpha.gmsservice.services;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.codealpha.gmsservice.entities.Organization;
-import org.codealpha.gmsservice.entities.Role;
 import org.codealpha.gmsservice.entities.UserRole;
 import org.codealpha.gmsservice.entities.WorkFlowPermission;
 import org.codealpha.gmsservice.entities.WorkflowActionPermission;
@@ -12,6 +7,9 @@ import org.codealpha.gmsservice.repositories.WorkflowActionPermissionRepository;
 import org.codealpha.gmsservice.repositories.WorkflowPermissionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class WorkflowPermissionService {
@@ -21,7 +19,7 @@ public class WorkflowPermissionService {
     @Autowired
     private WorkflowActionPermissionRepository workflowActionPermissionRepository;
 
-    public List<WorkFlowPermission> getGrantFlowPermissions(Long grantStatusId,Long userId,Long grantId) {
+    public List<WorkFlowPermission> getGrantFlowPermissions(Long grantStatusId,Long grantId) {
 
         return workflowPermissionRepository.getPermissionsForGrantFlow(grantStatusId,grantId);
     }

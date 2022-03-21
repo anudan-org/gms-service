@@ -1,21 +1,13 @@
 package org.codealpha.gmsservice.validators;
 
-import org.apache.commons.io.FilenameUtils;
-import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.exceptions.InvalidFileTypeException;
-import org.codealpha.gmsservice.exceptions.ResourceNotFoundException;
-import org.codealpha.gmsservice.models.SecureEntity;
+import org.codealpha.gmsservice.entities.Grant;
+import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.repositories.*;
 import org.codealpha.gmsservice.services.GrantService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 @Component
 public class GrantValidator {
@@ -36,7 +28,7 @@ public class GrantValidator {
     @Autowired
     private WorkflowStatusRepository workflowStatusRepository;
 
-    public void validate(GrantService grantService,Long grantId,Grant grantToSave, Long userId, String tenantCode) {
+    public void validate(GrantService grantService, Long grantId, Grant grantToSave, Long userId, String tenantCode) {
         return;
         /*Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String[] authTokens = auth.getPrincipal().toString().split("\\^");

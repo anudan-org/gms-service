@@ -1,7 +1,5 @@
 package org.codealpha.gmsservice.controllers;
 
-import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
 import org.codealpha.gmsservice.entities.DocKpiDataDocument;
 import org.codealpha.gmsservice.services.DocKpiDataDocumentService;
 import org.codealpha.gmsservice.services.GrantDocumentDataService;
@@ -18,6 +16,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import springfox.documentation.annotations.ApiIgnore;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/submission/{submissionId}/kpi/{kpiId}")

@@ -1,8 +1,6 @@
 package org.codealpha.gmsservice.models;
 
 import java.util.Date;
-import org.codealpha.gmsservice.entities.Organization;
-import org.codealpha.gmsservice.entities.Role;
 
 public class UserVO {
 

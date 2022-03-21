@@ -1,25 +1,13 @@
 package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.Date;
-import java.util.List;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
 import org.codealpha.gmsservice.constants.Frequency;
-import org.codealpha.gmsservice.constants.KPIStatus;
 import org.codealpha.gmsservice.constants.KpiReportingType;
 import org.codealpha.gmsservice.constants.KpiType;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
+
+import javax.persistence.*;
+import java.util.Date;
+import java.util.List;
 
 @Entity(name = "grant_kpis")
 public class GrantKpi implements Comparable<GrantKpi> {

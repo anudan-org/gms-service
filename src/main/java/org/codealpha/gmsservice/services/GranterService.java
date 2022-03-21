@@ -1,11 +1,9 @@
 package org.codealpha.gmsservice.services;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
-import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.entities.GrantCard;
+import org.codealpha.gmsservice.entities.Granter;
+import org.codealpha.gmsservice.entities.Organization;
+import org.codealpha.gmsservice.entities.Role;
 import org.codealpha.gmsservice.repositories.GrantRepository;
 import org.codealpha.gmsservice.repositories.GranterRepository;
 import org.codealpha.gmsservice.repositories.OrganizationRepository;
@@ -16,7 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.persistence.*;
+import javax.persistence.EntityManager;
+import javax.persistence.Parameter;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 @Service
 public class GranterService {

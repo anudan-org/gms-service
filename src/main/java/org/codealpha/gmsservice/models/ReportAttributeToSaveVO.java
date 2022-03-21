@@ -1,17 +1,15 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.Report;
-
 public class ReportAttributeToSaveVO {
 
-    private Report report;
+    private ReportDTO report;
     private SectionAttributesVO attr;
 
-    public Report getReport() {
+    public ReportDTO getReport() {
         return report;
     }
 
-    public void setReport(Report report) {
+    public void setReport(ReportDTO report) {
         this.report = report;
     }
 

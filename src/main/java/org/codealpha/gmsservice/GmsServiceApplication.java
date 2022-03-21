@@ -1,10 +1,6 @@
 package org.codealpha.gmsservice;
 
-import java.util.Properties;
-import java.util.TimeZone;
-import java.util.concurrent.Executor;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import org.modelmapper.ModelMapper;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
@@ -25,6 +21,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 import javax.annotation.PostConstruct;
 import javax.servlet.MultipartConfigElement;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.concurrent.Executor;
 
 @SpringBootApplication(exclude = ErrorMvcAutoConfiguration.class)
@@ -100,6 +97,11 @@ public class GmsServiceApplication {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public ModelMapper mapper(){
+        return new ModelMapper();
     }
 
 }

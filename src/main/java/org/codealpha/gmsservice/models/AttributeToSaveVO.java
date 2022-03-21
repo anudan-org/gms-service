@@ -1,17 +1,15 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.Grant;
-
 public class AttributeToSaveVO {
 
-    private Grant grant;
+    private GrantDTO grant;
     private SectionAttributesVO attr;
 
-    public Grant getGrant() {
+    public GrantDTO getGrant() {
         return grant;
     }
 
-    public void setGrant(Grant grant) {
+    public void setGrant(GrantDTO grant) {
         this.grant = grant;
     }
 

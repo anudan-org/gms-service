@@ -1,8 +1,5 @@
 package org.codealpha.gmsservice.models;
 
-import java.time.LocalDateTime;
-import java.util.Date;
-
 public class OrganizationVO {
 
   private Long id;

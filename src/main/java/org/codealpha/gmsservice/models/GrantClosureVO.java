@@ -1,16 +1,12 @@
 package org.codealpha.gmsservice.models;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModelProperty;
 import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.services.GrantClosureService;
 import org.codealpha.gmsservice.services.ReportService;
 import org.codealpha.gmsservice.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
-import javax.persistence.*;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
@@ -251,7 +247,7 @@ public class GrantClosureVO {
         this.stringAttributes = stringAttributes;
     }
 
-    public GrantClosureVO build(GrantClosure closure, List<ClosureSpecificSection> sections, UserService userService, GrantClosureService closureService, ReportService reportService) {
+    public GrantClosureVO build(GrantClosure closure, List<ClosureSpecificSection> sections, UserService userService, ReportService reportService) {
 
         PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(closure.getClass());
         GrantClosureVO vo = new GrantClosureVO();
@@ -268,7 +264,7 @@ public class GrantClosureVO {
                             closureDetailVO = new ClosureDetailVO();
                         }
                         closureDetailVO = closureDetailVO.buildStringAttributes(sections,
-                                (List<ClosureStringAttribute>) value, closureService,
+                                (List<ClosureStringAttribute>) value,
                                 closure.getGrant() == null ? 0 : closure.getGrant().getId(),reportService);
                         vo.setClosureDetails(closureDetailVO);
                     } else if (voPd!=null && (voPd.getName().equalsIgnoreCase("noteAddedBy")
@@ -283,9 +279,7 @@ public class GrantClosureVO {
                             voPd.getWriteMethod().invoke(vo, value);
                         }
                     }
-                } catch (IllegalAccessException e) {
-                    logger.error(e.getMessage(), e);
-                } catch (InvocationTargetException e) {
+                } catch (IllegalAccessException | InvocationTargetException e) {
                     logger.error(e.getMessage(), e);
                 }
             }

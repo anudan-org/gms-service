@@ -1,5 +1,25 @@
 package org.codealpha.gmsservice.controllers;
 
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import org.codealpha.gmsservice.constants.WorkflowObject;
+import org.codealpha.gmsservice.entities.*;
+import org.codealpha.gmsservice.models.GranterDTO;
+import org.codealpha.gmsservice.models.RfpDTO;
+import org.codealpha.gmsservice.repositories.GranterRepository;
+import org.codealpha.gmsservice.repositories.RfpRepository;
+import org.codealpha.gmsservice.services.*;
+import org.joda.time.DateTime;
+import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import springfox.documentation.annotations.ApiIgnore;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -9,31 +29,22 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import org.codealpha.gmsservice.constants.WorkflowObject;
-import org.codealpha.gmsservice.entities.*;
-import org.codealpha.gmsservice.repositories.GranterRepository;
-import org.codealpha.gmsservice.repositories.RfpRepository;
-import org.codealpha.gmsservice.services.*;
-import org.joda.time.DateTime;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import springfox.documentation.annotations.ApiIgnore;
+import java.util.Optional;
 
 /**
  * @author Developer code-alpha.org
  **/
 @RestController
 @RequestMapping(value = "/granter", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-@Api(value = "Granters", description = "Granter API endpoints")
 public class GranterController {
 
+	private static final Logger logger = LoggerFactory.getLogger(GranterController.class);
+	public static final String SECURE_SITES_TXT = "/opt/gms/secure-sites.txt";
+	public static final String ADMIN = "Admin";
+	public static final String SYSTEM = "System";
+	public static final String DEFAULT = "Default ";
+	public static final String GRANT_WORKFLOW = " Grant workflow";
+	public static final String ANUDAN_DEFAULT_REPORT_TEMPLATE = "Anudan Default Report Template";
 	@Autowired
 	private GranterRepository granterRepository;
 
@@ -91,29 +102,29 @@ public class GranterController {
 	private CommonEmailSevice commonEmailSevice;
 	@Autowired
 	private ReleaseService releaseService;
+	@Autowired
+	private ModelMapper modelMapper;
 
 	@Value("${spring.upload-file-location}")
 	private String uploadLocation;
 
 	@PostMapping(value = "/")
 	@ApiIgnore
-	public void create(@RequestBody Granter granter) {
+	public void create(@RequestBody GranterDTO granter) {
 
-		System.out.println("Create Granter");
 		granter.setCreatedAt(DateTime.now().toDate());
-		granter.setCreatedBy("Admin");
-		granter = granterRepository.save(granter);
+		granter.setCreatedBy(ADMIN);
+		granterRepository.save(modelMapper.map(granter,Granter.class));
 
 	}
 
 	@PostMapping("/{granterId}/rfps/")
 	@ApiIgnore
-	public Rfp createRfp(@PathVariable(name = "granterId") Long organizationId, @RequestBody Rfp rfp) {
+	public Rfp createRfp(@PathVariable(name = "granterId") Long organizationId, @RequestBody RfpDTO rfp) {
 
-		// rfp.setGranter(granterRepository.findById(organizationId).get());
 		rfp.setCreatedAt(LocalDateTime.now());
-		rfp.setCreatedBy("Admin");
-		return rfpRepository.save(rfp);
+		rfp.setCreatedBy(ADMIN);
+		return rfpRepository.save(modelMapper.map(rfp,Rfp.class));
 
 	}
 
@@ -136,31 +147,24 @@ public class GranterController {
 		org.setOrganizationType("GRANTER");
 		org = granterService.createGranter((Granter) org, image);
 
-		File file = new File("/opt/gms/secure-sites.txt");
+		File file = new File(SECURE_SITES_TXT);
 		try{
 
 			Files.write(file.toPath(),System.lineSeparator().concat(slug.toLowerCase()).concat(".").getBytes(), StandardOpenOption.APPEND);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 		}
 
-		try {
-			String filePath = uploadLocation + slug.toUpperCase() + "/logo/";
-			File dir = new File(filePath);
-			dir.mkdirs();
+		String filePath = uploadLocation + slug.toUpperCase() + "/logo/";
+		File dir = new File(filePath);
+		dir.mkdirs();
+		File fileToCreate = new File(dir, "logo.png");
+		try(FileOutputStream fos = new FileOutputStream(fileToCreate)) {
 
-			// File fileToCreate = new File(dir, "logo.png");
-			// image.transferTo(fileToCreate);
-
-			String fileName = image.getOriginalFilename();
-
-			File fileToCreate = new File(dir, "logo.png");
-			FileOutputStream fos = new FileOutputStream(fileToCreate);
+			image.getOriginalFilename();
 			fos.write(image.getBytes());
-			fos.close();
-
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 		}
 
 		User granterUser = new User();
@@ -171,13 +175,12 @@ public class GranterController {
 		granterUser.setLastName("");
 		granterUser.setOrganization(org);
 		granterUser.setEmailId(userEmail);
-		// granterUser.setPassword("password");
 		granterUser = userService.save(granterUser);
 
 		Role role = new Role();
 		role.setCreatedAt(DateTime.now().toDate());
 		role.setCreatedBy(userService.getUserById(userId).getEmailId());
-		role.setName("Admin");
+		role.setName(ADMIN);
 		role.setOrganization(org);
 		role.setInternal(true);
 		role = roleService.saveRole(role);
@@ -193,49 +196,8 @@ public class GranterController {
 		userRole = userRoleService.saveUserRole(userRole);
 
 		organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailSevice, releaseService,
-				userService.getUserById(userId), org, granterUser, Arrays.asList(new UserRole[] { userRole }));
+				userService.getUserById(userId), org, granterUser, Arrays.asList(userRole));
 
-		/*GranterGrantTemplate defaulTemplate = new GranterGrantTemplate();
-		defaulTemplate.setPublished(true);
-		defaulTemplate.setName("Anudan Template");
-		defaulTemplate.setGranterId(org.getId());
-		defaulTemplate.setDescription("Default Anudan template.");
-		defaulTemplate = grantService.saveGrantTemplate(defaulTemplate);
-		int order = 1;
-		for (GrantSection defaultSection : grantSectionService.getAllDefaultSections()) {
-			GranterGrantSection section = new GranterGrantSection();
-			section.setDeletable(true);
-			section.setGranter(granterService.getGranterById(org.getId()));
-			section.setGrantTemplate(defaulTemplate);
-			section.setSectionName(defaultSection.getSectionName());
-			section.setSectionOrder(order++);
-			section = grantService.saveGrantTemaplteSection(section);
-
-			int attributeOrder = 1;
-			for (GrantSectionAttribute defaultAttribute : grantSectionAttributeService
-					.getAllDefaultSectionAttributesForSection(defaultSection.getId())) {
-				GranterGrantSectionAttribute attribute = new GranterGrantSectionAttribute();
-				attribute.setAttributeOrder(attributeOrder++);
-				attribute.setSection(section);
-				attribute.setRequired(true);
-				attribute.setFieldType(defaultAttribute.getFieldType());
-				attribute.setFieldName(defaultAttribute.getFieldName());
-				attribute.setGranter(granterService.getGranterById(org.getId()));
-				attribute.setDeletable(true);
-				grantService.saveGrantTemaplteSectionAttribute(attribute);
-			}
-		}*/
-
-		/*
-		 * Workflow workflow = new Workflow();
-		 * workflow.setCreatedAt(DateTime.now().toDate());
-		 * workflow.setCreatedBy(userService.getUserById(userId).getEmailId());
-		 * workflow.setDescription("Default " + org.getName() + " Grant workflow");
-		 * workflow.setGranter(granterService.getGranterById(org.getId()));
-		 * workflow.setName("Default " + org.getName() + " Grant workflow");
-		 * workflow.setObject(WorkflowObject.GRANT); workflow =
-		 * workflowService.saveWorkflow(workflow);
-		 */
 
 		buildWorkflowsBasedOnTempOrg(org,refOrgCode);
 		buildDefaultTemplates(org, organizationService.findOrganizationByTenantCode(refOrgCode));
@@ -250,9 +212,11 @@ public class GranterController {
 	}
 
 	private void buildDefaultGrantTemplate(Organization org, Organization referenceOrg) {
-		List<GranterGrantSection> defaultSections = granterGrantTemplateService
+		Optional<GranterGrantTemplate> granterGrantTemplate = granterGrantTemplateService
 				.findByGranterIdAndPublishedStatusAndPrivateStatus(referenceOrg.getId(), true, false).stream()
-				.filter(t -> t.isDefaultTemplate()).findFirst().get().getSections();
+				.filter(GranterGrantTemplate::isDefaultTemplate).findFirst();
+
+		List<GranterGrantSection> defaultSections = granterGrantTemplate.isPresent()?granterGrantTemplate.get().getSections():new ArrayList<>();
 		GranterGrantTemplate defaultTemplate = new GranterGrantTemplate();
 		defaultTemplate.setDefaultTemplate(true);
 		defaultTemplate.setDescription("Anudan Default Grant Template");
@@ -272,7 +236,7 @@ public class GranterController {
 			templateSection.setSectionOrder(sectionOrder++);
 			templateSection = grantService.saveGrantTemaplteSection(templateSection);
 
-			if (section.getAttributes() != null && section.getAttributes().size() > 0) {
+			if (section.getAttributes() != null && !section.getAttributes().isEmpty()) {
 				int attributeOrder = 1;
 				for (GranterGrantSectionAttribute attribute : section.getAttributes()) {
 					GranterGrantSectionAttribute templateSectionAttribute = new GranterGrantSectionAttribute();
@@ -283,21 +247,22 @@ public class GranterController {
 					templateSectionAttribute.setGranter((Granter) org);
 					templateSectionAttribute.setRequired(false);
 					templateSectionAttribute.setSection(templateSection);
-					templateSectionAttribute = grantService.saveGrantTemaplteSectionAttribute(templateSectionAttribute);
+					grantService.saveGrantTemaplteSectionAttribute(templateSectionAttribute);
 				}
 			}
 		}
 	}
 
 	private void buildDefaultReportTemplate(Organization org, Organization referenceOrg) {
-		List<GranterReportSection> defaultSections = granterReportTemplateService
+		Optional<GranterReportTemplate> granterReportTemplate = granterReportTemplateService
 				.findByGranterIdAndPublishedStatusAndPrivateStatus(referenceOrg.getId(), true, false).stream()
-				.filter(t -> t.getDefaultTemplate()).findFirst().get().getSections();
+				.filter(GranterReportTemplate::getDefaultTemplate).findFirst();
+		List<GranterReportSection> defaultSections = granterReportTemplate.isPresent()?granterReportTemplate.get().getSections():new ArrayList<>();
 		GranterReportTemplate defaultTemplate = new GranterReportTemplate();
 		defaultTemplate.setDefaultTemplate(true);
-		defaultTemplate.setDescription("Anudan Default Report Template");
+		defaultTemplate.setDescription(ANUDAN_DEFAULT_REPORT_TEMPLATE);
 		defaultTemplate.setGranterId(org.getId());
-		defaultTemplate.setName("Anudan Default Report Template");
+		defaultTemplate.setName(ANUDAN_DEFAULT_REPORT_TEMPLATE);
 		defaultTemplate.setPrivateToReport(false);
 		defaultTemplate.setPublished(true);
 		defaultTemplate = granterReportTemplateService.saveReportTemplate(defaultTemplate);
@@ -313,7 +278,7 @@ public class GranterController {
 			templateSection.setSectionOrder(sectionOrder++);
 			templateSection = grantService.saveReportTemplateSection(templateSection);
 
-			if (section.getAttributes() != null && section.getAttributes().size() > 0) {
+			if (section.getAttributes() != null && !section.getAttributes().isEmpty()) {
 				int attributeOrder = 1;
 				for (GranterReportSectionAttribute attribute : section.getAttributes()) {
 					GranterReportSectionAttribute templateSectionAttribute = new GranterReportSectionAttribute();
@@ -324,7 +289,7 @@ public class GranterController {
 					templateSectionAttribute.setGranter((Granter) org);
 					templateSectionAttribute.setRequired(false);
 					templateSectionAttribute.setSection(templateSection);
-					templateSectionAttribute = grantService
+					grantService
 							.saveReportTemplateSectionAttribute(templateSectionAttribute);
 				}
 			}
@@ -360,10 +325,10 @@ public class GranterController {
 			List<WorkflowStatusTransition> tempGrantTransitions) {
 		Workflow grantWorkflow = new Workflow();
 		grantWorkflow.setCreatedAt(DateTime.now().toDate());
-		grantWorkflow.setCreatedBy("System");
-		grantWorkflow.setDescription("Default " + org.getName() + " Grant workflow");
+		grantWorkflow.setCreatedBy(SYSTEM);
+		grantWorkflow.setDescription(DEFAULT + org.getName() + GRANT_WORKFLOW);
 		grantWorkflow.setGranter(org);
-		grantWorkflow.setName("Default " + org.getName() + " Grant workflow");
+		grantWorkflow.setName(DEFAULT + org.getName() + GRANT_WORKFLOW);
 		grantWorkflow.setObject(WorkflowObject.GRANT);
 		grantWorkflow = workflowService.saveWorkflow(grantWorkflow);
 
@@ -371,7 +336,7 @@ public class GranterController {
 		for (WorkflowStatus tempStatus : tempGrantStatuses) {
 			WorkflowStatus status = new WorkflowStatus();
 			status.setCreatedAt(DateTime.now().toDate());
-			status.setCreatedBy("System");
+			status.setCreatedBy(SYSTEM);
 			status.setDisplayName(tempStatus.getDisplayName());
 			status.setInitial(tempStatus.isInitial());
 			status.setInternalStatus(tempStatus.getInternalStatus());
@@ -387,19 +352,23 @@ public class GranterController {
 			WorkflowStatusTransition transition = new WorkflowStatusTransition();
 			transition.setAction(tempTransition.getAction());
 			transition.setCreatedAt(DateTime.now().toDate());
-			transition.setCreatedBy("System");
+			transition.setCreatedBy(SYSTEM);
 			WorkflowStatus fromStatus = tempGrantStatuses.stream()
-					.filter(st -> st.getId().longValue() == tempTransition.getFromState().getId()).findFirst().get();
+					.filter(st -> st.getId().longValue() == tempTransition.getFromState().getId()).findFirst().orElse(null);
 			WorkflowStatus toStatus = tempGrantStatuses.stream()
-					.filter(st -> st.getId().longValue() == tempTransition.getToState().getId()).findFirst().get();
-			transition.setFromState(grantStatuses.stream()
-					.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().get());
-			transition.setToState(grantStatuses.stream().filter(s -> s.getName().equalsIgnoreCase(toStatus.getName()))
-					.findFirst().get());
+					.filter(st -> st.getId().longValue() == tempTransition.getToState().getId()).findFirst().orElse(null);
+			if(fromStatus!=null) {
+				transition.setFromState(grantStatuses.stream()
+						.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().orElse(null));
+			}
+			if(toStatus!=null) {
+				transition.setToState(grantStatuses.stream().filter(s -> s.getName().equalsIgnoreCase(toStatus.getName()))
+						.findFirst().orElse(null));
+			}
 			transition.setNoteRequired(true);
 			transition.setSeqOrder(tempTransition.getSeqOrder());
 			transition.setWorkflow(grantWorkflow);
-			transition = workflowStatusTransitionService.saveStatusTransition(transition);
+			workflowStatusTransitionService.saveStatusTransition(transition);
 		}
 	}
 
@@ -407,10 +376,10 @@ public class GranterController {
 			List<WorkflowStatusTransition> tempReportTransitions) {
 		Workflow reportWorkflow = new Workflow();
 		reportWorkflow.setCreatedAt(DateTime.now().toDate());
-		reportWorkflow.setCreatedBy("System");
-		reportWorkflow.setDescription("Default " + org.getName() + " Report workflow");
+		reportWorkflow.setCreatedBy(SYSTEM);
+		reportWorkflow.setDescription(DEFAULT + org.getName() + " Report workflow");
 		reportWorkflow.setGranter(org);
-		reportWorkflow.setName("Default " + org.getName() + " Report workflow");
+		reportWorkflow.setName(DEFAULT + org.getName() + " Report workflow");
 		reportWorkflow.setObject(WorkflowObject.REPORT);
 		reportWorkflow = workflowService.saveWorkflow(reportWorkflow);
 
@@ -418,7 +387,7 @@ public class GranterController {
 		for (WorkflowStatus tempStatus : tempReportStatuses) {
 			WorkflowStatus status = new WorkflowStatus();
 			status.setCreatedAt(DateTime.now().toDate());
-			status.setCreatedBy("System");
+			status.setCreatedBy(SYSTEM);
 			status.setDisplayName(tempStatus.getDisplayName());
 			status.setInitial(tempStatus.isInitial());
 			status.setInternalStatus(tempStatus.getInternalStatus());
@@ -434,19 +403,24 @@ public class GranterController {
 			WorkflowStatusTransition transition = new WorkflowStatusTransition();
 			transition.setAction(tempTransition.getAction());
 			transition.setCreatedAt(DateTime.now().toDate());
-			transition.setCreatedBy("System");
+			transition.setCreatedBy(SYSTEM);
 			WorkflowStatus fromStatus = tempReportStatuses.stream()
-					.filter(st -> st.getId().longValue() == tempTransition.getFromState().getId()).findFirst().get();
+					.filter(st -> st.getId().longValue() == tempTransition.getFromState().getId()).findFirst().orElse(null);
 			WorkflowStatus toStatus = tempReportStatuses.stream()
-					.filter(st -> st.getId().longValue() == tempTransition.getToState().getId()).findFirst().get();
-			transition.setFromState(reportStatuses.stream()
-					.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().get());
-			transition.setToState(reportStatuses.stream().filter(s -> s.getName().equalsIgnoreCase(toStatus.getName()))
-					.findFirst().get());
+					.filter(st -> st.getId().longValue() == tempTransition.getToState().getId()).findFirst().orElse(null);
+			if(fromStatus!=null) {
+				transition.setFromState(reportStatuses.stream()
+						.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().orElse(null));
+
+			}
+			if(toStatus!=null) {
+				transition.setToState(reportStatuses.stream().filter(s -> s.getName().equalsIgnoreCase(toStatus.getName()))
+						.findFirst().orElse(null));
+			}
 			transition.setNoteRequired(true);
 			transition.setSeqOrder(tempTransition.getSeqOrder());
 			transition.setWorkflow(reportWorkflow);
-			transition = workflowStatusTransitionService.saveStatusTransition(transition);
+			workflowStatusTransitionService.saveStatusTransition(transition);
 		}
 	}
 
@@ -454,10 +428,10 @@ public class GranterController {
 			List<WorkflowStatusTransition> tempDisbursementTransitions) {
 		Workflow disbursementWorkflow = new Workflow();
 		disbursementWorkflow.setCreatedAt(DateTime.now().toDate());
-		disbursementWorkflow.setCreatedBy("System");
-		disbursementWorkflow.setDescription("Default " + org.getName() + " Disbursement workflow");
+		disbursementWorkflow.setCreatedBy(SYSTEM);
+		disbursementWorkflow.setDescription(DEFAULT + org.getName() + " Disbursement workflow");
 		disbursementWorkflow.setGranter(org);
-		disbursementWorkflow.setName("Default " + org.getName() + " Disbursement workflow");
+		disbursementWorkflow.setName(DEFAULT + org.getName() + " Disbursement workflow");
 		disbursementWorkflow.setObject(WorkflowObject.DISBURSEMENT);
 		disbursementWorkflow = workflowService.saveWorkflow(disbursementWorkflow);
 
@@ -465,7 +439,7 @@ public class GranterController {
 		for (WorkflowStatus tempStatus : tempDisbursementStatuses) {
 			WorkflowStatus status = new WorkflowStatus();
 			status.setCreatedAt(DateTime.now().toDate());
-			status.setCreatedBy("System");
+			status.setCreatedBy(SYSTEM);
 			status.setDisplayName(tempStatus.getDisplayName());
 			status.setInitial(tempStatus.isInitial());
 			status.setInternalStatus(tempStatus.getInternalStatus());
@@ -481,19 +455,24 @@ public class GranterController {
 			WorkflowStatusTransition transition = new WorkflowStatusTransition();
 			transition.setAction(tempTransition.getAction());
 			transition.setCreatedAt(DateTime.now().toDate());
-			transition.setCreatedBy("System");
+			transition.setCreatedBy(SYSTEM);
 			WorkflowStatus fromStatus = tempDisbursementStatuses.stream()
-					.filter(st -> st.getId().longValue() == tempTransition.getFromState().getId()).findFirst().get();
+					.filter(st -> st.getId().longValue() == tempTransition.getFromState().getId()).findFirst().orElse(null);
 			WorkflowStatus toStatus = tempDisbursementStatuses.stream()
-					.filter(st -> st.getId().longValue() == tempTransition.getToState().getId()).findFirst().get();
-			transition.setFromState(disbursementStatuses.stream()
-					.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().get());
-			transition.setToState(disbursementStatuses.stream()
-					.filter(s -> s.getName().equalsIgnoreCase(toStatus.getName())).findFirst().get());
+					.filter(st -> st.getId().longValue() == tempTransition.getToState().getId()).findFirst().orElse(null);
+			if(fromStatus!=null) {
+				transition.setFromState(disbursementStatuses.stream()
+						.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().orElse(null));
+			}
+			if(toStatus!=null){
+				transition.setToState(disbursementStatuses.stream()
+						.filter(s -> s.getName().equalsIgnoreCase(toStatus.getName())).findFirst().orElse(null));
+			}
+
 			transition.setNoteRequired(true);
 			transition.setSeqOrder(tempTransition.getSeqOrder());
 			transition.setWorkflow(disbursementWorkflow);
-			transition = workflowStatusTransitionService.saveStatusTransition(transition);
+			workflowStatusTransitionService.saveStatusTransition(transition);
 		}
 	}
 

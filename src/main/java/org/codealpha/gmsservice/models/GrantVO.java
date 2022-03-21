@@ -10,9 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
-import javax.persistence.Column;
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -411,7 +409,7 @@ public class GrantVO {
 
         Collections.sort(vo.getGrantDetails().getSections());
         vo.setFlowAuthorities(
-                workflowPermissionService.getGrantFlowPermissions(vo.grantStatus.getId(), user.getId(), vo.getId()));
+                workflowPermissionService.getGrantFlowPermissions(vo.grantStatus.getId(), vo.getId()));
         vo.setActionAuthorities(workflowPermissionService.getGrantActionPermissions(vo.getGrantorOrganization().getId(),
                 user.getUserRoles(), vo.getGrantStatus().getId(), user.getId(), grant.getId()));
 

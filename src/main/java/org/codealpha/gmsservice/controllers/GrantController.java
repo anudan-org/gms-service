@@ -7,8 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.io.FileDeleteStrategy;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -21,6 +19,7 @@ import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.services.*;
 import org.codealpha.gmsservice.validators.GrantValidator;
 import org.joda.time.DateTime;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +47,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -66,7 +66,6 @@ public class GrantController {
     public static final String GRANT = "GRANT";
     public static final String TABLE = "table";
     public static final String DISBURSEMENT = "disbursement";
-    public static final String DD_MMM_YYYY = "dd-MMM-yyyy";
     public static final String GRANT_DOCUMENTS = "/grant-documents/";
     public static final String CLOSED = "CLOSED";
     public static final String ACTIVE = "ACTIVE";
@@ -85,6 +84,7 @@ public class GrantController {
     public static final String TYPE_GRANT = "&type=grant";
     public static final String LIBRARY = "library";
     public static final String CLOSURE = "closure";
+    public static final String TENANT = "%TENANT%";
 
     @Autowired
     DataSource dataSource;
@@ -155,6 +155,8 @@ public class GrantController {
     private DataExportConfigService exportConfigService;
     @Autowired
     private WorkflowValidationService workflowValidationService;
+    @Autowired
+    private ModelMapper modelMapper;
 
     @GetMapping("/create/{templateId}/{grantTypeId}")
     @ApiOperation("Create new grant with a template")
@@ -375,7 +377,7 @@ public class GrantController {
                                     attachment.setCreatedOn(DateTime.now().toDate());
                                     attachment.setDescription(attmnt.getDescription());
                                     attachment.setGrantStringAttribute(stringAttrubute);
-                                    String filePath = uploadLocation + tenantCode + GRANT_DOCUMENTS + grant.getId()
+                                    String filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + GRANT_DOCUMENTS + grant.getId()
                                             + FILE_SEPARATOR + stringAttrubute.getSection().getId() + FILE_SEPARATOR
                                             + stringAttrubute.getSectionAttribute().getId() + FILE_SEPARATOR;
                                     attachment.setLocation(filePath);
@@ -394,7 +396,7 @@ public class GrantController {
                                                 attachment.getName() + "." + attachment.getType());
                                         FileCopyUtils.copy(fileExisting, fileToCreate);
                                     } catch (IOException e) {
-                                        e.printStackTrace();
+                                        logger.error(e.getMessage(),e);
                                     }
 
                                 }
@@ -516,7 +518,7 @@ public class GrantController {
                                     attachment.setCreatedOn(DateTime.now().toDate());
                                     attachment.setDescription(attmnt.getDescription());
                                     attachment.setGrantStringAttribute(stringAttrubute);
-                                    String filePath = uploadLocation + tenantCode + GRANT_DOCUMENTS + grant.getId()
+                                    String filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + GRANT_DOCUMENTS + grant.getId()
                                             + FILE_SEPARATOR + stringAttrubute.getSection().getId() + FILE_SEPARATOR
                                             + stringAttrubute.getSectionAttribute().getId() + FILE_SEPARATOR;
                                     attachment.setLocation(filePath);
@@ -535,7 +537,7 @@ public class GrantController {
                                                 attachment.getName() + "." + attachment.getType());
                                         FileCopyUtils.copy(fileExisting, fileToCreate);
                                     } catch (IOException e) {
-                                        e.printStackTrace();
+                                        logger.error(e.getMessage(),e);
                                     }
 
                                 }
@@ -572,7 +574,7 @@ public class GrantController {
             grant.setAmendmentDetailsSnapshot(new ObjectMapper().writeValueAsString(grant.getGrantDetails()));
             grant = grantService.saveGrant(grant);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         List<WorkflowStatus> wfStatuses = workflowStatusService.findByWorkflow(existingGrant.getGrantStatus().getWorkflow());
@@ -618,7 +620,7 @@ public class GrantController {
                                 .getAppConfigForGranterOrg(existingGrant.getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                 .getConfigValue().replace(RELEASE_VERSION,
-                                releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",existingGrant
+                                releaseService.getCurrentRelease().getVersion()).replace(TENANT,existingGrant
                                 .getGrantorOrganization().getName())});
 
         final Grant finalGrant = existingGrant;
@@ -673,13 +675,13 @@ public class GrantController {
     @PostMapping("/{grantId}/section/{sectionId}/field")
     @ApiOperation("Added new field to section")
     public FieldInfo createFieldInSection(
-            @ApiParam(name = "grantToSave", value = "Grant to save if in edit mode passed in Body of request") @RequestBody Grant grantToSave,
+            @ApiParam(name = "grantToSave", value = "Grant to save if in edit mode passed in Body of request") @RequestBody GrantDTO grantToSave,
             @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,
             @ApiParam(name = "sectionId", value = "Unique identifier of the section to which the field is being added") @PathVariable("sectionId") Long sectionId,
             @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
-        grantValidator.validateSectionExists(grantService, grantToSave, sectionId);
+        grantValidator.validate(grantService, grantId, modelMapper.map(grantToSave,Grant.class), userId, tenantCode);
+        grantValidator.validateSectionExists(grantService, modelMapper.map(grantToSave,Grant.class), sectionId);
         saveGrant(grantId, grantToSave, userId, tenantCode);
         Grant grant = grantService.getById(grantId);
         GrantSpecificSection grantSection = grantService.getGrantSectionBySectionId(sectionId);
@@ -716,15 +718,15 @@ public class GrantController {
     @PostMapping("/{grantId}/section/{sectionId}/field/{fieldId}")
     @ApiOperation("Delete field in a section")
     public Grant deleteField(
-            @ApiParam(name = "grantToSave", value = "Grant to save if in edit mode, passed in Body of request") @RequestBody Grant grantToSave,
+            @ApiParam(name = "grantToSave", value = "Grant to save if in edit mode, passed in Body of request") @RequestBody GrantDTO grantToSave,
             @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,
             @ApiParam(name = "sectionId", value = "Unique identifier of the section being modified") @PathVariable("sectionId") Long sectionId,
             @ApiParam(name = "fieldId", value = "Unique identifier of the field being deleted") @PathVariable("fieldId") Long fieldId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
-        grantValidator.validateSectionExists(grantService, grantToSave, sectionId);
-        grantValidator.validateFieldExists(grantService, grantToSave, sectionId, fieldId);
+        grantValidator.validate(grantService, grantId, modelMapper.map(grantToSave,Grant.class), userId, tenantCode);
+        grantValidator.validateSectionExists(grantService, modelMapper.map(grantToSave,Grant.class), sectionId);
+        grantValidator.validateFieldExists(grantService, modelMapper.map(grantToSave,Grant.class), sectionId, fieldId);
         Grant grant = saveGrant(grantId, grantToSave, userId, tenantCode);
         GrantSpecificSectionAttribute attribute = grantService.findGrantStringAttributeById(fieldId)
                 .getSectionAttribute();
@@ -761,9 +763,9 @@ public class GrantController {
             @ApiParam(name = "fieldId", value = "Unique identifier of the field being updated") @PathVariable("fieldId") Long fieldId,
             @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        grantValidator.validate(grantService, grantId, attributeToSave.getGrant(), userId, tenantCode);
-        grantValidator.validateSectionExists(grantService, attributeToSave.getGrant(), sectionId);
-        grantValidator.validateFieldExists(grantService, attributeToSave.getGrant(), sectionId, fieldId);
+        grantValidator.validate(grantService, grantId, modelMapper.map(attributeToSave.getGrant(),Grant.class), userId, tenantCode);
+        grantValidator.validateSectionExists(grantService, modelMapper.map(attributeToSave.getGrant(),Grant.class), sectionId);
+        grantValidator.validateFieldExists(grantService, modelMapper.map(attributeToSave.getGrant(),Grant.class), sectionId, fieldId);
         saveGrant(grantId, attributeToSave.getGrant(), userId, tenantCode);
         GrantSpecificSectionAttribute currentAttribute = grantService.findGrantStringAttributeById(fieldId)
                 .getSectionAttribute();
@@ -785,14 +787,14 @@ public class GrantController {
 
     @PostMapping("/{id}/template/{templateId}/section/{sectionName}")
     @ApiOperation("Create new section in grant")
-    public SectionInfo createSection(@RequestBody Grant grantToSave,
+    public SectionInfo createSection(@RequestBody GrantDTO grantToSave,
                                      @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("id") Long grantId,
                                      @ApiParam(name = "temaplteId", value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId,
                                      @ApiParam(name = "sectionName", value = "Name of the new section") @PathVariable("sectionName") String sectionName,
                                      @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,
                                      @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
-        grantValidator.validateTemplateExists(grantService, grantToSave, templateId);
+        grantValidator.validate(grantService, grantId, modelMapper.map(grantToSave,Grant.class), userId, tenantCode);
+        grantValidator.validateTemplateExists(grantService, modelMapper.map(grantToSave,Grant.class), templateId);
         saveGrant(grantId, grantToSave, userId, tenantCode);
         Grant grant = grantService.getById(grantId);
 
@@ -816,17 +818,18 @@ public class GrantController {
 
     }
 
+
     @PutMapping("/{id}/template/{templateId}/section/{sectionId}")
     @ApiOperation("Delete existing section in grant")
-    public Grant deleteSection(@RequestBody Grant grantToSave,
+    public Grant deleteSection(@RequestBody GrantDTO grantToSave,
                                @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("id") Long grantId,
                                @ApiParam(name = "templateId", value = "Unique identifier of the grant template") @PathVariable("templateId") Long templateId,
                                @ApiParam(name = "sectionId", value = "Unique identifier of the section being deleted") @PathVariable("sectionId") Long sectionId,
                                @ApiParam(name = "userId", value = "Unique identifier of the logged in user") @PathVariable("userId") Long userId,
                                @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        grantValidator.validate(grantService, grantId, grantToSave, userId, tenantCode);
-        grantValidator.validateTemplateExists(grantService, grantToSave, templateId);
-        grantValidator.validateSectionExists(grantService, grantToSave, sectionId);
+        grantValidator.validate(grantService, grantId, modelMapper.map(grantToSave,Grant.class), userId, tenantCode);
+        grantValidator.validateTemplateExists(grantService, modelMapper.map(grantToSave,Grant.class), templateId);
+        grantValidator.validateSectionExists(grantService, modelMapper.map(grantToSave,Grant.class), sectionId);
         GrantSpecificSection section = grantService.getGrantSectionBySectionId(sectionId);
         Grant grant = grantService.getById(grantId);
 
@@ -900,7 +903,7 @@ public class GrantController {
                         newAttribute.setExtras(mapper.writeValueAsString(tableData));
 
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                     }
                 }
 
@@ -950,11 +953,11 @@ public class GrantController {
     @ApiOperation("Save grant")
     public Grant saveGrant(
             @ApiParam(name = "grantId", value = "Unique identifier of grant") @PathVariable("grantId") Long grantId,
-            @ApiParam(name = "grantToSave", value = "Grant to save in edit mode, passed in Body of request") @RequestBody Grant grantToSave,
+            @ApiParam(name = "grantToSave", value = "Grant to save in edit mode, passed in Body of request") @RequestBody GrantDTO grantToSave,
             @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        return grantService.saveGrant(grantId,grantToSave,userId,tenantCode);
+        return grantService.saveGrant(grantId,modelMapper.map(grantToSave,Grant.class),userId,tenantCode);
     }
 
     @PostMapping("/{grantId}/flow/{fromState}/{toState}")
@@ -1220,7 +1223,7 @@ public class GrantController {
                                     .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                             AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                     .getConfigValue().replace(RELEASE_VERSION,
-                                    releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",grant
+                                    releaseService.getCurrentRelease().getVersion()).replace(TENANT,grant
                                     .getGrantorOrganization().getName())});
 
             Map<Long, Long> cleanAsigneesList = new HashMap<>();
@@ -1255,7 +1258,7 @@ public class GrantController {
     @PostMapping("/{grantId}/field/{fieldId}/template/{templateId}")
     @ApiOperation(value = "Attach document to field", notes = "Valid for Document field types only")
     public DocInfo createDocumentForGrantSectionField(
-            @ApiParam(name = "grantToSave", value = "Grant to save in edit mode, passed in Body of request") @RequestBody Grant grantToSave,
+            @ApiParam(name = "grantToSave", value = "Grant to save in edit mode, passed in Body of request") @RequestBody GrantDTO grantToSave,
             @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,
             @ApiParam(name = "fieldId", value = "Unique identifier of the field to which document is being attached") @PathVariable("fieldId") Long fieldId,
@@ -1270,7 +1273,7 @@ public class GrantController {
         String filePath = null;
         try {
             file = resourceLoader.getResource(FILE + uploadLocation + libraryDoc.getLocation()).getFile();
-            filePath = uploadLocation + tenantCode + GRANT_DOCUMENTS + grantId + FILE_SEPARATOR
+            filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + GRANT_DOCUMENTS + grantId + FILE_SEPARATOR
                     + stringAttribute.getSection().getId() + FILE_SEPARATOR + stringAttribute.getSectionAttribute().getId() + FILE_SEPARATOR;
 
             File dir = new File(filePath);
@@ -1278,7 +1281,7 @@ public class GrantController {
             File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
             FileCopyUtils.copy(file, fileToCreate);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         GrantStringAttributeAttachments attachment = new GrantStringAttributeAttachments();
         attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
@@ -1299,7 +1302,7 @@ public class GrantController {
             stringAttribute.setValue(mapper.writeValueAsString(stringAttributeAttachments));
             grantService.saveGrantStringAttribute(stringAttribute);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         Grant grant = grantService.getById(grantId);
         grant = grantService.grantToReturn(userId, grant);
@@ -1309,7 +1312,7 @@ public class GrantController {
     @PostMapping("{grantId}/attribute/{attributeId}/attachment/{attachmentId}")
     @ApiOperation("Delete attachment from document field")
     public Grant deleteGrantStringAttributeAttachment(
-            @ApiParam(name = "grantToSave", value = "Grant to save in edit mode, pass in Body of request") @RequestBody Grant grantToSave,
+            @ApiParam(name = "grantToSave", value = "Grant to save in edit mode, pass in Body of request") @RequestBody GrantDTO grantToSave,
             @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("grantId") Long grantId,
             @ApiParam(name = "userId", value = "Unique identifier og logged in user") @PathVariable("userId") Long userId,
             @ApiParam(name = "attachmentId", value = "Unique identifier of the document attachment being deleted") @PathVariable("attachmentId") Long attachmentId,
@@ -1373,14 +1376,15 @@ public class GrantController {
         Grant grant = grantService.getById(grantId);
 
         GrantStringAttribute attr = grantService.findGrantStringAttributeById(attributeId);
-        String filePath = uploadLocation + tenantCode + GRANT_DOCUMENTS + grantId + FILE_SEPARATOR + attr.getSection().getId()
+        String filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + GRANT_DOCUMENTS + grantId + FILE_SEPARATOR + attr.getSection().getId()
                 + FILE_SEPARATOR + attr.getSectionAttribute().getId() + FILE_SEPARATOR;
         File dir = new File(filePath);
         dir.mkdirs();
         List<GrantStringAttributeAttachments> attachments = new ArrayList<>();
         for (MultipartFile file : files) {
-            if (file != null && file.getOriginalFilename() != null) {
-                String fileName = file.getOriginalFilename();
+            String fileName = file.getOriginalFilename();
+            if (file != null && fileName != null) {
+
 
                 File fileToCreate = new File(dir, fileName);
                 try (FileOutputStream fos = new FileOutputStream(fileToCreate)) {
@@ -1390,14 +1394,14 @@ public class GrantController {
                 }
                 GrantStringAttributeAttachments attachment = new GrantStringAttributeAttachments();
                 attachment.setVersion(1);
-                attachment.setType(FilenameUtils.getExtension(file.getOriginalFilename()));
-                attachment.setTitle(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), "") : "temp"
+                attachment.setType(FilenameUtils.getExtension(fileName));
+                attachment.setTitle(fileName != null ? fileName.replace("." + FilenameUtils.getExtension(fileName), "") : "temp"
                         );
                 attachment.setLocation(filePath);
-                attachment.setName(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), "") : "temp"
+                attachment.setName(fileName != null ? fileName.replace("." + FilenameUtils.getExtension(fileName), "") : "temp"
                         );
                 attachment.setGrantStringAttribute(attr);
-                attachment.setDescription(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(file.getOriginalFilename()), "") : "temp"
+                attachment.setDescription(fileName != null ? fileName.replace("." + FilenameUtils.getExtension(fileName), "") : "temp"
                         );
                 attachment.setCreatedOn(new Date());
                 attachment.setCreatedBy(userService.getUserById(userId).getEmailId());
@@ -1430,7 +1434,7 @@ public class GrantController {
             grantService.saveGrant(grant);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         grant = grantService.getById(grantId);
@@ -1462,7 +1466,7 @@ public class GrantController {
 
         // packing files
         for (Long attachmentId : downloadRequest.getAttachmentIds()) {
-            Map<String, File> fileMap = getAttachment(grantId, tenantCode, attachmentId);
+            Map<String, File> fileMap = getAttachment(attachmentId);
             File file = fileMap.values().stream().collect(Collectors.toList()).get(0);
             try (FileInputStream fileInputStream = new FileInputStream(file)) {
                 zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
@@ -1482,11 +1486,9 @@ public class GrantController {
         return byteArrayOutputStream.toByteArray();
     }
 
-    private Map<String, File> getAttachment(Long grantId, String tenantCode, Long attachmentId) throws IOException {
+    private Map<String, File> getAttachment(Long attachmentId) throws IOException {
         GrantStringAttributeAttachments attachment = grantService
                 .getStringAttributeAttachmentsByAttachmentId(attachmentId);
-        Long sectionId = attachment.getGrantStringAttribute().getSectionAttribute().getSection().getId();
-        Long attributeId = attachment.getGrantStringAttribute().getSectionAttribute().getId();
         String fileName = attachment.getName();
         if(!fileName.contains(".".concat(attachment.getType()))){
             fileName=fileName.concat(".".concat(attachment.getType()));
@@ -1681,7 +1683,7 @@ public class GrantController {
 
         List<GrantHistory> history = new ArrayList<>();
         List<GrantSnapshot> grantSnapshotHistory = grantSnapshotService.getGrantSnapshotForGrant(grantId);
-        if (grantSnapshotHistory != null && grantSnapshotHistory.size()>0 && grantSnapshotHistory.get(0).getFromStateId() == null) {
+        if (grantSnapshotHistory != null && !grantSnapshotHistory.isEmpty() && grantSnapshotHistory.get(0).getFromStateId() == null) {
             history = grantService.getGrantHistory(grantId);
             for (GrantHistory historyEntry : history) {
                 historyEntry.setNoteAddedByUser(userService.getUserByEmailAndOrg(historyEntry.getNoteAddedBy(),
@@ -1800,7 +1802,7 @@ public class GrantController {
                                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                                 .getConfigValue()
-                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",grant
+                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT,grant
                                 .getGrantorOrganization().getName())});
             } catch (UnsupportedEncodingException e) {
                 logger.error(e.getMessage(), e);
@@ -1861,38 +1863,38 @@ public class GrantController {
             @RequestParam("file") MultipartFile[] files,
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        String filePath = uploadLocation + tenantCode + GRANT_DOCUMENTS + grantId + FILE_SEPARATOR;
+        String filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + GRANT_DOCUMENTS + grantId + FILE_SEPARATOR;
         File dir = new File(filePath);
         dir.mkdirs();
         List<GrantDocument> attachments = new ArrayList<>();
         for (MultipartFile file : files) {
             String fileName = file.getOriginalFilename();
+            if(fileName!=null) {
 
-            File fileToCreate = new File(dir, fileName);
-            try (FileOutputStream fos = new FileOutputStream(fileToCreate)) {
-                fos.write(file.getBytes());
-            } catch (IOException e) {
-                logger.error(e.getMessage(), e);
+                File fileToCreate = new File(dir, fileName);
+                try (FileOutputStream fos = new FileOutputStream(fileToCreate)) {
+                    fos.write(file.getBytes());
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
+                GrantDocument attachment = new GrantDocument();
+                attachment.setExtension(FilenameUtils.getExtension(fileName));
+                attachment.setName(fileName.replace("." + FilenameUtils.getExtension(fileName), ""));
+                attachment.setLocation(filePath + fileName);
+                attachment.setUploadedOn(new Date());
+                attachment.setUploadedBy(userId);
+                attachment.setGrantId(grantId);
+                attachment = grantService.saveGrantDocument(attachment);
+                attachments.add(attachment);
             }
-            GrantDocument attachment = new GrantDocument();
-            attachment.setExtension(FilenameUtils.getExtension(file.getOriginalFilename()));
-            String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp";
-            attachment.setName(file.getOriginalFilename() != null ? file.getOriginalFilename().replace("." + FilenameUtils.getExtension(filename), "") : "temp"
-                    );
-            attachment.setLocation(filePath + (file.getOriginalFilename() != null ? file.getOriginalFilename() : "temp"));
-            attachment.setUploadedOn(new Date());
-            attachment.setUploadedBy(userId);
-            attachment.setGrantId(grantId);
-            attachment = grantService.saveGrantDocument(attachment);
-            attachments.add(attachment);
         }
 
-        updateProjectDocuments(grantId, tenantCode, userId);
+        updateProjectDocuments(grantId, userId);
 
         return attachments;
     }
 
-    private void updateProjectDocuments(Long grantId, String tenantCode, Long userId) {
+    private void updateProjectDocuments(Long grantId,Long userId) {
         List<Long> projectGrantIds = grantService.getAllGrantIdsForProject(grantId);
         List<GrantDocument> projectDocs = grantService.getGrantsDocuments(grantId);
         if (projectGrantIds != null && !projectGrantIds.isEmpty()) {
@@ -1915,7 +1917,7 @@ public class GrantController {
                     for (GrantDocument d : projectDocs) {
                         GrantDocument newDoc = new GrantDocument();
                         newDoc.setName(d.getName());
-                        File dir = new File(uploadLocation + tenantCode + GRANT_DOCUMENTS + id);
+                        File dir = new File(uploadLocation + userService.getUserById(userId).getOrganization().getCode() + GRANT_DOCUMENTS + id);
                         dir.mkdirs();
                         newDoc.setLocation(dir.getPath() + FILE_SEPARATOR + d.getName() + "." + d.getExtension());
                         newDoc.setExtension(d.getExtension());
@@ -1962,8 +1964,7 @@ public class GrantController {
         for (Long attachmentId : downloadRequest.getAttachmentIds()) {
             GrantDocument attachment = grantService.getGrantDocumentById(attachmentId);
 
-            File file = resourceLoader.getResource(FILE + uploadLocation + tenantCode + GRANT_DOCUMENTS + grantId
-                    + FILE_SEPARATOR + attachment.getName() + "." + attachment.getExtension()).getFile();
+            File file = resourceLoader.getResource(FILE + attachment.getLocation()).getFile();
             // new zip entry and copying inputstream with file to zipOutputStream, after all
             // closing streams
             zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
@@ -1995,7 +1996,7 @@ public class GrantController {
             logger.error(e.getMessage(), e);
         }
 
-        updateProjectDocuments(grantId, tenantCode, userId);
+        updateProjectDocuments(grantId, userId);
 
     }
 
@@ -2115,20 +2116,16 @@ public class GrantController {
 
         Map<String, File> fileMap = null;
         if (GRANT.equalsIgnoreCase(forEntity)) {
-            fileMap = getAttachment(id, tenantCode, downloadRequest.getAttachmentIds()[0]);
+            fileMap = getAttachment(downloadRequest.getAttachmentIds()[0]);
         } else if (PROJECT.equalsIgnoreCase(forEntity)) {
             GrantDocument doc = grantService.getGrantDocumentById(downloadRequest.getAttachmentIds()[0]);
             fileMap = new HashMap<>();
-            String fileName = doc.getName();
-            if(!fileName.contains(".".concat(doc.getExtension()))){
-                fileName=fileName.concat(".".concat(doc.getExtension()));
-            }
+
             File file = resourceLoader.getResource(FILE + doc.getLocation()).getFile();
             fileMap.put(doc.getExtension(), file);
         } else if (REPORT.equalsIgnoreCase(forEntity)) {
             ReportStringAttributeAttachments attachment = reportService.getStringAttributeAttachmentsByAttachmentId(downloadRequest.getAttachmentIds()[0]);
-            Long sectionId = attachment.getReportStringAttribute().getSectionAttribute().getSection().getId();
-            Long attributeId = attachment.getReportStringAttribute().getSectionAttribute().getId();
+
 
             String fileName = attachment.getName();
             if(!fileName.contains(".".concat(attachment.getType()))){
@@ -2163,8 +2160,6 @@ public class GrantController {
             fileMap.put(attachment.getType(), file);
         }else if (CLOSURE.equalsIgnoreCase(forEntity)) {
             ClosureStringAttributeAttachments attachment = grantClosureService.getStringAttributeAttachmentsByAttachmentId(downloadRequest.getAttachmentIds()[0]);
-            Long sectionId = attachment.getClosureStringAttribute().getSectionAttribute().getSection().getId();
-            Long attributeId = attachment.getClosureStringAttribute().getSectionAttribute().getId();
 
             String fileName = attachment.getName();
             if(!fileName.contains(".".concat(attachment.getType()))){
@@ -2178,11 +2173,6 @@ public class GrantController {
         }else if ("closure-document".equalsIgnoreCase(forEntity)) {
             ClosureDocument attachment = grantClosureService.getClosureDocumentById(downloadRequest.getAttachmentIds()[0]);
 
-            String fileName = attachment.getName();
-            if(!fileName.contains(".".concat(attachment.getExtension()))){
-                fileName=fileName.concat(".".concat(attachment.getExtension()));
-            }
-
             File file = resourceLoader.getResource(FILE + attachment.getLocation())
                     .getFile();
             fileMap = new HashMap<>();
@@ -2194,7 +2184,7 @@ public class GrantController {
         }
         File file = fileMap.values().stream().collect(Collectors.toList()).get(0);
         Optional<String> first = fileMap.keySet().stream().findFirst();
-        String tempFileName = RandomStringUtils.randomAlphabetic(127) + "." + (first.isPresent() ? first.get() : "");
+        String tempFileName =  RandomStringUtils.random(127, 0, 0, true, true, null, new SecureRandom()) + "." + (first.isPresent() ? first.get() : "");
         File tempFile = new File(previewLocation + FILE_SEPARATOR + tempFileName);
         FileCopyUtils.copy(file, tempFile);
         return new PreviewData(tempFileName);

@@ -1,6 +1,5 @@
 package org.codealpha.gmsservice.services;
 
-import java.util.List;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.OrgConfig;
@@ -8,6 +7,8 @@ import org.codealpha.gmsservice.repositories.AppConfigRepository;
 import org.codealpha.gmsservice.repositories.OrgConfigRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class AppConfigService {

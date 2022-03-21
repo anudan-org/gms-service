@@ -1,9 +1,8 @@
 package org.codealpha.gmsservice.entities;
 
+import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
-
-import javax.persistence.*;
 
 @Entity(name = "report_assignments")
 public class ReportAssignment {

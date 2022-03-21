@@ -1,15 +1,15 @@
 package org.codealpha.gmsservice.services;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import org.codealpha.gmsservice.entities.Role;
 import org.codealpha.gmsservice.entities.User;
 import org.codealpha.gmsservice.entities.UserRole;
 import org.codealpha.gmsservice.repositories.RoleRepository;
-import org.codealpha.gmsservice.repositories.UserRepository;
 import org.codealpha.gmsservice.repositories.UserRoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserRoleService {

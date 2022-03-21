@@ -1,9 +1,9 @@
 package org.codealpha.gmsservice.services;
 
+import org.codealpha.gmsservice.entities.Notifications;
+import org.codealpha.gmsservice.repositories.NotificationsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.codealpha.gmsservice.repositories.NotificationsRepository;
-import org.codealpha.gmsservice.entities.Notifications;
 
 import java.util.Date;
 import java.util.List;

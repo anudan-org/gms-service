@@ -1,10 +1,10 @@
 package org.codealpha.gmsservice.repositories;
 
-import java.util.List;
-
 import org.codealpha.gmsservice.entities.DisbursementAssignmentHistory;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+
+import java.util.List;
 
 public interface DisbursementAssignmentHistoryRepository extends CrudRepository<DisbursementAssignmentHistory, Long> {
 

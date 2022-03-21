@@ -1,12 +1,8 @@
 package org.codealpha.gmsservice.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
-import javax.persistence.*;
-
-import net.bytebuddy.agent.builder.AgentBuilder.LambdaInstrumentationStrategy;
-import org.hibernate.annotations.Columns;
 
 @Entity(name = "roles")
 public class Role {

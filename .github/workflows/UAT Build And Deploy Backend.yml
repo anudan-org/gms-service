@@ -5,7 +5,7 @@ on:
   push:
    branches: [ master ]
    paths-ignore: 
-      - '.github/workflows/**.yml'
+      - '.github/**'
       - 'DB/**'
       - 'gradle/**'
       - '.DS_Store'
@@ -17,7 +17,7 @@ on:
       - '**.properties'
 
 env:
-  commitmsg: ${{ github.event.head_commit.message }} 
+  commitmsg: ${{ github.event.head_commit.message }}  
 
 jobs:
   UAT-Backend-Build:
@@ -109,7 +109,12 @@ jobs:
            -Dsonar.sonar.junit.reportsPath=build/test-results/test
            -Dsonar.sonar.java.coveragePlugin=jacoco
            -Dsonar.sonar.jacoco.reportPath=build/jacoco/jacoco.exec  
-
+    - name: SonarQube Quality Gate check
+      uses: sonarsource/sonarqube-quality-gate-action@master
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        scanMetadataReportFile: build/sonar/report-task.txt
 
   Anudan-config:
     runs-on: ubuntu-latest

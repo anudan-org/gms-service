@@ -3,10 +3,9 @@ package org.codealpha.gmsservice.entities;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Date;
-import java.util.List;
-import javax.persistence.*;
 
 
 /**
@@ -24,7 +23,7 @@ import javax.persistence.*;
 		@JsonSubTypes.Type(value = Granter.class, name = "GRANTER"),
 		@JsonSubTypes.Type(value = Grantee.class, name = "GRANTEE")
 })
-public abstract class Organization {
+public class Organization {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -65,7 +64,7 @@ public abstract class Organization {
 	private String instagram;
 
 
-	public Organization() {
+	protected Organization() {
 	}
 
 	public Long getId() {
@@ -134,7 +133,7 @@ public abstract class Organization {
 
 	@Transient
 	public String getType() {
-		return this.getClass().getAnnotation(DiscriminatorValue.class).value();
+		return this.organizationType;
 	}
 
 	public String getDescription() {

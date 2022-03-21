@@ -1,10 +1,10 @@
 package org.codealpha.gmsservice.security;
 
-import java.util.Arrays;
-import java.util.Collection;
 import org.codealpha.gmsservice.entities.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
 
 public class GmsUserPrincipal implements UserDetails {
 
