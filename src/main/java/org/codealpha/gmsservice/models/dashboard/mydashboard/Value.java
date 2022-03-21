@@ -23,7 +23,7 @@ public class Value {
     @JsonProperty("count")
     private Long count;
     @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    private Map<String, Object> additionalProperties = new HashMap<>();
 
     public Value(String name, String value) {
         this.name = name;

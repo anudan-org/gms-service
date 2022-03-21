@@ -9,5 +9,5 @@ import java.util.List;
 public interface WorkflowValidationRepository extends CrudRepository<WorkflowValidation,Long> {
 
     @Query(value = "SELECT a.*,message FROM public.workflow_validations a left join messages m on m.id=a.message_id where active=true and object=?1",nativeQuery = true)
-    public List<WorkflowValidation> getActiveValidationsByObject(String _for);
+    public List<WorkflowValidation> getActiveValidationsByObject(String forObject);
 }

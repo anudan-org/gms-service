@@ -10,7 +10,7 @@ import java.util.Date;
 import java.util.List;
 
 @Entity(name = "grant_kpis")
-public class GrantKpi implements Comparable<GrantKpi> {
+public class GrantKpi  {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -162,11 +162,4 @@ public class GrantKpi implements Comparable<GrantKpi> {
     this.kpiReportingType = kpiReportingType;
   }
 
-  @Override
-  public int compareTo(GrantKpi o) {
-    if (id == null || o.id == null) {
-      return 0;
-    }
-    return id.compareTo(o.id);
-  }
 }

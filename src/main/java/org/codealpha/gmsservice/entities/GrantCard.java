@@ -22,13 +22,8 @@ import java.util.List;
 @ApiModel(value = "Grant Model", description = "Data model of a Grant")
 @SqlResultSetMapping(name="GRANTSLIST",
         entities={
-                @EntityResult(entityClass= GrantCard.class
-                        /*fields={
-                                @FieldResult(name="id",column="id"),
-                                @FieldResult(name="name", column="name"),
-                                @FieldResult(name="amendGrantId",column = "amend_grant_id"),
-                                @FieldResult(name="approvedReportsForGrant",column="approved_reports_for_grant")
-                        }*/),
+                @EntityResult(entityClass = GrantCard.class
+                ),
         }
 )
 @NamedNativeQuery(

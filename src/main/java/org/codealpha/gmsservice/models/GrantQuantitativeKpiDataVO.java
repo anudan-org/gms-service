@@ -1,10 +1,7 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.BaseEntity;
 import org.codealpha.gmsservice.entities.GrantQuantitativeKpiData;
-import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -47,9 +44,7 @@ public class GrantQuantitativeKpiDataVO extends BaseEntity {
   }
 
 
-  public GrantQuantitativeKpiDataVO build(GrantQuantitativeKpiData grantQuantitativeKpiData,
-      WorkflowPermissionService workflowPermissionService,
-      User user, AppConfig submissionWindow) {
+  public GrantQuantitativeKpiDataVO build(GrantQuantitativeKpiData grantQuantitativeKpiData) {
 
     PropertyDescriptor[] propertyDescriptors = BeanUtils
         .getPropertyDescriptors(grantQuantitativeKpiData.getClass());
@@ -60,11 +55,11 @@ public class GrantQuantitativeKpiDataVO extends BaseEntity {
           Object value = descriptor.getReadMethod().invoke(grantQuantitativeKpiData);
           PropertyDescriptor voPd = BeanUtils
               .getPropertyDescriptor(vo.getClass(), descriptor.getName());
-          voPd.getWriteMethod().invoke(vo, value);
+          if(voPd!=null) {
+            voPd.getWriteMethod().invoke(vo, value);
+          }
 
-        } catch (IllegalAccessException e) {
-          logger.error(e.getMessage(),e);
-        } catch (InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
           logger.error(e.getMessage(),e);
         }
       }

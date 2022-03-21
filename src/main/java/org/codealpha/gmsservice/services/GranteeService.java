@@ -27,7 +27,7 @@ public class GranteeService {
     List<Grant> allGrants = new ArrayList<>();
 
     if("GRANTER".equalsIgnoreCase(tenantOrg.getOrganizationType())){
-      List<Long> userRoleIds = userRoles.stream().map(e->new Long(e.getRole().getId())).collect(
+      List<Long> userRoleIds = userRoles.stream().map(e->e.getRole().getId()).collect(
           Collectors.toList());
       allGrants
           .addAll(grantRepository.findGrantsOfGranteeForTenantOrg(granteeOrgId, tenantOrg.getId(),userRoleIds));
@@ -41,7 +41,7 @@ public class GranteeService {
     List<GrantCard> allGrants = new ArrayList<>();
 
     if("GRANTER".equalsIgnoreCase(tenantOrg.getOrganizationType())){
-      List<Long> userRoleIds = userRoles.stream().map(e->new Long(e.getRole().getId())).collect(
+      List<Long> userRoleIds = userRoles.stream().map(e->e.getRole().getId()).collect(
               Collectors.toList());
       allGrants
               .addAll(grantCardRepository.findGrantsOfGranteeForTenantOrg(granteeOrgId, tenantOrg.getId(),userRoleIds));

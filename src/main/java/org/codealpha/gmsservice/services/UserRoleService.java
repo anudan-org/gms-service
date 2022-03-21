@@ -21,9 +21,8 @@ public class UserRoleService {
 
   public List<Role> findRolesForUser(User user) {
     List<UserRole> userRoles = userRoleRepository.findByUser(user);
-    List<Role> roles = userRoles.stream().map(e -> roleRepository.findById(e.getRole().getId()).get())
+    return userRoles.stream().map(e -> roleRepository.findById(e.getRole().getId()).get())
         .collect(Collectors.toList());
-    return roles;
   }
 
   public UserRole saveUserRole(UserRole userRole) {
@@ -31,9 +30,7 @@ public class UserRoleService {
   }
 
   public List<UserRole> saveUserRoles(List<UserRole> userRoles) {
-    userRoles.stream().forEach(ur -> {
-      userRoleRepository.save(ur);
-    });
+    userRoles.stream().forEach(ur -> userRoleRepository.save(ur));
     return userRoles;
   }
 

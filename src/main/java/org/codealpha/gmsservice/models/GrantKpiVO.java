@@ -4,14 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KPIStatus;
 import org.codealpha.gmsservice.constants.KpiType;
-import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.Grant;
-import org.codealpha.gmsservice.entities.GrantKpi;
-import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.services.WorkflowPermissionService;
-import org.springframework.beans.BeanUtils;
 
-import java.beans.PropertyDescriptor;
 import java.util.Date;
 import java.util.List;
 
@@ -146,39 +140,7 @@ public class GrantKpiVO {
     this.submissions = submissions;
   }
 
-  public GrantKpiVO build(GrantKpi kpi, WorkflowPermissionService workflowPermissionService,
-      User user, AppConfig submissionWindow) {
-    PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(kpi.getClass());
-    GrantKpiVO vo = new GrantKpiVO();
-    /*List<SubmissionVO> submissionVOList=null;
-    for (PropertyDescriptor descriptor : propertyDescriptors) {
-      if (!descriptor.getName().equalsIgnoreCase("class")) {
-        try {
-          Object value = descriptor.getReadMethod().invoke(kpi);
-          PropertyDescriptor voPd = BeanUtils
-              .getPropertyDescriptor(vo.getClass(), descriptor.getName());
-
-          if (voPd.getName().equalsIgnoreCase("submissions")) {
-            submissionVOList = new ArrayList<>();
-            for(Submission submission: kpi.getSubmissions()) {
-                KpiSubmissionVO submissionVO = new KpiSubmissionVO()
-                    .build(submission, workflowPermissionService, user,
-                        submissionWindow);
-                submissionVOList.add(submissionVO);
-            }
-
-            vo.setSubmissions(submissionVOList);
-
-          } else {
-            voPd.getWriteMethod().invoke(vo, value);
-          }
-        } catch (IllegalAccessException e) {
-          e.printStackTrace();
-        } catch (InvocationTargetException e) {
-          e.printStackTrace();
-        }
-      }
-    }*/
-    return vo;
+  public GrantKpiVO build() {
+    return new GrantKpiVO();
   }
 }

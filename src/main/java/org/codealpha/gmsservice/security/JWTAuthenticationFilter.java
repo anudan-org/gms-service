@@ -39,8 +39,7 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
     } else {
       Authentication authentication = null;
 
-      authentication = TokenAuthenticationService.getAuthentication((HttpServletRequest) request,
-          (HttpServletResponse) response);
+      authentication = TokenAuthenticationService.getAuthentication((HttpServletRequest) request);
 
       if (authentication != null) {
         String[] principalTokens = authentication.getPrincipal().toString().split("\\^");
@@ -58,7 +57,7 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
           }
         }
 
-        if (!user.isActive() || user.isDeleted()) {
+        if (user==null || !user.isActive() || user.isDeleted()) {
           throw new BadCredentialsException("Inactive user");
         }
         SecurityContextHolder.getContext().setAuthentication(authentication);

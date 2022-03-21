@@ -16,6 +16,6 @@ public class GrantQualitativeDataService {
   }
 
   public GrantQualitativeKpiData findById(Long id){
-    return grantQualitativeDataRepository.findById(id).get();
+    return grantQualitativeDataRepository.findById(id).orElse(null);
   }
 }

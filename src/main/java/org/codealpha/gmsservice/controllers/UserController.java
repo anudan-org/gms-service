@@ -269,7 +269,7 @@ public class UserController {
                         HttpStatus.OK);
             case GRANTER:
                 return new ResponseEntity<>(
-                        granterService.getActiveGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId()),
+                        granterService.getActiveGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg),
                         HttpStatus.OK);
             default:
                 return new ResponseEntity<>(0l, HttpStatus.OK);
@@ -290,7 +290,7 @@ public class UserController {
                     HttpStatus.OK);
         } else if (GRANTER.equalsIgnoreCase(userOrg.getType())) {
             return new ResponseEntity<>(
-                    granterService.getClosedGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId()),
+                    granterService.getClosedGrantsOfGranterForGrantor(userOrg.getId()),
                     HttpStatus.OK);
         }
 

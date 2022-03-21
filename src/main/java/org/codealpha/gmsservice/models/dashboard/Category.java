@@ -22,7 +22,7 @@ public class Category {
     @JsonProperty("filters")
     private List<Filter> filters = null;
     @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    private Map<String, Object> additionalProperties = new HashMap<>();
 
     public Category(String categoryName,Summary summary,List<Filter> filters) {
         this.name=categoryName;

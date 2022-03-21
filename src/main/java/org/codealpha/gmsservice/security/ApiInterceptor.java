@@ -10,7 +10,6 @@ import javax.servlet.http.HttpServletResponse;
 
 @Component
 public class ApiInterceptor extends HandlerInterceptorAdapter {
-
     public static final String YOU_ARE_NOT_AUTHORIZED_TO_PERFORM_THIS_ACTION = "You are not authorized to perform this action";
     public static final String YOU_ARE_NOT_AUTHORIZED_TO_MODIFY_THIS_FIELD = "You are not authorized to modify this field";
     public static final String YOU_ARE_NOT_AUTHORIZED_TO_MODIFY_THIS_SECTION = "You are not authorized to modify this section.";
@@ -32,8 +31,6 @@ public class ApiInterceptor extends HandlerInterceptorAdapter {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-
-        System.out.println(request.getServletPath());
         return super.preHandle(request, response, handler);
     }
 }

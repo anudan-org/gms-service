@@ -15,7 +15,7 @@ public class DashboardSummary {
     @JsonProperty("category")
     private Category category;
     @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    private Map<String, Object> additionalProperties = new HashMap<>();
 
     @JsonProperty("category")
     public Category getCategory() {

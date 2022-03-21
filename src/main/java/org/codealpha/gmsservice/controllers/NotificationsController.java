@@ -1,6 +1,5 @@
 package org.codealpha.gmsservice.controllers;
 
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.codealpha.gmsservice.entities.Notifications;
@@ -14,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/user/{userId}/notifications")
-@Api(value = "Notifications",description = "Notifications API endpoints")
 public class NotificationsController{
 
 	@Autowired
@@ -24,9 +22,6 @@ public class NotificationsController{
 	@GetMapping("/")
 	@ApiOperation("Get notifications for logged in user")
 	public List<Notifications> getUserNotifications(@ApiParam(name = "userId",value = "Unique identifier of logger in user") @PathVariable("userId") Long userId,@ApiParam(name="X-TENANT-CODE",value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode){
-		/*List<Notifications> notifications = notificationsService.getUserNotifications(userId, false);
-		notifications.sort((a,b)->a.getPostedOn().compareTo(b.getPostedOn()));*/
-		//notificationValidator.validate(userId,tenantCode);
 		return notificationsService.getAllUserNotifications(userId);
 	}
 
@@ -36,7 +31,9 @@ public class NotificationsController{
 													 @ApiParam(name = "notificationId",value = "Unique identifier of notification to be marked as read") @PathVariable("notificationId") Long notificationId) {
 
 		Notifications notif = notificationsService.getNotificationById(notificationId);
-		notif.setRead(true);
+		if(notif!=null) {
+			notif.setRead(true);
+		}
 		notif = notificationsService.saveNotification(notif);
 		return notif;
 	}

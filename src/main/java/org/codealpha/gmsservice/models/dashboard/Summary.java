@@ -24,7 +24,7 @@ public class Summary {
     @JsonProperty("activeUsers")
     private Long activeUsers;
     @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    private Map<String, Object> additionalProperties = new HashMap<>();
 
     public Summary(Long totalGrants, Long grantees, Long totalGrantAmount, Long activeUsers) {
         this.totalGrants = totalGrants;

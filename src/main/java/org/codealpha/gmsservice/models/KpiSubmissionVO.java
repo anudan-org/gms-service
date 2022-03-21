@@ -10,7 +10,7 @@ import java.util.List;
 
 public class KpiSubmissionVO {
 
-  private Long Id;
+  private Long id;
   @JsonIgnore
   private GrantKpi grantKpi;
   private Date submitByDate;
@@ -27,11 +27,11 @@ public class KpiSubmissionVO {
   private String title;
 
   public Long getId() {
-    return Id;
+    return id;
   }
 
   public void setId(Long id) {
-    Id = id;
+    this.id = id;
   }
 
   public GrantKpi getGrantKpi() {
@@ -141,66 +141,4 @@ public class KpiSubmissionVO {
     this.title = title;
   }
 
-  /*public KpiSubmissionVO build(QuantitativeKpiSubmission submission, WorkflowPermissionService workflowPermissionService, User user, AppConfig submissionWindow) {
-    PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(submission.getClass());
-    KpiSubmissionVO vo = new KpiSubmissionVO();
-    /*List<GrantQuantitativeKpiDataVO> quantitativeKpiDataList=null;
-    List<GrantQualitativeKpiDataVO> qualitativeKpiDataList=null;
-    for (PropertyDescriptor descriptor : propertyDescriptors) {
-      if (!descriptor.getName().equalsIgnoreCase("class")) {
-        try {
-          Object value = descriptor.getReadMethod().invoke(submission);
-          PropertyDescriptor voPd = BeanUtils
-              .getPropertyDescriptor(vo.getClass(), descriptor.getName());
-
-          if (voPd.getName().equalsIgnoreCase("grantQuantitativeKpiData")) {
-            quantitativeKpiDataList = new ArrayList<>();
-              for (GrantQuantitativeKpiData grantQuantitativeKpiData : submission.getGrantQuantitativeKpiData()) {
-                GrantQuantitativeKpiDataVO quantitativeKpiDataVO = new GrantQuantitativeKpiDataVO()
-                    .build(grantQuantitativeKpiData, workflowPermissionService, user,
-                        submissionWindow);
-                quantitativeKpiDataList.add(quantitativeKpiDataVO);
-              }
-            vo.setGrantQuantitativeKpiData(quantitativeKpiDataList);
-
-          } else if (voPd.getName().equalsIgnoreCase("grantQualitativeKpiData")) {
-
-            qualitativeKpiDataList = new ArrayList<>();
-              for (GrantQualitativeKpiData grantQualitativeKpiData : submission.getGrantQualitativeKpiData()) {
-                GrantQualitativeKpiDataVO qualitativeKpiDataVO = new GrantQualitativeKpiDataVO()
-                    .build(grantQualitativeKpiData, workflowPermissionService, user,
-                        submissionWindow);
-                qualitativeKpiDataList.add(qualitativeKpiDataVO);
-              }
-            vo.setGrantQualitativeKpiData(qualitativeKpiDataList);
-          } else {
-            voPd.getWriteMethod().invoke(vo, value);
-          }
-        } catch (IllegalAccessException e) {
-          e.printStackTrace();
-        } catch (InvocationTargetException e) {
-          e.printStackTrace();
-        }
-      }
-    }
-
-    DateTime today = DateTime.now();
-    if (today.isBefore(
-        new DateTime(submission.getSubmitByDate())
-            .withTimeAtStartOfDay()
-            .plusDays(1)) && today
-        .isAfter(new DateTime(submission.getSubmitByDate())
-            .minusDays(Integer.valueOf(submissionWindow.getConfigValue())))
-        && !workflowPermissionService.getKPIFlowPermissions(
-        submission.getGrantKpi().getGrant()
-            .getGrantorOrganization().getId(),
-        user.getRole().getId(), submission.getSubmissionStatus().getId())
-        .isEmpty()) {
-      vo.setFlowAuthority(workflowPermissionService.getKPIFlowPermissions(
-          submission.getGrantKpi().getGrant()
-              .getGrantorOrganization().getId(),
-          user.getRole().getId(), submission.getSubmissionStatus().getId()));
-    }
-    return vo;
-  }*/
 }

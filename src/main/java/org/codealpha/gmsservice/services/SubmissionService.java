@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SubmissionService {
@@ -24,8 +25,9 @@ public class SubmissionService {
   }
 
   public Submission getById(Long id){
-    if(submissionRepository.findById(id).isPresent()) {
-      return submissionRepository.findById(id).get();
+    Optional<Submission> subissionById = submissionRepository.findById(id);
+    if(subissionById.isPresent()) {
+      return subissionById.get();
     }
     return null;
   }

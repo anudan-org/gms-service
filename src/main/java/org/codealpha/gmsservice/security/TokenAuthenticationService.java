@@ -35,10 +35,10 @@ public class TokenAuthenticationService {
 
   public static void addAuthentication(HttpServletResponse res, String auth, JsonNode userNode, String tenant)
       throws IOException {
-    String JWT = Jwts.builder().setSubject(auth + "^" + tenant)
+    String jwt = Jwts.builder().setSubject(auth + "^" + tenant)
         .setExpiration(new Date(System.currentTimeMillis() + EXPIRATIONTIME)).signWith(SignatureAlgorithm.HS512, SECRET)
         .compact();
-    res.addHeader(HEADER_STRING, TOKEN_PREFIX + " " + JWT);
+    res.addHeader(HEADER_STRING, TOKEN_PREFIX + " " + jwt);
     res.addIntHeader(HEADER_EXPIRES_IN, EXPIRATIONTIME);
     res.setHeader("X-TENANT-CODE", tenant);
     res.setHeader("Access-Control-Allow-Headers",
@@ -49,7 +49,7 @@ public class TokenAuthenticationService {
 
   }
 
-  static Authentication getAuthentication(HttpServletRequest request, HttpServletResponse response) {
+  static Authentication getAuthentication(HttpServletRequest request) {
     String token = request.getHeader(HEADER_STRING);
     if (token != null) {
       // parse the token.

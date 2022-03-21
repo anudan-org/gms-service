@@ -32,6 +32,8 @@ import java.util.Map;
 @Component
 public class AuthProvider implements AuthenticationProvider {
 
+  public static final String INVALID_LOGIN_CREDENTIALS = "Invalid login credentials";
+  public static final String ANUDAN = "ANUDAN";
   @Autowired
   private UserService userService;
   @Autowired
@@ -51,7 +53,7 @@ public class AuthProvider implements AuthenticationProvider {
     String tenantCode = ((Map<String, String>) authentication.getDetails()).get("TOKEN");
     String captcha = ((Map<String, String>) authentication.getDetails()).get("CAPTCHA");
 
-    if (provider.equalsIgnoreCase("ANUDAN") && useCaptcha) {
+    if (provider.equalsIgnoreCase(ANUDAN) && Boolean.TRUE.equals(useCaptcha)) {
       UriComponentsBuilder builder = UriComponentsBuilder
           .fromHttpUrl("https://www.google.com/recaptcha/api/siteverify");
       LinkedMultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
@@ -65,7 +67,7 @@ public class AuthProvider implements AuthenticationProvider {
           requestEntity, String.class);
 
       try {
-        if (!((JsonNode) new ObjectMapper().readValue(responseEntity.getBody(), JsonNode.class)).get("success")
+        if (!(new ObjectMapper().readValue(responseEntity.getBody(), JsonNode.class)).get("success")
             .asBoolean()) {
           throw new BadCredentialsException("Invalid Captcha credentials");
         }
@@ -77,24 +79,20 @@ public class AuthProvider implements AuthenticationProvider {
     if (tenantCode == null) {
       throw new InvalidCredentialsException("Missing required header X-TENANT-CODE");
     }
-    if ("ANUDAN".equalsIgnoreCase(provider.toUpperCase())) {
+    if (ANUDAN.equalsIgnoreCase(provider.toUpperCase())) {
       Organization org = null;
-      /*
-       * if (org == null) { throw new
-       * BadCredentialsException("Invalid login credentials"); }
-       */
 
       User user = null;
-      if (!"ANUDAN".equalsIgnoreCase(tenantCode)) {
+      if (!ANUDAN.equalsIgnoreCase(tenantCode)) {
         org = organizationService.findOrganizationByTenantCode(tenantCode);
         user = userService.getUserByEmailAndOrg(username, org);
-      } else if ("ANUDAN".equalsIgnoreCase(tenantCode)) {
+      } else if (ANUDAN.equalsIgnoreCase(tenantCode)) {
         List<User> users = userService.getUsersByEmail(username);
         for (User eachUser : users) {
           if (eachUser.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")
               || eachUser.getOrganization().getOrganizationType().equalsIgnoreCase("PLATFORM")) {
             user = eachUser;
-            org = user.getOrganization();
+            user.getOrganization();
             break;
           }
         }
@@ -111,18 +109,16 @@ public class AuthProvider implements AuthenticationProvider {
         if (user.isPlain()) {
           if (password.equalsIgnoreCase(user.getPassword()) && username.equalsIgnoreCase(user.getEmailId())) {
 
-            return new UsernamePasswordAuthenticationToken(username, password, new ArrayList());
+            return new UsernamePasswordAuthenticationToken(username, password, new ArrayList<>());
           } else {
-            // TODO - Read messages from a resource bundle
-            throw new BadCredentialsException("Invalid login credentials");
+            throw new BadCredentialsException(INVALID_LOGIN_CREDENTIALS);
           }
         } else {
           if (passwordEncoder.matches(password, user.getPassword()) && username.equalsIgnoreCase(user.getEmailId())) {
 
-            return new UsernamePasswordAuthenticationToken(username, password, new ArrayList());
+            return new UsernamePasswordAuthenticationToken(username, password, new ArrayList<>());
           } else {
-            // TODO - Read messages from a resource bundle
-            throw new BadCredentialsException("Invalid login credentials");
+            throw new BadCredentialsException(INVALID_LOGIN_CREDENTIALS);
           }
         }
       } else {
@@ -131,7 +127,7 @@ public class AuthProvider implements AuthenticationProvider {
     } else if ("GOOGLE".equalsIgnoreCase(provider.toUpperCase())) {
       Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
       if (org == null) {
-        throw new BadCredentialsException("Invalid login credentials");
+        throw new BadCredentialsException(INVALID_LOGIN_CREDENTIALS);
       }
       User user = userService.getUserByEmailAndOrg(username, org);
 
@@ -139,12 +135,12 @@ public class AuthProvider implements AuthenticationProvider {
 
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")
             && !((Granter) user.getOrganization()).getCode().equalsIgnoreCase(tenantCode)) {
-          throw new BadCredentialsException("Invalid login credentials");
+          throw new BadCredentialsException(INVALID_LOGIN_CREDENTIALS);
         }
 
-        return new UsernamePasswordAuthenticationToken(username, password, new ArrayList());
+        return new UsernamePasswordAuthenticationToken(username, password, new ArrayList<>());
       } else {
-        throw new BadCredentialsException("Invalid login credentials");
+        throw new BadCredentialsException(INVALID_LOGIN_CREDENTIALS);
       }
 
     }

@@ -16,6 +16,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.unit.DataSize;
+import org.springframework.util.unit.DataUnit;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import javax.annotation.PostConstruct;
@@ -65,11 +66,9 @@ public class GmsServiceApplication {
     @Bean
     public MultipartConfigElement multipartConfigElement() {
 
-        MultipartConfigFactory factory = new MultipartConfigFactory();
-
-        factory.setMaxFileSize("200MB");
-
-        factory.setMaxRequestSize("200MB");
+        final MultipartConfigFactory factory = new MultipartConfigFactory();
+        factory.setMaxFileSize(DataSize.of(200, DataUnit.MEGABYTES));
+        factory.setMaxRequestSize(DataSize.of(200, DataUnit.MEGABYTES));
         factory.setMaxFileSize(DataSize.ofMegabytes(200));
         factory.setFileSizeThreshold(DataSize.ofMegabytes(200));
 
@@ -91,7 +90,6 @@ public class GmsServiceApplication {
     @PostConstruct
     public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kolkata"));
-        System.out.println("Running with: " + TimeZone.getDefault().getDisplayName());
     }
 
     @Bean

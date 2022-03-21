@@ -24,7 +24,7 @@ public class Summary__1 {
     @JsonProperty("statusSummary")
     private List<StatusSummary> statusSummary = null;
     @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    private Map<String, Object> additionalProperties = new HashMap<>();
 
     @JsonProperty("disbursement")
     public List<Disbursement> getDisbursement() {

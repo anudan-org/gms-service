@@ -209,7 +209,7 @@ public class GrantClosureService {
                     workFlowPermission.setFromName(tr.getFromState().getName());
                     workFlowPermission.setFromStateId(tr.getFromState().getId());
                     workFlowPermission.setId(tr.getId());
-                    workFlowPermission.setNoteRequired(tr.getNoteRequired());
+                    workFlowPermission.setNoteRequired(tr.isNoteRequired());
                     workFlowPermission.setToName(tr.getToState().getName());
                     workFlowPermission.setToStateId(tr.getToState().getId());
                     workFlowPermission.setSeqOrder(tr.getSeqOrder());

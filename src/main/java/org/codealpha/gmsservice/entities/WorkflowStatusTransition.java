@@ -114,7 +114,7 @@ public class WorkflowStatusTransition {
     this.updatedBy = updatedBy;
   }
 
-  public boolean getNoteRequired() {
+  public boolean isNoteRequired() {
     return noteRequired;
   }
 
@@ -128,10 +128,6 @@ public class WorkflowStatusTransition {
 
   public void setWorkflow(Workflow workflow) {
     this.workflow = workflow;
-  }
-
-  public boolean isNoteRequired() {
-    return noteRequired;
   }
 
   public Integer getSeqOrder() {

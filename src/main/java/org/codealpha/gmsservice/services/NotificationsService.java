@@ -45,6 +45,6 @@ public List<Notifications> getAllUserNotifications(Long userId){
     }
 
   public Notifications getNotificationById(Long notificationId){
-      return notificationsRepository.findById(notificationId).get();
+      return notificationsRepository.findById(notificationId).orElse(null);
   }
 }

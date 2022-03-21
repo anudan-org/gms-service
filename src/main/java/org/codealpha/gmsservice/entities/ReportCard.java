@@ -15,6 +15,7 @@ import java.util.List;
 @Entity(name = "reports")
 public class ReportCard {
 
+    public static final String YYYY_MM_DD = "yyyy-MM-dd";
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -305,7 +306,7 @@ public class ReportCard {
         if (startDate == null) {
             return "";
         }
-        return new SimpleDateFormat("yyyy-MM-dd").format(startDate);
+        return new SimpleDateFormat(YYYY_MM_DD).format(startDate);
     }
 
     public void setStDate(String stDate) {
@@ -316,7 +317,7 @@ public class ReportCard {
         if (endDate == null) {
             return "";
         }
-        return new SimpleDateFormat("yyyy-MM-dd").format(endDate);
+        return new SimpleDateFormat(YYYY_MM_DD).format(endDate);
     }
 
     public void setEnDate(String enDate) {
@@ -327,7 +328,7 @@ public class ReportCard {
         if (dueDate == null) {
             return "";
         }
-        return new SimpleDateFormat("yyyy-MM-dd").format(dueDate);
+        return new SimpleDateFormat(YYYY_MM_DD).format(dueDate);
     }
 
     public void setdDate(String dDate) {

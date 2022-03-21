@@ -32,8 +32,6 @@ public class GranteeController {
 		grantee.setCreatedAt(DateTime.now().toDate());
 		grantee.setCreatedBy("Admin");
 		repository.save(modelMapper.map(grantee,Grantee.class));
-
-		System.out.println(repository.findAll());
 	}
 
 }

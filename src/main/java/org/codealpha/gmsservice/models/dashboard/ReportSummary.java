@@ -16,7 +16,7 @@ public class ReportSummary extends DetailedSummary {
     @JsonProperty("value")
     private Long value;
     @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    private Map<String, Object> additionalProperties = new HashMap<>();
 
     public ReportSummary(String name, Long value) {
         super(name);

@@ -42,7 +42,6 @@ public class KpiSubmissionController {
       @PathVariable("kpiId") Long kpiId, @PathVariable("fileId") Long fileId,
       HttpServletResponse servletResponse) {
 
-    //GrantDocumentKpiData documentKpiData = grantDocumentDataService.findByKpiIdAndSubmissionId(kpiId,submissionId);
     DocKpiDataDocument doc = docKpiDataDocumentService.getById(fileId);
 
     Resource file = resourceLoader.getResource("file:" + uploadLocation + doc.getFileName());
@@ -62,6 +61,8 @@ public class KpiSubmissionController {
       case "doc":
         servletResponse.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
         break;
+      default:
+        servletResponse.setContentType(MediaType.TEXT_PLAIN_VALUE);
     }
 
     try {

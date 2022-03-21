@@ -175,7 +175,6 @@ public class SubmissionVO {
     PropertyDescriptor[] propertyDescriptors = BeanUtils
         .getPropertyDescriptors(submission.getClass());
     SubmissionVO vo = new SubmissionVO();
-    List<SubmissionVO> submissionVOList = null;
     for (PropertyDescriptor descriptor : propertyDescriptors) {
       if (!descriptor.getName().equalsIgnoreCase("class")) {
         try {
@@ -183,11 +182,11 @@ public class SubmissionVO {
           PropertyDescriptor voPd = BeanUtils
               .getPropertyDescriptor(vo.getClass(), descriptor.getName());
 
-          voPd.getWriteMethod().invoke(vo, value);
+          if(voPd!=null) {
+            voPd.getWriteMethod().invoke(vo, value);
+          }
 
-        } catch (IllegalAccessException e) {
-          logger.error(e.getMessage(), e);
-        } catch (InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
           logger.error(e.getMessage(), e);
         }
       }

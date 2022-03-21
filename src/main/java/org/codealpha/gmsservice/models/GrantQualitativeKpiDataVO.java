@@ -1,10 +1,7 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.AppConfig;
 import org.codealpha.gmsservice.entities.BaseEntity;
 import org.codealpha.gmsservice.entities.GrantQualitativeKpiData;
-import org.codealpha.gmsservice.entities.User;
-import org.codealpha.gmsservice.services.WorkflowPermissionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -47,22 +44,21 @@ public class GrantQualitativeKpiDataVO extends BaseEntity {
   }
 
 
-  public GrantQualitativeKpiDataVO build(GrantQualitativeKpiData grantQualitativeKpiData,
-      WorkflowPermissionService workflowPermissionService, User user, AppConfig submissionWindow) {
+  public GrantQualitativeKpiDataVO build(GrantQualitativeKpiData grantQualitativeKpiData) {
     PropertyDescriptor[] propertyDescriptors = BeanUtils
-        .getPropertyDescriptors(grantQualitativeKpiData.getClass());
+            .getPropertyDescriptors(grantQualitativeKpiData.getClass());
     GrantQualitativeKpiDataVO vo = new GrantQualitativeKpiDataVO();
     for (PropertyDescriptor descriptor : propertyDescriptors) {
       if (!descriptor.getName().equalsIgnoreCase("class")) {
         try {
           Object value = descriptor.getReadMethod().invoke(grantQualitativeKpiData);
           PropertyDescriptor voPd = BeanUtils
-              .getPropertyDescriptor(vo.getClass(), descriptor.getName());
-          voPd.getWriteMethod().invoke(vo, value);
+                  .getPropertyDescriptor(vo.getClass(), descriptor.getName());
+          if(voPd!=null) {
+            voPd.getWriteMethod().invoke(vo, value);
+          }
 
-        } catch (IllegalAccessException e) {
-          logger.error(e.getMessage(), e);
-        } catch (InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
           logger.error(e.getMessage(), e);
         }
       }

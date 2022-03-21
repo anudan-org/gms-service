@@ -25,14 +25,14 @@ public class GranterReportTemplateService {
 
     public GranterReportTemplate findByTemplateId(Long templateId) {
         if (granterReportTemplateRepository.findById(templateId).isPresent()) {
-            return granterReportTemplateRepository.findById(templateId).get();
+            return granterReportTemplateRepository.findById(templateId).orElse(null);
         }
         return null;
     }
 
     public List<GranterReportTemplate> findByGranterIdAndPublishedStatusAndPrivateStatus(Long granterId,
-            boolean published, boolean _private) {
+            boolean published, boolean isPrivate) {
         return granterReportTemplateRepository.findByGranterIdAndPublishedAndPrivateToReport(granterId, published,
-                _private);
+                isPrivate);
     }
 }

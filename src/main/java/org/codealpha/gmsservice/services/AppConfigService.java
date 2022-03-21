@@ -32,11 +32,11 @@ public class AppConfigService {
   }
 
   public AppConfig getAppConfigById(Long id){
-    return appConfigRepository.findById(id).get();
+    return appConfigRepository.findById(id).orElse(null);
   }
 
   public OrgConfig getOrgConfigById(Long id){
-    return orgConfigRepository.findById(id).get();
+    return orgConfigRepository.findById(id).orElse(null);
   }
 
   public AppConfig saveAppConfig(AppConfig config){

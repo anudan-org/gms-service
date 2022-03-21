@@ -674,41 +674,37 @@ public class AdiminstrativeController {
                                               @RequestHeader("X-TENANT-CODE") String tenantCode, @RequestBody AttachmentDownloadRequest downloadRequest,
                                               HttpServletResponse response) throws IOException {
 
-        // setting headers
         response.setContentType("application/zip");
         response.setStatus(HttpServletResponse.SC_OK);
         response.addHeader("Content-Disposition", "attachment; filename=\"test.zip\"");
 
-        // creating byteArray stream, make it bufforable and passing this buffor to
-        // ZipOutputStream
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
-        ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+        try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+            ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);) {
+            for (Long attachmentId : downloadRequest.getAttachmentIds()) {
+                TemplateLibrary attachment = templateLibraryService.getTemplateLibraryDocumentById(attachmentId);
 
-        // simple file list, just for tests
-        // packing files
-        for (Long attachmentId : downloadRequest.getAttachmentIds()) {
-            TemplateLibrary attachment = templateLibraryService.getTemplateLibraryDocumentById(attachmentId);
-
-            File file = resourceLoader.getResource("file:" + uploadLocation + attachment.getLocation()).getFile();
-            // new zip entry and copying inputstream with file to zipOutputStream, after all
-            // closing streams
-            try (FileInputStream fileInputStream = new FileInputStream(file)) {
-                zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
-
-                IOUtils.copy(fileInputStream, zipOutputStream);
-                zipOutputStream.closeEntry();
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
+                File file = resourceLoader.getResource("file:" + uploadLocation + attachment.getLocation()).getFile();
+                processZipFile(zipOutputStream, file);
             }
+            zipOutputStream.finish();
+            zipOutputStream.flush();
+            return byteArrayOutputStream.toByteArray();
+        }catch(Exception e){
+            logger.error(e.getMessage(),e);
         }
+        return new byte[0];
+    }
 
-        zipOutputStream.finish();
-        zipOutputStream.flush();
-        IOUtils.closeQuietly(zipOutputStream);
-        IOUtils.closeQuietly(bufferedOutputStream);
-        IOUtils.closeQuietly(byteArrayOutputStream);
-        return byteArrayOutputStream.toByteArray();
+    private void processZipFile(ZipOutputStream zipOutputStream, File file) {
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+
+            IOUtils.copy(fileInputStream, zipOutputStream);
+            zipOutputStream.closeEntry();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
     }
 
     @PostMapping(value = "/user/{userId}/document-library/delete")

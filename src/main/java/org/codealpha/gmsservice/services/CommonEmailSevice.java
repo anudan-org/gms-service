@@ -31,7 +31,7 @@ public class CommonEmailSevice {
   private MailLogService mailLogService;
 
   @Async("threadPoolTaskExecutor")
-  public void sendMail(String[] to, String[] ccList, String subject, String messageText, String footer[]) {
+  public void sendMail(String[] to, String[] ccList, String subject, String messageText, String[] footer) {
     for (String footerBlock : footer) {
       messageText = messageText.concat(footerBlock);
     }
@@ -45,7 +45,6 @@ public class CommonEmailSevice {
     try {
       MimeMessage message = mailSender.createMimeMessage();
       MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message);
-      // SimpleMailMessage message = new SimpleMailMessage();
       if (to != null) {
         mimeMessageHelper.setTo(to);
       }

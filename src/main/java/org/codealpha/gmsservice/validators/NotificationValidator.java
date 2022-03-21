@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class NotificationValidator {
 
+    public static final String INVALID_AUTHORIZATION = "Invalid authorization";
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -27,26 +28,26 @@ public class NotificationValidator {
         if (!"ANUDAN".equalsIgnoreCase(tenantCode)){
             user = userRepository.findByEmailIdAndOrganization(authTokens[0], tenant);
         }else if ("ANUDAN".equalsIgnoreCase(tenantCode)){
-            user = userRepository.findById(userId).get();
+            user = userRepository.findById(userId).orElse(null);
         }
 
         try {
-            _validateUser(userId, user);
-            _validateTenant(tenantCode, tenant);
+            validateUser(userId, user);
+            validateTenant(tenantCode, tenant);
         } catch (Exception e) {
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException(INVALID_AUTHORIZATION);
         }
     }
 
-    private void _validateUser(Long userId, User user) {
-        if (userId != user.getId()) {
-            throw new ResourceNotFoundException("Invalid authorization");
+    private void validateUser(Long userId, User user) {
+        if (user==null || userId.longValue() != user.getId().longValue()) {
+            throw new ResourceNotFoundException(INVALID_AUTHORIZATION);
         }
     }
 
-    private void _validateTenant(String tenantCode, Organization tenant) {
+    private void validateTenant(String tenantCode, Organization tenant) {
         if (!tenantCode.equalsIgnoreCase(tenant.getCode())) {
-            throw new ResourceNotFoundException("Invalid authorization");
+            throw new ResourceNotFoundException(INVALID_AUTHORIZATION);
         }
     }
 }

@@ -1778,12 +1778,14 @@ public class ReportController {
             @ApiParam(name = "templateDate", value = "Additional information about the template such as descriptio, publish or save as private") @RequestBody TemplateMetaData templateData) {
 
         GranterReportTemplate template = granterReportTemplateService.findByTemplateId(templateId);
-        template.setName(templateName);
-        template.setDescription(templateData.getDescription());
-        template.setPublished(templateData.isPublish());
-        template.setPrivateToReport(templateData.isPrivateToGrant());
-        template.setPublished(true);
-        reportService.saveReportTemplate(template);
+        if(template!=null) {
+            template.setName(templateName);
+            template.setDescription(templateData.getDescription());
+            template.setPublished(templateData.isPublish());
+            template.setPrivateToReport(templateData.isPrivateToGrant());
+            template.setPublished(true);
+            reportService.saveReportTemplate(template);
+        }
 
         Report report = reportService.getReportById(reportId);
         report = reportToReturn(report, userId);

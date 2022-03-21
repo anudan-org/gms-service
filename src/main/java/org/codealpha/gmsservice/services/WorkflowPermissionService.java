@@ -25,7 +25,7 @@ public class WorkflowPermissionService {
     }
 
     public List<WorkFlowPermission> getFlowPermisionsOfRoleForStateTransition(Long granterOrgId, List<UserRole> userRoles, Long grantStatusId) {
-        List<Long> userRoleIds = userRoles.stream().map(e -> new Long(e.getRole().getId())).collect(
+        List<Long> userRoleIds = userRoles.stream().map(e -> e.getRole().getId()).collect(
                 Collectors.toList());
         return workflowPermissionRepository.getFlowPermisionsOfRoleForStateTransition(granterOrgId, userRoleIds, grantStatusId);
     }
@@ -33,7 +33,7 @@ public class WorkflowPermissionService {
     public List<WorkFlowPermission> getSubmissionFlowPermissions(Long granterOrgId, List<UserRole> userRoles,
                                                                  Long statusId) {
 
-        List<Long> userRoleIds = userRoles.stream().map(e -> new Long(e.getRole().getId())).collect(
+        List<Long> userRoleIds = userRoles.stream().map(e -> e.getRole().getId()).collect(
                 Collectors.toList());
 
         return workflowPermissionRepository
@@ -44,7 +44,7 @@ public class WorkflowPermissionService {
     public WorkflowActionPermission getGrantActionPermissions(Long granterOrgId,
                                                               List<UserRole> userRoles, Long grantStatusId, Long userId, Long grantId) {
 
-        List<Long> userRoleIds = userRoles.stream().map(e -> new Long(e.getRole().getId())).collect(
+        List<Long> userRoleIds = userRoles.stream().map(e -> e.getRole().getId()).collect(
                 Collectors.toList());
         return workflowActionPermissionRepository
                 .getActionPermissionsForGrant(granterOrgId, userRoleIds, grantStatusId,userId, grantId);
@@ -53,7 +53,7 @@ public class WorkflowPermissionService {
     public WorkflowActionPermission getSubmissionActionPermission(Long granterOrgId,
                                                                   List<UserRole> userRoles) {
 
-        List<Long> userRoleIds = userRoles.stream().map(e -> new Long(e.getRole().getId())).collect(
+        List<Long> userRoleIds = userRoles.stream().map(e -> e.getRole().getId()).collect(
                 Collectors.toList());
 
         return workflowActionPermissionRepository

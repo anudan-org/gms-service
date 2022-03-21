@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.services;
 
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.Organization;
@@ -32,7 +32,6 @@ public class OrganizationService {
 		if (optionalOrganization.isPresent()) {
 			return optionalOrganization.get();
 		}
-		// TODO - Replace with specific exception
 		throw new ResourceNotFoundException("Organization with id [" + organizationId + "] not found.");
 	}
 
@@ -70,7 +69,12 @@ public class OrganizationService {
 		UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
 		String host = null;
 		if (org.getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-			host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
+			String uriHost = uriComponents.getHost();
+			if(uriHost!=null) {
+				host = uriHost.substring(uriHost.indexOf(".") + 1);
+			}else{
+				host="";
+			}
 		} else if (org.getOrganizationType().equalsIgnoreCase("GRANTER")) {
 			host = uriComponents.getHost();
 			if (adminUser.getOrganization().getOrganizationType().equals("PLATFORM")) {
@@ -81,7 +85,7 @@ public class OrganizationService {
 				.host(host).port(uriComponents.getPort());
 		String url = uriBuilder.toUriString();
 		url = url + "/home/?action=registration&org="
-				+ StringEscapeUtils.escapeHtml4(user.getOrganization().getName()).replaceAll(" ", "%20") + "&email="
+				+ StringEscapeUtils.escapeHtml4(user.getOrganization().getName()).replace(" ", "%20") + "&email="
 				+ user.getEmailId() + "&type=join";
 		String[] notifications = userService.buildJoiningInvitationContent(user.getOrganization(),
 				userRoles.get(0).getRole(), adminUser,
@@ -98,7 +102,7 @@ public class OrganizationService {
 						.getAppConfigForGranterOrg(user.getOrganization().getId(),
 								AppConfiguration.PLATFORM_EMAIL_FOOTER)
 						.getConfigValue()
-						.replaceAll("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",user.getOrganization()
+						.replace("%RELEASE_VERSION%", releaseService.getCurrentRelease().getVersion()).replace("%TENANT%",user.getOrganization()
 						.getName()) });
 	}
 

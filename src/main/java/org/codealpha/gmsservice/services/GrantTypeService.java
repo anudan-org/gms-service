@@ -24,6 +24,6 @@ public class GrantTypeService {
     }
 
     public GrantType findById(Long id){
-        return grantTypeRepository.findById(id).get();
+        return grantTypeRepository.findById(id).orElse(null);
     }
 }

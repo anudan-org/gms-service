@@ -50,7 +50,7 @@ public class ReportDetailVO {
     if(value!=null) {
       for (ReportStringAttribute stringAttribute : value) {
 
-        Optional<SectionVO> so = sections.stream().filter(a -> a.getId()==stringAttribute.getSection().getId()).findFirst();
+        Optional<SectionVO> so = sections.stream().filter(a -> a.getId().longValue()==stringAttribute.getSection().getId().longValue()).findFirst();
         if(so.isPresent()) {
           sectionVO = so.get();
         }else{
@@ -62,7 +62,6 @@ public class ReportDetailVO {
         sectionAttribute.setFieldName(stringAttribute.getSectionAttribute().getFieldName());
         sectionAttribute
             .setFieldType(stringAttribute.getSectionAttribute().getFieldType());
-        //sectionAttribute.setDeletable(stringAttribute.getSectionAttribute().getDeletable());
         sectionAttribute.setRequired(stringAttribute.getSectionAttribute().getRequired());
         sectionAttribute.setAttributeOrder(stringAttribute.getSectionAttribute().getAttributeOrder());
         sectionAttribute.setCanEdit(stringAttribute.getSectionAttribute().getCanEdit());
@@ -97,36 +96,7 @@ public class ReportDetailVO {
             logger.error(e.getMessage(),e);
           }
           sectionAttribute.setFieldTableValue(tableData);
-        } /*else if(sectionAttribute.getFieldType().equalsIgnoreCase("disbursement")){
-          ObjectMapper mapper = new ObjectMapper();
-          String[] colHeaders = new String[]{"Disbursement Date","Actual Disbursement","Funds from other Sources","Notes"};
-          if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ){
-            List<TableData> tableDataList = new ArrayList<>();
-            TableData tableData = new TableData();
-            tableData.setName("1");
-            tableData.setHeader("#");
-            tableData.setEnteredByGrantee(false);
-            tableData.setColumns(new ColumnData[4]);
-            for(int i=0;i<tableData.getColumns().length;i++){
-
-              tableData.getColumns()[i] = new ColumnData(colHeaders[i],"",(i==1 || i==2)?"currency":i==0?"date":null);
-            }
-            tableDataList.add(tableData);
-
-            try {
-              sectionAttribute.setFieldValue( mapper.writeValueAsString(tableDataList));
-            } catch (JsonProcessingException e) {
-              logger.error(e.getMessage(),e);
-            }
-          }
-          List<TableData> tableData = null;
-          try {
-            tableData = mapper.readValue(sectionAttribute.getFieldValue(), new TypeReference<List<TableData>>() {});
-          } catch (IOException e) {
-            logger.error(e.getMessage(),e);
-          }
-          sectionAttribute.setFieldTableValue(tableData);
-        }*/ else if(sectionAttribute.getFieldType().equalsIgnoreCase("document")){
+        } else if(sectionAttribute.getFieldType().equalsIgnoreCase("document")){
 
           ObjectMapper mapper = new ObjectMapper();
           if(sectionAttribute.getFieldValue()==null || sectionAttribute.getFieldValue().trim().equalsIgnoreCase("") ) {
@@ -186,7 +156,7 @@ public class ReportDetailVO {
         if (sectionAttributes == null) {
           sectionAttributes = new ArrayList<>();
         }
-        if (sectionAttributes.size()>0 && !sectionAttributes.contains(sectionAttribute)) {
+        if (!sectionAttributes.isEmpty() && !sectionAttributes.contains(sectionAttribute)) {
           sectionAttributes.add(sectionAttribute);
         }
         sectionVO.setAttributes(sectionAttributes);

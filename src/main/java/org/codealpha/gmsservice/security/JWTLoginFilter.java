@@ -46,14 +46,7 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
     creds =
         new ObjectMapper().readValue(request.getInputStream(), AccountCredentials.class);
     Collection<GrantedAuthority> authorities = new ArrayList<>();
-    authorities.add(new GrantedAuthority() {
-
-      @Override
-      public String getAuthority() {
-        // TODO Auto-generated method stub
-        return creds.getProvider();
-      }
-    });
+    authorities.add((GrantedAuthority) () -> creds.getProvider());
 
 
 
@@ -70,7 +63,7 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
   protected void successfulAuthentication(HttpServletRequest req, HttpServletResponse res,
       FilterChain chain, Authentication auth) throws IOException, ServletException {
 
-    User user = null;
+    User user = new User();
     String token = ((Map<String,String>) auth.getDetails()).get("TOKEN");
     if(!"ANUDAN".equalsIgnoreCase(token)){
       user = userRepository.findByEmailIdAndOrganization(auth.getName(),organizationRepository.findByCode(token));
@@ -83,9 +76,6 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
         }
       }
     }
-
-    Long userId = user.getId();
-
 
     ObjectMapper mapper = new ObjectMapper();
     String userJSON = mapper.writeValueAsString(user);

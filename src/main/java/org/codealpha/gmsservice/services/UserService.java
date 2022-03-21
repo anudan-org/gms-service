@@ -38,8 +38,7 @@ public class UserService {
     private PasswordResetRequestService passwordResetRequestService;
 
     public User getUserByEmailAndOrg(String email, Organization org) {
-        User user = userRepository.findByEmailAndOrg(email, org.getId());
-        return user;
+        return userRepository.findByEmailAndOrg(email, org.getId());
     }
 
     public User getUserById(Long userId) {
@@ -72,9 +71,7 @@ public class UserService {
     }
 
     public List<User> findByOrganization(Organization org) {
-        List<User> users = userRepository.findByOrganization(org);
-        // users.removeIf(u -> u.isDeleted());
-        return users;
+        return userRepository.findByOrganization(org);
     }
 
     public List<User> getGranteeUsers(Organization org) {
@@ -103,14 +100,7 @@ public class UserService {
         String url = "";
         try {
             uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
-            if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE")) {
-                // host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".")
-                // + 1);
-                host = uriComponents.getHost();
-
-            } else {
-                host = uriComponents.getHost();
-            }
+            host = uriComponents.getHost();
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
                     .host(host).port(uriComponents.getPort());
             url = uriBuilder.toUriString();
@@ -127,10 +117,10 @@ public class UserService {
             resetRequest = passwordResetRequestService.savePasswordResetRequest(resetRequest);
 
             url = url + "/home?action=reset-password&email=" + user.getEmailId() + "&key=" + key + "&org="
-                    + user.getOrganization().getName().replaceAll(" ", "%20");
-            mailMessage = mailMessage.replaceAll("%RESET_LINK%", url);
-            mailMessage = mailMessage.replaceAll("%USER_NAME%", user.getFirstName());
-            mailMessage = mailMessage.replaceAll("%ORGANIZATION%", user.getOrganization().getName());
+                    + user.getOrganization().getName().replace(" ", "%20");
+            mailMessage = mailMessage.replace("%RESET_LINK%", url);
+            mailMessage = mailMessage.replace("%USER_NAME%", user.getFirstName());
+            mailMessage = mailMessage.replace("%ORGANIZATION%", user.getOrganization().getName());
             commonEmailSevice.sendMail(new String[] { !user.isDeleted() ? user.getEmailId() : null }, null, mailSubject,
                     mailMessage, new String[] { mailFooter });
 

@@ -19,7 +19,7 @@ public class Detail {
     @JsonProperty("summary")
     private Map<String,List<DetailedSummary>> summary = null;
     @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    private Map<String, Object> additionalProperties = new HashMap<>();
 
     public Detail(String name, Map<String,List<DetailedSummary>> summary) {
         this.name = name;
