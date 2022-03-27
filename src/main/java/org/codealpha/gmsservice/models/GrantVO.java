@@ -62,6 +62,9 @@ public class GrantVO {
     private List<GrantTagVO> tags;
     private Double refundAmount;
     private String refundReason;
+    private Double actualSpent;
+
+
     @JsonIgnore
     private List<GrantStringAttribute> stringAttributes;
 
@@ -606,5 +609,13 @@ public class GrantVO {
 
     public void setOngoingDisbursementAmount(Double ongoingDisbursementAmount) {
         this.ongoingDisbursementAmount = ongoingDisbursementAmount;
+    }
+
+    public Double getActualSpent() {
+        return actualSpent;
+    }
+
+    public void setActualSpent(Double actualSpent) {
+        this.actualSpent = actualSpent;
     }
 }
