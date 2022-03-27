@@ -232,6 +232,8 @@ public class Grant {
   private Double refundAmount;
   @Column
   private String refundReason;
+  @Column
+  private Double actualSpent;
 
   public Boolean getClosureInProgress() {
     return closureInProgress;
@@ -711,5 +713,13 @@ public class Grant {
 
   public void setActualRefunds(List<ActualRefund> actualRefunds) {
     this.actualRefunds = actualRefunds;
+  }
+
+  public Double getActualSpent() {
+    return actualSpent;
+  }
+
+  public void setActualSpent(Double actualSpent) {
+    this.actualSpent = actualSpent;
   }
 }

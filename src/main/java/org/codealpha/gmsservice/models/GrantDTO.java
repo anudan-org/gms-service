@@ -66,6 +66,7 @@ public class GrantDTO {
   private Boolean closureInProgress = false;
   private Double refundAmount;
   private String refundReason;
+  private Double actualSpent;
 
   public Boolean getClosureInProgress() {
     return closureInProgress;
@@ -540,5 +541,13 @@ public class GrantDTO {
 
   public void setGrantTags(List<GrantTagsDTO> grantTags) {
     this.grantTags = grantTags;
+  }
+
+  public Double getActualSpent() {
+    return actualSpent;
+  }
+
+  public void setActualSpent(Double actualSpent) {
+    this.actualSpent = actualSpent;
   }
 }

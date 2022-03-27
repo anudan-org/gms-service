@@ -44,5 +44,5 @@ add column grant_refund_reason text,
 add column actual_refunds text;
 
 update report_specific_sections  set is_system_generated=true where section_name='Project Indicators' or section_name='Project Funds';
-update closure_specific_sections  set is_system_generated=true where section_name='Project Indicators' or section_name='Project Funds';
 
+alter table grants add column actual_spent double precision;
