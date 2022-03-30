@@ -1,4 +1,3 @@
-[![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-white.svg)](https://sonarcloud.io/dashboard?id=anudan-org_anudan-app)
 
 # Anudan Grant Management System: Backend
 
