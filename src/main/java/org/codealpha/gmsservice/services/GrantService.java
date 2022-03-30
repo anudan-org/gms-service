@@ -1572,7 +1572,8 @@ public class GrantService {
         grant.setGrantorOrganization((Granter) tenant);
         grant.setGrantStatus(grantToSave.getGrantStatus());
         grant.setName(grantToSave.getName());
-
+        grant.setRefundAmount(grantToSave.getRefundAmount());
+        grant.setRefundReason(grantToSave.getRefundReason());
         grantToSave.setOrganization(grantToSave.getOrganization());
 
         grant.setOrganization(grantToSave.getOrganization());
