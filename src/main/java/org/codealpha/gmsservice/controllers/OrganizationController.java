@@ -1,5 +1,7 @@
 package org.codealpha.gmsservice.controllers;
 
+import org.codealpha.gmsservice.entities.Grantee;
+import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.models.OrganizationDTO;
 import org.codealpha.gmsservice.repositories.OrganizationRepository;
