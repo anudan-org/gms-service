@@ -1,5 +1,7 @@
 package org.codealpha.gmsservice.controllers;
 
+import org.codealpha.gmsservice.entities.Grantee;
+import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.models.OrganizationDTO;
 import org.codealpha.gmsservice.repositories.OrganizationRepository;
@@ -47,7 +49,11 @@ public class OrganizationController {
 
 	@PostMapping("/")
 	public Organization saveOrganization(@RequestBody OrganizationDTO org){
-		return service.save(modelMapper.map(org,Organization.class));
+		if(org.getOrganizationType().equalsIgnoreCase("GRANTEE")){
+			return service.save(modelMapper.map(org, Grantee.class));
+		}else{
+			return service.save(modelMapper.map(org, Granter.class));
+		}
 	}
 
 	@PostMapping(value="/logo",consumes = {"multipart/form-data" })

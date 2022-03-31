@@ -11,6 +11,8 @@ import javax.persistence.*;
 public class Granter extends Organization {
 
 	@PrimaryKeyJoinColumn(name = "id", referencedColumnName = "id")
+	@Id
+	@GeneratedValue
 	protected Long id;
 
 	@Column(name = "host_url")
