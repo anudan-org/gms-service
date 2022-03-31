@@ -47,7 +47,11 @@ public class OrganizationController {
 
 	@PostMapping("/")
 	public Organization saveOrganization(@RequestBody OrganizationDTO org){
-		return service.save(modelMapper.map(org,Organization.class));
+		if(org.getOrganizationType().equalsIgnoreCase("GRANTEE")){
+			return service.save(modelMapper.map(org, Grantee.class));
+		}else{
+			return service.save(modelMapper.map(org, Granter.class));
+		}
 	}
 
 	@PostMapping(value="/logo",consumes = {"multipart/form-data" })
