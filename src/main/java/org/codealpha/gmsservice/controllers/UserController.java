@@ -620,7 +620,7 @@ public class UserController {
         }
         Double disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGranter(tenantOrg.getId(), status);
         Filter categoryFilter = new Filter();
-        categoryFilter.setName(StringUtils.capitalize(status + GRANTS));
+        categoryFilter.setName(StringUtils.capitalize(status.substring(0,1))+StringUtils.lowerCase(status.substring(1)) + GRANTS);
         categoryFilter.setTotalGrants(activeGrantSummaryCommitted.getGrantCount());
         SimpleDateFormat sd = new SimpleDateFormat("yyyy");
         categoryFilter.setPeriod(sd.format(activeGrantSummaryCommitted.getPeriodStart()) + "-"
