@@ -932,6 +932,7 @@ public class GrantClosureController {
                                             @PathVariable("userId") Long userId,
                                             @PathVariable("isRefund") Boolean isRefund,
                                             @RequestHeader("X-TENANT-CODE") String tenantCode) {
+
         GrantClosure closure = saveClosure(closureId, closureToSave, userId, tenantCode);
 
         ClosureSpecificSection specificSection = new ClosureSpecificSection();
@@ -946,6 +947,13 @@ public class GrantClosureController {
         specificSection.setRefund(isRefund);
         if (Boolean.TRUE.equals(isRefund)) {
             specificSection.setSystemGenerated(true);
+            closure.getGrant().setRefundAmount(0d);
+            grantService.saveGrant(closure.getGrant().getId(),closure.getGrant(),userId,tenantCode);
+
+            ActualRefundDTO actualRefundDTO = new ActualRefundDTO();
+            actualRefundDTO.setCreatedBy(userId);
+            addActualRefund(userId,closureId,tenantCode,actualRefundDTO);
+
         }
         specificSection = closureService.saveSection(specificSection);
 
@@ -1234,6 +1242,9 @@ public class GrantClosureController {
             }
             closureToSave.getGrant().setRefundAmount(null);
             closureToSave.getGrant().setRefundReason(null);
+            Grant grant = grantService.saveGrant(closureToSave.getGrant().getId(),closureToSave.getGrant(),userId,tenantCode);
+            closureToSave.setGrant(grant);
+            closureService.saveClosure(modelMapper.map(closureToSave,GrantClosure.class));
         }
 
         closure = closureService.getClosureById(closureId);

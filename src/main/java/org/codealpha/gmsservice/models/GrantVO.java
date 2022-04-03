@@ -54,6 +54,8 @@ public class GrantVO {
     private Boolean deleted;
     private Date movedOn;
     private Boolean hasOngoingDisbursement;
+    private Double actualOngoingDisbursementRecorded;
+    private String ongoingDisbursementNote;
     private int projectDocumentsCount = 0;
     private Double approvedDisbursementsTotal = 0d;
     private int approvedReportsForGrant;
@@ -617,5 +619,21 @@ public class GrantVO {
 
     public void setActualSpent(Double actualSpent) {
         this.actualSpent = actualSpent;
+    }
+
+    public Double getActualOngoingDisbursementRecorded() {
+        return actualOngoingDisbursementRecorded;
+    }
+
+    public void setActualOngoingDisbursementRecorded(Double actualOngoingDisbursementRecorded) {
+        this.actualOngoingDisbursementRecorded = actualOngoingDisbursementRecorded;
+    }
+
+    public String getOngoingDisbursementNote() {
+        return ongoingDisbursementNote;
+    }
+
+    public void setOngoingDisbursementNote(String ongoingDisbursementNote) {
+        this.ongoingDisbursementNote = ongoingDisbursementNote;
     }
 }

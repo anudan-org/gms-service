@@ -197,6 +197,10 @@ public class Grant {
   @Transient
   private Double ongoingDisbursementAmount;
   @Transient
+  private Double actualOngoingDisbursementRecorded;
+  @Transient
+  private String ongoingDisbursementNote;
+  @Transient
   private int projectDocumentsCount = 0;
   @Transient
   private Double approvedDisbursementsTotal = 0d;
@@ -721,5 +725,21 @@ public class Grant {
 
   public void setActualSpent(Double actualSpent) {
     this.actualSpent = actualSpent;
+  }
+
+  public Double getActualOngoingDisbursementRecorded() {
+    return actualOngoingDisbursementRecorded;
+  }
+
+  public void setActualOngoingDisbursementRecorded(Double actualOngoingDisbursementRecorded) {
+    this.actualOngoingDisbursementRecorded = actualOngoingDisbursementRecorded;
+  }
+
+  public String getOngoingDisbursementNote() {
+    return ongoingDisbursementNote;
+  }
+
+  public void setOngoingDisbursementNote(String ongoingDisbursementNote) {
+    this.ongoingDisbursementNote = ongoingDisbursementNote;
   }
 }

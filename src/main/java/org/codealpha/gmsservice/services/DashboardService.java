@@ -107,18 +107,20 @@ public class DashboardService {
             tenants.add(tenant);
         }
 
-        for (GrantCard grant: grants) {
+        for (GrantCard grant : grants) {
             for (Tenant tenant : tenants) {
                 if ((user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")
                         && tenant.getName().equalsIgnoreCase(grant.getGrantorOrganization().getCode()))
                         || (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"))) {
                     List<GrantCard> grantList = tenant.getGrants();
 
+
                     if (grant.getOrigGrantId() != null
                             && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(ACTIVE)
                             && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(CLOSED)) {
                         grant.setOrigGrantRefNo(grantService.getById(grant.getOrigGrantId()).getReferenceNo());
                     }
+
 
                     grantList.add(grant);
                     tenant.setGrants(grantList);
@@ -217,8 +219,8 @@ public class DashboardService {
         return granterGranteeRepository.getGranteeSummaryForGranter(granterId);
     }
 
-    public GranterGrantee getMyGranteesSummaryForGranter(Long userId,String status) {
-        return granterGranteeRepository.getMyGranteeSummaryForGranter(userId,status);
+    public GranterGrantee getMyGranteesSummaryForGranter(Long userId, String status) {
+        return granterGranteeRepository.getMyGranteeSummaryForGranter(userId, status);
     }
 
     public GranterActiveUser getActiveUserSummaryForGranter(Long granterId) {
@@ -252,11 +254,12 @@ public class DashboardService {
         List<Long> closedStatusIds = closedStatuses.stream().mapToLong(WorkflowStatus::getId).boxed()
                 .collect(Collectors.toList());
 
-        List<Grant> activeGrants = grantRepository.findGrantsByStatus(granterId,status);
+        List<Grant> activeGrants = grantRepository.findGrantsByStatus(granterId, status);
         if (activeGrants != null && !activeGrants.isEmpty()) {
             for (Grant ag : activeGrants) {
-                disbursedAmount+= getAllLinkedGrantsDisbursementsTotal(ag,closedStatusIds);
+                disbursedAmount += getAllLinkedGrantsDisbursementsTotal(ag, closedStatusIds);
             }
+
         }
 
         return disbursedAmount;
@@ -265,10 +268,10 @@ public class DashboardService {
     public Double getActiveGrantDisbursedAmountForGrantee(Long granteeId, String status) {
         Double disbursedAmount = 0d;
 
-        List<Grant> activeGrants = grantRepository.findGrantsByStatusForGrantee(granteeId,status);
+        List<Grant> activeGrants = grantRepository.findGrantsByStatusForGrantee(granteeId, status);
         if (activeGrants != null && !activeGrants.isEmpty()) {
             for (Grant ag : activeGrants) {
-                disbursedAmount+= getAllLinkedGrantsDisbursementsTotalForGrantee(ag);
+                disbursedAmount += getAllLinkedGrantsDisbursementsTotalForGrantee(ag);
             }
         }
 
@@ -295,12 +298,12 @@ public class DashboardService {
         return granterReportSummaryStatusRepository.getReportsByStatusForUser(userId);
     }
 
-    public List<TransitionStatusOrder> getStatusTransitionOrderByWorflowAndGrantType(Long workflowId,Long grantTypeId){
-        return transitionStatusOrderRepository.getTransitionOrderByWorkflowAndGrantType(workflowId,grantTypeId);
+    public List<TransitionStatusOrder> getStatusTransitionOrderByWorflowAndGrantType(Long workflowId, Long grantTypeId) {
+        return transitionStatusOrderRepository.getTransitionOrderByWorkflowAndGrantType(workflowId, grantTypeId);
     }
 
-    public TransitionStatusOrder getStatusTransitionOrderForTerminalState(Long workflowId,Long grantTypeId){
-        return transitionStatusOrderRepository.getTransitionOrderForTerminalState(workflowId,grantTypeId);
+    public TransitionStatusOrder getStatusTransitionOrderForTerminalState(Long workflowId, Long grantTypeId) {
+        return transitionStatusOrderRepository.getTransitionOrderForTerminalState(workflowId, grantTypeId);
     }
 
     public List<GranterReportStatus> findGrantCountsByReportNumbersAndStatusForGranter(Long granterId, String status) {
@@ -369,7 +372,7 @@ public class DashboardService {
                     List<ActualDisbursement> actualDisbursements = actualDisbursementRepository
                             .findByDisbursementId(cd.getId());
 
-                    for(ActualDisbursement ad : actualDisbursements){
+                    for (ActualDisbursement ad : actualDisbursements) {
                         DateTime actualDisbursementDate = new DateTime(ad.getDisbursementDate(),
                                 DateTimeZone.forID(timezone));
                         DateTime calendarYearStart1 = new DateTime(DateTimeZone.forID(timezone)).withYear(actualDisbursementDate.getYear())
@@ -433,7 +436,7 @@ public class DashboardService {
                     List<ActualDisbursement> actualDisbursements = actualDisbursementRepository
                             .findByDisbursementId(cd.getId());
 
-                    for(ActualDisbursement ad : actualDisbursements){
+                    for (ActualDisbursement ad : actualDisbursements) {
                         DateTime actualDisbursementDate = new DateTime(ad.getDisbursementDate(),
                                 DateTimeZone.forID(timezone));
                         DateTime calendarYearStart1 = new DateTime(DateTimeZone.forID(timezone)).withYear(actualDisbursementDate.getYear())
@@ -455,7 +458,6 @@ public class DashboardService {
     }
 
 
-
     public Double[] getDisbursedAmountForGranterAndPeriodAndStatus(Integer period, Long granterId, String status) {
 
         Double total = 0d;
@@ -468,7 +470,7 @@ public class DashboardService {
         List<Long> closedStatusIds = closedStatuses.stream().mapToLong(WorkflowStatus::getId).boxed()
                 .collect(Collectors.toList());
 
-        List<Grant> grantsByStatus = grantRepository.findGrantsByStatus(granterId,status);
+        List<Grant> grantsByStatus = grantRepository.findGrantsByStatus(granterId, status);
         if (grantsByStatus != null && !grantsByStatus.isEmpty()) {
             List<Disbursement> allClosedDisbursements = new ArrayList<>();
 
@@ -488,6 +490,9 @@ public class DashboardService {
             }
 
             for (ActualDisbursement ad : allActualDisbursements) {
+                if (ad.getDisbursementDate() == null) {
+                    continue;
+                }
                 DateTime disbursementDate = new DateTime(ad.getDisbursementDate(), DateTimeZone.forID(timezone));
                 Double disbursementAmt = ad.getActualAmount();
                 DateTime calendarYearStart = new DateTime(DateTimeZone.forID(timezone))
@@ -506,7 +511,7 @@ public class DashboardService {
             }
 
         }
-        return new Double[] { total };
+        return new Double[]{total};
     }
 
     public Double[] getDisbursedAmountForUserAndPeriodAndStatus(Integer period, User user, String status) {
@@ -521,7 +526,7 @@ public class DashboardService {
         List<Long> closedStatusIds = closedStatuses.stream().mapToLong(WorkflowStatus::getId).boxed()
                 .collect(Collectors.toList());
 
-        List<Grant> grantsByStatus = grantRepository.findGrantsByStatusForUser(user.getId(),status);
+        List<Grant> grantsByStatus = grantRepository.findGrantsByStatusForUser(user.getId(), status);
         if (grantsByStatus != null && !grantsByStatus.isEmpty()) {
             List<Disbursement> allClosedDisbursements = new ArrayList<>();
 
@@ -559,7 +564,7 @@ public class DashboardService {
             }
 
         }
-        return new Double[] { total };
+        return new Double[]{total};
     }
 
     public Long[] getCommittedAmountForGranterAndPeriodAndStatus(Integer period, Long granterId, String status) {
@@ -596,7 +601,7 @@ public class DashboardService {
                 }
             }
         }
-        return new Long[] { total, Long.valueOf(countMap.size()) };
+        return new Long[]{total, Long.valueOf(countMap.size())};
     }
 
     public Long[] getCommittedAmountForUserAndPeriodAndStatus(Integer period, User user, String status) {
@@ -633,14 +638,14 @@ public class DashboardService {
                 }
             }
         }
-        return new Long[] { total, Long.valueOf(countMap.size()) };
+        return new Long[]{total, Long.valueOf(countMap.size())};
     }
 
     public GranterGrantSummaryCommitted getDisbursementPeriodsForUserAndStatus(Long userId, String status) {
-        return granterActiveGrantSummaryCommittedRepository.getDisbursementPeriodsForUserAndStatus(userId,status);
+        return granterActiveGrantSummaryCommittedRepository.getDisbursementPeriodsForUserAndStatus(userId, status);
     }
 
     public List<GranteeReportStatus> getReportApprovedStatusSummaryForGranteeAndStatusByGranter(Long id, String status) {
-        return granteeReportStatusRepository.getReportApprovedStatusSummaryForGranteeAndStatusByGranter(id,status);
+        return granteeReportStatusRepository.getReportApprovedStatusSummaryForGranteeAndStatusByGranter(id, status);
     }
 }
