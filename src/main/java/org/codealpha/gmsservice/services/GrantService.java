@@ -797,7 +797,7 @@ public class GrantService {
 
         List<Long> draftAndReviewStatusIds = workflowStatusRepository.findByWorkflow(workflowRepository.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(), DISBURSEMENT_CAPS))
                 .stream()
-                .filter(st -> (st.getInternalStatus().equalsIgnoreCase(DRAFT) || st.getInternalStatus().equalsIgnoreCase("REVIEW")))
+                .filter(st -> (st.getInternalStatus().equalsIgnoreCase(DRAFT) || st.getInternalStatus().equalsIgnoreCase("REVIEW") || st.getInternalStatus().equalsIgnoreCase(ACTIVE)))
                 .mapToLong(WorkflowStatus::getId).boxed()
                 .collect(Collectors.toList());
         List<Disbursement> draftAndReviewDisbursements = disbursementService
@@ -807,6 +807,17 @@ public class GrantService {
         if (draftAndReviewDisbursements != null && !draftAndReviewDisbursements.isEmpty()) {
             grant.setHasOngoingDisbursement(true);
             grant.setOngoingDisbursementAmount(draftAndReviewDisbursements.get(0).getRequestedAmount());
+            List<ActualDisbursement> actualDisbursements = disbursementService.getActualDisbursementsForDisbursement(draftAndReviewDisbursements.get(0));
+            if(!actualDisbursements.isEmpty()){
+                grant.setActualOngoingDisbursementRecorded(actualDisbursements.stream().mapToDouble(y -> {
+                    try {
+                        return Double.valueOf(y.getActualAmount());
+                    } catch (Exception e) {
+                        return 0.0;
+                    }
+                }).sum());
+            }
+            grant.setOngoingDisbursementNote(draftAndReviewDisbursements.get(0).getReason());
 
         }
         return grant;

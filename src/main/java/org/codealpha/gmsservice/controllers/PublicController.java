@@ -2,6 +2,7 @@ package org.codealpha.gmsservice.controllers;
 
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Release;
 import org.codealpha.gmsservice.entities.User;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.support.ResourcePatternUtils;
 import org.springframework.http.MediaType;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/public")
@@ -49,15 +53,31 @@ public class PublicController {
     @ApiOperation(value = "Get tenant logo image for <img> tag 'src' property")
     public void getLogoImage(HttpServletResponse servletResponse, @ApiParam(name = "tenant", value = "Tenant code") @PathVariable("tenant") String tenant) {
 
-        Resource image = resourceLoader.getResource(FILE + uploadLocation + "/" + tenant + "/logo/logo.png");
-
-        servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
-        servletResponse.setHeader("org-name", organizationService.findOrganizationByTenantCode(tenant).getName());
+        Resource[] logoResources = new Resource[]{};
         try {
-            StreamUtils.copy(image.getInputStream(), servletResponse.getOutputStream());
+            logoResources = ResourcePatternUtils.getResourcePatternResolver(resourceLoader).getResources(FILE + uploadLocation + "/" + tenant + "/logo/logo.*");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        } catch (IOException ex) {
-            logger.error(ex.getMessage(), ex);
+        Optional<Resource> first = Arrays.stream(logoResources).filter(a -> a.getFilename().lastIndexOf("svg") > 0 || a.getFilename().lastIndexOf("png") > 0).findFirst();
+        Resource image = first.isPresent()?first.get():null;
+
+        if(image!=null && image.getFilename()!=null) {
+            if (image.getFilename().lastIndexOf(".png") > 0) {
+                servletResponse.setContentType(MediaType.IMAGE_PNG_VALUE);
+            } else if (image.getFilename().lastIndexOf(".svg") > 0) {
+                servletResponse.setContentType("image/svg+xml");
+            } else if (image.getFilename().lastIndexOf(".jpg") > 0 || image.getFilename().lastIndexOf(".jpeg") > 0) {
+                servletResponse.setContentType(MediaType.IMAGE_JPEG_VALUE);
+            }
+            servletResponse.setHeader("org-name", organizationService.findOrganizationByTenantCode(tenant).getName());
+            try {
+                StreamUtils.copy(image.getInputStream(), servletResponse.getOutputStream());
+
+            } catch (IOException ex) {
+                logger.error(ex.getMessage(), ex);
+            }
         }
     }
 
@@ -121,7 +141,18 @@ public class PublicController {
         } else {
             throw new ResourceNotFoundException("Invalid request to access Anudan");
         }
+    }
 
+    @GetMapping("/tenant/{domain}/navbar")
+    public String getTenantNavbarColor(@PathVariable("domain") String domain) {
+        Organization org = organizationService.findOrganizationByTenantCode(domain.toUpperCase());
+        if (org.getOrganizationType().equalsIgnoreCase("GRANTER")) {
+            return ((Granter)org).getNavbarColor();
+        }else if (org.getOrganizationType().equalsIgnoreCase("PLATFORM")) {
+            return "#ffffff;";
+        } else {
+            throw new ResourceNotFoundException("Invalid request to access Anudan");
+        }
     }
 
     @GetMapping("/release")
