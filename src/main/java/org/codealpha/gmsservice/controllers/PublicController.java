@@ -57,7 +57,7 @@ public class PublicController {
         try {
             logoResources = ResourcePatternUtils.getResourcePatternResolver(resourceLoader).getResources(FILE + uploadLocation + "/" + tenant + "/logo/logo.*");
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(),e);
         }
 
         Optional<Resource> first = Arrays.stream(logoResources).filter(a -> a.getFilename().lastIndexOf("svg") > 0 || a.getFilename().lastIndexOf("png") > 0).findFirst();
