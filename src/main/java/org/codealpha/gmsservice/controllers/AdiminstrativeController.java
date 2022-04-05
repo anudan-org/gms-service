@@ -54,6 +54,7 @@ public class AdiminstrativeController {
     public static final String COLOR_CODE = "#fdf6ff";
     public static final String IMPLEMENTED_VIA_EXTERNAL_PARTNER = "Implemented via external partner";
     public static final String EXTERNAL_IMPLEMENTATION = "External Implementation";
+    public static final String CLOSURE = "CLOSURE";
     @Autowired
     private OrganizationService organizationService;
     @Autowired
@@ -944,6 +945,8 @@ public class AdiminstrativeController {
                         query = validation.getValidationQuery().replace("%reportId%", String.valueOf(objectId));
                     } else if (object.equalsIgnoreCase(DISBURSEMENT)) {
                         query = validation.getValidationQuery().replace("%disbursementId%", String.valueOf(objectId));
+                    }else if (object.equalsIgnoreCase(CLOSURE)) {
+                        query = validation.getValidationQuery().replace("%closureId%", String.valueOf(objectId));
                     }
 
                     try (PreparedStatement ps = conn.prepareStatement(query)) {
