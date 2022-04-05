@@ -46,3 +46,6 @@ add column actual_refunds text;
 update report_specific_sections  set is_system_generated=true where section_name='Project Indicators' or section_name='Project Funds';
 
 alter table grants add column actual_spent double precision;
+
+insert into messages(id,message) values(16,'The request refund amount cannot be greater than the available amount.');
+insert into workflow_validations (id,object,validation_query,type,active,message_id) values(11,'CLOSURE','select case when b>(a) then true else false end _failed from ( select id,sum(available) a,sum(requested_refund) b,sum(actual_refunds) c from ( select a.id,sum(ad.actual_amount)-g.actual_spent available,g.refund_amount requested_refund,0 actual_refunds from grant_closure a inner join grants g on g.id=a.grant_id inner join disbursements d on d.grant_id=g.id inner join actual_disbursements ad on ad.disbursement_id=d.id inner join actual_refunds ar on ar.associated_grant_id=g.id where a.id=%closureId% group by a.id,g.id,g.actual_spent,g.refund_amount union select %closureId%,0,0, sum(amount) from grant_closure a inner join actual_refunds b on b.associated_grant_id=a.grant_id where a.id=%closureId% group by a.grant_id)X group by X.id) Y','WARN',true,16)
