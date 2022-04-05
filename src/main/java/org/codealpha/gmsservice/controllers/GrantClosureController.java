@@ -1240,6 +1240,15 @@ public class GrantClosureController {
             if (closureToSave.getGrant().getActualRefunds() != null && !closureToSave.getGrant().getActualRefunds().isEmpty()) {
                 grantService.deleteActualRefundsForGrant(closureToSave.getGrant().getActualRefunds());
             }
+
+            long[] docIds = closureToSave.getClosureDocuments().stream().mapToLong(ClosureDocument::getId).toArray();
+            if(docIds.length>0){
+                for(long docId: docIds){
+                    closureService.deleteClosureDocument(closureService.getClosureDocumentById(docId));
+                    closureToSave.getClosureDocuments().removeIf(d -> d.getId().longValue()==docId);
+                }
+
+            }
             closureToSave.getGrant().setRefundAmount(null);
             closureToSave.getGrant().setRefundReason(null);
             Grant grant = grantService.saveGrant(closureToSave.getGrant().getId(),closureToSave.getGrant(),userId,tenantCode);
