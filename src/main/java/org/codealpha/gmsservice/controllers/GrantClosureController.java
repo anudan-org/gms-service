@@ -153,6 +153,11 @@ public class GrantClosureController {
             @PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode) {
         GrantClosure closure = closureService.getClosureById(closureId);
+        Grant grant = grantService.getById(closure.getGrant().getId());
+        grant.setClosureInProgress(false);
+        grant.setActualSpent(null);
+        grantService.deleteActualRefundsForGrant(grant.getActualRefunds());
+        grantService.saveGrant(grant);
 
         closureService.deleteClosure(closure);
     }
