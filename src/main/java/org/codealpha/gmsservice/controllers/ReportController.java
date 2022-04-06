@@ -80,6 +80,7 @@ public class ReportController {
     public static final String TENANT = "%TENANT%";
     public static final String PATH_SEPARATOR = "/";
     public static final String UTF_8 = "UTF-8";
+    public static final String TABLE = "table";
     private static Logger logger = LoggerFactory.getLogger(ReportController.class);
 
     @Autowired
@@ -767,12 +768,19 @@ public class ReportController {
                     if ((user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE) && !grantTypeService.findById(report.getGrant().getGrantTypeId()).isInternal()) || (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER") && grantTypeService.findById(report.getGrant().getGrantTypeId()).isInternal())) {
                         reportStringAttribute.setActualTarget(sectionAttributesVO.getActualTarget());
                     }
-                    if (sectionAttribute.getFieldType().equalsIgnoreCase("table")
+                    if (sectionAttribute.getFieldType().equalsIgnoreCase(TABLE)
                             || sectionAttribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
                         List<TableData> tableData = sectionAttributesVO.getFieldTableValue();
                         // Do the below only if field type is Disbursement
                         // The idea is to create a real disbursement if a new row is added
-                        if (sectionAttribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)
+                        if (sectionAttribute.getFieldType().equalsIgnoreCase(TABLE)){
+                            try {
+                                reportStringAttribute.setValue(new ObjectMapper().writeValueAsString(sectionAttributesVO.getFieldTableValue()));
+                                reportService.saveReportStringAttribute(reportStringAttribute);
+                            } catch (JsonProcessingException e) {
+                                logger.error(e.getMessage(),e);
+                            }
+                        }else if (sectionAttribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)
                                 && user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
                             try {
                                 List<TableData> newEntries = new ArrayList<>();
@@ -1942,7 +1950,7 @@ public class ReportController {
                 if (sectionAttribute.getFieldType().equalsIgnoreCase("kpi")) {
                     stringAttribute.setGrantLevelTarget(null);
                     stringAttribute.setFrequency(finalReport1.getType().toLowerCase());
-                } else if (sectionAttribute.getFieldType().equalsIgnoreCase("table")) {
+                } else if (sectionAttribute.getFieldType().equalsIgnoreCase(TABLE)) {
                     stringAttribute.setValue(a.getExtras());
                 }
                 stringAttribute = reportService.saveReportStringAttribute(stringAttribute);
