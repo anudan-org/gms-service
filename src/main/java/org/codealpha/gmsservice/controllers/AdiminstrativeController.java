@@ -914,18 +914,16 @@ public class AdiminstrativeController {
         orgTagService.delete(existingTag);
     }
 
-    @PostMapping("/{id}/workflow/validate/{object}/{fromStateId}/{toStateId}")
+    @PostMapping("/{id}/workflow/validate/{object}/{fromStateId}/{toStateId}/{isForward}")
     public WorkflowValidationResult getGrantValidations(@PathVariable("id") Long objectId,
                                                         @PathVariable("object") String object,
                                                         @PathVariable("fromStateId") Long fromStateId,
                                                         @PathVariable("toStateId") Long toStateId,
-                                                        @RequestBody(required = false) List<ColumnData> meta) {
+                                                        @RequestBody(required = false) List<ColumnData> meta,
+                                                        @PathVariable("isForward")boolean isForward) {
         WorkflowValidationResult validationResult = new WorkflowValidationResult();
         WorkflowStatusTransition transition = workflowStatusTransitionService.findByFromAndToStates(workflowStatusService.getById(fromStateId), workflowStatusService.getById(toStateId));
 
-        if (transition == null) {
-            return validationResult;
-        }
         List<WorkflowValidation> validationsToRun = workflowValidationService.getActiveValidationsByObject(object.toUpperCase());
         if (!validationsToRun.isEmpty()) {
 
@@ -961,12 +959,18 @@ public class AdiminstrativeController {
                         }
                     }
                 }
-                boolean canMove = transition.getAllowTransitionOnValidationWarning() == null || transition.getAllowTransitionOnValidationWarning();
-                if (!canMove && !wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).isEmpty()) {
-                    canMove = false;
-                } else if (!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).isEmpty()) {
-                    canMove = true;
+                boolean canMove = false;
+                if(isForward){
+                    canMove = transition.getAllowTransitionOnValidationWarning() == null || transition.getAllowTransitionOnValidationWarning();
+                    if (!canMove && !wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).isEmpty()) {
+                        canMove = false;
+                    } else if (!canMove && wfValidationMessages.stream().filter(m -> m.getType().equalsIgnoreCase("warn")).collect(Collectors.toList()).isEmpty()) {
+                        canMove = true;
+                    }
+                }else{
+                    canMove=true;
                 }
+
                 validationResult.setCanMove(canMove);
                 validationResult.setMessages(wfValidationMessages);
 
