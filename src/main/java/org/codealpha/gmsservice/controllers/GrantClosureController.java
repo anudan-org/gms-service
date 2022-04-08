@@ -218,16 +218,6 @@ public class GrantClosureController {
 
         closure = closureService.saveClosure(closure);
 
-        ActualRefund actualRefund = new ActualRefund();
-        actualRefund.setAmount(null);
-        actualRefund.setAssociatedGrant(grant);
-        actualRefund.setCreatedBy(userId);
-        actualRefund.setCreatedDate(DateTime.now().toDate());
-        actualRefund.setNote("");
-        actualRefund.setRefundDate(null);
-        actualRefund = closureService.saveActualRefund(actualRefund);
-        List<ActualRefund> refunds = new ArrayList<>();
-        refunds.add(actualRefund);
         closure = closureService.getClosureById(closure.getId());
 
 
@@ -953,15 +943,34 @@ public class GrantClosureController {
         specificSection.setRefund(isRefund);
         if (Boolean.TRUE.equals(isRefund)) {
             specificSection.setSystemGenerated(true);
-            closure.getGrant().setRefundAmount(0d);
+            closure.getGrant().setRefundAmount(null);
             grantService.saveGrant(closure.getGrant().getId(),closure.getGrant(),userId,tenantCode);
 
             ActualRefundDTO actualRefundDTO = new ActualRefundDTO();
             actualRefundDTO.setCreatedBy(userId);
             addActualRefund(userId,closureId,tenantCode,actualRefundDTO);
-
         }
         specificSection = closureService.saveSection(specificSection);
+        if(Boolean.TRUE.equals(isRefund)){
+            ClosureSpecificSectionAttribute specificSectionAttribute = new ClosureSpecificSectionAttribute();
+            specificSectionAttribute.setAttributeOrder(1);
+            specificSectionAttribute.setCanEdit(true);
+            specificSectionAttribute.setDeletable(true);
+            specificSectionAttribute.setRequired(true);
+            specificSectionAttribute.setFieldName("Refund Documents");
+            specificSectionAttribute.setFieldType("document");
+            specificSectionAttribute.setGranter(specificSection.getGranter());
+            specificSectionAttribute.setSection(specificSection);
+
+            specificSectionAttribute = closureService.saveClosureSpecificSectionAttribute(specificSectionAttribute);
+
+            ClosureStringAttribute stringAttribute = new ClosureStringAttribute();
+            stringAttribute.setSection(specificSection);
+            stringAttribute.setSectionAttribute(specificSectionAttribute);
+            stringAttribute.setClosure(closure);
+            closureService.saveClosureStringAttribute(stringAttribute);
+
+        }
 
         if (closureService.checkIfClosureTemplateChanged(closure, specificSection, null)) {
             closureService.createNewClosureTemplateFromExisiting(closure);
