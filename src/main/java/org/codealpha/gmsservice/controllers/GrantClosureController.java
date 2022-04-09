@@ -292,6 +292,8 @@ public class GrantClosureController {
             final AtomicInteger[] attribVOOrder = {new AtomicInteger(1)};
 
             if (specificSection.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS)) {
+                specificSection.setSystemGenerated(true);
+                closureService.saveClosureSpecificSection(specificSection);
                 for (Map<DatePeriod, PeriodAttribWithLabel> hold : getPeriodsWithAttributes(closure.getGrant(), userId)) {
                     hold.forEach((entry, val) -> val.getAttributes().forEach(attribVo -> {
                         ClosureSpecificSectionAttribute sectionAttribute = new ClosureSpecificSectionAttribute();
