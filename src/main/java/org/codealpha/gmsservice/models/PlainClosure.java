@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.models;
 
 import org.codealpha.gmsservice.entities.ActualRefund;
+import org.codealpha.gmsservice.entities.ClosureDocument;
 import org.codealpha.gmsservice.entities.ClosureReason;
 
 import java.util.List;
@@ -18,6 +19,8 @@ public class PlainClosure {
     private Double grantRefundAmount;
     private String grantRefundReason;
     private List<ActualRefund> actualRefunds;
+    private Double actualSpent;
+    private List<ClosureDocument> closureDocs;
 
     public ClosureReason getReason() {
         return reason;
@@ -113,5 +116,21 @@ public class PlainClosure {
 
     public void setActualRefunds(List<ActualRefund> actualRefunds) {
         this.actualRefunds = actualRefunds;
+    }
+
+    public Double getActualSpent() {
+        return actualSpent;
+    }
+
+    public void setActualSpent(Double actualSpent) {
+        this.actualSpent = actualSpent;
+    }
+
+    public List<ClosureDocument> getClosureDocs() {
+        return closureDocs;
+    }
+
+    public void setClosureDocs(List<ClosureDocument> closureDocs) {
+        this.closureDocs = closureDocs;
     }
 }

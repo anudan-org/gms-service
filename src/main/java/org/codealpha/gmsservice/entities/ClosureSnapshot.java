@@ -51,6 +51,10 @@ public class ClosureSnapshot {
   private String grantRefundReason;
   @Column
   private String actualRefunds;
+  @Column
+  private Double actualSpent;
+  @Column
+  private String closureDocs;
 
   public Long getId() {
     return id;
@@ -180,5 +184,21 @@ public class ClosureSnapshot {
 
   public void setActualRefunds(String actualRefunds) {
     this.actualRefunds = actualRefunds;
+  }
+
+  public Double getActualSpent() {
+    return actualSpent;
+  }
+
+  public void setActualSpent(Double actualSpent) {
+    this.actualSpent = actualSpent;
+  }
+
+  public String getClosureDocs() {
+    return closureDocs;
+  }
+
+  public void setClosureDocs(String closureDocs) {
+    this.closureDocs = closureDocs;
   }
 }

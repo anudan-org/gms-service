@@ -597,12 +597,19 @@ public class GrantClosureService {
         plainClosure.setDescription(closure.getDescription());
         plainClosure.setName(closure.getGrant().getName());
         plainClosure.setReferenceNo(closure.getGrant().getReferenceNo());
+
         if(snapshot!=null) {
             plainClosure.setGrantRefundAmount(snapshot.getGrantRefundAmount());
             plainClosure.setGrantRefundReason(snapshot.getGrantRefundReason());
+            plainClosure.setActualSpent(snapshot.getActualSpent());
             String refundsString = snapshot.getActualRefunds();
             if (refundsString != null && !refundsString.trim().equalsIgnoreCase("")) {
                 plainClosure.setActualRefunds(new ObjectMapper().readValue(refundsString, new TypeReference<List<ActualRefund>>() {
+                }));
+            }
+            String closureDocsString = snapshot.getClosureDocs();
+            if (closureDocsString != null && !closureDocsString.trim().equalsIgnoreCase("")) {
+                plainClosure.setClosureDocs(new ObjectMapper().readValue(closureDocsString, new TypeReference<List<ClosureDocument>>() {
                 }));
             }
         }
