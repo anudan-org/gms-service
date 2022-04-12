@@ -2301,9 +2301,15 @@ public class GrantClosureController {
         ClosureSnapshot tempSnapshot = new ClosureSnapshot();
         tempSnapshot.setGrantRefundAmount(currenClosure.getGrant().getRefundAmount());
         tempSnapshot.setGrantRefundReason(currenClosure.getGrant().getRefundReason());
+        tempSnapshot.setActualSpent(currenClosure.getGrant().getActualSpent());
         List<ActualRefund> actualRefunds = grantService.getActualRefundsForGrant(currenClosure.getGrant().getId());
         if (actualRefunds != null && !actualRefunds.isEmpty()) {
             tempSnapshot.setActualRefunds(new ObjectMapper().writeValueAsString(actualRefunds));
+        }
+
+        List<ClosureDocument> closureDocs = currenClosure.getClosureDocuments();
+        if (closureDocs != null && !closureDocs.isEmpty()) {
+            tempSnapshot.setClosureDocs(new ObjectMapper().writeValueAsString(closureDocs));
         }
         return closureService.closureToPlain(currenClosure, tempSnapshot);
     }
@@ -2357,6 +2363,9 @@ public class GrantClosureController {
             if (refunds != null && !refunds.isEmpty()) {
                 snapshot.setActualRefunds(new ObjectMapper().writeValueAsString(refunds));
             }
+
+            snapshot.setActualSpent(closure.getGrant().getActualSpent());
+            snapshot.setClosureDocs(closure.getClosureDocuments()!=null?new ObjectMapper().writeValueAsString(closure.getClosureDocuments()):"[]");
 
             closureSnapshotService.saveClosureSnapshot(snapshot);
         } catch (JsonProcessingException e) {
