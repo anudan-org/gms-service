@@ -42,7 +42,7 @@ public class ReportService {
     public static final String CLOSED = "CLOSED";
     public static final String CURRENCY = "currency";
     public static final String REPORT = "REPORT";
-    public static final String HOME_ACTION_LOGIN_ORG = "/home/?action=login&org=";
+    public static final String HOME_ACTION_LOGIN_ORG = "/landing/?action=login&org=";
     public static final String EMAIL_TYPE_REPORT = "&email=&type=report";
     public static final String GRANT_NAME = "%GRANT_NAME%";
     public static final String REPORT_NAME = "%REPORT_NAME%";

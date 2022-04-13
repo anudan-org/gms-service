@@ -56,6 +56,7 @@ public class GrantService {
     public static final String DRAFT = "DRAFT";
     public static final String TENANT = "%TENANT%";
     public static final String DISBURSEMENT_CAPS = "DISBURSEMENT";
+    public static final String HOME_ACTION_LOGIN_G = "/landing/?action=login&g=";
 
 
     @Autowired
@@ -457,11 +458,11 @@ public class GrantService {
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
                     .host(host).port(uriComponents.getPort());
             url = uriBuilder.toUriString();
-            url = url + "/home/?action=login&g=" + code + "&email=&type=grant";
+            url = url + HOME_ACTION_LOGIN_G + code + "&email=&type=grant";
         } catch (Exception e) {
             url = link;
 
-            url = url + "/home/?action=login&g=" + code + "&email=&type=grant";
+            url = url + HOME_ACTION_LOGIN_G + code + "&email=&type=grant";
         }
 
         String grantName = "";
@@ -811,7 +812,7 @@ public class GrantService {
             if(!actualDisbursements.isEmpty()){
                 grant.setActualOngoingDisbursementRecorded(actualDisbursements.stream().mapToDouble(y -> {
                     try {
-                        return Double.valueOf(y.getActualAmount());
+                        return y.getActualAmount();
                     } catch (Exception e) {
                         return 0.0;
                     }

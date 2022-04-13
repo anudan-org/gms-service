@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 public class DisbursementService {
 
     public static final String TD = "</td>";
+    public static final String HOME_ACTION_LOGIN_D = "/landing/?action=login&d=";
     @Autowired
     private DisbursementRepository disbursementRepository;
     @Autowired
@@ -290,11 +291,11 @@ public class DisbursementService {
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
                     .host(host).port(uriComponents.getPort());
             url = uriBuilder.toUriString();
-            url = url + "/home/?action=login&d=" + code + "&email=&type=disbursement";
+            url = url + HOME_ACTION_LOGIN_D + code + "&email=&type=disbursement";
         } catch (Exception e) {
             url = link;
 
-            url = url + "/home/?action=login&d=" + code + "&email=&type=disbursement";
+            url = url + HOME_ACTION_LOGIN_D + code + "&email=&type=disbursement";
         }
 
         String grantName = "";
