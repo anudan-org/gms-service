@@ -28,7 +28,7 @@ public class GrantClosureService {
 
     public static final String GRANT_NAME = "%GRANT_NAME%";
     public static final String TENANT_NAME = "%TENANT_NAME%";
-    public static final String HOME_ACTION_LOGIN_ORG = "/home/?action=login&org=";
+    public static final String HOME_ACTION_LOGIN_ORG = "/landing/?action=login&org=";
     public static final String R = "&r=";
     public static final String EMAIL_TYPE_CLOSURE = "&email=&type=closure";
     public static final String TD = "</td>";
@@ -527,7 +527,8 @@ public class GrantClosureService {
         }
 
         String message = msgConfigValue.replace(GRANT_NAME, grantName)
-                .replace("%CLOSURE_LINK%", granteeUrl)
+                .replace("%GRANTEE_CLOSURE_LINK%", granteeUrl)
+                .replace("%GRANTER_CLOSURE_LINK%",granterUrl)
                 .replace(GRANT_NAME,grantName)
                 .replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner)
                 .replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner)
@@ -544,7 +545,7 @@ public class GrantClosureService {
                 .replace("%ENTITY_TYPE%", "report")
                 .replace("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
                 .replace("%ENTITY_NAME%", "Closure Request of grant " + grantName);
-        String subject = subConfigValue.replace("%CLOSURE_NAME%", "Closure Request for Grant " + finalClosure.getGrant().getName());
+        String subject = subConfigValue.replace(GRANT_NAME, "Closure Request for Grant " + finalClosure.getGrant().getName());
 
         return new String[] { subject, message };
     }
