@@ -62,7 +62,7 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
 
     @Query(value = "select g.*,(select assignments from grant_assignments where grant_id=g.id and state_id=g.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants g inner join workflow_statuses w on w.id=g.grant_status_id\n"
             + "inner join grant_assignments ga on ga.grant_id=g.id and ga.state_id=w.id\n"
-            + "where ga.assignments=?1 and w.internal_status=?2 and g.deleted=false and g.closure_in_progress=false", nativeQuery = true)
+            + "where ga.assignments=?1 and w.internal_status=?2 and g.deleted=false", nativeQuery = true)
     List<Grant> findGrantsOwnedByUserByStatus(Long userId, String status);
 
     @Query(value = "select A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants A inner join workflow_statuses B on B.id=A.grant_status_id where ( (B.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id) >0   ) or B.internal_status!='DRAFT') and A.id=?1", nativeQuery = true)
