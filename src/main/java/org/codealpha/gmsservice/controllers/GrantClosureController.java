@@ -175,7 +175,13 @@ public class GrantClosureController {
         if (userOrg.getOrganizationType().equalsIgnoreCase(GRANTEE)) {
             closures = closureService.getClosuresForGranteeUser(userId);
         } else if (userOrg.getOrganizationType().equalsIgnoreCase(GRANTER)) {
-            closures = closureService.getClosuresForUser(userId);
+            Boolean isAdmin = userService.getUserById(userId).getUserRoles().stream().anyMatch(a -> a.getRole().getName().equalsIgnoreCase("Admin"));
+            if(Boolean.TRUE.equals(isAdmin)){
+                closures = closureService.getClosuresForAdminUser(userId);
+            }else{
+                closures = closureService.getClosuresForUser(userId);
+            }
+
         }
 
 
