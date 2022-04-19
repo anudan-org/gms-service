@@ -686,6 +686,15 @@ public class GrantClosureService {
         return new ArrayList<>();
     }
 
+    public List<GrantClosure> getClosuresForAdminUser(Long userId) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if(optionalUser.isPresent()){
+            return closureRepository.findAllAssignedClosuresForGranterAdmin(userId,optionalUser.get().getOrganization().getId());
+        }
+
+        return new ArrayList<>();
+    }
+
     public List<GrantClosure> getClosuresForGranteeUser(Long userId) {
         Optional<User> optionalUser = userRepository.findById(userId);
         if(optionalUser.isPresent()){
