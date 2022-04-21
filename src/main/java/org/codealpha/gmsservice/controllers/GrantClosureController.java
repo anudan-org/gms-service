@@ -296,7 +296,6 @@ public class GrantClosureController {
             specificSection = closureService.saveClosureSpecificSection(specificSection);
             ClosureSpecificSection finalSpecificSection = specificSection;
             GrantClosure finalClosure = closure;
-            final AtomicInteger[] attribVOOrder = {new AtomicInteger(1)};
 
             if (specificSection.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS)) {
                 specificSection.setSystemGenerated(true);
@@ -304,7 +303,7 @@ public class GrantClosureController {
                 for (Map<DatePeriod, PeriodAttribWithLabel> hold : getPeriodsWithAttributes(closure.getGrant(), userId)) {
                     hold.forEach((entry, val) -> val.getAttributes().forEach(attribVo -> {
                         ClosureSpecificSectionAttribute sectionAttribute = new ClosureSpecificSectionAttribute();
-                        sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
+                        sectionAttribute.setAttributeOrder(attribVo.getAttributeOrder());
                         sectionAttribute.setDeletable(attribVo.isDeletable());
                         sectionAttribute.setFieldName(attribVo.getFieldName());
                         sectionAttribute.setFieldType(attribVo.getFieldType());
@@ -330,7 +329,7 @@ public class GrantClosureController {
 
             closureSection.getAttributes().forEach(a -> {
                 ClosureSpecificSectionAttribute sectionAttribute = new ClosureSpecificSectionAttribute();
-                sectionAttribute.setAttributeOrder(attribVOOrder[0].getAndIncrement());
+                sectionAttribute.setAttributeOrder(a.getAttributeOrder());
                 sectionAttribute.setDeletable(a.getDeletable());
                 sectionAttribute.setFieldName(a.getFieldName());
                 sectionAttribute.setFieldType(a.getFieldType());
