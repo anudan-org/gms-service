@@ -32,3 +32,4 @@ gms.log*
 .vscode/settings.json
 .vscode/launch.json
 release.json
+application.yml

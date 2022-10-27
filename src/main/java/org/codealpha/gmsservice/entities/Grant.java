@@ -238,6 +238,8 @@ public class Grant {
   private String refundReason;
   @Column
   private Double actualSpent;
+  @Column
+  private Double interestEarned;
 
   public Boolean getClosureInProgress() {
     return closureInProgress;
@@ -729,6 +731,12 @@ public class Grant {
 
   public Double getActualOngoingDisbursementRecorded() {
     return actualOngoingDisbursementRecorded;
+  }
+
+  public Double getInterestEarned() { return interestEarned; }
+
+  public void setInterestEarned(Double interestEarned) {
+    this.interestEarned = interestEarned;
   }
 
   public void setActualOngoingDisbursementRecorded(Double actualOngoingDisbursementRecorded) {

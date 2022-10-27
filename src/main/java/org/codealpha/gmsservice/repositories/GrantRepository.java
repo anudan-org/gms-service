@@ -74,7 +74,7 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
     @Query(value = "select a.*,(select assignments from grant_assignments where grant_id=a.id and state_id=a.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants a where grantor_org_id=?1",nativeQuery = true)
     List<Grant> getAllGrantsForGranter(Long granterId);
 
-    @Query(value = "select g.*,(select assignments from grant_assignments where grant_id=g.id and state_id=g.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants g inner join workflow_statuses w on w.id=g.grant_status_id where g.grantor_org_id=?1 and w.internal_status=?2 and g.deleted=false",nativeQuery = true)
+    @Query(value = "select g.*,(select assignments from grant_assignments where grant_id=g.id and state_id=g.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants g inner join workflow_statuses w on w.id=g.grant_status_id where g.grantor_org_id=?1 and w.internal_status=?2 and (case when 'CLOSED'=?2 then g.amend_grant_id is null else true end) and g.deleted=false",nativeQuery = true)
     List<Grant> findGrantsByStatus(Long granterId,String status);
 
     @Query(value = "select g.*,\n" +
@@ -149,17 +149,17 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
             "                        and a.deleted=false) X where X.internal_status not in ('CLOSED','ACTIVE') group by X.assignments",nativeQuery = true)
     Long getUpcomingGrantsDisbursementAmount(Long userId);
 
-    @Query(value = "select count(distinct(a.id)) from grants a inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id inner join workflow_statuses c on c.id=a.grant_status_id where b.assignments=?1 and (c.internal_status=?2) and a.deleted=false",nativeQuery = true)
+    @Query(value = "select count(distinct(a.id)) from grants a inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id inner join workflow_statuses c on c.id=a.grant_status_id where b.assignments=?1 and (c.internal_status=?2) and (case when 'CLOSED'=?2 then a.amend_grant_id is null else true end) and a.deleted=false",nativeQuery = true)
     Long getGrantsTotalForUserByStatus(Long userId,String status);
 
-    @Query(value = "select sum(a.amount) from grants a inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id inner join workflow_statuses c on c.id=a.grant_status_id where b.assignments=?1 and (c.internal_status=?2) and a.deleted=false group by b.assignments",nativeQuery = true)
+    @Query(value = "select sum(a.amount) from grants a inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id inner join workflow_statuses c on c.id=a.grant_status_id where b.assignments=?1 and (c.internal_status=?2) and (case when 'CLOSED'=?2 then a.amend_grant_id is null else true end) and a.deleted=false group by b.assignments",nativeQuery = true)
     Long getCommittedAmountByUserAndStatus(Long userId, String status);
 
     @Query(value = "select sum(disbursed_amount_for_grant(id)) from (select distinct a.id\n" +
             "from grants a \n" +
             "inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id \n" +
             "inner join workflow_statuses c on c.id=a.grant_status_id \n" +
-            "where b.assignments=?1 and (c.internal_status=?2) and a.deleted=false) X",nativeQuery = true)
+            "where b.assignments=?1 and (c.internal_status=?2) and (case when 'CLOSED'=?2 then a.amend_grant_id is null else true end) and a.deleted=false) X",nativeQuery = true)
     Long getDisbursedAmountByUserAndStatus(Long userId, String status);
 
     @Query(value = "select count(distinct(a.organization_id)) from grants a inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id inner join workflow_statuses c on c.id=a.grant_status_id where b.assignments=?1 and (c.internal_status=?2) and a.deleted=false",nativeQuery = true)

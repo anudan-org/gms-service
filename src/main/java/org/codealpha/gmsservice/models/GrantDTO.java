@@ -69,7 +69,8 @@ public class GrantDTO {
   private Double refundAmount;
   private String refundReason;
   private Double actualSpent;
-
+  private Double interestEarned;
+  
   public Boolean getClosureInProgress() {
     return closureInProgress;
   }
@@ -551,6 +552,14 @@ public class GrantDTO {
 
   public void setActualSpent(Double actualSpent) {
     this.actualSpent = actualSpent;
+  }
+
+  public Double getInterestEarned() {
+    return interestEarned;
+  }
+
+  public void setInterestEarned(Double interestEarned) {
+    this.interestEarned = interestEarned;
   }
 
   public Double getActualOngoingDisbursementRecorded() {
