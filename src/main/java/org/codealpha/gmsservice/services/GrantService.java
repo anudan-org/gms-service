@@ -1502,7 +1502,7 @@ public class GrantService {
         for (SectionVO sec : grant.getGrantDetails().getSections()) {
             if (sec.getAttributes() != null) {
                 sec.getAttributes().sort(
-                        (a, b) -> Long.compare(a.getAttributeOrder(),b.getAttributeOrder());
+                        (a, b) -> Long.compare(a.getAttributeOrder(),b.getAttributeOrder()));
             }
         }
 
