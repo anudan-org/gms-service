@@ -676,11 +676,11 @@ public class GrantService {
 
         grant.getWorkflowAssignment().sort((a, b) -> a.getId().compareTo(b.getId()));
         grant.getGrantDetails().getSections()
-                .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+                .sort((a, b) -> Long.compare(a.getOrder(),b.getOrder()));
         for (SectionVO section : grant.getGrantDetails().getSections()) {
             if (section.getAttributes() != null) {
                 section.getAttributes().sort(
-                        (a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+                        (a, b) -> Long.compare(a.getAttributeOrder(),b.getAttributeOrder()));
             }
         }
 
@@ -1070,11 +1070,11 @@ public class GrantService {
         }
         if (grant.getGrantDetails().getSections() != null && !grant.getGrantDetails().getSections().isEmpty()) {
             List<PlainSection> plainSections = new ArrayList<>();
-            grant.getGrantDetails().getSections().sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+            grant.getGrantDetails().getSections().sort((a, b) -> Long.compare(a.getOrder(),b.getOrder()));
             for (SectionVO section : grant.getGrantDetails().getSections()) {
                 List<PlainAttribute> plainAttributes = new ArrayList<>();
                 if (section.getAttributes() != null && !section.getAttributes().isEmpty()) {
-                    section.getAttributes().sort((a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+                    section.getAttributes().sort((a, b) -> Long.compare(a.getAttributeOrder(),b.getAttributeOrder()));
                     ObjectMapper mapper = new ObjectMapper();
                     for (SectionAttributesVO attribute : section.getAttributes()) {
                         PlainAttribute plainAttribute = new PlainAttribute();
@@ -1352,11 +1352,11 @@ public class GrantService {
         grant.getWorkflowAssignment().sort((a, b) -> a.getId().compareTo(b.getId()));
         grant.getSubmissions().sort((a, b) -> a.getSubmitBy().compareTo(b.getSubmitBy()));
         grant.getGrantDetails().getSections()
-                .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+                .sort((a, b) -> Long.compare(a.getOrder(),b.getOrder()));
         for (SectionVO sec : grant.getGrantDetails().getSections()) {
             if (sec.getAttributes() != null) {
                 sec.getAttributes().sort(
-                        (a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+                        (a, b) -> Long.compare(a.getAttributeOrder(),b.getAttributeOrder()));
             }
         }
 
@@ -1498,11 +1498,11 @@ public class GrantService {
 
         grant.getSubmissions().sort((a, b) -> a.getSubmitBy().compareTo(b.getSubmitBy()));
         grant.getGrantDetails().getSections()
-                .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+                .sort((a, b) -> Long.compare(a.getOrder(),b.getOrder()));
         for (SectionVO sec : grant.getGrantDetails().getSections()) {
             if (sec.getAttributes() != null) {
                 sec.getAttributes().sort(
-                        (a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+                        (a, b) -> Long.compare(a.getAttributeOrder(),b.getAttributeOrder());
             }
         }
 

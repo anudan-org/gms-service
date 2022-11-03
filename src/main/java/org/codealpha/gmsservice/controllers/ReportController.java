@@ -381,11 +381,11 @@ public class ReportController {
 
         report.getWorkflowAssignments().sort((a, b) -> a.getId().compareTo(b.getId()));
         report.getReportDetails().getSections()
-                .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
+                .sort((a, b) -> Long.compare(a.getOrder(),b.getOrder()));
         for (SectionVO section : report.getReportDetails().getSections()) {
             if (section.getAttributes() != null) {
                 section.getAttributes().sort(
-                        (a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+                        (a, b) -> Long.compare(a.getAttributeOrder(),b.getAttributeOrder()));
             }
         }
 
