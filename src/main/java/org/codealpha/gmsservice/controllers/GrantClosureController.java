@@ -646,12 +646,18 @@ public class GrantClosureController {
         closure.setNoteAddedByUser(closureVO.getNoteAddedByUser());
 
         closure.getWorkflowAssignment().sort((a, b) -> a.getId().compareTo(b.getId()));
+     //   closure.getClosureDetails().getSections()
+     //           .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
         closure.getClosureDetails().getSections()
-                .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
-        for (SectionVO section : closure.getClosureDetails().getSections()) {
+                .sort((a, b) -> Long.compare(a.getOrder(), b.getOrder()));
+     
+     for (SectionVO section : closure.getClosureDetails().getSections()) {
             if (section.getAttributes() != null) {
-                section.getAttributes().sort(
-                        (a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+             //   section.getAttributes().sort(
+             //           (a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+              section.getAttributes().sort(
+                        (a, b) -> Long.compare(a.getAttributeOrder(),b.getAttributeOrder()));
+     
             }
         }
 
