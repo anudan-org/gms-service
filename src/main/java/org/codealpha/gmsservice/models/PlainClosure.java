@@ -20,6 +20,7 @@ public class PlainClosure {
     private String grantRefundReason;
     private List<ActualRefund> actualRefunds;
     private Double actualSpent;
+    private Double interestEarned;
     private List<ClosureDocument> closureDocs;
 
     public ClosureReason getReason() {
@@ -124,6 +125,14 @@ public class PlainClosure {
 
     public void setActualSpent(Double actualSpent) {
         this.actualSpent = actualSpent;
+    }
+
+    public Double getInterestEarned() {
+        return interestEarned;
+    }
+
+    public void setInterestEarned(Double interestEarned) {
+        this.interestEarned = interestEarned;
     }
 
     public List<ClosureDocument> getClosureDocs() {

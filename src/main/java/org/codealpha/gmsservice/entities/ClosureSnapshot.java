@@ -54,6 +54,8 @@ public class ClosureSnapshot {
   @Column
   private Double actualSpent;
   @Column
+  private Double interestEarned;
+  @Column
   private String closureDocs;
 
   public Long getId() {
@@ -192,6 +194,12 @@ public class ClosureSnapshot {
 
   public void setActualSpent(Double actualSpent) {
     this.actualSpent = actualSpent;
+  }
+
+  public Double getInterestEarned() { return interestEarned; }
+
+  public void setInterestEarned(Double interestEarned) {
+    this.interestEarned = interestEarned;
   }
 
   public String getClosureDocs() {

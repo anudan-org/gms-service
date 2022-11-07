@@ -158,6 +158,7 @@ public class GrantClosureController {
         Grant grant = grantService.getById(closure.getGrant().getId());
         grant.setClosureInProgress(false);
         grant.setActualSpent(null);
+        grant.setInterestEarned(null);
         grantService.deleteActualRefundsForGrant(grant.getActualRefunds());
         grantService.saveGrant(grant);
 
@@ -2310,6 +2311,7 @@ public class GrantClosureController {
         tempSnapshot.setGrantRefundAmount(currenClosure.getGrant().getRefundAmount());
         tempSnapshot.setGrantRefundReason(currenClosure.getGrant().getRefundReason());
         tempSnapshot.setActualSpent(currenClosure.getGrant().getActualSpent());
+        tempSnapshot.setInterestEarned(currenClosure.getGrant().getInterestEarned());
         List<ActualRefund> actualRefunds = grantService.getActualRefundsForGrant(currenClosure.getGrant().getId());
         if (actualRefunds != null && !actualRefunds.isEmpty()) {
             tempSnapshot.setActualRefunds(new ObjectMapper().writeValueAsString(actualRefunds));
@@ -2373,6 +2375,7 @@ public class GrantClosureController {
             }
 
             snapshot.setActualSpent(closure.getGrant().getActualSpent());
+            snapshot.setInterestEarned(closure.getGrant().getInterestEarned());
             snapshot.setClosureDocs(closure.getClosureDocuments() != null ? new ObjectMapper().writeValueAsString(closure.getClosureDocuments()) : "[]");
 
             closureSnapshotService.saveClosureSnapshot(snapshot);

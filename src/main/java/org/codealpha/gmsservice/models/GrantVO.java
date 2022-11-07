@@ -65,6 +65,7 @@ public class GrantVO {
     private Double refundAmount;
     private String refundReason;
     private Double actualSpent;
+    private Double interestEarned;
 
 
     @JsonIgnore
@@ -619,6 +620,14 @@ public class GrantVO {
 
     public void setActualSpent(Double actualSpent) {
         this.actualSpent = actualSpent;
+    }
+
+    public Double getInterestEarned() {
+        return interestEarned;
+    }
+
+    public void setInterestEarned(Double interestEarned) {
+        this.interestEarned = interestEarned;
     }
 
     public Double getActualOngoingDisbursementRecorded() {

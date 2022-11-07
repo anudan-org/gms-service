@@ -603,6 +603,7 @@ public class GrantClosureService {
             plainClosure.setGrantRefundAmount(snapshot.getGrantRefundAmount());
             plainClosure.setGrantRefundReason(snapshot.getGrantRefundReason());
             plainClosure.setActualSpent(snapshot.getActualSpent());
+            plainClosure.setInterestEarned(snapshot.getInterestEarned());
             String refundsString = snapshot.getActualRefunds();
             if (refundsString != null && !refundsString.trim().equalsIgnoreCase("")) {
                 plainClosure.setActualRefunds(new ObjectMapper().readValue(refundsString, new TypeReference<List<ActualRefund>>() {
