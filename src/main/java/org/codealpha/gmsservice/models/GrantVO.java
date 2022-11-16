@@ -62,10 +62,7 @@ public class GrantVO {
     private Long grantTypeId;
     private List<GrantTag> grantTags;
     private List<GrantTagVO> tags;
-    private Double refundAmount;
-    private String refundReason;
-    private Double actualSpent;
-    private Double interestEarned;
+   
 
 
     @JsonIgnore
@@ -590,44 +587,12 @@ public class GrantVO {
         this.closureId = closureId;
     }
 
-    public Double getRefundAmount() {
-        return refundAmount;
-    }
-
-    public void setRefundAmount(Double refundAmount) {
-        this.refundAmount = refundAmount;
-    }
-
-    public String getRefundReason() {
-        return refundReason;
-    }
-
-    public void setRefundReason(String refundReason) {
-        this.refundReason = refundReason;
-    }
-
     public Double getOngoingDisbursementAmount() {
         return ongoingDisbursementAmount;
     }
 
     public void setOngoingDisbursementAmount(Double ongoingDisbursementAmount) {
         this.ongoingDisbursementAmount = ongoingDisbursementAmount;
-    }
-
-    public Double getActualSpent() {
-        return actualSpent;
-    }
-
-    public void setActualSpent(Double actualSpent) {
-        this.actualSpent = actualSpent;
-    }
-
-    public Double getInterestEarned() {
-        return interestEarned;
-    }
-
-    public void setInterestEarned(Double interestEarned) {
-        this.interestEarned = interestEarned;
     }
 
     public Double getActualOngoingDisbursementRecorded() {

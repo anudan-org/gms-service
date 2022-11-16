@@ -34,6 +34,10 @@ public class GrantClosureDTO {
     private String description;
     private Long ownerId;
     private String ownerName;
+    private Double refundAmount;
+    private String refundReason;
+     private Double actualSpent;
+    private Double interestEarned;
     private List<ClosureDocument> closureDocuments;
 
     public Long getOwnerId() {
@@ -59,7 +63,36 @@ public class GrantClosureDTO {
     public void setDescription(String description) {
         this.description = description;
     }
+    public Double getRefundAmount() {
+        return refundAmount;
+    }
 
+    public void setRefundAmount(Double refundAmount) {
+        this.refundAmount = refundAmount;
+    }
+
+    public String getRefundReason() {
+        return refundReason;
+    }
+
+    public void setRefundReason(String refundReason) {
+        this.refundReason = refundReason;
+    }
+    public Double getActualSpent() {
+        return actualSpent;
+      }
+    
+      public void setActualSpent(Double actualSpent) {
+        this.actualSpent = actualSpent;
+      }
+    
+      public Double getInterestEarned() {
+        return interestEarned;
+      }
+    
+      public void setInterestEarned(Double interestEarned) {
+        this.interestEarned = interestEarned;
+      }
     public List<WorkFlowPermission> getFlowAuthorities() {
         return flowAuthorities;
     }

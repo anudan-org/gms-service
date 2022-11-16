@@ -75,6 +75,14 @@ public class GrantClosure {
     private Long ownerId;
     @Column
     private String ownerName;
+    @Column
+    private Double refundAmount;
+    @Column
+    private String refundReason;
+    @Column
+    private Double actualSpent;
+    @Column
+    private Double interestEarned;
     @OneToMany(mappedBy = "closure")
     private List<ClosureDocument> closureDocuments;
 
@@ -100,6 +108,33 @@ public class GrantClosure {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+    public Double getRefundAmount() {
+        return refundAmount;
+    }
+
+    public void setRefundAmount(Double refundAmount) {
+        this.refundAmount = refundAmount;
+    }
+
+    public String getRefundReason() {
+        return refundReason;
+    }
+
+    public void setRefundReason(String refundReason) {
+        this.refundReason = refundReason;
+    }
+    public Double getActualSpent() {
+        return actualSpent;
+      }
+    
+      public void setActualSpent(Double actualSpent) {
+        this.actualSpent = actualSpent;
+      }
+      public Double getInterestEarned() { return interestEarned; }
+
+    public void setInterestEarned(Double interestEarned) {
+    this.interestEarned = interestEarned;
     }
 
     public List<WorkFlowPermission> getFlowAuthorities() {

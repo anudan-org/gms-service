@@ -87,7 +87,8 @@ public class GrantClosureController {
     public static final String FILE_SEPARATOR = "/";
     public static final String UTF_8 = "UTF-8";
     public static final String TABLE = "table";
-
+    public static final String PROJECT_FUNDS = "Project Funds";
+    public static final String PROJECT_REFUND_DETAILS = "Project Refund Details";
 
     @Autowired
     private WorkflowStatusService workflowStatusService;
@@ -157,12 +158,13 @@ public class GrantClosureController {
         GrantClosure closure = closureService.getClosureById(closureId);
         Grant grant = grantService.getById(closure.getGrant().getId());
         grant.setClosureInProgress(false);
-        grant.setActualSpent(null);
-        grant.setInterestEarned(null);
-        grantService.deleteActualRefundsForGrant(grant.getActualRefunds());
+        if (grant.getActualRefunds() != null && !grant.getActualRefunds().isEmpty()) {
+            grantService.deleteActualRefundsForGrant(grant.getActualRefunds());
+        }
+       
         grantService.saveGrant(grant);
-
         closureService.deleteClosure(closure);
+
     }
 
     @GetMapping(FILE_SEPARATOR)
@@ -269,12 +271,16 @@ public class GrantClosureController {
             closureService.saveAssignmentForClosure(assignment);
 
         }
-
+    
         List<GranterClosureSection> granterClosureSections = closureTemplate.getSections();
         closure.setStringAttributes(new ArrayList<>());
         AtomicBoolean closureTemplateHasDisbursement = new AtomicBoolean(false);
         AtomicReference<ClosureStringAttribute> disbursementAttributeValue = new AtomicReference<>(new ClosureStringAttribute());
 
+        granterClosureSections.removeIf((rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_FUNDS)));
+        granterClosureSections.removeIf((rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_REFUND_DETAILS)));
+       
+        
         if (granterClosureSections.stream().noneMatch(rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS))) {
             GranterClosureSection indicatorSection = new GranterClosureSection();
             indicatorSection.setClosureTemplate(closureTemplate);
@@ -285,6 +291,7 @@ public class GrantClosureController {
             granterClosureSections.add(indicatorSection);
         }
 
+        
         for (GranterClosureSection closureSection : granterClosureSections) {
             ClosureSpecificSection specificSection = new ClosureSpecificSection();
             specificSection.setDeletable(true);
@@ -300,6 +307,7 @@ public class GrantClosureController {
 
             if (specificSection.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS)) {
                 specificSection.setSystemGenerated(true);
+
                 closureService.saveClosureSpecificSection(specificSection);
                 for (Map<DatePeriod, PeriodAttribWithLabel> hold : getPeriodsWithAttributes(closure.getGrant(), userId)) {
                     hold.forEach((entry, val) -> val.getAttributes().forEach(attribVo -> {
@@ -327,7 +335,8 @@ public class GrantClosureController {
                 }
 
             }
-
+                   
+            if (closureSection.getAttributes() != null && !closureSection.getAttributes().isEmpty()) {
             closureSection.getAttributes().forEach(a -> {
                 ClosureSpecificSectionAttribute sectionAttribute = new ClosureSpecificSectionAttribute();
                 sectionAttribute.setAttributeOrder(a.getAttributeOrder());
@@ -360,6 +369,7 @@ public class GrantClosureController {
                     disbursementAttributeValue.set(stringAttribute);
                 }
             });
+            }
         }
 
         // Handle logic for setting dibursement type in reports
@@ -598,7 +608,6 @@ public class GrantClosureController {
     }
 
     private GrantClosure closureToReturn(GrantClosure closure, Long userId) {
-
         closure.setStringAttributes(closureService.getStringAttributesForClosure(closure));
 
         List<ClosureAssignmentsVO> workflowAssignments = new ArrayList<>();
@@ -954,9 +963,9 @@ public class GrantClosureController {
         specificSection.setRefund(isRefund);
         if (Boolean.TRUE.equals(isRefund)) {
             specificSection.setSystemGenerated(true);
-            closure.getGrant().setRefundAmount(null);
+            closure.setRefundAmount(null);
             grantService.saveGrant(closure.getGrant().getId(), closure.getGrant(), userId, tenantCode);
-
+//check here 
             ActualRefundDTO actualRefundDTO = new ActualRefundDTO();
             actualRefundDTO.setCreatedBy(userId);
             addActualRefund(userId, closureId, tenantCode, actualRefundDTO);
@@ -968,7 +977,7 @@ public class GrantClosureController {
             specificSectionAttribute.setCanEdit(true);
             specificSectionAttribute.setDeletable(true);
             specificSectionAttribute.setRequired(true);
-            specificSectionAttribute.setFieldName("Refund Documents");
+            specificSectionAttribute.setFieldName("Project Refund Documents");
             specificSectionAttribute.setFieldType("document");
             specificSectionAttribute.setGranter(specificSection.getGranter());
             specificSectionAttribute.setSection(specificSection);
@@ -1006,7 +1015,9 @@ public class GrantClosureController {
         GrantClosure closure = null;
         GrantClosure savedClosure = closureService.getClosureById(closureId);
         determineCanManage(savedClosure, userId);
+
         grantService.saveGrant(closureToSave.getGrant());
+        
         if (savedClosure.isCanManage())
             closure = processClosure(modelMapper.map(closureToSave, GrantClosure.class), tenantOrg, user);
 
@@ -1014,7 +1025,7 @@ public class GrantClosureController {
             closure.getGrant().setClosureInProgress(true);
             grantService.saveGrant(closure.getGrant());
         }
-
+        System.out.println("expecting null here");
         closure = closureToReturn(closure, userId);
         return closure;
     }
@@ -1024,6 +1035,11 @@ public class GrantClosureController {
 
         closure.setReason(processNewReasonIfPresent(closureToSave));
         closure.setDescription(closureToSave.getDescription());
+        closure.setRefundAmount(closureToSave.getRefundAmount());
+        closure.setRefundReason(closureToSave.getRefundReason());
+        closure.setActualSpent(closureToSave.getActualSpent());
+        closure.setInterestEarned(closureToSave.getInterestEarned());
+        
         closure.setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
         closure.setUpdatedBy(user.getId());
         try {
@@ -1283,10 +1299,10 @@ public class GrantClosureController {
                 }
 
             }
-            closureToSave.getGrant().setRefundAmount(null);
-            closureToSave.getGrant().setRefundReason(null);
-            Grant grant = grantService.saveGrant(closureToSave.getGrant().getId(), closureToSave.getGrant(), userId, tenantCode);
-            closureToSave.setGrant(grant);
+            closureToSave.setRefundAmount(null);
+            closureToSave.setRefundReason(null);
+           // Grant grant = grantService.saveGrant(closureToSave.getGrant().getId(), closureToSave.getGrant(), userId, tenantCode);
+            //closureToSave.setGrant(grant);
             closureService.saveClosure(modelMapper.map(closureToSave, GrantClosure.class));
         }
 
@@ -1772,6 +1788,7 @@ public class GrantClosureController {
             @PathVariable("closureId") Long closureId,
             @RequestBody ClosureAssignmentModel assignmentModel,
             @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        
         GrantClosure closure = saveClosure(closureId, assignmentModel.getClosure(), userId, tenantCode);
 
         Map<Long, Long> currentAssignments = new LinkedHashMap<>();
@@ -2308,10 +2325,10 @@ public class GrantClosureController {
 
 
         ClosureSnapshot tempSnapshot = new ClosureSnapshot();
-        tempSnapshot.setGrantRefundAmount(currenClosure.getGrant().getRefundAmount());
-        tempSnapshot.setGrantRefundReason(currenClosure.getGrant().getRefundReason());
-        tempSnapshot.setActualSpent(currenClosure.getGrant().getActualSpent());
-        tempSnapshot.setInterestEarned(currenClosure.getGrant().getInterestEarned());
+        tempSnapshot.setGrantRefundAmount(currenClosure.getRefundAmount());
+        tempSnapshot.setGrantRefundReason(currenClosure.getRefundReason());
+        tempSnapshot.setActualSpent(currenClosure.getActualSpent());
+        tempSnapshot.setInterestEarned(currenClosure.getInterestEarned());
         List<ActualRefund> actualRefunds = grantService.getActualRefundsForGrant(currenClosure.getGrant().getId());
         if (actualRefunds != null && !actualRefunds.isEmpty()) {
             tempSnapshot.setActualRefunds(new ObjectMapper().writeValueAsString(actualRefunds));
@@ -2367,15 +2384,15 @@ public class GrantClosureController {
             snapshot.setFromStateId(fromStatusId);
             snapshot.setToStateId(toStatusId);
             snapshot.setMovedOn(closure.getMovedOn());
-            snapshot.setGrantRefundAmount(closure.getGrant().getRefundAmount());
-            snapshot.setGrantRefundReason(closure.getGrant().getRefundReason());
+            snapshot.setGrantRefundAmount(closure.getRefundAmount());
+            snapshot.setGrantRefundReason(closure.getRefundReason());
             List<ActualRefund> refunds = grantService.getActualRefundsForGrant(closure.getGrant().getId());
             if (refunds != null && !refunds.isEmpty()) {
                 snapshot.setActualRefunds(new ObjectMapper().writeValueAsString(refunds));
             }
 
-            snapshot.setActualSpent(closure.getGrant().getActualSpent());
-            snapshot.setInterestEarned(closure.getGrant().getInterestEarned());
+            snapshot.setActualSpent(closure.getActualSpent());
+            snapshot.setInterestEarned(closure.getInterestEarned());
             snapshot.setClosureDocs(closure.getClosureDocuments() != null ? new ObjectMapper().writeValueAsString(closure.getClosureDocuments()) : "[]");
 
             closureSnapshotService.saveClosureSnapshot(snapshot);
