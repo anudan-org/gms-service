@@ -407,7 +407,7 @@ public class GrantClosureController {
                         specificSection.setGranter((Granter) closure.getGrant().getGrantorOrganization());
                         specificSection.setClosureId(closure.getId());
                         specificSection.setClosureTemplateId(closureTemplate.getId());
-                        specificSection.setSectionName("Project Funds");
+                        specificSection.setSectionName(PROJECT_FUNDS);
                         specificSection.setSystemGenerated(true);
                         List<ClosureSpecificSection> closureSections = closureService.getClosureSections(closure);
                         specificSection.setSectionOrder(Collections.max(closureSections.stream()
@@ -1025,7 +1025,7 @@ public class GrantClosureController {
             closure.getGrant().setClosureInProgress(true);
             grantService.saveGrant(closure.getGrant());
         }
-        System.out.println("expecting null here");
+        logger.info("expecting null here");
         closure = closureToReturn(closure, userId);
         return closure;
     }
@@ -1301,8 +1301,8 @@ public class GrantClosureController {
             }
             closureToSave.setRefundAmount(null);
             closureToSave.setRefundReason(null);
-           // Grant grant = grantService.saveGrant(closureToSave.getGrant().getId(), closureToSave.getGrant(), userId, tenantCode);
-            //closureToSave.setGrant(grant);
+            Grant grant = grantService.saveGrant(closureToSave.getGrant().getId(), closureToSave.getGrant(), userId, tenantCode);
+            closureToSave.setGrant(grant);
             closureService.saveClosure(modelMapper.map(closureToSave, GrantClosure.class));
         }
 
