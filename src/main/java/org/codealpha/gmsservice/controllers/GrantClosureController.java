@@ -1018,16 +1018,21 @@ public class GrantClosureController {
 
         grantService.saveGrant(closureToSave.getGrant());
         
-        if (savedClosure.isCanManage())
+        if (savedClosure.isCanManage()) {
             closure = processClosure(modelMapper.map(closureToSave, GrantClosure.class), tenantOrg, user);
-
-        if (closure != null) {
-            closure.getGrant().setClosureInProgress(true);
-            grantService.saveGrant(closure.getGrant());
-        }
-        logger.info("expecting null here");
-        closure = closureToReturn(closure, userId);
-        return closure;
+            if (closure != null) {
+                closure.getGrant().setClosureInProgress(true);
+                grantService.saveGrant(closure.getGrant());
+            }
+            closure = closureToReturn(closure, userId);
+            return closure;
+        } 
+        else
+        {
+        savedClosure = closureToReturn(savedClosure, userId);
+        return savedClosure;
+        }   
+   
     }
 
     private GrantClosure processClosure(GrantClosure closureToSave, Organization tenantOrg, User user) {
