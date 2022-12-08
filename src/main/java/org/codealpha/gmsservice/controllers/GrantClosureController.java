@@ -66,6 +66,7 @@ public class GrantClosureController {
     public static final String PLANNED_INSTALLMENT = "Planned Installment #";
     public static final String CURRENCY = "currency";
     public static final String DATE = "date";
+    public static final String CLOSURE = "CLOSURE";
     public static final String REPORT = "REPORT";
     public static final String FILE = "file:";
     public static final String ACTIVE = "ACTIVE";
@@ -1788,7 +1789,7 @@ public class GrantClosureController {
 
 
     @PostMapping("/{closureId}/assignment")
-    public GrantClosure saveReportAssignments(
+    public GrantClosure saveClosureAssignments(
             @PathVariable("userId") Long userId,
             @PathVariable("closureId") Long closureId,
             @RequestBody ClosureAssignmentModel assignmentModel,
@@ -1942,7 +1943,7 @@ public class GrantClosureController {
             final GrantClosure finalClosure = closure;
 
             cleanAsigneesList.keySet().stream().forEach(u ->
-                    notificationsService.saveNotification(finaNotifications, u, finalClosure.getId(), REPORT)
+                    notificationsService.saveNotification(finaNotifications, u, finalClosure.getId(), CLOSURE)
             );
 
         }
@@ -2076,7 +2077,7 @@ public class GrantClosureController {
                     null, null, null, null, null);
 
             notificationsService.saveNotification(notificationContent, currentOwner.getId(), finalClosure.getId(),
-                    REPORT);
+            CLOSURE);
 
             usersToNotify.stream().forEach(u -> {
                 final String[] nc = closureService.buildEmailNotificationContent(finalClosure, u,
@@ -2100,7 +2101,7 @@ public class GrantClosureController {
                                 : STRNOSPACE,
                         null, null, null, null, null);
 
-                notificationsService.saveNotification(nc, u.getId(), finalClosure.getId(), REPORT);
+                notificationsService.saveNotification(nc, u.getId(), finalClosure.getId(), CLOSURE);
             });
         } else if (!toStatus.getInternalStatus().equalsIgnoreCase(CLOSED)) {
             usersToNotify
@@ -2152,7 +2153,7 @@ public class GrantClosureController {
                     null, null, null, null, null);
 
             notificationsService.saveNotification(notificationContent, currentOwner.getId(), finalClosure.getId(),
-                    REPORT);
+            CLOSURE);
 
             usersToNotify.stream().forEach(u -> {
                 final String[] nc = closureService.buildEmailNotificationContent(finalClosure, u,
@@ -2176,7 +2177,7 @@ public class GrantClosureController {
                                 : STRNOSPACE,
                         null, null, null, null, null);
 
-                notificationsService.saveNotification(nc, u.getId(), finalClosure.getId(), REPORT);
+                notificationsService.saveNotification(nc, u.getId(), finalClosure.getId(), CLOSURE);
             });
         } else {
 
@@ -2228,7 +2229,7 @@ public class GrantClosureController {
                         null, null, null, null, null);
 
                 notificationsService.saveNotification(notificationContent, granteeUser.getId(), finalClosure.getId(),
-                        REPORT);
+                CLOSURE);
             }
 
 
@@ -2254,7 +2255,7 @@ public class GrantClosureController {
                                 : STRNOSPACE,
                         null, null, null, null, null);
 
-                notificationsService.saveNotification(nc, u.getId(), finalClosure.getId(), REPORT);
+                notificationsService.saveNotification(nc, u.getId(), finalClosure.getId(), CLOSURE);
             });
 
         }
@@ -2279,7 +2280,7 @@ public class GrantClosureController {
     }
 
     @GetMapping("{closureId}/changeHistory")
-    public PlainClosure getReportHistory(@PathVariable("closureId") Long closureId,
+    public PlainClosure getClosureHistory(@PathVariable("closureId") Long closureId,
                                          @PathVariable("userId") Long userId) throws IOException {
 
         GrantClosure closure = closureService.getClosureById(closureId);
@@ -2443,7 +2444,7 @@ public class GrantClosureController {
 
 
         List<WorkflowStatus> reportWfStatuses = workflowStatusService.findByWorkflow(
-                workflowService.findWorkflowByGrantTypeAndObject(grantService.getById(grantId).getGrantTypeId(), REPORT)
+                workflowService.findWorkflowByGrantTypeAndObject(grantService.getById(grantId).getGrantTypeId(), CLOSURE)
         );
 
         List<Report> reportsInProgress = new ArrayList<>();
