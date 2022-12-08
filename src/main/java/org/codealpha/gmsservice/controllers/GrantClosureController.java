@@ -1808,60 +1808,7 @@ public class GrantClosureController {
         sendEmailtoAssignees(assignmentModel,closure, userId );
 
         if (currentAssignments.size() > 0) {
-
-            List<ClosureAssignments> newAssignments = closureService.getAssignmentsForClosure(closure);
-
-            String[] notifications = closureService.buildEmailNotificationContent(closure,
-                    userService.getUserById(userId),
-                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
-                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
-                    null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
-                    newAssignments);
-            List<User> toUsers = newAssignments.stream().map(ClosureAssignments::getAssignment)
-                    .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
-            toUsers.removeIf(User::isDeleted);
-            List<User> ccUsers = currentAssignments.values().stream().map(uid -> userService.getUserById(uid))
-                    .collect(Collectors.toList());
-            ccUsers.removeIf(User::isDeleted);
-
-            commonEmailSevice
-                    .sendMail(
-                            toUsers.stream().map(User::getEmailId).collect(Collectors.toList())
-                                    .toArray(new String[toUsers.size()]),
-                            ccUsers.stream().map(User::getEmailId).collect(
-                                    Collectors.toList()).toArray(new String[ccUsers.size()]),
-                            notifications[0], notifications[1],
-                            new String[]{appConfigService
-                                    .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                                            AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                    .getConfigValue().replace(RELEASE_VERSION,
-                                            releaseService.getCurrentRelease().getVersion()).replace(TENANT, closure.getGrant()
-                                    .getGrantorOrganization().getName())});
-
-            Map<Long, Long> cleanAsigneesList = new HashMap<>();
-            for (Long ass : currentAssignments.values()) {
-                cleanAsigneesList.put(ass, ass);
-            }
-            for (ClosureAssignments ass : newAssignments) {
-                cleanAsigneesList.put(ass.getAssignment(), ass.getAssignment());
-            }
-            notifications = closureService.buildEmailNotificationContent(closure, userService.getUserById(userId),
-                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
-                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
-                    null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
-                    newAssignments);
-
-            final String[] finaNotifications = notifications;
-            final GrantClosure finalClosure = closure;
-
-            cleanAsigneesList.keySet().stream().forEach(u ->
-                    notificationsService.saveNotification(finaNotifications, u, finalClosure.getId(), CLOSURE)
-            );
-
+        sendEmailwithNewAssignments(currentAssignments,closure,userId);
         }
 
         closure = closureToReturn(closure, userId);
@@ -1958,6 +1905,61 @@ public class GrantClosureController {
       
     }}
 
+    private void sendEmailwithNewAssignments(Map<Long, Long> currentAssignments ,GrantClosure closure,Long userId){
+    List<ClosureAssignments> newAssignments = closureService.getAssignmentsForClosure(closure);
+
+    String[] notifications = closureService.buildEmailNotificationContent(closure,
+            userService.getUserById(userId),
+            appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                    AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
+            appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                    AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
+            null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+            newAssignments);
+    List<User> toUsers = newAssignments.stream().map(ClosureAssignments::getAssignment)
+            .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
+    toUsers.removeIf(User::isDeleted);
+    List<User> ccUsers = currentAssignments.values().stream().map(uid -> userService.getUserById(uid))
+            .collect(Collectors.toList());
+    ccUsers.removeIf(User::isDeleted);
+
+    commonEmailSevice
+            .sendMail(
+                    toUsers.stream().map(User::getEmailId).collect(Collectors.toList())
+                            .toArray(new String[toUsers.size()]),
+                    ccUsers.stream().map(User::getEmailId).collect(
+                            Collectors.toList()).toArray(new String[ccUsers.size()]),
+                    notifications[0], notifications[1],
+                    new String[]{appConfigService
+                            .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                            .getConfigValue().replace(RELEASE_VERSION,
+                                    releaseService.getCurrentRelease().getVersion()).replace(TENANT, closure.getGrant()
+                            .getGrantorOrganization().getName())});
+
+    Map<Long, Long> cleanAsigneesList = new HashMap<>();
+    for (Long ass : currentAssignments.values()) {
+        cleanAsigneesList.put(ass, ass);
+    }
+    for (ClosureAssignments ass : newAssignments) {
+        cleanAsigneesList.put(ass.getAssignment(), ass.getAssignment());
+    }
+    notifications = closureService.buildEmailNotificationContent(closure, userService.getUserById(userId),
+            appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                    AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
+            appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                    AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
+            null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+            newAssignments);
+
+    final String[] finaNotifications = notifications;
+    final GrantClosure finalClosure = closure;
+
+    cleanAsigneesList.keySet().stream().forEach(u ->
+            notificationsService.saveNotification(finaNotifications, u, finalClosure.getId(), CLOSURE)
+    );
+}
+    
     @PostMapping("/{closureId}/flow/{fromState}/{toState}")
     public GrantClosure moveClosureState(@RequestBody ClosureWithNote closureWithNote,
                                          @PathVariable("userId") Long userId,
