@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -1803,93 +1804,8 @@ public class GrantClosureController {
             closureService.getAssignmentsForClosure(closure).stream().forEach(a ->
                     currentAssignments.put(a.getStateId(), a.getAssignment()));
         }
-        String customAss = null;
-        UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
-        String host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
-                .host(host).port(uriComponents.getPort());
-        String url = uriBuilder.toUriString();
-        for (ClosureAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
-            if (customAss == null && assignmentsVO.getCustomAssignments() != null) {
-                customAss = assignmentsVO.getCustomAssignments();
-            }
-            ClosureAssignments assignment = null;
-            if (assignmentsVO.getId() == null) {
-                assignment = new ClosureAssignments();
-                assignment.setStateId(assignmentsVO.getStateId());
-                assignment.setClosure(closure);
-            } else {
-                assignment = closureService.getClosureAssignmentById(assignmentsVO.getId());
-            }
-
-            assignment.setAssignment(assignmentsVO.getAssignmentId());
-            assignment.setUpdatedBy(userId);
-            assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
-
-            if ((customAss != null && !STRNOSPACE.equalsIgnoreCase(customAss.trim())) && workflowStatusService
-                    .getById(assignmentsVO.getStateId()).getInternalStatus().equalsIgnoreCase(ACTIVE)) {
-                User granteeUser = null;
-                User existingUser = userService.getUserByEmailAndOrg(customAss, closure.getGrant().getOrganization());
-                String code = null;
-
-                code = Base64.getEncoder().encodeToString(String.valueOf(closure.getId()).getBytes());
-                try {
-                    if (existingUser != null && existingUser.isActive()) {
-                        granteeUser = existingUser;
-                        url = new StringBuilder(url + "/home/?action=login&org="
-                                + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
-                                + EMAIL + granteeUser.getEmailId() + "&type=closure").toString();
-                    } else if (existingUser != null && !existingUser.isActive()) {
-                        granteeUser = existingUser;
-                        url = new StringBuilder(url + "/home/?action=registration&org="
-                                + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
-                                + EMAIL + granteeUser.getEmailId() + "&type=closure").toString();
-
-                    } else {
-                        granteeUser = new User();
-                        Role newRole = roleService.findByOrganizationAndName(closure.getGrant().getOrganization(), "Admin");
-
-                        UserRole userRole = new UserRole();
-                        userRole.setRole(newRole);
-                        userRole.setUser(granteeUser);
-
-                        List<UserRole> userRoles = new ArrayList<>();
-                        userRoles.add(userRole);
-                        granteeUser.setUserRoles(userRoles);
-                        granteeUser.setFirstName(STRNOSPACE);
-                        granteeUser.setLastName(STRNOSPACE);
-                        granteeUser.setEmailId(customAss);
-                        granteeUser.setOrganization(closure.getGrant().getOrganization());
-                        granteeUser.setActive(false);
-                        granteeUser = userService.save(granteeUser);
-                        userRoleService.saveUserRole(userRole);
-                        url = new StringBuilder(url + "/home/?action=registration&org="
-                                + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
-                                + EMAIL + granteeUser.getEmailId() + "&type=report").toString();
-                    }
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-                String[] notifications = closureService.buildClosureInvitationContent(closure,
-                        appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                                AppConfiguration.CLOSURE_INVITE_SUBJECT).getConfigValue(),
-                        appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                                AppConfiguration.CLOSURE_INVITE_MESSAGE).getConfigValue(),
-                        url);
-                commonEmailSevice.sendMail(new String[]{(granteeUser != null && !granteeUser.isDeleted()) ? granteeUser.getEmailId() : null},
-                        null, notifications[0], notifications[1],
-                        new String[]{appConfigService
-                                .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                                        AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                .getConfigValue()
-                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT, closure.getGrant()
-                                .getGrantorOrganization().getName())});
-
-                assignment.setAssignment(granteeUser != null ? granteeUser.getId() : null);
-            }
-
-            closureService.saveAssignmentForClosure(assignment);
-        }
+       
+        sendEmailtoAssignees(assignmentModel,closure, userId );
 
         if (currentAssignments.size() > 0) {
 
@@ -1951,6 +1867,96 @@ public class GrantClosureController {
         closure = closureToReturn(closure, userId);
         return closure;
     }
+    private void sendEmailtoAssignees(ClosureAssignmentModel assignmentModel,GrantClosure closure,Long userId ){
+        String customAss = null;
+        UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
+        String host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
+                .host(host).port(uriComponents.getPort());
+        String url = uriBuilder.toUriString();
+
+    for (ClosureAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
+        if (customAss == null && assignmentsVO.getCustomAssignments() != null) {
+            customAss = assignmentsVO.getCustomAssignments();
+        }
+        ClosureAssignments assignment = null;
+        if (assignmentsVO.getId() == null) {
+            assignment = new ClosureAssignments();
+            assignment.setStateId(assignmentsVO.getStateId());
+            assignment.setClosure(closure);
+        } else {
+            assignment = closureService.getClosureAssignmentById(assignmentsVO.getId());
+        }
+
+        assignment.setAssignment(assignmentsVO.getAssignmentId());
+        assignment.setUpdatedBy(userId);
+        assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
+
+        if ((customAss != null && !STRNOSPACE.equalsIgnoreCase(customAss.trim())) && workflowStatusService
+                .getById(assignmentsVO.getStateId()).getInternalStatus().equalsIgnoreCase(ACTIVE)) {
+            User granteeUser = null;
+            User existingUser = userService.getUserByEmailAndOrg(customAss, closure.getGrant().getOrganization());
+            String code = null;
+
+            code = Base64.getEncoder().encodeToString(String.valueOf(closure.getId()).getBytes());
+            try {
+                if (existingUser != null && existingUser.isActive()) {
+                    granteeUser = existingUser;
+                    url = new StringBuilder(url + "/home/?action=login&org="
+                            + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
+                            + EMAIL + granteeUser.getEmailId() + "&type=closure").toString();
+                } else if (existingUser != null && !existingUser.isActive()) {
+                    granteeUser = existingUser;
+                    url = new StringBuilder(url + "/home/?action=registration&org="
+                            + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
+                            + EMAIL + granteeUser.getEmailId() + "&type=closure").toString();
+
+                } else {
+                    granteeUser = new User();
+                    Role newRole = roleService.findByOrganizationAndName(closure.getGrant().getOrganization(), "Admin");
+
+                    UserRole userRole = new UserRole();
+                    userRole.setRole(newRole);
+                    userRole.setUser(granteeUser);
+
+                    List<UserRole> userRoles = new ArrayList<>();
+                    userRoles.add(userRole);
+                    granteeUser.setUserRoles(userRoles);
+                    granteeUser.setFirstName(STRNOSPACE);
+                    granteeUser.setLastName(STRNOSPACE);
+                    granteeUser.setEmailId(customAss);
+                    granteeUser.setOrganization(closure.getGrant().getOrganization());
+                    granteeUser.setActive(false);
+                    granteeUser = userService.save(granteeUser);
+                    userRoleService.saveUserRole(userRole);
+                    url = new StringBuilder(url + "/home/?action=registration&org="
+                            + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
+                            + EMAIL + granteeUser.getEmailId() + "&type=report").toString();
+                }
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
+            String[] notifications = closureService.buildClosureInvitationContent(closure,
+                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.CLOSURE_INVITE_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.CLOSURE_INVITE_MESSAGE).getConfigValue(),
+                    url);
+            commonEmailSevice.sendMail(new String[]{(granteeUser != null && !granteeUser.isDeleted()) ? granteeUser.getEmailId() : null},
+                    null, notifications[0], notifications[1],
+                    new String[]{appConfigService
+                            .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                            .getConfigValue()
+                            .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT, closure.getGrant()
+                            .getGrantorOrganization().getName())});
+
+            assignment.setAssignment(granteeUser != null ? granteeUser.getId() : null);
+        }
+
+        closureService.saveAssignmentForClosure(assignment);
+      
+    }}
 
     @PostMapping("/{closureId}/flow/{fromState}/{toState}")
     public GrantClosure moveClosureState(@RequestBody ClosureWithNote closureWithNote,
