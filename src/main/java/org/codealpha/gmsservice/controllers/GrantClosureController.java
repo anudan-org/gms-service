@@ -1830,7 +1830,7 @@ public class GrantClosureController {
             assignment.setUpdatedBy(userId);
             assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
 
-            sendEmailtoAssignees(customAss, assignmentsVO,assignment, closure, userId,url );
+            sendEmailtoAssignees(customAss, assignmentsVO,assignment, closure, url );
 
         }
         
@@ -1841,7 +1841,7 @@ public class GrantClosureController {
         closure = closureToReturn(closure, userId);
         return closure;
     }
-    private void sendEmailtoAssignees(String customAss ,ClosureAssignmentsVO assignmentsVO ,ClosureAssignments assignment,GrantClosure closure,Long userId,String url ){
+    private void sendEmailtoAssignees(String customAss ,ClosureAssignmentsVO assignmentsVO ,ClosureAssignments assignment,GrantClosure closure,String url ){
      
         if ((customAss != null && !STRNOSPACE.equalsIgnoreCase(customAss.trim())) && workflowStatusService
                 .getById(assignmentsVO.getStateId()).getInternalStatus().equalsIgnoreCase(ACTIVE)) {
