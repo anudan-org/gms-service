@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -1805,16 +1804,6 @@ public class GrantClosureController {
                     currentAssignments.put(a.getStateId(), a.getAssignment()));
         }
        
-        sendEmailtoAssignees(assignmentModel,closure, userId );
-
-        if (currentAssignments.size() > 0) {
-        sendEmailwithNewAssignments(currentAssignments,closure,userId);
-        }
-
-        closure = closureToReturn(closure, userId);
-        return closure;
-    }
-    private void sendEmailtoAssignees(ClosureAssignmentModel assignmentModel,GrantClosure closure,Long userId ){
         String customAss = null;
         UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
         String host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
@@ -1822,23 +1811,38 @@ public class GrantClosureController {
                 .host(host).port(uriComponents.getPort());
         String url = uriBuilder.toUriString();
 
-    for (ClosureAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
-        if (customAss == null && assignmentsVO.getCustomAssignments() != null) {
-            customAss = assignmentsVO.getCustomAssignments();
+        for (ClosureAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
+           
+            if (customAss == null && assignmentsVO.getCustomAssignments() != null) {
+                customAss = assignmentsVO.getCustomAssignments();
+           
+            }
+            ClosureAssignments assignment = null;
+            if (assignmentsVO.getId() == null) {
+                assignment = new ClosureAssignments();
+                assignment.setStateId(assignmentsVO.getStateId());
+                assignment.setClosure(closure);
+            } else {
+                assignment = closureService.getClosureAssignmentById(assignmentsVO.getId());
+            }
+    
+            assignment.setAssignment(assignmentsVO.getAssignmentId());
+            assignment.setUpdatedBy(userId);
+            assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
+
+            sendEmailtoAssignees(customAss, assignmentsVO,assignment, closure, userId,url );
+
         }
-        ClosureAssignments assignment = null;
-        if (assignmentsVO.getId() == null) {
-            assignment = new ClosureAssignments();
-            assignment.setStateId(assignmentsVO.getStateId());
-            assignment.setClosure(closure);
-        } else {
-            assignment = closureService.getClosureAssignmentById(assignmentsVO.getId());
+        
+        if (currentAssignments.size() > 0) {
+        sendEmailwithNewAssignments(currentAssignments,closure,userId);
         }
 
-        assignment.setAssignment(assignmentsVO.getAssignmentId());
-        assignment.setUpdatedBy(userId);
-        assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
-
+        closure = closureToReturn(closure, userId);
+        return closure;
+    }
+    private void sendEmailtoAssignees(String customAss ,ClosureAssignmentsVO assignmentsVO ,ClosureAssignments assignment,GrantClosure closure,Long userId,String url ){
+     
         if ((customAss != null && !STRNOSPACE.equalsIgnoreCase(customAss.trim())) && workflowStatusService
                 .getById(assignmentsVO.getStateId()).getInternalStatus().equalsIgnoreCase(ACTIVE)) {
             User granteeUser = null;
@@ -1903,7 +1907,7 @@ public class GrantClosureController {
 
         closureService.saveAssignmentForClosure(assignment);
       
-    }}
+    }
 
     private void sendEmailwithNewAssignments(Map<Long, Long> currentAssignments ,GrantClosure closure,Long userId){
     List<ClosureAssignments> newAssignments = closureService.getAssignmentsForClosure(closure);
