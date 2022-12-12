@@ -66,6 +66,7 @@ public class GrantClosureController {
     public static final String PLANNED_INSTALLMENT = "Planned Installment #";
     public static final String CURRENCY = "currency";
     public static final String DATE = "date";
+    public static final String CLOSURE = "CLOSURE";
     public static final String REPORT = "REPORT";
     public static final String FILE = "file:";
     public static final String ACTIVE = "ACTIVE";
@@ -87,7 +88,8 @@ public class GrantClosureController {
     public static final String FILE_SEPARATOR = "/";
     public static final String UTF_8 = "UTF-8";
     public static final String TABLE = "table";
-
+    public static final String PROJECT_FUNDS = "Project Funds";
+    public static final String PROJECT_REFUND_DETAILS = "Project Refund Details";
 
     @Autowired
     private WorkflowStatusService workflowStatusService;
@@ -157,11 +159,13 @@ public class GrantClosureController {
         GrantClosure closure = closureService.getClosureById(closureId);
         Grant grant = grantService.getById(closure.getGrant().getId());
         grant.setClosureInProgress(false);
-        grant.setActualSpent(null);
-        grantService.deleteActualRefundsForGrant(grant.getActualRefunds());
+        if (grant.getActualRefunds() != null && !grant.getActualRefunds().isEmpty()) {
+            grantService.deleteActualRefundsForGrant(grant.getActualRefunds());
+        }
+       
         grantService.saveGrant(grant);
-
         closureService.deleteClosure(closure);
+
     }
 
     @GetMapping(FILE_SEPARATOR)
@@ -268,12 +272,16 @@ public class GrantClosureController {
             closureService.saveAssignmentForClosure(assignment);
 
         }
-
+    
         List<GranterClosureSection> granterClosureSections = closureTemplate.getSections();
         closure.setStringAttributes(new ArrayList<>());
         AtomicBoolean closureTemplateHasDisbursement = new AtomicBoolean(false);
         AtomicReference<ClosureStringAttribute> disbursementAttributeValue = new AtomicReference<>(new ClosureStringAttribute());
 
+        granterClosureSections.removeIf((rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_FUNDS)));
+        granterClosureSections.removeIf((rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_REFUND_DETAILS)));
+       
+        
         if (granterClosureSections.stream().noneMatch(rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS))) {
             GranterClosureSection indicatorSection = new GranterClosureSection();
             indicatorSection.setClosureTemplate(closureTemplate);
@@ -284,6 +292,7 @@ public class GrantClosureController {
             granterClosureSections.add(indicatorSection);
         }
 
+        
         for (GranterClosureSection closureSection : granterClosureSections) {
             ClosureSpecificSection specificSection = new ClosureSpecificSection();
             specificSection.setDeletable(true);
@@ -299,6 +308,7 @@ public class GrantClosureController {
 
             if (specificSection.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS)) {
                 specificSection.setSystemGenerated(true);
+
                 closureService.saveClosureSpecificSection(specificSection);
                 for (Map<DatePeriod, PeriodAttribWithLabel> hold : getPeriodsWithAttributes(closure.getGrant(), userId)) {
                     hold.forEach((entry, val) -> val.getAttributes().forEach(attribVo -> {
@@ -326,7 +336,8 @@ public class GrantClosureController {
                 }
 
             }
-
+                   
+            if (closureSection.getAttributes() != null && !closureSection.getAttributes().isEmpty()) {
             closureSection.getAttributes().forEach(a -> {
                 ClosureSpecificSectionAttribute sectionAttribute = new ClosureSpecificSectionAttribute();
                 sectionAttribute.setAttributeOrder(a.getAttributeOrder());
@@ -359,6 +370,7 @@ public class GrantClosureController {
                     disbursementAttributeValue.set(stringAttribute);
                 }
             });
+            }
         }
 
         // Handle logic for setting dibursement type in reports
@@ -396,7 +408,7 @@ public class GrantClosureController {
                         specificSection.setGranter((Granter) closure.getGrant().getGrantorOrganization());
                         specificSection.setClosureId(closure.getId());
                         specificSection.setClosureTemplateId(closureTemplate.getId());
-                        specificSection.setSectionName("Project Funds");
+                        specificSection.setSectionName(PROJECT_FUNDS);
                         specificSection.setSystemGenerated(true);
                         List<ClosureSpecificSection> closureSections = closureService.getClosureSections(closure);
                         specificSection.setSectionOrder(Collections.max(closureSections.stream()
@@ -597,7 +609,6 @@ public class GrantClosureController {
     }
 
     private GrantClosure closureToReturn(GrantClosure closure, Long userId) {
-
         closure.setStringAttributes(closureService.getStringAttributesForClosure(closure));
 
         List<ClosureAssignmentsVO> workflowAssignments = new ArrayList<>();
@@ -647,11 +658,13 @@ public class GrantClosureController {
 
         closure.getWorkflowAssignment().sort((a, b) -> a.getId().compareTo(b.getId()));
         closure.getClosureDetails().getSections()
-                .sort((a, b) -> Long.valueOf(a.getOrder()).compareTo(Long.valueOf(b.getOrder())));
-        for (SectionVO section : closure.getClosureDetails().getSections()) {
+                .sort((a, b) -> Long.compare(a.getOrder(), b.getOrder()));
+     
+     for (SectionVO section : closure.getClosureDetails().getSections()) {
             if (section.getAttributes() != null) {
-                section.getAttributes().sort(
-                        (a, b) -> Long.valueOf(a.getAttributeOrder()).compareTo(Long.valueOf(b.getAttributeOrder())));
+              section.getAttributes().sort(
+                        (a, b) -> Long.compare(a.getAttributeOrder(),b.getAttributeOrder()));
+     
             }
         }
 
@@ -951,9 +964,9 @@ public class GrantClosureController {
         specificSection.setRefund(isRefund);
         if (Boolean.TRUE.equals(isRefund)) {
             specificSection.setSystemGenerated(true);
-            closure.getGrant().setRefundAmount(null);
+            closure.setRefundAmount(null);
             grantService.saveGrant(closure.getGrant().getId(), closure.getGrant(), userId, tenantCode);
-
+//check here 
             ActualRefundDTO actualRefundDTO = new ActualRefundDTO();
             actualRefundDTO.setCreatedBy(userId);
             addActualRefund(userId, closureId, tenantCode, actualRefundDTO);
@@ -965,7 +978,7 @@ public class GrantClosureController {
             specificSectionAttribute.setCanEdit(true);
             specificSectionAttribute.setDeletable(true);
             specificSectionAttribute.setRequired(true);
-            specificSectionAttribute.setFieldName("Refund Documents");
+            specificSectionAttribute.setFieldName("Project Refund Documents");
             specificSectionAttribute.setFieldType("document");
             specificSectionAttribute.setGranter(specificSection.getGranter());
             specificSectionAttribute.setSection(specificSection);
@@ -1003,17 +1016,24 @@ public class GrantClosureController {
         GrantClosure closure = null;
         GrantClosure savedClosure = closureService.getClosureById(closureId);
         determineCanManage(savedClosure, userId);
+
         grantService.saveGrant(closureToSave.getGrant());
-        if (savedClosure.isCanManage())
+        
+        if (savedClosure.isCanManage()) {
             closure = processClosure(modelMapper.map(closureToSave, GrantClosure.class), tenantOrg, user);
-
-        if (closure != null) {
-            closure.getGrant().setClosureInProgress(true);
-            grantService.saveGrant(closure.getGrant());
-        }
-
-        closure = closureToReturn(closure, userId);
-        return closure;
+            if (closure != null) {
+                closure.getGrant().setClosureInProgress(true);
+                grantService.saveGrant(closure.getGrant());
+            }
+            closure = closureToReturn(closure, userId);
+            return closure;
+        } 
+        else
+        {
+        savedClosure = closureToReturn(savedClosure, userId);
+        return savedClosure;
+        }   
+   
     }
 
     private GrantClosure processClosure(GrantClosure closureToSave, Organization tenantOrg, User user) {
@@ -1021,6 +1041,11 @@ public class GrantClosureController {
 
         closure.setReason(processNewReasonIfPresent(closureToSave));
         closure.setDescription(closureToSave.getDescription());
+        closure.setRefundAmount(closureToSave.getRefundAmount());
+        closure.setRefundReason(closureToSave.getRefundReason());
+        closure.setActualSpent(closureToSave.getActualSpent());
+        closure.setInterestEarned(closureToSave.getInterestEarned());
+        
         closure.setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
         closure.setUpdatedBy(user.getId());
         try {
@@ -1280,8 +1305,8 @@ public class GrantClosureController {
                 }
 
             }
-            closureToSave.getGrant().setRefundAmount(null);
-            closureToSave.getGrant().setRefundReason(null);
+            closureToSave.setRefundAmount(null);
+            closureToSave.setRefundReason(null);
             Grant grant = grantService.saveGrant(closureToSave.getGrant().getId(), closureToSave.getGrant(), userId, tenantCode);
             closureToSave.setGrant(grant);
             closureService.saveClosure(modelMapper.map(closureToSave, GrantClosure.class));
@@ -1764,11 +1789,12 @@ public class GrantClosureController {
 
 
     @PostMapping("/{closureId}/assignment")
-    public GrantClosure saveReportAssignments(
+    public GrantClosure saveClosureAssignments(
             @PathVariable("userId") Long userId,
             @PathVariable("closureId") Long closureId,
             @RequestBody ClosureAssignmentModel assignmentModel,
             @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        
         GrantClosure closure = saveClosure(closureId, assignmentModel.getClosure(), userId, tenantCode);
 
         Map<Long, Long> currentAssignments = new LinkedHashMap<>();
@@ -1777,15 +1803,19 @@ public class GrantClosureController {
             closureService.getAssignmentsForClosure(closure).stream().forEach(a ->
                     currentAssignments.put(a.getStateId(), a.getAssignment()));
         }
+       
         String customAss = null;
         UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
         String host = uriComponents.getHost().substring(uriComponents.getHost().indexOf(".") + 1);
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance().scheme(uriComponents.getScheme())
                 .host(host).port(uriComponents.getPort());
         String url = uriBuilder.toUriString();
+
         for (ClosureAssignmentsVO assignmentsVO : assignmentModel.getAssignments()) {
+           
             if (customAss == null && assignmentsVO.getCustomAssignments() != null) {
                 customAss = assignmentsVO.getCustomAssignments();
+           
             }
             ClosureAssignments assignment = null;
             if (assignmentsVO.getId() == null) {
@@ -1795,137 +1825,145 @@ public class GrantClosureController {
             } else {
                 assignment = closureService.getClosureAssignmentById(assignmentsVO.getId());
             }
-
+    
             assignment.setAssignment(assignmentsVO.getAssignmentId());
             assignment.setUpdatedBy(userId);
             assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
 
-            if ((customAss != null && !STRNOSPACE.equalsIgnoreCase(customAss.trim())) && workflowStatusService
-                    .getById(assignmentsVO.getStateId()).getInternalStatus().equalsIgnoreCase(ACTIVE)) {
-                User granteeUser = null;
-                User existingUser = userService.getUserByEmailAndOrg(customAss, closure.getGrant().getOrganization());
-                String code = null;
+            sendEmailtoAssignees(customAss, assignmentsVO,assignment, closure, url );
 
-                code = Base64.getEncoder().encodeToString(String.valueOf(closure.getId()).getBytes());
-                try {
-                    if (existingUser != null && existingUser.isActive()) {
-                        granteeUser = existingUser;
-                        url = new StringBuilder(url + "/home/?action=login&org="
-                                + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
-                                + EMAIL + granteeUser.getEmailId() + "&type=closure").toString();
-                    } else if (existingUser != null && !existingUser.isActive()) {
-                        granteeUser = existingUser;
-                        url = new StringBuilder(url + "/home/?action=registration&org="
-                                + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
-                                + EMAIL + granteeUser.getEmailId() + "&type=closure").toString();
-
-                    } else {
-                        granteeUser = new User();
-                        Role newRole = roleService.findByOrganizationAndName(closure.getGrant().getOrganization(), "Admin");
-
-                        UserRole userRole = new UserRole();
-                        userRole.setRole(newRole);
-                        userRole.setUser(granteeUser);
-
-                        List<UserRole> userRoles = new ArrayList<>();
-                        userRoles.add(userRole);
-                        granteeUser.setUserRoles(userRoles);
-                        granteeUser.setFirstName(STRNOSPACE);
-                        granteeUser.setLastName(STRNOSPACE);
-                        granteeUser.setEmailId(customAss);
-                        granteeUser.setOrganization(closure.getGrant().getOrganization());
-                        granteeUser.setActive(false);
-                        granteeUser = userService.save(granteeUser);
-                        userRoleService.saveUserRole(userRole);
-                        url = new StringBuilder(url + "/home/?action=registration&org="
-                                + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
-                                + EMAIL + granteeUser.getEmailId() + "&type=report").toString();
-                    }
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-                String[] notifications = closureService.buildClosureInvitationContent(closure,
-                        appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                                AppConfiguration.CLOSURE_INVITE_SUBJECT).getConfigValue(),
-                        appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                                AppConfiguration.CLOSURE_INVITE_MESSAGE).getConfigValue(),
-                        url);
-                commonEmailSevice.sendMail(new String[]{(granteeUser != null && !granteeUser.isDeleted()) ? granteeUser.getEmailId() : null},
-                        null, notifications[0], notifications[1],
-                        new String[]{appConfigService
-                                .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                                        AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                .getConfigValue()
-                                .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT, closure.getGrant()
-                                .getGrantorOrganization().getName())});
-
-                assignment.setAssignment(granteeUser != null ? granteeUser.getId() : null);
-            }
-
-            closureService.saveAssignmentForClosure(assignment);
         }
-
+        
         if (currentAssignments.size() > 0) {
-
-            List<ClosureAssignments> newAssignments = closureService.getAssignmentsForClosure(closure);
-
-            String[] notifications = closureService.buildEmailNotificationContent(closure,
-                    userService.getUserById(userId),
-                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
-                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
-                    null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
-                    newAssignments);
-            List<User> toUsers = newAssignments.stream().map(ClosureAssignments::getAssignment)
-                    .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
-            toUsers.removeIf(User::isDeleted);
-            List<User> ccUsers = currentAssignments.values().stream().map(uid -> userService.getUserById(uid))
-                    .collect(Collectors.toList());
-            ccUsers.removeIf(User::isDeleted);
-
-            commonEmailSevice
-                    .sendMail(
-                            toUsers.stream().map(User::getEmailId).collect(Collectors.toList())
-                                    .toArray(new String[toUsers.size()]),
-                            ccUsers.stream().map(User::getEmailId).collect(
-                                    Collectors.toList()).toArray(new String[ccUsers.size()]),
-                            notifications[0], notifications[1],
-                            new String[]{appConfigService
-                                    .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                                            AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                    .getConfigValue().replace(RELEASE_VERSION,
-                                            releaseService.getCurrentRelease().getVersion()).replace(TENANT, closure.getGrant()
-                                    .getGrantorOrganization().getName())});
-
-            Map<Long, Long> cleanAsigneesList = new HashMap<>();
-            for (Long ass : currentAssignments.values()) {
-                cleanAsigneesList.put(ass, ass);
-            }
-            for (ClosureAssignments ass : newAssignments) {
-                cleanAsigneesList.put(ass.getAssignment(), ass.getAssignment());
-            }
-            notifications = closureService.buildEmailNotificationContent(closure, userService.getUserById(userId),
-                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
-                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
-                    null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
-                    newAssignments);
-
-            final String[] finaNotifications = notifications;
-            final GrantClosure finalClosure = closure;
-
-            cleanAsigneesList.keySet().stream().forEach(u ->
-                    notificationsService.saveNotification(finaNotifications, u, finalClosure.getId(), REPORT)
-            );
-
+        sendEmailwithNewAssignments(currentAssignments,closure,userId);
         }
 
         closure = closureToReturn(closure, userId);
         return closure;
     }
+    private void sendEmailtoAssignees(String customAss ,ClosureAssignmentsVO assignmentsVO ,ClosureAssignments assignment,GrantClosure closure,String url ){
+     
+        if ((customAss != null && !STRNOSPACE.equalsIgnoreCase(customAss.trim())) && workflowStatusService
+                .getById(assignmentsVO.getStateId()).getInternalStatus().equalsIgnoreCase(ACTIVE)) {
+            User granteeUser = null;
+            User existingUser = userService.getUserByEmailAndOrg(customAss, closure.getGrant().getOrganization());
+            String code = null;
 
+            code = Base64.getEncoder().encodeToString(String.valueOf(closure.getId()).getBytes());
+            try {
+                if (existingUser != null && existingUser.isActive()) {
+                    granteeUser = existingUser;
+                    url = new StringBuilder(url + "/home/?action=login&org="
+                            + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
+                            + EMAIL + granteeUser.getEmailId() + "&type=closure").toString();
+                } else if (existingUser != null && !existingUser.isActive()) {
+                    granteeUser = existingUser;
+                    url = new StringBuilder(url + "/home/?action=registration&org="
+                            + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
+                            + EMAIL + granteeUser.getEmailId() + "&type=closure").toString();
+
+                } else {
+                    granteeUser = new User();
+                    Role newRole = roleService.findByOrganizationAndName(closure.getGrant().getOrganization(), "Admin");
+
+                    UserRole userRole = new UserRole();
+                    userRole.setRole(newRole);
+                    userRole.setUser(granteeUser);
+
+                    List<UserRole> userRoles = new ArrayList<>();
+                    userRoles.add(userRole);
+                    granteeUser.setUserRoles(userRoles);
+                    granteeUser.setFirstName(STRNOSPACE);
+                    granteeUser.setLastName(STRNOSPACE);
+                    granteeUser.setEmailId(customAss);
+                    granteeUser.setOrganization(closure.getGrant().getOrganization());
+                    granteeUser.setActive(false);
+                    granteeUser = userService.save(granteeUser);
+                    userRoleService.saveUserRole(userRole);
+                    url = new StringBuilder(url + "/home/?action=registration&org="
+                            + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
+                            + EMAIL + granteeUser.getEmailId() + "&type=report").toString();
+                }
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
+            String[] notifications = closureService.buildClosureInvitationContent(closure,
+                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.CLOSURE_INVITE_SUBJECT).getConfigValue(),
+                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.CLOSURE_INVITE_MESSAGE).getConfigValue(),
+                    url);
+            commonEmailSevice.sendMail(new String[]{(granteeUser != null && !granteeUser.isDeleted()) ? granteeUser.getEmailId() : null},
+                    null, notifications[0], notifications[1],
+                    new String[]{appConfigService
+                            .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                            .getConfigValue()
+                            .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT, closure.getGrant()
+                            .getGrantorOrganization().getName())});
+
+            assignment.setAssignment(granteeUser != null ? granteeUser.getId() : null);
+        }
+
+        closureService.saveAssignmentForClosure(assignment);
+      
+    }
+
+    private void sendEmailwithNewAssignments(Map<Long, Long> currentAssignments ,GrantClosure closure,Long userId){
+    List<ClosureAssignments> newAssignments = closureService.getAssignmentsForClosure(closure);
+
+    String[] notifications = closureService.buildEmailNotificationContent(closure,
+            userService.getUserById(userId),
+            appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                    AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
+            appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                    AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
+            null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+            newAssignments);
+    List<User> toUsers = newAssignments.stream().map(ClosureAssignments::getAssignment)
+            .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
+    toUsers.removeIf(User::isDeleted);
+    List<User> ccUsers = currentAssignments.values().stream().map(uid -> userService.getUserById(uid))
+            .collect(Collectors.toList());
+    ccUsers.removeIf(User::isDeleted);
+
+    commonEmailSevice
+            .sendMail(
+                    toUsers.stream().map(User::getEmailId).collect(Collectors.toList())
+                            .toArray(new String[toUsers.size()]),
+                    ccUsers.stream().map(User::getEmailId).collect(
+                            Collectors.toList()).toArray(new String[ccUsers.size()]),
+                    notifications[0], notifications[1],
+                    new String[]{appConfigService
+                            .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                            .getConfigValue().replace(RELEASE_VERSION,
+                                    releaseService.getCurrentRelease().getVersion()).replace(TENANT, closure.getGrant()
+                            .getGrantorOrganization().getName())});
+
+    Map<Long, Long> cleanAsigneesList = new HashMap<>();
+    for (Long ass : currentAssignments.values()) {
+        cleanAsigneesList.put(ass, ass);
+    }
+    for (ClosureAssignments ass : newAssignments) {
+        cleanAsigneesList.put(ass.getAssignment(), ass.getAssignment());
+    }
+    notifications = closureService.buildEmailNotificationContent(closure, userService.getUserById(userId),
+            appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                    AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
+            appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
+                    AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
+            null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+            newAssignments);
+
+    final String[] finaNotifications = notifications;
+    final GrantClosure finalClosure = closure;
+
+    cleanAsigneesList.keySet().stream().forEach(u ->
+            notificationsService.saveNotification(finaNotifications, u, finalClosure.getId(), CLOSURE)
+    );
+}
+    
     @PostMapping("/{closureId}/flow/{fromState}/{toState}")
     public GrantClosure moveClosureState(@RequestBody ClosureWithNote closureWithNote,
                                          @PathVariable("userId") Long userId,
@@ -2051,7 +2089,7 @@ public class GrantClosureController {
                     null, null, null, null, null);
 
             notificationsService.saveNotification(notificationContent, currentOwner.getId(), finalClosure.getId(),
-                    REPORT);
+            CLOSURE);
 
             usersToNotify.stream().forEach(u -> {
                 final String[] nc = closureService.buildEmailNotificationContent(finalClosure, u,
@@ -2075,7 +2113,7 @@ public class GrantClosureController {
                                 : STRNOSPACE,
                         null, null, null, null, null);
 
-                notificationsService.saveNotification(nc, u.getId(), finalClosure.getId(), REPORT);
+                notificationsService.saveNotification(nc, u.getId(), finalClosure.getId(), CLOSURE);
             });
         } else if (!toStatus.getInternalStatus().equalsIgnoreCase(CLOSED)) {
             usersToNotify
@@ -2127,7 +2165,7 @@ public class GrantClosureController {
                     null, null, null, null, null);
 
             notificationsService.saveNotification(notificationContent, currentOwner.getId(), finalClosure.getId(),
-                    REPORT);
+            CLOSURE);
 
             usersToNotify.stream().forEach(u -> {
                 final String[] nc = closureService.buildEmailNotificationContent(finalClosure, u,
@@ -2151,7 +2189,7 @@ public class GrantClosureController {
                                 : STRNOSPACE,
                         null, null, null, null, null);
 
-                notificationsService.saveNotification(nc, u.getId(), finalClosure.getId(), REPORT);
+                notificationsService.saveNotification(nc, u.getId(), finalClosure.getId(), CLOSURE);
             });
         } else {
 
@@ -2203,7 +2241,7 @@ public class GrantClosureController {
                         null, null, null, null, null);
 
                 notificationsService.saveNotification(notificationContent, granteeUser.getId(), finalClosure.getId(),
-                        REPORT);
+                CLOSURE);
             }
 
 
@@ -2229,7 +2267,7 @@ public class GrantClosureController {
                                 : STRNOSPACE,
                         null, null, null, null, null);
 
-                notificationsService.saveNotification(nc, u.getId(), finalClosure.getId(), REPORT);
+                notificationsService.saveNotification(nc, u.getId(), finalClosure.getId(), CLOSURE);
             });
 
         }
@@ -2254,7 +2292,7 @@ public class GrantClosureController {
     }
 
     @GetMapping("{closureId}/changeHistory")
-    public PlainClosure getReportHistory(@PathVariable("closureId") Long closureId,
+    public PlainClosure getClosureHistory(@PathVariable("closureId") Long closureId,
                                          @PathVariable("userId") Long userId) throws IOException {
 
         GrantClosure closure = closureService.getClosureById(closureId);
@@ -2305,9 +2343,10 @@ public class GrantClosureController {
 
 
         ClosureSnapshot tempSnapshot = new ClosureSnapshot();
-        tempSnapshot.setGrantRefundAmount(currenClosure.getGrant().getRefundAmount());
-        tempSnapshot.setGrantRefundReason(currenClosure.getGrant().getRefundReason());
-        tempSnapshot.setActualSpent(currenClosure.getGrant().getActualSpent());
+        tempSnapshot.setGrantRefundAmount(currenClosure.getRefundAmount());
+        tempSnapshot.setGrantRefundReason(currenClosure.getRefundReason());
+        tempSnapshot.setActualSpent(currenClosure.getActualSpent());
+        tempSnapshot.setInterestEarned(currenClosure.getInterestEarned());
         List<ActualRefund> actualRefunds = grantService.getActualRefundsForGrant(currenClosure.getGrant().getId());
         if (actualRefunds != null && !actualRefunds.isEmpty()) {
             tempSnapshot.setActualRefunds(new ObjectMapper().writeValueAsString(actualRefunds));
@@ -2363,14 +2402,15 @@ public class GrantClosureController {
             snapshot.setFromStateId(fromStatusId);
             snapshot.setToStateId(toStatusId);
             snapshot.setMovedOn(closure.getMovedOn());
-            snapshot.setGrantRefundAmount(closure.getGrant().getRefundAmount());
-            snapshot.setGrantRefundReason(closure.getGrant().getRefundReason());
+            snapshot.setGrantRefundAmount(closure.getRefundAmount());
+            snapshot.setGrantRefundReason(closure.getRefundReason());
             List<ActualRefund> refunds = grantService.getActualRefundsForGrant(closure.getGrant().getId());
             if (refunds != null && !refunds.isEmpty()) {
                 snapshot.setActualRefunds(new ObjectMapper().writeValueAsString(refunds));
             }
 
-            snapshot.setActualSpent(closure.getGrant().getActualSpent());
+            snapshot.setActualSpent(closure.getActualSpent());
+            snapshot.setInterestEarned(closure.getInterestEarned());
             snapshot.setClosureDocs(closure.getClosureDocuments() != null ? new ObjectMapper().writeValueAsString(closure.getClosureDocuments()) : "[]");
 
             closureSnapshotService.saveClosureSnapshot(snapshot);
@@ -2416,7 +2456,7 @@ public class GrantClosureController {
 
 
         List<WorkflowStatus> reportWfStatuses = workflowStatusService.findByWorkflow(
-                workflowService.findWorkflowByGrantTypeAndObject(grantService.getById(grantId).getGrantTypeId(), REPORT)
+                workflowService.findWorkflowByGrantTypeAndObject(grantService.getById(grantId).getGrantTypeId(), CLOSURE)
         );
 
         List<Report> reportsInProgress = new ArrayList<>();

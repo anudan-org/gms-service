@@ -31,7 +31,7 @@ gms.log*
 /.nb-gradle/
 .vscode/settings.json
 .vscode/launch.json
+
+### Anudan related
 release.json
-release.json
-release.json
-release.json
+application.yml

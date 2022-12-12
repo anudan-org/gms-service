@@ -232,12 +232,7 @@ public class Grant {
   private String amendmentDetailsSnapshot;
   @Column
   private Boolean closureInProgress = false;
-  @Column
-  private Double refundAmount;
-  @Column
-  private String refundReason;
-  @Column
-  private Double actualSpent;
+  
 
   public Boolean getClosureInProgress() {
     return closureInProgress;
@@ -687,22 +682,6 @@ public class Grant {
     this.closureId = closureId;
   }
 
-    public Double getRefundAmount() {
-        return refundAmount;
-    }
-
-    public void setRefundAmount(Double refundAmount) {
-        this.refundAmount = refundAmount;
-    }
-
-    public String getRefundReason() {
-        return refundReason;
-    }
-
-    public void setRefundReason(String refundReason) {
-        this.refundReason = refundReason;
-    }
-
   public Double getOngoingDisbursementAmount() {
     return ongoingDisbursementAmount;
   }
@@ -717,14 +696,6 @@ public class Grant {
 
   public void setActualRefunds(List<ActualRefund> actualRefunds) {
     this.actualRefunds = actualRefunds;
-  }
-
-  public Double getActualSpent() {
-    return actualSpent;
-  }
-
-  public void setActualSpent(Double actualSpent) {
-    this.actualSpent = actualSpent;
   }
 
   public Double getActualOngoingDisbursementRecorded() {

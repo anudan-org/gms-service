@@ -32,6 +32,9 @@ public class GrantClosureService {
     public static final String R = "&r=";
     public static final String EMAIL_TYPE_CLOSURE = "&email=&type=closure";
     public static final String TD = "</td>";
+    public static final String PROJECT_FUNDS = "Project Funds";
+    public static final String PROJECT_REFUND_DETAILS = "Project Refund Details";
+
     @Autowired
     private ClosureAssignmentRepository closureAssignmentRepository;
     @Autowired
@@ -300,13 +303,14 @@ public class GrantClosureService {
 
         List<GranterClosureSection> newSections = new ArrayList<>();
         for (ClosureSpecificSection currentSection : getClosureSections(closure)) {
+            
             GranterClosureSection newSection = new GranterClosureSection();
             newSection.setSectionOrder(currentSection.getSectionOrder());
             newSection.setSectionName(currentSection.getSectionName());
             newSection.setClosureTemplate(newTemplate);
             newSection.setGranter((Granter) closure.getGrant().getGrantorOrganization());
             newSection.setDeletable(currentSection.getDeletable());
-
+        
             newSection = saveClosureTemplateSection(newSection);
             newSections.add(newSection);
 
@@ -530,10 +534,10 @@ public class GrantClosureService {
                 .replace("%GRANTEE_CLOSURE_LINK%", granteeUrl)
                 .replace("%GRANTER_CLOSURE_LINK%",granterUrl)
                 .replace(GRANT_NAME,grantName)
-                .replace("%CURRENT_STATE%", currentState).replace("%CURRENT_OWNER%", currentOwner)
-                .replace("%PREVIOUS_STATE%", previousState).replace("%PREVIOUS_OWNER%", previousOwner)
-                .replace("%PREVIOUS_ACTION%", previousAction).replace("%HAS_CHANGES%", hasChanges)
-                .replace("%HAS_CHANGES_COMMENT%", hasChangesComment).replace("%HAS_NOTES%", hasNotes)
+                .replace("%CURRENT_STATE%", currentState ).replace("%CURRENT_OWNER%", currentOwner)
+                .replace("%PREVIOUS_STATE%", previousState ).replace("%PREVIOUS_OWNER%", previousOwner)
+                .replace("%PREVIOUS_ACTION%", previousAction ).replace("%HAS_CHANGES%", hasChanges)
+                .replace("%HAS_CHANGES_COMMENT%", hasChangesComment ).replace("%HAS_NOTES%", hasNotes)
                 .replace("%HAS_NOTES_COMMENT%", hasNotesComment)
                 .replace("%TENANT%", finalClosure.getGrant().getGrantorOrganization().getName())
                 .replace("%OWNER_NAME%", owner == null ? "" : owner.getFirstName() + " " + owner.getLastName())
@@ -598,11 +602,16 @@ public class GrantClosureService {
         plainClosure.setDescription(closure.getDescription());
         plainClosure.setName(closure.getGrant().getName());
         plainClosure.setReferenceNo(closure.getGrant().getReferenceNo());
-
+        plainClosure.setGrantRefundAmount(closure.getRefundAmount());
+        plainClosure.setGrantRefundReason(closure.getRefundReason());
+        plainClosure.setActualSpent(closure.getActualSpent());
+        plainClosure.setInterestEarned(closure.getInterestEarned());
+        
         if(snapshot!=null) {
             plainClosure.setGrantRefundAmount(snapshot.getGrantRefundAmount());
             plainClosure.setGrantRefundReason(snapshot.getGrantRefundReason());
             plainClosure.setActualSpent(snapshot.getActualSpent());
+            plainClosure.setInterestEarned(snapshot.getInterestEarned());
             String refundsString = snapshot.getActualRefunds();
             if (refundsString != null && !refundsString.trim().equalsIgnoreCase("")) {
                 plainClosure.setActualRefunds(new ObjectMapper().readValue(refundsString, new TypeReference<List<ActualRefund>>() {

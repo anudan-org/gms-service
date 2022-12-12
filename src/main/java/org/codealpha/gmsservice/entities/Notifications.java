@@ -38,6 +38,9 @@ public class Notifications {
 
   	@Column
   	private Long userId;
+	
+	@Column
+	private Long closureId;
 
 	public Long getId() {
 		return id;
@@ -123,5 +126,14 @@ public class Notifications {
 	public void setDisbursementId(Long disbursementId) {
 		this.disbursementId = disbursementId;
 	}
+
+	public Long getClosureId() {
+		return closureId;
+	}
+
+	public void setClosureId(Long closureId) {
+		this.closureId = closureId;
+	}
+	
 
 }

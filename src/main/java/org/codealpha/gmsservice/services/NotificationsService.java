@@ -36,7 +36,10 @@ public List<Notifications> getAllUserNotifications(Long userId){
           notification.setGrantId(id);
       }else if(notificationFor.equalsIgnoreCase("DISBURSEMENT")){
         notification.setDisbursementId(id);
-    }
+    }else if(notificationFor.equalsIgnoreCase("CLOSURE")){
+      notification.setClosureId(id);
+  }
+
       return notificationsRepository.save(notification);
   }
 

@@ -66,10 +66,8 @@ public class GrantDTO {
   private Long closureId;
   private String amendmentDetailsSnapshot;
   private Boolean closureInProgress = false;
-  private Double refundAmount;
-  private String refundReason;
-  private Double actualSpent;
-
+  
+  
   public Boolean getClosureInProgress() {
     return closureInProgress;
   }
@@ -437,22 +435,6 @@ public class GrantDTO {
     this.closureId = closureId;
   }
 
-    public Double getRefundAmount() {
-        return refundAmount;
-    }
-
-    public void setRefundAmount(Double refundAmount) {
-        this.refundAmount = refundAmount;
-    }
-
-    public String getRefundReason() {
-        return refundReason;
-    }
-
-    public void setRefundReason(String refundReason) {
-        this.refundReason = refundReason;
-    }
-
   public Double getOngoingDisbursementAmount() {
     return ongoingDisbursementAmount;
   }
@@ -543,14 +525,6 @@ public class GrantDTO {
 
   public void setGrantTags(List<GrantTagsDTO> grantTags) {
     this.grantTags = grantTags;
-  }
-
-  public Double getActualSpent() {
-    return actualSpent;
-  }
-
-  public void setActualSpent(Double actualSpent) {
-    this.actualSpent = actualSpent;
   }
 
   public Double getActualOngoingDisbursementRecorded() {
