@@ -243,8 +243,8 @@ jobs:
 
                7. Anudan - Grant Management System › UAT Build - UAT R-${{ env.UAT_Version }}
 
-          to: ${{ secrets.TO_ADDRESSES }} 
-          from: ${{ secrets.FROM_ADDRESS }} 
+          to: ${{ secrets.TO_ADDRESSES }}
+          from: ${{ secrets.FROM_ADDRESS }}
 
           
          
