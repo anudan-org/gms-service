@@ -2433,7 +2433,7 @@ public class GrantClosureController {
         } else {
             for (ClosureSnapshot snapShot : closureSnapshotHistory) {
                 GrantClosureHistory hist = new GrantClosureHistory();
-                hist.setReason(snapShot.getReason().getReason());
+                hist.setReason(snapShot.getReason()==null?"":snapShot.getReason().getReason());
                 hist.setDescription(snapShot.getDescription());
                 hist.setId(snapShot.getClosureId());
                 hist.setNote(snapShot.getFromNote());

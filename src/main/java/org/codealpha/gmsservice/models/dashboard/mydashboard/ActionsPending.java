@@ -18,6 +18,8 @@ public class ActionsPending {
 
     @JsonProperty("Grants")
     private Long grants;
+    @JsonProperty("Closures")
+    private Long closures;
     @JsonProperty("Reports")
     private Long reports;
     @JsonProperty("DisbursementApprovals")
@@ -28,8 +30,9 @@ public class ActionsPending {
     public ActionsPending() {
     }
 
-    public ActionsPending(Long grants, Long reports, Long disbursementApprovals) {
+    public ActionsPending(Long grants, Long closures, Long reports, Long disbursementApprovals) {
         this.grants = grants;
+        this.closures=closures;
         this.reports = reports;
         this.disbursementApprovals = disbursementApprovals;
     }

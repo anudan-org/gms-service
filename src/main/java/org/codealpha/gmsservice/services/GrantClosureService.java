@@ -779,4 +779,25 @@ public class GrantClosureService {
     public void deleteActualRefund(ActualRefund actualRefund) {
         actualRefundRepository.delete(actualRefund);
     }
+
+    public Long getUpcomingClosuresActualSpentAmount(Long userId) {
+        return grantClosureRepository.getUpcomingClosuresActualSpentAmount(userId);
+    }
+    public Long getActionDueClosuresForUser(Long userId) {
+        return grantClosureRepository.getActionDueClosuresForUser(userId);
+    }
+    public Long getUpComingDraftClosures(Long userId) {
+        return grantClosureRepository.getUpComingDraftClosures(userId);
+    }
+
+    public Long getClosuresInWorkflow(Long userId) {
+        return grantClosureRepository.getClosuresInWorkflow(userId);
+    }
+    public List<GrantClosure> getDetailedActionDueClosuresForUser(Long userId) {
+        return grantClosureRepository.getDetailedActionDueClosuresForUser(userId);
+    }
+    public List<GrantClosure> getDetailedUpComingDraftClosures(Long userId) {
+        return grantClosureRepository.getDetailedUpComingDraftClosures(userId);
+    }
+
 }
