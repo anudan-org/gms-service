@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ClosureReasonService {
@@ -22,7 +23,13 @@ public class ClosureReasonService {
   }
 
   public ClosureReason getById(Long id) {
-    return closureReasonRepository.findById(id).get();
+    Optional<ClosureReason>  reasons = closureReasonRepository.findById(id);
+    if ( reasons.isPresent() ) {
+    return reasons.get();
+    } else { 
+      return null;
+    }
+    
   }
 
   public void deleteClosureReason(ClosureReason reason) {
