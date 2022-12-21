@@ -88,25 +88,6 @@ public class ClosureReasonDTO {
         this.deleted = deleted;
     }
     
-
-    public ClosureReasonDTO(Long id, String reason, Organization organization, Date createdAt, String createdBy,
-            Date updatedAt, String updatedBy, boolean enabled, boolean deleted, Long usagecount) {
-        this.id = id;
-        this.reason = reason;
-        this.organization = organization;
-        this.createdAt = createdAt;
-        this.createdBy = createdBy;
-        this.updatedAt = updatedAt;
-        this.updatedBy = updatedBy;
-        this.enabled = enabled;
-        this.deleted = deleted;
-        this.usagecount = usagecount;
-    }
-    
-
-    public ClosureReasonDTO() {
-    }
-
     public Long getUsagecount() {
         return usagecount;
     }

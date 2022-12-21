@@ -33,7 +33,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -350,14 +349,14 @@ public class AdministrativeController {
             Long orgId = userService.getUserById(userId).getOrganization().getId();
             Long usageCount = closureReasonService.getReasonUsageCount(orgId, reason.getId());
    
-            ClosureReasonDTO _reason = new ClosureReasonDTO();
-            _reason.setId(reason.getId());
-            _reason.setReason(reason.getReason());
-            _reason.setOrganization(userService.getUserById(userId).getOrganization());
-            _reason.setEnabled(reason.isEnabled());
-            _reason.setDeleted(reason.isDeleted());
-            _reason.setUsagecount(usageCount==null?0:usageCount);
-            reasonsList.add(_reason);
+            ClosureReasonDTO reasonDTO = new ClosureReasonDTO();
+            reasonDTO.setId(reason.getId());
+            reasonDTO.setReason(reason.getReason());
+            reasonDTO.setOrganization(userService.getUserById(userId).getOrganization());
+            reasonDTO.setEnabled(reason.isEnabled());
+            reasonDTO.setDeleted(reason.isDeleted());
+            reasonDTO.setUsagecount(usageCount==null?0:usageCount);
+            reasonsList.add(reasonDTO);
         }
         return reasonsList;
     }
