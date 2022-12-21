@@ -68,7 +68,7 @@ public class GrantClosureService {
     @Autowired
     private UserService userService;
     @Autowired
-    private ClosureReasonsRepository closureReasonsRepository;
+    private ClosureReasonRepository closureReasonRepository;
     @Autowired
     private WorkflowPermissionRepository workflowPermissionRepository;
     @Autowired
@@ -745,7 +745,7 @@ public class GrantClosureService {
     }
 
     public ClosureReason saveReason(ClosureReason newReason) {
-        return closureReasonsRepository.save(newReason);
+        return closureReasonRepository.save(newReason);
     }
 
     public List<GrantClosureHistory> getClosureHistory(Long closureId) {

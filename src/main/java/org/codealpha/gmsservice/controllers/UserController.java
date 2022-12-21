@@ -690,7 +690,7 @@ public class UserController {
                 for(Workflow wf : workflows){
                     List<GrantTypeWorkflowMapping> mappings = grantTypeWorkflowMappingService.findByWorkflow(wf.getId());
                     for(GrantTypeWorkflowMapping mapping:mappings){
-                        List<TransitionStatusOrder> orderedTransitions = dashboardService.getStatusTransitionOrderByWorflowAndGrantType(wf.getId(),mapping.getGrantTypeId());
+                        List<TransitionStatusOrder> orderedTransitions = dashboardService.getStatusTransitionOrderByWorkflowAndGrantType(wf.getId(),mapping.getGrantTypeId());
                         orderedTransitions.add(0, dashboardService.getStatusTransitionOrderForTerminalState(wf.getId(),mapping.getGrantTypeId()));
 
                         List<String> statusOrder = orderedTransitions.stream().map(TransitionStatusOrder::getState).collect(Collectors.toList());

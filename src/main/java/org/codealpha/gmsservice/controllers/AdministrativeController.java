@@ -33,6 +33,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -45,7 +46,7 @@ import java.util.zip.ZipOutputStream;
 @RestController
 @RequestMapping("/admin")
 @ApiIgnore
-public class AdiminstrativeController {
+public class AdministrativeController {
 
     public static final String DISBURSEMENT = "DISBURSEMENT";
     public static final String ANUDAN = "ANUDAN";
@@ -67,6 +68,8 @@ public class AdiminstrativeController {
     public UserService userService;
     @Autowired
     private RoleService roleService;
+    @Autowired
+    private ClosureReasonService closureReasonService;
     @Autowired
     private UserRoleService userRoleService;
     @Autowired
@@ -112,7 +115,7 @@ public class AdiminstrativeController {
     @Autowired
     private GrantClosureService closureService;
 
-    private static Logger logger = LoggerFactory.getLogger(AdiminstrativeController.class);
+    private static Logger logger = LoggerFactory.getLogger(AdministrativeController.class);
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
     @ApiOperation(value = "Get workflow assignments for grant")
@@ -330,6 +333,68 @@ public class AdiminstrativeController {
 
         return getCurrentOrgRoles(userService.getUserById(userId));
     }
+
+
+    @GetMapping("/user/{userId}/closureReasons")
+    public List<ClosureReasonDTO> getClosureReasons(
+            @PathVariable("userId") Long userId) {
+        Long orgId = userService.getUserById(userId).getOrganization().getId();
+        List<ClosureReason> reasons = closureReasonService.getByOrganization(orgId);
+    
+     return getReasonUsageCount(reasons, userId) ;
+    }
+
+    private List<ClosureReasonDTO> getReasonUsageCount(List<ClosureReason> reasons, Long userId ){
+    List<ClosureReasonDTO> reasonsList = new ArrayList<>();
+        for (ClosureReason reason : reasons) {
+            Long orgId = userService.getUserById(userId).getOrganization().getId();
+            Long usageCount = closureReasonService.getReasonUsageCount(orgId, reason.getId());
+   
+            ClosureReasonDTO _reason = new ClosureReasonDTO();
+            _reason.setId(reason.getId());
+            _reason.setReason(reason.getReason());
+            _reason.setOrganization(userService.getUserById(userId).getOrganization());
+            _reason.setEnabled(reason.isEnabled());
+            _reason.setDeleted(reason.isDeleted());
+            _reason.setUsagecount(usageCount==null?0:usageCount);
+            reasonsList.add(_reason);
+        }
+        return reasonsList;
+    }
+    @PutMapping("/user/{userId}/reason")
+    public ClosureReason saveReason(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
+                         @RequestBody ClosureReasonDTO newReason) {
+        ClosureReason reason = null;
+        if (newReason.getId() == 0) {
+            reason = new ClosureReason();
+            User user = userService.getUserById(userId);
+            reason.setOrganizationId(user.getOrganization().getId());
+            reason.setCreatedAt(DateTime.now().toDate());
+        } else {
+            reason = closureReasonService.getById(newReason.getId());
+            reason.setReason(newReason.getReason());
+            reason.setUpdatedAt(DateTime.now().toDate());
+        }
+
+        reason.setReason(newReason.getReason());
+
+        reason = closureReasonService.saveClosureReason(reason);
+        return reason;
+    }
+
+    @DeleteMapping("/user/{userId}/reason/{reasonId}")
+    public List<ClosureReasonDTO> deleteReason(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
+                                 @PathVariable("reasonId") Long reasonId) {
+
+        ClosureReason reason = closureReasonService.getById(reasonId);
+        closureReasonService.deleteClosureReason(reason);
+
+        List<ClosureReason> reasons = closureReasonService.getByOrganization(userService.getUserById(userId).getOrganization().getId());
+    
+     
+     return getReasonUsageCount(reasons, userId) ;
+    }
+
 
     @PostMapping("/user/{userId}/user")
     public User createUser(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId,
@@ -753,7 +818,7 @@ public class AdiminstrativeController {
                         for (SectionAttributesVO attribute : attributes) {
                             if (attribute.getId() == 8655) {
                                 attribute.setFieldValue(
-                                        "PRADAN, 3 Community Shopping Centre, Niti Bagh, New Delhi - 110049");//
+                                        "PRADAN, 3 Community Shopping Centre, Niti Bagh, New Delhi - 110049");
                             }
                             if (attribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
                                 attribute.setFieldTableValue(disbsToSet);
