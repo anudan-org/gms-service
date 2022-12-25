@@ -1918,7 +1918,7 @@ public class GrantClosureController {
                     AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
             appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                     AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
-            null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+            "", "", "", "", "", "", "", "", "", "", null, null, currentAssignments,
             newAssignments);
     List<User> toUsers = newAssignments.stream().map(ClosureAssignments::getAssignment)
             .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
@@ -1953,7 +1953,7 @@ public class GrantClosureController {
                     AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
             appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                     AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
-            null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+            "", "", "", "", "", "", "", "", "", "", null, null, currentAssignments,
             newAssignments);
 
     final String[] finaNotifications = notifications;
