@@ -16,6 +16,7 @@ public class ClosureReason {
     @Column private Date updatedAt;
     @Column private boolean enabled;
     @Column private boolean deleted;
+    
 
     public Long getId() {
         return id;
@@ -88,4 +89,7 @@ public class ClosureReason {
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
     }
+
+ 
+  
 }

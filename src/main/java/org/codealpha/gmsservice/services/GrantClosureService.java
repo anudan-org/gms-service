@@ -68,7 +68,7 @@ public class GrantClosureService {
     @Autowired
     private UserService userService;
     @Autowired
-    private ClosureReasonsRepository closureReasonsRepository;
+    private ClosureReasonRepository closureReasonRepository;
     @Autowired
     private WorkflowPermissionRepository workflowPermissionRepository;
     @Autowired
@@ -534,7 +534,8 @@ public class GrantClosureService {
                 .replace("%GRANTEE_CLOSURE_LINK%", granteeUrl)
                 .replace("%GRANTER_CLOSURE_LINK%",granterUrl)
                 .replace(GRANT_NAME,grantName)
-                .replace("%CURRENT_STATE%", currentState ).replace("%CURRENT_OWNER%", currentOwner)
+                .replace("%CURRENT_STATE%", currentState )
+                .replace("%CURRENT_OWNER%",  currentOwner)
                 .replace("%PREVIOUS_STATE%", previousState ).replace("%PREVIOUS_OWNER%", previousOwner)
                 .replace("%PREVIOUS_ACTION%", previousAction ).replace("%HAS_CHANGES%", hasChanges)
                 .replace("%HAS_CHANGES_COMMENT%", hasChangesComment ).replace("%HAS_NOTES%", hasNotes)
@@ -546,7 +547,7 @@ public class GrantClosureService {
                 .replace("%GRANTEE%", finalClosure.getGrant().getOrganization()!=null?finalClosure.getGrant().getOrganization().getName():finalClosure.getGrant().getGrantorOrganization().getName())
                 .replace("%GRANTEE_REPORT_LINK%", granteeUrl).replace("%GRANTER_REPORT_LINK%", granterUrl)
                 .replace("%GRANTER%", finalClosure.getGrant().getGrantorOrganization().getName())
-                .replace("%ENTITY_TYPE%", "report")
+                .replace("%ENTITY_TYPE%", "closure")
                 .replace("%PREVIOUS_ASSIGNMENTS%", getAssignmentsTable(previousApprover, newApprover))
                 .replace("%ENTITY_NAME%", "Closure Request of grant " + grantName);
         String subject = subConfigValue.replace(GRANT_NAME, "Closure Request for Grant " + finalClosure.getGrant().getName());
@@ -745,7 +746,7 @@ public class GrantClosureService {
     }
 
     public ClosureReason saveReason(ClosureReason newReason) {
-        return closureReasonsRepository.save(newReason);
+        return closureReasonRepository.save(newReason);
     }
 
     public List<GrantClosureHistory> getClosureHistory(Long closureId) {
@@ -779,4 +780,25 @@ public class GrantClosureService {
     public void deleteActualRefund(ActualRefund actualRefund) {
         actualRefundRepository.delete(actualRefund);
     }
+
+    public Long getUpcomingClosuresActualSpentAmount(Long userId) {
+        return grantClosureRepository.getUpcomingClosuresActualSpentAmount(userId);
+    }
+    public Long getActionDueClosuresForUser(Long userId) {
+        return grantClosureRepository.getActionDueClosuresForUser(userId);
+    }
+    public Long getUpComingDraftClosures(Long userId) {
+        return grantClosureRepository.getUpComingDraftClosures(userId);
+    }
+
+    public Long getClosuresInWorkflow(Long userId) {
+        return grantClosureRepository.getClosuresInWorkflow(userId);
+    }
+    public List<GrantClosure> getDetailedActionDueClosuresForUser(Long userId) {
+        return grantClosureRepository.getDetailedActionDueClosuresForUser(userId);
+    }
+    public List<GrantClosure> getDetailedUpComingDraftClosures(Long userId) {
+        return grantClosureRepository.getDetailedUpComingDraftClosures(userId);
+    }
+
 }

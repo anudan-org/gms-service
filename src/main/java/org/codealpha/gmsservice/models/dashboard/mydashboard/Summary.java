@@ -19,6 +19,8 @@ public class Summary {
     private ActionsPending actionsPending;
     @JsonProperty("UpcomingGrants")
     private UpcomingGrants upcomingGrants;
+    @JsonProperty("UpcomingClosures")
+    private UpcomingClosures upcomingClosures;
     @JsonProperty("UpcomingReports")
     private UpcomingReports upcomingReports;
     @JsonProperty("upcomingDisbursements")
@@ -44,6 +46,16 @@ public class Summary {
     @JsonProperty("UpcomingGrants")
     public void setUpcomingGrants(UpcomingGrants upcomingGrants) {
         this.upcomingGrants = upcomingGrants;
+    }
+
+    @JsonProperty("UpcomingClosures")
+    public UpcomingClosures getUpcomingClosures() {
+        return upcomingClosures;
+    }
+
+    @JsonProperty("UpcomingClosures")
+    public void setUpcomingClosures(UpcomingClosures upcomingClosures) {
+        this.upcomingClosures = upcomingClosures;
     }
 
     @JsonAnyGetter

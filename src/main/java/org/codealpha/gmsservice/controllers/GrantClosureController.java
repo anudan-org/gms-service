@@ -1918,7 +1918,7 @@ public class GrantClosureController {
                     AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
             appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                     AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
-            null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+            "", "", "", "", "", "", "", "", "", "", null, null, currentAssignments,
             newAssignments);
     List<User> toUsers = newAssignments.stream().map(ClosureAssignments::getAssignment)
             .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
@@ -1953,7 +1953,7 @@ public class GrantClosureController {
                     AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
             appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                     AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
-            null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+            "", "", "", "", "", "", "", "", "", "", null, null, currentAssignments,
             newAssignments);
 
     final String[] finaNotifications = notifications;
@@ -2433,7 +2433,7 @@ public class GrantClosureController {
         } else {
             for (ClosureSnapshot snapShot : closureSnapshotHistory) {
                 GrantClosureHistory hist = new GrantClosureHistory();
-                hist.setReason(snapShot.getReason().getReason());
+                hist.setReason(snapShot.getReason()==null?"":snapShot.getReason().getReason());
                 hist.setDescription(snapShot.getDescription());
                 hist.setId(snapShot.getClosureId());
                 hist.setNote(snapShot.getFromNote());

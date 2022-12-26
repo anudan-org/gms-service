@@ -79,23 +79,18 @@ public interface GrantClosureRepository extends CrudRepository<GrantClosure, Lon
     List<GrantClosure> findUpcomingFutureAdminClosures(Long userId, Long id);
 
     @Query(value = "select count(distinct(a.id)) from grant_closure a\n" +
-            "            inner join closure_assignments b on b.closure_id=a.id and b.state_id=a.status_id\n" +
-            "            inner join grants c on c.id=a.grant_id\n" +
-            "            where b.assignment=?1 \n" +
-            "\t\t\tand (a.end_date between now() and (now()+ INTERVAL '15 day') \n" +
-            "\t\t\t\tor a.due_date<now()\n" +
-            "\t\t\t\tor (select count(*) from grant_closure_history where id=a.id )>0)\n" +
-            "\t\t\tand c.deleted=false and a.deleted=false group by b.assignment",nativeQuery = true)
+            " inner join closure_assignments b on b.closure_id=a.id and b.state_id=a.status_id\n" +
+            " inner join workflow_statuses c on c.id = a.status_id " +
+            " where b.assignment=?1 \n" +
+            " and a.deleted=false and c.internal_status!='CLOSED' group by b.assignment",nativeQuery = true)
     Long getActionDueClosuresForUser(Long userId);
 
-    @Query(value = "select distinct a.*,get_owner_closure(a.id) owner_id,get_owner_closure_name(a.id) owner_name from grant_closure a\n" +
+    @Query(value = "select distinct a.id, a.reason, a.template_id, a.grant_id, a.moved_on, a.create_by, a.created_at, a.updated_by, a.updated_at, a.status_id, a.note_added_by, a.note, a.deleted, a.closure_detail, a.linked_approved_reports, a.description, a.note_added,get_owner_closure(a.id) owner_id,get_owner_closure_name(a.id) owner_name,a.refund_amount, a.refund_reason, a.actual_spent, a.interest_earned " +
+     " from grant_closure a\n" +
             "inner join closure_assignments b on b.closure_id=a.id and b.state_id=a.status_id\n" +
-            "inner join grants c on c.id=a.grant_id\n" +
-            "where b.assignment=?1\n" +
-            "and (a.end_date between now() and (now()+ INTERVAL '15 day') \n" +
-            "or a.due_date<now()\n" +
-            "or (select count(*) from grant_closure_history where id=a.id )>0)\n" +
-            "and c.deleted=false and a.deleted=false",nativeQuery = true)
+            " inner join workflow_statuses c on c.id=a.status_id " +
+            " where b.assignment=?1\n" +
+            " and a.deleted=false and c.internal_status!='CLOSED' ",nativeQuery = true)
     List<GrantClosure> getDetailedActionDueClosuresForUser(Long userId);
 
     @Query(value = "select count(distinct(d.id)) from grants a\n" +
@@ -125,24 +120,23 @@ public interface GrantClosureRepository extends CrudRepository<GrantClosure, Lon
             "where b.assignment=?1 and c.internal_status='DRAFT' and d.deleted=false and a.deleted=false",nativeQuery = true)
     Long getUpComingDraftClosures(Long userId);
 
-    @Query(value = "select distinct a.*,get_owner_closure(a.id) owner_id,get_owner_closure_name(a.id) owner_name from grant_closure a \n" +
+    @Query(value = "select distinct a.id, a.reason, a.template_id, a.grant_id, a.moved_on, a.create_by, a.created_at, a.updated_by, a.updated_at, a.status_id, a.note_added_by, a.note, a.deleted, a.closure_detail, a.linked_approved_reports, a.description, a.note_added,get_owner_closure(a.id) owner_id,get_owner_closure_name(a.id) owner_name,a.refund_amount, a.refund_reason, a.actual_spent, a.interest_earned " +
+        " from grant_closure a \n" +
             "inner join closure_assignments b on b.closure_id=a.id and b.state_id=a.status_id \n" +
             "inner join workflow_statuses c on c.id=a.status_id \n" +
-            "inner join grants d on d.id=a.grant_id\n" +
             "where b.assignment=?1 \n" +
             "and c.internal_status='DRAFT' \n" +
-            "and d.deleted=false and a.deleted=false",nativeQuery = true)
+            "and a.deleted=false",nativeQuery = true)
     List<GrantClosure> getDetailedUpComingDraftClosures(Long userId);
 
     @Query(value = "select count(distinct(a.id)) \n" +
             "            from grant_closure a \n" +
             "            inner join closure_assignments b on b.closure_id=a.id \n" +
             "            inner join workflow_statuses c on c.id=a.status_id \n" +
-            "            inner join grants d on d.id=a.grant_id\n" +
             "            where b.assignment=?1 and (\n" +
             "\t\t\t\t\t\t\t((select count(*) from grant_closure_history where id=A.id)>0 and ?1 = any (array(select assignment from closure_assignments where closure_id=A.id))) or \n" +
             "\t\t\t\t\t\t\t(C.internal_status='REVIEW' and ?1 = any( array(select assignment from closure_assignments where closure_id=A.id)))\n" +
-            "\t\t\t\t\t\t) and a.deleted=false and d.deleted=false",nativeQuery = true)
+            "\t\t\t\t\t\t) and a.deleted=false and c.internal_status !='CLOSED' ",nativeQuery = true)
     Long getClosuresInWorkflow(Long userId);
 
     @Query(value = "select (sum(committed) - sum(disbursed)) as pending_commitments from (\n" +
@@ -164,4 +158,24 @@ public interface GrantClosureRepository extends CrudRepository<GrantClosure, Lon
 
     @Query(value = "select * from grant_closure where grant_id=?1",nativeQuery = true)
     List<GrantClosure> findByGrant(Long grantId);
+
+    @Query(value = "  select sum(a.actual_spent)  from grant_closure a, workflow_statuses s where s.id = a.status_id "
+    + " and exists (select 1 from closure_assignments b  "
+    + " inner join workflow_statuses c on c.id=a.status_id "
+    + " where  b.closure_id =a.id and b.assignment=?1 and "
+    + " (b.assignment=?1 and c.internal_status='DRAFT' and b.state_id=a.status_id) or "
+    + " (b.assignment=?1 and c.internal_status!='DRAFT') or "
+    + " (c.internal_status='DRAFT' and (select count(*) from grant_closure_history where id=a.id)>0)) "
+    + " and a.deleted=false and s.internal_status not in ( 'CLOSED')",nativeQuery = true)
+    Long getUpcomingClosuresActualSpentAmount(Long userId);
+   
+   @Query(value="select count(*) from grant_closure a\n" +
+   " inner join closure_assignments b on b.state_id=a.status_id and b.closure_id=a.id\n" +
+   " inner join workflow_statuses c on c.id=a.status_id\n" +
+   " where b.assignment=?1 and c.internal_status!='CLOSED' and a.deleted=false",nativeQuery = true)
+Long getActionDueClsouresForUser(Long userId);
+
+
+
+   
 }

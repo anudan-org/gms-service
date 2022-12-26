@@ -158,7 +158,7 @@ public class GrantService {
     @Autowired
     private ReportCardRepository reportCardRepository;
     @Autowired
-    private ClosureReasonsRepository closureReasonsRepository;
+    private ClosureReasonRepository closureReasonRepository;
     @Autowired
     private GranteeService granteeService;
     @Autowired
@@ -1118,7 +1118,7 @@ public class GrantService {
     }
 
     public List<ClosureReason> getClosureReasons(Long orgId) {
-        return closureReasonsRepository.getClosureReasonsForOrg(orgId);
+        return closureReasonRepository.getClosureReasonsForOrg(orgId);
     }
 
     public Grant moveToNewState(GrantWithNote grantwithNote, Long userId, Long grantId, Long fromStateId,

@@ -298,7 +298,7 @@ public class DashboardService {
         return granterReportSummaryStatusRepository.getReportsByStatusForUser(userId);
     }
 
-    public List<TransitionStatusOrder> getStatusTransitionOrderByWorflowAndGrantType(Long workflowId, Long grantTypeId) {
+    public List<TransitionStatusOrder> getStatusTransitionOrderByWorkflowAndGrantType(Long workflowId, Long grantTypeId) {
         return transitionStatusOrderRepository.getTransitionOrderByWorkflowAndGrantType(workflowId, grantTypeId);
     }
 

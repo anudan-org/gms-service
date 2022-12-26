@@ -88,6 +88,8 @@ public class UserController {
     @Autowired
     private GrantService grantService;
     @Autowired
+    private GrantClosureService grantClosureService;
+    @Autowired
     private ReportService reportService;
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -427,6 +429,7 @@ public class UserController {
 
         summary.setActionsPending(getActionsPending(userId));
         summary.setUpcomingGrants(getUpcomingGrants(userId));
+        summary.setUpcomingClosures(getUpcomingClosures(userId));
         summary.setUpcomingReports(getUpcomingReports(userId));
         summary.setUpcomingDisbursements(getUpcomingDisbursements(userId));
 
@@ -543,7 +546,11 @@ public class UserController {
         Long upcomingDibursementAmount = getUpcomingGrantsDisbursementAmount(userId);
         return new UpcomingGrants(getUpComingDraftGrants(userId), getGrantsInWorkflow(userId), upcomingDibursementAmount==null?0:upcomingDibursementAmount);
     }
-
+    
+    private UpcomingClosures getUpcomingClosures(Long userId) {
+        Long upcomingClosuresActualSpentAmount = getUpcomingClosuresActualSpentAmount(userId);
+        return new UpcomingClosures(getUpComingDraftClosures(userId), getClosuresInWorkflow(userId), upcomingClosuresActualSpentAmount==null?0:upcomingClosuresActualSpentAmount);
+    }
     private UpcomingReports getUpcomingReports(Long userId) {
         Long upcomingDibursementAmount = getUpcomingReportsDisbursementAmount(userId);
         return new UpcomingReports(getUpComingDraftReports(userId), getReportsInWorkflow(userId), upcomingDibursementAmount==null?0:upcomingDibursementAmount);
@@ -558,6 +565,10 @@ public class UserController {
         return grantService.getUpcomingGrantsDisbursementAmount(userId);
     }
 
+    private Long getUpcomingClosuresActualSpentAmount(Long userId) {
+        return grantClosureService.getUpcomingClosuresActualSpentAmount(userId);
+    }
+    
     private Long getUpcomingReportsDisbursementAmount(Long userId) {
         return grantService.getUpcomingReportsDisbursementAmount(userId);
     }
@@ -569,6 +580,11 @@ public class UserController {
     private Long getGrantsInWorkflow(Long userId) {
         return grantService.getGrantsInWorkflow(userId);
     }
+
+    private Long getClosuresInWorkflow(Long userId) {
+        return grantClosureService.getClosuresInWorkflow(userId);
+    }
+    
 
     private Long getReportsInWorkflow(Long userId) {
         return reportService.getReportsInWorkflow(userId);
@@ -582,6 +598,11 @@ public class UserController {
         return grantService.getUpComingDraftGrants(userId);
     }
 
+    private Long getUpComingDraftClosures(Long userId) {
+        return grantClosureService.getUpComingDraftClosures(userId);
+    }
+    
+
     private Long getUpComingDraftReports(Long userId) {
         return reportService.getUpComingDraftReports(userId);
     }
@@ -593,8 +614,9 @@ public class UserController {
     private ActionsPending getActionsPending(Long userId) {
         Long pendingDisbursement = getPendingActionDisbursements(userId);
         Long pendingGrants = getPendingActionGrants(userId);
+        Long pendingClosures = getPendingActionClosures(userId);
         Long pendingReports = getPendingActionReports(userId);
-        return new ActionsPending(pendingGrants==null?0:pendingGrants, pendingReports==null?0:pendingReports,pendingDisbursement==null?0:pendingDisbursement );
+        return new ActionsPending(pendingGrants==null?0:pendingGrants, pendingClosures==null?0:pendingClosures, pendingReports==null?0:pendingReports,pendingDisbursement==null?0:pendingDisbursement );
     }
 
     private Long getPendingActionDisbursements(Long userId) {
@@ -609,6 +631,13 @@ public class UserController {
 
         return grantService.getActionDueGrantsForUser(userId);
     }
+
+    private Long getPendingActionClosures(Long userId) {
+
+        return grantClosureService.getActionDueClosuresForUser(userId);
+    }
+
+    
 
     private Filter getFilterForGrantsByStatus(Organization tenantOrg, String status) {
         GranterGrantSummaryCommitted activeGrantSummaryCommitted = ACTIVE.equalsIgnoreCase(status) ? dashboardService
@@ -661,7 +690,7 @@ public class UserController {
                 for(Workflow wf : workflows){
                     List<GrantTypeWorkflowMapping> mappings = grantTypeWorkflowMappingService.findByWorkflow(wf.getId());
                     for(GrantTypeWorkflowMapping mapping:mappings){
-                        List<TransitionStatusOrder> orderedTransitions = dashboardService.getStatusTransitionOrderByWorflowAndGrantType(wf.getId(),mapping.getGrantTypeId());
+                        List<TransitionStatusOrder> orderedTransitions = dashboardService.getStatusTransitionOrderByWorkflowAndGrantType(wf.getId(),mapping.getGrantTypeId());
                         orderedTransitions.add(0, dashboardService.getStatusTransitionOrderForTerminalState(wf.getId(),mapping.getGrantTypeId()));
 
                         List<String> statusOrder = orderedTransitions.stream().map(TransitionStatusOrder::getState).collect(Collectors.toList());
@@ -961,6 +990,11 @@ public class UserController {
     public List<GrantCard> getPendingDetailedGrantsForUser(@PathVariable("userId")Long userId){
         return grantService.getDetailedActionDueGrantsForUser(userId);
     }
+    @GetMapping("/{userId}/dashboard/mysummary/pendingclosures")
+    public List<GrantClosure> getPendingDetailedClosuresForUser(@PathVariable("userId")Long userId){
+            return grantClosureService.getDetailedActionDueClosuresForUser(userId);
+    }
+
     @GetMapping("/{userId}/dashboard/mysummary/pendingreports")
     public List<ReportCard> getPendingDetailedReportForUser(@PathVariable("userId")Long userId){
         return grantService.getDetailedActionDueReportsForUser(userId);
@@ -978,6 +1012,12 @@ public class UserController {
     public List<GrantCard> getUpcomingDetailedGrantsForUser(@PathVariable("userId")Long userId){
         return grantService.getDetailedUpComingDraftGrants(userId);
     }
+
+    @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftclosures")
+    public List<GrantClosure> getUpcomingDetailedClosuresForUser(@PathVariable("userId")Long userId){
+        return grantClosureService.getDetailedUpComingDraftClosures(userId);
+    }
+    
 
     @GetMapping("/{userId}/dashboard/mysummary/grants/{status}")
     public List<Grant> getGrantsForUserByStatus(@PathVariable("userId")Long userId,@PathVariable("status")String status){
