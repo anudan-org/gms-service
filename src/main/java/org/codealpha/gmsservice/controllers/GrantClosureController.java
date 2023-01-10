@@ -280,7 +280,7 @@ public class GrantClosureController {
 
         granterClosureSections.removeIf((rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_FUNDS)));
         granterClosureSections.removeIf((rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_REFUND_DETAILS)));
-       
+        granterClosureSections.removeIf((rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS)));
         
         if (granterClosureSections.stream().noneMatch(rs -> rs.getSectionName().equalsIgnoreCase(PROJECT_INDICATORS))) {
             GranterClosureSection indicatorSection = new GranterClosureSection();
@@ -1242,7 +1242,12 @@ public class GrantClosureController {
         ClosureSpecificSectionAttribute newSectionAttribute = new ClosureSpecificSectionAttribute();
         newSectionAttribute.setSection(closureSection);
         newSectionAttribute.setRequired(false);
-        newSectionAttribute.setFieldType("multiline");
+        if (closureSection.getSectionName().equals(PROJECT_INDICATORS)) {
+            newSectionAttribute.setFieldType("kpi"); 
+        } else {
+            newSectionAttribute.setFieldType("multiline");
+        }
+        
         newSectionAttribute.setFieldName(STRNOSPACE);
         newSectionAttribute.setDeletable(true);
         newSectionAttribute.setCanEdit(true);

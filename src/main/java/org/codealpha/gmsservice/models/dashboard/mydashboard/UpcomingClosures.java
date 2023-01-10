@@ -59,7 +59,7 @@ public class UpcomingClosures {
         return actualSpent;
     }
 
-    @JsonProperty("GrantAmount")
+    @JsonProperty("ActualSpent")
     public void setActualSpent(Long actualSpent) {
         this.actualSpent = actualSpent;
     }

@@ -292,7 +292,7 @@ public class DisbursementsController {
                                                         disbursement.getGrant().getGrantorOrganization().getId(),
                                                         AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE)
                                                         .getConfigValue(),
-                                        null, null, null, null, null, null, null, null, null, null, null, null,
+                                        "", "", "", "", "", "", "", "", "", "", null, null,
                                         currentAssignments, newAssignments);
                         List<User> toUsers = newAssignments.stream().map(DisbursementAssignment::getOwner)
                                         .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
@@ -332,7 +332,7 @@ public class DisbursementsController {
                                                         disbursement.getGrant().getGrantorOrganization().getId(),
                                                         AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE)
                                                         .getConfigValue(),
-                                        null, null, null, null, null, null, null, null, null, null, null, null,
+                                                        "", "", "", "", "", "", "", "", "", "", null, null,
                                         currentAssignments, newAssignments);
 
                         final Disbursement finalDisbursement = disbursement;
