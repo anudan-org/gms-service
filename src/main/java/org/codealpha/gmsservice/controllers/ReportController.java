@@ -938,18 +938,18 @@ public class ReportController {
                     .getFile();
 
             User user = userService.getUserById(userId);
-
+                
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
-                filePath = uploadLocation + modelMapper.map(reportToSave,Report.class).getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS
+                filePath = modelMapper.map(reportToSave,Report.class).getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS
                         + reportId + PATH_SEPARATOR + stringAttribute.getSection().getId() + PATH_SEPARATOR
                         + stringAttribute.getSectionAttribute().getId() + PATH_SEPARATOR;
             } else {
-                filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR
+                filePath = userService.getUserById(userId).getOrganization().getCode() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR
                         + stringAttribute.getSection().getId() + PATH_SEPARATOR + stringAttribute.getSectionAttribute().getId()
                         + PATH_SEPARATOR;
             }
-
-            File dir = new File(filePath);
+           
+            File dir = new File(uploadLocation,filePath);
             dir.mkdirs();
             File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
             FileCopyUtils.copy(file, fileToCreate);
@@ -961,7 +961,7 @@ public class ReportController {
         attachment.setCreatedOn(new Date());
         attachment.setDescription(libraryDoc.getDescription());
         attachment.setReportStringAttribute(stringAttribute);
-        attachment.setLocation(filePath);
+        attachment.setLocation(uploadLocation+filePath);
         attachment.setName(libraryDoc.getName());
         attachment.setTitle("");
         attachment.setType(libraryDoc.getType());
@@ -1004,13 +1004,13 @@ public class ReportController {
 
         String filePath = "";
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
-            filePath = uploadLocation + report.getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS + reportId
+            filePath =  report.getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS + reportId
                     + PATH_SEPARATOR + attr.getSection().getId() + PATH_SEPARATOR + attr.getSectionAttribute().getId() + PATH_SEPARATOR;
         } else {
-            filePath = uploadLocation + userService.getUserById(userId).getOrganization().getCode() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + attr.getSection().getId()
+            filePath = userService.getUserById(userId).getOrganization().getCode() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + attr.getSection().getId()
                     + PATH_SEPARATOR + attr.getSectionAttribute().getId() + PATH_SEPARATOR;
         }
-        File dir = new File(filePath);
+        File dir = new File(uploadLocation,filePath);
         dir.mkdirs();
 
         List<ReportStringAttributeAttachments> attachments = new ArrayList<>();
@@ -1028,7 +1028,7 @@ public class ReportController {
                 attachment.setType(FilenameUtils.getExtension(fileName));
                 attachment.setTitle(fileName
                         .replace("." + FilenameUtils.getExtension(fileName), ""));
-                attachment.setLocation(filePath);
+                attachment.setLocation(uploadLocation+filePath);
                 attachment.setName(fileName
                         .replace("." + FilenameUtils.getExtension(fileName), ""));
                 attachment.setReportStringAttribute(attr);
