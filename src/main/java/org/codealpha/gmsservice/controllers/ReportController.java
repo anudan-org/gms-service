@@ -927,9 +927,8 @@ public class ReportController {
             @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         saveReport(reportId, reportToSave, userId, tenantCode);
         TemplateLibrary libraryDoc = templateLibraryService.getTemplateLibraryDocumentById(templateId);
-
+        Report report = reportService.getReportById(reportId); 
         ReportStringAttribute stringAttribute = reportService.getReportStringByStringAttributeId(fieldId);
-        final String UPLOAD_LOCATION = uploadLocation;
         File file = null;
         String filePath = null;
         try {
@@ -938,18 +937,19 @@ public class ReportController {
                     .getFile();
 
             User user = userService.getUserById(userId);
-                
+            
             if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
-                filePath = modelMapper.map(reportToSave,Report.class).getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS
+                
+                filePath = uploadLocation + report.getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS
                         + reportId + PATH_SEPARATOR + stringAttribute.getSection().getId() + PATH_SEPARATOR
                         + stringAttribute.getSectionAttribute().getId() + PATH_SEPARATOR;
-            } else {
-                filePath = userService.getUserById(userId).getOrganization().getCode() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR
+                } else {
+                filePath = uploadLocation +  userService.getUserById(userId).getOrganization().getCode() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR
                         + stringAttribute.getSection().getId() + PATH_SEPARATOR + stringAttribute.getSectionAttribute().getId()
                         + PATH_SEPARATOR;
             }
             
-            File dir = new File(UPLOAD_LOCATION,filePath);
+            File dir = new File(filePath);
             dir.mkdirs();
             File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
             FileCopyUtils.copy(file, fileToCreate);
@@ -961,7 +961,7 @@ public class ReportController {
         attachment.setCreatedOn(new Date());
         attachment.setDescription(libraryDoc.getDescription());
         attachment.setReportStringAttribute(stringAttribute);
-        attachment.setLocation(UPLOAD_LOCATION+filePath);
+        attachment.setLocation(filePath);
         attachment.setName(libraryDoc.getName());
         attachment.setTitle("");
         attachment.setType(libraryDoc.getType());
@@ -977,7 +977,7 @@ public class ReportController {
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
         }
-        Report report = reportService.getReportById(reportId);
+        report = reportService.getReportById(reportId);
         report = reportToReturn(report, userId);
         return new ReportDocInfo(attachment.getId(), report);
     }
@@ -1004,14 +1004,13 @@ public class ReportController {
 
         String filePath = "";
         if (user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
-            filePath =  report.getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS + reportId
+            filePath = uploadLocation + report.getGrant().getGrantorOrganization().getCode() + REPORT_DOCUMENTS + reportId
                     + PATH_SEPARATOR + attr.getSection().getId() + PATH_SEPARATOR + attr.getSectionAttribute().getId() + PATH_SEPARATOR;
         } else {
-            filePath = userService.getUserById(userId).getOrganization().getCode() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + attr.getSection().getId()
+            filePath = uploadLocation +  userService.getUserById(userId).getOrganization().getCode() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + attr.getSection().getId()
                     + PATH_SEPARATOR + attr.getSectionAttribute().getId() + PATH_SEPARATOR;
         }
-        final String UPLOAD_LOCATION = uploadLocation;
-        File dir = new File(UPLOAD_LOCATION,filePath);
+        File dir = new File(filePath);
         dir.mkdirs();
 
         List<ReportStringAttributeAttachments> attachments = new ArrayList<>();
@@ -1029,7 +1028,7 @@ public class ReportController {
                 attachment.setType(FilenameUtils.getExtension(fileName));
                 attachment.setTitle(fileName
                         .replace("." + FilenameUtils.getExtension(fileName), ""));
-                attachment.setLocation(UPLOAD_LOCATION+filePath);
+                attachment.setLocation(filePath);
                 attachment.setName(fileName
                         .replace("." + FilenameUtils.getExtension(fileName), ""));
                 attachment.setReportStringAttribute(attr);
