@@ -929,7 +929,7 @@ public class ReportController {
         TemplateLibrary libraryDoc = templateLibraryService.getTemplateLibraryDocumentById(templateId);
 
         ReportStringAttribute stringAttribute = reportService.getReportStringByStringAttributeId(fieldId);
-
+        final String UPLOAD_LOCATION = uploadLocation;
         File file = null;
         String filePath = null;
         try {
@@ -948,8 +948,8 @@ public class ReportController {
                         + stringAttribute.getSection().getId() + PATH_SEPARATOR + stringAttribute.getSectionAttribute().getId()
                         + PATH_SEPARATOR;
             }
-           
-            File dir = new File(uploadLocation,filePath);
+            
+            File dir = new File(UPLOAD_LOCATION,filePath);
             dir.mkdirs();
             File fileToCreate = new File(dir, libraryDoc.getName() + "." + libraryDoc.getType());
             FileCopyUtils.copy(file, fileToCreate);
@@ -961,7 +961,7 @@ public class ReportController {
         attachment.setCreatedOn(new Date());
         attachment.setDescription(libraryDoc.getDescription());
         attachment.setReportStringAttribute(stringAttribute);
-        attachment.setLocation(uploadLocation+filePath);
+        attachment.setLocation(UPLOAD_LOCATION+filePath);
         attachment.setName(libraryDoc.getName());
         attachment.setTitle("");
         attachment.setType(libraryDoc.getType());
@@ -1010,7 +1010,8 @@ public class ReportController {
             filePath = userService.getUserById(userId).getOrganization().getCode() + REPORT_DOCUMENTS + reportId + PATH_SEPARATOR + attr.getSection().getId()
                     + PATH_SEPARATOR + attr.getSectionAttribute().getId() + PATH_SEPARATOR;
         }
-        File dir = new File(uploadLocation,filePath);
+        final String UPLOAD_LOCATION = uploadLocation;
+        File dir = new File(UPLOAD_LOCATION,filePath);
         dir.mkdirs();
 
         List<ReportStringAttributeAttachments> attachments = new ArrayList<>();
@@ -1028,7 +1029,7 @@ public class ReportController {
                 attachment.setType(FilenameUtils.getExtension(fileName));
                 attachment.setTitle(fileName
                         .replace("." + FilenameUtils.getExtension(fileName), ""));
-                attachment.setLocation(uploadLocation+filePath);
+                attachment.setLocation(UPLOAD_LOCATION+filePath);
                 attachment.setName(fileName
                         .replace("." + FilenameUtils.getExtension(fileName), ""));
                 attachment.setReportStringAttribute(attr);
