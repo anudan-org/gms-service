@@ -1202,7 +1202,7 @@ public class GrantController {
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
-                    null,currentUser.getFirstName().concat(" ").concat(currentUser.getLastName()) , null, null, null, null, null, null, null, null, null, null, currentAssignments,
+                    "",currentUser.getFirstName().concat(" ").concat(currentUser.getLastName()) , "", "", "", "", "", "", "", "", null, null, currentAssignments,
                     newAssignments);
             List<User> toUsers = newAssignments.stream().map(GrantAssignments::getAssignments)
                     .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
@@ -1240,7 +1240,7 @@ public class GrantController {
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_SUBJECT).getConfigValue(),
                     appConfigService.getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                             AppConfiguration.OWNERSHIP_CHANGED_EMAIL_MESSAGE).getConfigValue(),
-                    null, null, null, null, null, null, null, null, null, null, null, null, currentAssignments,
+                    "", "", "", "", "", "", "", "", "", "", null, null, currentAssignments,
                     newAssignments);
 
             final Grant finalGrant = grant;
