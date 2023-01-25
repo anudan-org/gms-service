@@ -780,8 +780,7 @@ public class ReportController {
                             } catch (JsonProcessingException e) {
                                 logger.error(e.getMessage(),e);
                             }
-                        }else if (sectionAttribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)
-                                && user.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
+                        }else if (sectionAttribute.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
                             try {
                                 List<TableData> newEntries = new ArrayList<>();
                                 List<TableData> missingEntries = new ArrayList<>();

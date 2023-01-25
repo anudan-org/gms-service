@@ -496,8 +496,7 @@ public class GrantService {
             return "";
         }
 
-        newAssignments.sort(Comparator.comparing(GrantAssignments::getId, (a, b) ->
-                a.compareTo(b)));
+        Collections.sort(newAssignments, (a,b) -> a.getId().compareTo(b.getId()));
 
         String[] table = {
                 "<table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>Current State Owners</b></td><td><b>Previous State Owners</b></td></tr>"};
