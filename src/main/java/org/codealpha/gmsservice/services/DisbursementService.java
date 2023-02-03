@@ -189,7 +189,6 @@ public class DisbursementService {
     }   
 
      private List<ActualDisbursement> getApprovedActualDisbursements(Disbursement disbursement, List<Long> statusIds,boolean includeCurrent) {
-        //List<Disbursement> approvedDisbursements = getDibursementsForGrantByStatuses(disbursement.getGrant().getId(),statusIds); 
         //Fix: gets all disbursements upto original grant and gets approved actual disbursements for all of them
         List<Disbursement> approvedDisbursements = getDisbursementsForGrant(disbursement.getGrant(), statusIds);
         List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
@@ -454,9 +453,6 @@ public class DisbursementService {
 
     public List<Disbursement> getDetailedUpComingDraftDisbursements(Long userId) {
         return disbursementRepository.getDetailedUpComingDraftDisbursements(userId);
-        //User user = userService.getUserById(userId);
-
-        //return getDisbursementsForUserByStatus(user, user.getOrganization(),"ACTIVE");
     }
 
     public Long getDisbursementsInWorkflow(Long userId) {
