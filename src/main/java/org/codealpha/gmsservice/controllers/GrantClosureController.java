@@ -2461,7 +2461,7 @@ public class GrantClosureController {
 
 
         List<WorkflowStatus> reportWfStatuses = workflowStatusService.findByWorkflow(
-                workflowService.findWorkflowByGrantTypeAndObject(grantService.getById(grantId).getGrantTypeId(), CLOSURE)
+                workflowService.findWorkflowByGrantTypeAndObject(grantService.getById(grantId).getGrantTypeId(), REPORT)
         );
 
         List<Report> reportsInProgress = new ArrayList<>();
