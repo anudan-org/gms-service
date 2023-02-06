@@ -740,7 +740,8 @@ public class GrantService {
 
         // Set Minimum End Date for Amendment grant
         if (grant.getOrigGrantId() != null) {
-            List<Report> existingReports = reportService.getReportsForGrant(getById(grant.getOrigGrantId()));
+            //Fix: to consider only approved reports in previous grant.
+            List<Report> existingReports = reportService.findReportsByStatusForGrant(reportApprovedStatus.get(0), getById(grant.getOrigGrantId()));
             if (existingReports != null && !existingReports.isEmpty()) {
                 existingReports.removeIf(r -> r.getEndDate() == null);
                 if (!existingReports.isEmpty()) {

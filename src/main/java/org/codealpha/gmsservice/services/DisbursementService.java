@@ -180,9 +180,17 @@ public class DisbursementService {
         return disbursementDocumentRepository.findByDisbursementId(disbursementId);
     }
 
-    private List<ActualDisbursement> getApprovedActualDisbursements(Disbursement disbursement, List<Long> statusIds,boolean includeCurrent) {
-        List<Disbursement> approvedDisbursements = getDibursementsForGrantByStatuses(disbursement.getGrant().getId(),
-                statusIds);
+    private List<Disbursement> getDisbursementsForGrant(Grant grant, List<Long> statusIds) {
+        List<Disbursement> disbursements = getDibursementsForGrantByStatuses(grant.getId(),statusIds);
+        if(grant.getOrigGrantId()!=null){
+                disbursements.addAll(getDisbursementsForGrant(grantService.getById(grant.getOrigGrantId()), statusIds));
+        }
+        return disbursements;
+    }   
+
+     private List<ActualDisbursement> getApprovedActualDisbursements(Disbursement disbursement, List<Long> statusIds,boolean includeCurrent) {
+        //Fix: gets all disbursements upto original grant and gets approved actual disbursements for all of them
+        List<Disbursement> approvedDisbursements = getDisbursementsForGrant(disbursement.getGrant(), statusIds);
         List<ActualDisbursement> approvedActualDisbursements = new ArrayList<>();
         if (approvedDisbursements != null) {
             if(!includeCurrent){
@@ -431,7 +439,12 @@ public class DisbursementService {
     }
 
     public List<Disbursement> getDetailedPendingActionDisbursements(Long userId) {
-        return disbursementRepository.getDetailedPendingActionDisbursements(userId);
+        //Fix: added two calls to avoid the unknown error in getPermissions that brings permissions from previous record.
+        List<Disbursement> disbursementActive = disbursementRepository.getDetailedPendingActiveDisbursements(userId);
+        List<Disbursement> disbursementReview = disbursementRepository.getDetailedPendingReviewDisbursements(userId);
+        disbursementActive.addAll(disbursementReview);
+       
+        return disbursementActive;
     }
 
     public Long getUpComingDraftDisbursements(Long userId) {
@@ -440,6 +453,10 @@ public class DisbursementService {
 
     public List<Disbursement> getDetailedUpComingDraftDisbursements(Long userId) {
         return disbursementRepository.getDetailedUpComingDraftDisbursements(userId);
+    }
+
+    public Long getAcutalDisbursementAmountByGrant(Long grantId) {
+        return disbursementRepository.getAcutalDisbursementAmountByGrant(grantId);
     }
 
     public Long getDisbursementsInWorkflow(Long userId) {

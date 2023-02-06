@@ -57,6 +57,20 @@ public interface DisbursementRepository extends CrudRepository<Disbursement, Lon
             "\t\t\tinner join workflow_statuses d on d.id=a.status_id\n" +
             "            where b.owner=?1 and c.deleted=false and d.internal_status!='CLOSED' ", nativeQuery = true)
     List<Disbursement> getDetailedPendingActionDisbursements(Long userId);
+//Fix : added to get list by status separately.
+    @Query(value = "select distinct a.id, a.requested_amount, a.reason, a.requested_on, a.requested_by, a.status_id, a.grant_id, a.note, a.note_added, a.note_added_by, a.created_at, a.created_by, a.updated_at, a.updated_by, a.moved_on, a.grantee_entry, a.other_sources, a.report_id, a.disabled_by_amendment,get_owner_disbursement_name(a.id) owner_name,get_owner_disbursement(a.id) owner_id from disbursements a\n" +
+            "            inner join disbursement_assignments b on b.disbursement_id=a.id and b.state_id=a.status_id\n" +
+            "            inner join grants c on c.id=a.grant_id\n" +
+            "\t\t\tinner join workflow_statuses d on d.id=a.status_id\n" +
+            "            where b.owner=?1 and c.deleted=false and d.internal_status ='ACTIVE'  ", nativeQuery = true)
+    List<Disbursement> getDetailedPendingActiveDisbursements(Long userId);
+
+    @Query(value = "select distinct a.id, a.requested_amount, a.reason, a.requested_on, a.requested_by, a.status_id, a.grant_id, a.note, a.note_added, a.note_added_by, a.created_at, a.created_by, a.updated_at, a.updated_by, a.moved_on, a.grantee_entry, a.other_sources, a.report_id, a.disabled_by_amendment,get_owner_disbursement_name(a.id) owner_name,get_owner_disbursement(a.id) owner_id from disbursements a\n" +
+            "            inner join disbursement_assignments b on b.disbursement_id=a.id and b.state_id=a.status_id\n" +
+            "            inner join grants c on c.id=a.grant_id\n" +
+            "\t\t\tinner join workflow_statuses d on d.id=a.status_id\n" +
+            "            where b.owner=?1 and c.deleted=false and d.internal_status ='REVIEW'  ", nativeQuery = true)
+    List<Disbursement> getDetailedPendingReviewDisbursements(Long userId);
 
     @Query(value = "select count(distinct(a.id)) from disbursements a \n" +
             "            inner join disbursement_assignments b on b.disbursement_id=a.id and b.state_id=a.status_id \n" +
@@ -108,4 +122,7 @@ public interface DisbursementRepository extends CrudRepository<Disbursement, Lon
             "disbursements a\n" +
             "inner join workflow_statuses b on b.id=a.status_id where grant_id=?1 and b.internal_status='CLOSED'",nativeQuery = true)
     List<Disbursement> getClosedDisbursementByGrantAndStatusesForGrantee(Long id);
+
+    @Query(value="select disbursed_amount_for_grant(id) from grants where id =?1",nativeQuery = true)
+    Long getAcutalDisbursementAmountByGrant(Long grantId);
 }

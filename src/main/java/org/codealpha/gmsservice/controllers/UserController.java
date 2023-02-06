@@ -1005,6 +1005,9 @@ public class UserController {
         for(org.codealpha.gmsservice.entities.Disbursement disbursement: disbursements){
             disbursementService.disbursementToReturn(disbursement,userId);
         }
+        //Fix Sorting after getting workflow permissions.
+        Comparator<org.codealpha.gmsservice.entities.Disbursement> updatedAtComparator = Comparator.comparing(org.codealpha.gmsservice.entities.Disbursement::getUpdatedAt).reversed();
+        disbursements.sort(updatedAtComparator);
         return disbursements;
     }
 
