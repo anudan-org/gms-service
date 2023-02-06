@@ -455,6 +455,10 @@ public class DisbursementService {
         return disbursementRepository.getDetailedUpComingDraftDisbursements(userId);
     }
 
+    public Long getAcutalDisbursementAmountByGrant(Long grantId) {
+        return disbursementRepository.getAcutalDisbursementAmountByGrant(grantId);
+    }
+
     public Long getDisbursementsInWorkflow(Long userId) {
         return disbursementRepository.getDisbursementsInWorkflow(userId);
     }

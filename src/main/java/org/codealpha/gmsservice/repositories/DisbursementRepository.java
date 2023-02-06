@@ -122,4 +122,7 @@ public interface DisbursementRepository extends CrudRepository<Disbursement, Lon
             "disbursements a\n" +
             "inner join workflow_statuses b on b.id=a.status_id where grant_id=?1 and b.internal_status='CLOSED'",nativeQuery = true)
     List<Disbursement> getClosedDisbursementByGrantAndStatusesForGrantee(Long id);
+
+    @Query(value="select disbursed_amount_for_grant(id) from grants where id =?1",nativeQuery = true)
+    Long getAcutalDisbursementAmountByGrant(Long grantId);
 }

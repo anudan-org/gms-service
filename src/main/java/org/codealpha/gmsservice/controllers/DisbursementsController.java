@@ -86,29 +86,12 @@ public class DisbursementsController {
                 List<Grant> grantsToReturn = new ArrayList<>();
                 if (ownerGrants != null && !ownerGrants.isEmpty()) {
                         for (Grant g : ownerGrants) {
-                                Double total = 0d;
-
-                                List<Long> statusIds=workflowStatusService.findByWorkflow(workflowService.findWorkflowByGrantTypeAndObject(g.getGrantTypeId(), DISBURSEMENT)).stream()
-                                        .filter(st ->st.getInternalStatus().equalsIgnoreCase(CLOSED))
-                                        .mapToLong(WorkflowStatus::getId).boxed()
-                                        .collect(Collectors.toList());
-                                List<Disbursement> closedDisbursements = disbursementService
-                                                .getDibursementsForGrantByStatuses(g.getId(), statusIds);
-                                if (closedDisbursements != null && !closedDisbursements.isEmpty()) {
-                                        for (Disbursement d : closedDisbursements) {
-                                                List<ActualDisbursement> actualDisbursements = disbursementService
-                                                                .getActualDisbursementsForDisbursement(d);
-                                                if (actualDisbursements != null && !actualDisbursements.isEmpty()) {
-                                                        for (ActualDisbursement ad : actualDisbursements) {
-                                                                total += ad.getActualAmount() == null ? 0d
-                                                                                : ad.getActualAmount();
-                                                        }
-                                                }
-                                        }
-                                }
-                                if (total < g.getAmount()) {
-                                        grantsToReturn.add(g);
-                                }
+                                Long actualDisbursementAmount = disbursementService.getAcutalDisbursementAmountByGrant(g.getId());
+                                if (actualDisbursementAmount < g.getAmount()) {
+                                       grantsToReturn.add(g);
+                                 }
+                      
+                                
                         }
 
                         for (Grant ownerGrant : grantsToReturn) {
