@@ -21,6 +21,8 @@ public class PlainClosure {
     private List<ActualRefund> actualRefunds;
     private Double actualSpent;
     private Double interestEarned;
+    private String covernoteAttributes;
+    private String covernoteContent;
     private List<ClosureDocument> closureDocs;
 
     public ClosureReason getReason() {
@@ -133,6 +135,23 @@ public class PlainClosure {
 
     public void setInterestEarned(Double interestEarned) {
         this.interestEarned = interestEarned;
+    }
+
+    
+    public String getCovernoteAttributes() {
+        return covernoteAttributes;
+    }
+
+    public void setCovernoteAttributes(String covernoteAttributes) {
+        this.covernoteAttributes = covernoteAttributes;
+    }
+
+    public String getCovernoteContent() {
+        return covernoteContent;
+    }
+
+    public void setCovernoteContent(String covernoteContent) {
+        this.covernoteContent = covernoteContent;
     }
 
     public List<ClosureDocument> getClosureDocs() {

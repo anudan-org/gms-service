@@ -607,6 +607,8 @@ public class GrantClosureService {
         plainClosure.setGrantRefundReason(closure.getRefundReason());
         plainClosure.setActualSpent(closure.getActualSpent());
         plainClosure.setInterestEarned(closure.getInterestEarned());
+        plainClosure.setCovernoteAttributes(closure.getCovernoteAttributes());
+        plainClosure.setCovernoteContent(closure.getCovernoteContent());
         
         if(snapshot!=null) {
             plainClosure.setGrantRefundAmount(snapshot.getGrantRefundAmount());

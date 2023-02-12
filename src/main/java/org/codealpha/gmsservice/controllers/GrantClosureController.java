@@ -195,6 +195,46 @@ public class GrantClosureController {
         return closures;
     }
 
+    @PostMapping("/{closureId}/covernote")
+    @ApiOperation("Create covernote content from template")
+    public GrantClosure addCovernote(@RequestBody GrantClosureDTO closureToSave,
+                                            @PathVariable("closureId") Long closureId,
+                                           @PathVariable("userId") Long userId,
+                                            @RequestHeader("X-TENANT-CODE") String tenantCode) {
+
+                AppConfig appConfig = appConfigService.getAppConfigForGranterOrg(
+                organizationService.findOrganizationByTenantCode(tenantCode).getId(), AppConfiguration.GRANTCLOSURE_COVER_NOTE);
+                String covernoteContent ="Template Not Found";
+                if (appConfig != null ) {
+                covernoteContent = appConfig.getConfigValue();
+                } 
+                //replace variables with grant, grantee names.
+                Grant grant = grantService.getById(closureToSave.getGrant().getId());
+                String grantName= grant.getName();
+                String granteeName = grant.getOrganization().getName();
+                Date startDate = new Date();
+                Date endDate = new Date();
+                try {
+                startDate = new SimpleDateFormat("yyyy-MM-dd").parse(grant.getStDate());
+                endDate = new SimpleDateFormat("yyyy-MM-dd").parse(grant.getEnDate());
+                
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+                String startDateString = new SimpleDateFormat("dd-MMM-yyyy").format(startDate);
+                String endDateString = new SimpleDateFormat("dd-MMM-yyyy").format(endDate); 
+                covernoteContent = covernoteContent.replaceAll("%GRANT_NAME%", grantName);
+                covernoteContent = covernoteContent.replaceAll("%START_DATE%", startDateString);
+                covernoteContent = covernoteContent.replaceAll("%END_DATE%", endDateString);
+                covernoteContent = covernoteContent.replaceAll("%GRANTEE_NAME%",granteeName );
+                
+                closureToSave.setCovernoteContent(covernoteContent);
+            GrantClosure closure = saveClosure(closureId, closureToSave, userId, tenantCode);
+            closure = closureToReturn(closure, userId);
+            return closure;
+            }
+     
+
     @GetMapping("/templates")
     @ApiOperation("Get all published closure templates for tenant")
     public List<GranterClosureTemplate> getTenantPublishedClosureTemplates(
@@ -1045,6 +1085,8 @@ public class GrantClosureController {
         closure.setRefundReason(closureToSave.getRefundReason());
         closure.setActualSpent(closureToSave.getActualSpent());
         closure.setInterestEarned(closureToSave.getInterestEarned());
+        closure.setCovernoteAttributes(closureToSave.getCovernoteAttributes());
+        closure.setCovernoteContent(closureToSave.getCovernoteContent());
         
         closure.setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
         closure.setUpdatedBy(user.getId());

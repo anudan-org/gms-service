@@ -112,8 +112,8 @@ public class GranterService {
     return granterOrg;
   }
 
-  public Granter getGranterById(Long grnaterId) {
-    return granterRepository.findById(grnaterId).orElse(null);
+  public Granter getGranterById(Long granterId) {
+    return granterRepository.findById(granterId).orElse(null);
   }
 
   public Long getInProgressGrantsOfGranterForGrantor(Long granterOrgId, Organization tenantOrg, Long userId) {

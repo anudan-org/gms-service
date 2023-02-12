@@ -15,6 +15,7 @@ import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -180,6 +181,10 @@ public class GrantService {
     @Autowired
     private ActualRefundRepository actualRefundRepository;
 
+           
+	@Autowired
+	private ModelMapper modelMapper;
+    
     public GrantService() {
         //Adding for sonar
     }
@@ -1545,10 +1550,11 @@ public class GrantService {
 
     private Organization processNewGranteeOrgIfPresent(Grant grantToSave) {
         Organization newGrantee = null;
+ 
         if (grantToSave.getOrganization() != null) {
             if (grantToSave.getOrganization().getId() < 0) {
                 newGrantee = grantToSave.getOrganization();
-                newGrantee = granteeService.saveGrantee((Grantee)newGrantee);
+                newGrantee = granteeService.saveGrantee(modelMapper.map(newGrantee, Grantee.class));     
                 Role role = new Role();
                 role.setCreatedBy("System");
                 role.setCreatedAt(DateTime.now().toDate());
