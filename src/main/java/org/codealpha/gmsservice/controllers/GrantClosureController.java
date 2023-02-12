@@ -221,12 +221,12 @@ public class GrantClosureController {
                 } catch (Exception e){
                     e.printStackTrace();
                 }
-                String startDateString = new SimpleDateFormat("dd-MMM-yyyy").format(startDate);
-                String endDateString = new SimpleDateFormat("dd-MMM-yyyy").format(endDate); 
-                covernoteContent = covernoteContent.replaceAll("%GRANT_NAME%", grantName);
-                covernoteContent = covernoteContent.replaceAll("%START_DATE%", startDateString);
-                covernoteContent = covernoteContent.replaceAll("%END_DATE%", endDateString);
-                covernoteContent = covernoteContent.replaceAll("%GRANTEE_NAME%",granteeName );
+                String startDateString = new SimpleDateFormat(DD_MMM_YYYY).format(startDate);
+                String endDateString = new SimpleDateFormat(DD_MMM_YYYY).format(endDate); 
+                covernoteContent = covernoteContent.replace("%GRANT_NAME%", grantName);
+                covernoteContent = covernoteContent.replace("%START_DATE%", startDateString);
+                covernoteContent = covernoteContent.replace("%END_DATE%", endDateString);
+                covernoteContent = covernoteContent.replace("%GRANTEE_NAME%",granteeName );
                 
                 closureToSave.setCovernoteContent(covernoteContent);
             GrantClosure closure = saveClosure(closureId, closureToSave, userId, tenantCode);
