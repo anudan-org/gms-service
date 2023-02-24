@@ -455,7 +455,13 @@ public class UserController {
         grantFilter.setCommittedAmount(committedAmnt==null?0:committedAmnt);
         grantFilter.setDetails(getDetails(userId,status));
         Long disbursedAmt = grantService.getDisbursedAmountByUserAndStatus(userId,status);
+        Long plannedFundOthers = grantService.getPlannedFundOthersByUserAndStatus(userId,status);
+        Long actualFundOthers = grantService.getActualFundOthersByUserAndStatus(userId,status);
+        
         grantFilter.setDisbursedAmount(disbursedAmt==null?0:disbursedAmt);
+        grantFilter.setPlannedFundOthers(plannedFundOthers==null?0:plannedFundOthers);
+        grantFilter.setActualFundOthers(actualFundOthers==null?0:actualFundOthers);
+        
         grantFilter.setGranteeOrgs(grantService.getGranteeOrgsCountByUserAndStatus(userId,status));
         grantFilter.setGrantswithnoapprovedreports(grantService.getGrantsWithNoApprovedReportsByUserAndStatus(userId,status));
         Long noKpis = grantService.getGrantsWithNoAKPIsByUserAndStatus(userId,status);
@@ -648,6 +654,9 @@ public class UserController {
             return null;
         }
         Double disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGranter(tenantOrg.getId(), status);
+        Double plannedFundOthers = dashboardService.getPlannedFundFromOthersForGranter(tenantOrg.getId(), status);
+        Double actualFundOthers = dashboardService.getActualFundFromOthersForGranter(tenantOrg.getId(), status);
+        
         Filter categoryFilter = new Filter();
         categoryFilter.setName(StringUtils.capitalize(status.substring(0,1))+StringUtils.lowerCase(status.substring(1)) + GRANTS);
         categoryFilter.setTotalGrants(activeGrantSummaryCommitted.getGrantCount());
@@ -656,6 +665,9 @@ public class UserController {
                 + sd.format(activeGrantSummaryCommitted.getPeriodEnd()));
         categoryFilter.setCommittedAmount(activeGrantSummaryCommitted.getCommittedAmount());
         categoryFilter.setDisbursedAmount(disbursedAmount.longValue());
+        categoryFilter.setPlannedFundOthers(plannedFundOthers.longValue());
+        categoryFilter.setActualFundOthers(actualFundOthers.longValue());
+
         List<GranterReportStatus> reportStatuses = null;
         List<GranterReportSummaryStatus> reportsByStatuses = null;
         List<DetailedSummary> reportSummaryList = new ArrayList<>();
@@ -770,6 +782,8 @@ public class UserController {
             return null;
         }
         Double disbursedAmount = dashboardService.getActiveGrantDisbursedAmountForGrantee(granteeOrg.getId(), status);
+        Double plannedFundOthers = dashboardService.getGrantPlannedFundOthersForGrantee(granteeOrg.getId(), status);
+        Double actualFundOthers = dashboardService.getGrantActualFundOthersForGrantee(granteeOrg.getId(), status);
         Filter categoryFilter = new Filter();
         categoryFilter.setName(StringUtils.capitalize(status + GRANTS));
         categoryFilter.setTotalGrants(activeGrantSummaryCommitted.getGrantCount());
@@ -779,6 +793,9 @@ public class UserController {
                 + sd.format(activeGrantSummaryCommitted.getPeriodEnd()));
         categoryFilter.setCommittedAmount(activeGrantSummaryCommitted.getCommittedAmount());
         categoryFilter.setDisbursedAmount(disbursedAmount.longValue());
+        categoryFilter.setPlannedFundOthers(plannedFundOthers.longValue());
+        categoryFilter.setActualFundOthers(actualFundOthers.longValue());
+        
         List<GranterReportStatus> reportStatuses = null;
         List<GranteeReportStatus> reportAprrovedStatuses = null;
         List<DetailedSummary> reportSummaryList = new ArrayList<>();

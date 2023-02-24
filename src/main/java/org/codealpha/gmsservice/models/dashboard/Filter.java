@@ -34,6 +34,10 @@ public class Filter {
     private Map<String, Object> additionalProperties = new HashMap<>();
     @JsonProperty("donors")
     private Long donors;
+    @JsonProperty("plannedFundOthers")
+    private Long plannedFundOthers;
+    @JsonProperty("actualFundOthers")
+    private Long actualFundOthers;
 
     @JsonProperty("name")
     public String getName() {
@@ -73,6 +77,26 @@ public class Filter {
     @JsonProperty("disbursedAmount")
     public void setDisbursedAmount(Long disbursedAmount) {
         this.disbursedAmount = disbursedAmount;
+    }
+
+    @JsonProperty("plannedFundOthers")
+    public Long getPlannedFundOthers() {
+        return plannedFundOthers;
+    }
+
+    @JsonProperty("plannedFundOthers")
+    public void setPlannedFundOthers(Long plannedFundOthers) {
+        this.plannedFundOthers = plannedFundOthers;
+    }
+
+    @JsonProperty("actualFundOthers")
+    public Long getActualFundOthers() {
+        return actualFundOthers;
+    }
+
+    @JsonProperty("actualFundOthers")
+    public void setActualFundOthers(Long actualFundOthers) {
+        this.actualFundOthers = actualFundOthers;
     }
 
     @JsonProperty("committedAmount")

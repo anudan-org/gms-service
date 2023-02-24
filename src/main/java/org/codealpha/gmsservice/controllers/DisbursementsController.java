@@ -86,7 +86,7 @@ public class DisbursementsController {
                 List<Grant> grantsToReturn = new ArrayList<>();
                 if (ownerGrants != null && !ownerGrants.isEmpty()) {
                         for (Grant g : ownerGrants) {
-                                Long actualDisbursementAmount = disbursementService.getAcutalDisbursementAmountByGrant(g.getId());
+                                Double actualDisbursementAmount = disbursementService.getAcutalDisbursementAmountByGrant(g.getId());
                                 if (actualDisbursementAmount < g.getAmount()) {
                                        grantsToReturn.add(g);
                                  }

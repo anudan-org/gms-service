@@ -162,6 +162,20 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
             "where b.assignments=?1 and (c.internal_status=?2) and (case when 'CLOSED'=?2 then a.amend_grant_id is null else true end) and a.deleted=false) X",nativeQuery = true)
     Long getDisbursedAmountByUserAndStatus(Long userId, String status);
 
+    @Query(value = "select sum(planned_fund_from_others(id)) from (select distinct a.id\n" +
+            "from grants a \n" +
+            "inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id \n" +
+            "inner join workflow_statuses c on c.id=a.grant_status_id \n" +
+            "where b.assignments=?1 and (c.internal_status=?2) and (case when 'CLOSED'=?2 then a.amend_grant_id is null else true end) and a.deleted=false) X",nativeQuery = true)
+    Long getPlannedFundOthersByUserAndStatus(Long userId, String status);
+
+    @Query(value = "select sum(actual_fund_from_others(id)) from (select distinct a.id\n" +
+            "from grants a \n" +
+            "inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id \n" +
+            "inner join workflow_statuses c on c.id=a.grant_status_id \n" +
+            "where b.assignments=?1 and (c.internal_status=?2) and (case when 'CLOSED'=?2 then a.amend_grant_id is null else true end) and a.deleted=false) X",nativeQuery = true)
+    Long getActualFundOthersByUserAndStatus(Long userId, String status);
+
     @Query(value = "select count(distinct(a.organization_id)) from grants a inner join grant_assignments b on b.grant_id=a.id and b.state_id=a.grant_status_id inner join workflow_statuses c on c.id=a.grant_status_id where b.assignments=?1 and (c.internal_status=?2) and a.deleted=false",nativeQuery = true)
     Long getGranteeOrgsCountByUserAndStatus(Long userId, String status);
 

@@ -1030,6 +1030,13 @@ public class GrantService {
         return grantRepository.getDisbursedAmountByUserAndStatus(userId, status);
     }
 
+    public Long getPlannedFundOthersByUserAndStatus(Long userId, String status) {
+        return grantRepository.getPlannedFundOthersByUserAndStatus(userId, status);
+    }
+    public Long getActualFundOthersByUserAndStatus(Long userId, String status) {
+        return grantRepository.getActualFundOthersByUserAndStatus(userId, status);
+    }
+
     public Long getGranteeOrgsCountByUserAndStatus(Long userId, String status) {
         return grantRepository.getGranteeOrgsCountByUserAndStatus(userId, status);
     }
