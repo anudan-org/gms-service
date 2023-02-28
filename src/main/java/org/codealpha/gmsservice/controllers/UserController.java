@@ -1007,10 +1007,19 @@ public class UserController {
     public List<GrantCard> getPendingDetailedGrantsForUser(@PathVariable("userId")Long userId){
         return grantService.getDetailedActionDueGrantsForUser(userId);
     }
-    @GetMapping("/{userId}/dashboard/mysummary/pendingclosures")
-    public List<GrantClosure> getPendingDetailedClosuresForUser(@PathVariable("userId")Long userId){
-            return grantClosureService.getDetailedActionDueClosuresForUser(userId);
-    }
+
+    // //this call is shifted to GrantClosureController
+    // @GetMapping("/{userId}/dashboard/mysummary/pendingclosures")
+    // public List<GrantClosure> getPendingDetailedClosuresForUser(@PathVariable("userId")Long userId){
+    //         List<GrantClosure> gc = grantClosureService.getDetailedActionDueClosuresForUser(userId);
+    //         GrantClosure g = gc.get(0);
+    //         System.out.println("closure desc" + g.getDescription());
+    //         System.out.println("grant name" + g.getGrant().getName());
+    //         //return grantClosureService.getDetailedActionDueClosuresForUser(userId);
+    //         return gc;
+          
+
+    // }
 
     @GetMapping("/{userId}/dashboard/mysummary/pendingreports")
     public List<ReportCard> getPendingDetailedReportForUser(@PathVariable("userId")Long userId){

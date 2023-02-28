@@ -62,7 +62,8 @@ public class GrantVO {
     private Long grantTypeId;
     private List<GrantTag> grantTags;
     private List<GrantTagVO> tags;
-   
+    private Double plannedFundOthers = 0d;
+    private Double actualFundOthers = 0d;
 
 
     @JsonIgnore
@@ -364,6 +365,24 @@ public class GrantVO {
 
     public void setDeleted(Boolean deleted) {
         this.deleted = deleted;
+    }
+
+    
+
+    public Double getPlannedFundOthers() {
+        return plannedFundOthers;
+    }
+
+    public void setPlannedFundOthers(Double plannedFundOthers) {
+        this.plannedFundOthers = plannedFundOthers;
+    }
+
+    public Double getActualFundOthers() {
+        return actualFundOthers;
+    }
+
+    public void setActualFundOthers(Double actualFundOthers) {
+        this.actualFundOthers = actualFundOthers;
     }
 
     public GrantVO build(Grant grant, List<GrantSpecificSection> sections,

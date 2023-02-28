@@ -195,6 +195,15 @@ public class GrantClosureController {
         return closures;
     }
 
+    @GetMapping("/pendingclosures")
+    public List<GrantClosure> getPendingDetailedClosuresForUser(@PathVariable("userId")Long userId){
+            List<GrantClosure> closures = closureService.getDetailedActionDueClosuresForUser(userId);
+            for (GrantClosure closure : closures) {
+                closureToReturn(closure, userId);
+            }
+            return closures;
+    }
+
     @PostMapping("/{closureId}/covernote")
     @ApiOperation("Create covernote content from template")
     public GrantClosure addCovernote(@RequestBody GrantClosureDTO closureToSave,

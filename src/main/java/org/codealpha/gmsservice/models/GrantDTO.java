@@ -66,7 +66,8 @@ public class GrantDTO {
   private Long closureId;
   private String amendmentDetailsSnapshot;
   private Boolean closureInProgress = false;
-  
+  private Double plannedFundOthers = 0d;
+  private Double actualFundOthers = 0d;
   
   public Boolean getClosureInProgress() {
     return closureInProgress;
@@ -542,4 +543,22 @@ public class GrantDTO {
   public void setOngoingDisbursementNote(String ongoingDisbursementNote) {
     this.ongoingDisbursementNote = ongoingDisbursementNote;
   }
+
+  public Double getPlannedFundOthers() {
+    return plannedFundOthers;
+  }
+
+  public void setPlannedFundOthers(Double plannedFundOthers) {
+    this.plannedFundOthers = plannedFundOthers;
+  }
+
+  public Double getActualFundOthers() {
+    return actualFundOthers;
+  }
+
+  public void setActualFundOthers(Double actualFundOthers) {
+    this.actualFundOthers = actualFundOthers;
+  }
+
+  
 }

@@ -721,6 +721,9 @@ public class GrantService {
         grant.setApprovedDisbursementsTotal(
                 approvedActualDisbursements.stream().mapToDouble(ActualDisbursement::getActualAmount).sum());
 
+        grant.setPlannedFundOthers(disbursementService.getPlannedFundFromOthersByGrant(grant));
+        grant.setActualFundOthers(disbursementService.getActualFundFromOthersByGrant(grant));
+
         List<WorkflowStatus> reportApprovedStatus = workflowStatusService
                 .getTenantWorkflowStatuses(REPORT, grant.getGrantorOrganization().getId()).stream()
                 .filter(s -> s.getInternalStatus().equalsIgnoreCase(CLOSED)).collect(Collectors.toList());

@@ -163,15 +163,7 @@ public class DashboardService {
         return total;
     }
 
-    private Double getPlannedFundFromOthersByGrant(Grant byId) {
-        return disbursementRepository.getPlannedFundFromOthersByGrant(byId.getId());
-        
-    }
-
-    private Double getActualFundFromOthersByGrant(Grant byId) {
-        return disbursementRepository.getActualFundFromOthersByGrant(byId.getId());
-        
-    }
+   
 
     private Double getAllLinkedGrantsDisbursementsTotalForGrantee(Grant byId) {
         List<Disbursement> approvedDisbursements = disbursementRepository
@@ -282,7 +274,7 @@ public class DashboardService {
         List<Grant> activeGrants = grantRepository.findGrantsByStatus(granterId, status);
         if (activeGrants != null && !activeGrants.isEmpty()) {
             for (Grant ag : activeGrants) {
-                plannedFundOthers += getPlannedFundFromOthersByGrant(ag);
+                plannedFundOthers += disbursementService.getPlannedFundFromOthersByGrant(ag);
             }
 
         }
@@ -297,7 +289,7 @@ public class DashboardService {
         List<Grant> activeGrants = grantRepository.findGrantsByStatus(granterId, status);
         if (activeGrants != null && !activeGrants.isEmpty()) {
             for (Grant ag : activeGrants) {
-                actualFundOthers += getActualFundFromOthersByGrant(ag);
+                actualFundOthers += disbursementService.getActualFundFromOthersByGrant(ag);
             }
 
         }
@@ -325,7 +317,7 @@ public class DashboardService {
         List<Grant> activeGrants = grantRepository.findGrantsByStatusForGrantee(granteeId, status);
         if (activeGrants != null && !activeGrants.isEmpty()) {
             for (Grant ag : activeGrants) {
-                plannedFundOthers += getPlannedFundFromOthersByGrant(ag);
+                plannedFundOthers += disbursementService.getPlannedFundFromOthersByGrant(ag);
             }
         }
 
@@ -338,7 +330,7 @@ public class DashboardService {
         List<Grant> activeGrants = grantRepository.findGrantsByStatusForGrantee(granteeId, status);
         if (activeGrants != null && !activeGrants.isEmpty()) {
             for (Grant ag : activeGrants) {
-                plannedFundOthers += getActualFundFromOthersByGrant(ag);
+                plannedFundOthers += disbursementService.getActualFundFromOthersByGrant(ag);
             }
         }
 

@@ -62,6 +62,16 @@ public class DisbursementService {
         return disbursementRepository.save(disbursement);
     }
 
+    public Double getPlannedFundFromOthersByGrant(Grant byId) {
+        return disbursementRepository.getPlannedFundFromOthersByGrant(byId.getId());
+        
+    }
+
+    public Double getActualFundFromOthersByGrant(Grant byId) {
+        return disbursementRepository.getActualFundFromOthersByGrant(byId.getId());
+        
+    }
+
     public Disbursement createAssignmentPlaceholders(Disbursement disbursementToSave, Long userId) {
         Workflow currentWorkflow = disbursementToSave.getStatus().getWorkflow();
         final Disbursement finalDisbursement = disbursementToSave;
