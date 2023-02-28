@@ -228,7 +228,7 @@ public class GrantClosureController {
                 endDate = new SimpleDateFormat("yyyy-MM-dd").parse(grant.getEnDate());
                 
                 } catch (Exception e){
-                    e.printStackTrace();
+                    logger.info("date conversion falied");
                 }
                 String startDateString = new SimpleDateFormat(DD_MMM_YYYY).format(startDate);
                 String endDateString = new SimpleDateFormat(DD_MMM_YYYY).format(endDate); 
