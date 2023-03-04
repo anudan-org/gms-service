@@ -630,7 +630,6 @@ public class ReportService {
                     StandardCharsets.UTF_8.toString())
                     + "&r=" + code + EMAIL_TYPE_REPORT;
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
             granteeUrl = link;
             try {
                 granteeUrl = granteeUrl + HOME_ACTION_LOGIN_ORG

@@ -506,7 +506,6 @@ public class GrantClosureService {
                     StandardCharsets.UTF_8.toString())
                     + R + code + EMAIL_TYPE_CLOSURE;
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
             granteeUrl = link;
             try {
 
@@ -802,5 +801,14 @@ public class GrantClosureService {
     public List<GrantClosure> getDetailedUpComingDraftClosures(Long userId) {
         return grantClosureRepository.getDetailedUpComingDraftClosures(userId);
     }
+
+    public List<ClosureAssignments> getActionDueClosureForPlatform(List<Long> granterIds) {
+        return closureAssignmentRepository.getActionDueClosuresForPlatform(granterIds);
+    }
+
+    public List<ClosureAssignments> getActionDueClosuresForGranterOrg(Long granterId) {
+        return closureAssignmentRepository.getActionDueClosuresForGranterOrg(granterId);
+    }
+
 
 }

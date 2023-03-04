@@ -1067,7 +1067,6 @@ public class GrantClosureController {
         determineCanManage(savedClosure, userId);
 
         grantService.saveGrant(closureToSave.getGrant());
-        
         if (savedClosure.isCanManage()) {
             closure = processClosure(modelMapper.map(closureToSave, GrantClosure.class), tenantOrg, user);
             if (closure != null) {
@@ -1134,7 +1133,7 @@ public class GrantClosureController {
         processStringAttributes(user, closure, closureToSave, tenantOrg);
 
         closure = closureService.saveClosure(closure);
-
+    
         return closure;
     }
 
@@ -2344,6 +2343,18 @@ public class GrantClosureController {
                 grantService.moveToNewState(gn, userId, grant.getId(), grant.getGrantStatus().getId(), optionalClosedStatus.get().getId(), tenantCode);
             }
         }
+        
+        //added by RK to remove the remaining reports in Draft status
+        if (closure.getStatus().getInternalStatus().equals(CLOSED)) {
+           
+            List<Report> draftReports = getDraftReprotsByGrant(closure.getGrant());
+            for (Report draftReport: draftReports) {
+            reportService.deleteReport(draftReport);
+            }
+        }
+
+
+
         return closure;
     }
 
@@ -2536,6 +2547,23 @@ public class GrantClosureController {
 
         return new ResponseEntity<>(new ClosureWarnings(disbursementsInProgress, reportsInProgress, grantInAmendment), HttpStatus.OK);
     }
+
+    private List<Report> getDraftReprotsByGrant(Grant grant) {
+
+        List<WorkflowStatus> reportWfDraftStatuses = workflowStatusService.findByWorkflow(
+            workflowService.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(), REPORT))
+            .stream().filter(s -> s.getInternalStatus().equalsIgnoreCase(DRAFT)).collect(Collectors.toList());
+       
+        List<Report> reportsDraft = new ArrayList<>();
+        for (WorkflowStatus status : reportWfDraftStatuses) {
+            reportsDraft.addAll(reportService.findReportsByStatusForGrant(status, grant));
+        }
+
+        return reportsDraft;
+
+    }
+   
+
 
     @PutMapping("/{closureId}/actualRefund")
     public ActualRefund addActualRefund(@PathVariable("userId") Long userId,
