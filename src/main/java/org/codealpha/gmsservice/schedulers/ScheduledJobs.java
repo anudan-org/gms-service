@@ -787,7 +787,6 @@ public class ScheduledJobs {
     @Scheduled(cron = "0 * * * * *")
     public void closureActionDueChecker() {
         DateTime now = DateTime.now();
-
         List<Granter> granters = granterService.getAllGranters();
 
         Map<Long, AppConfig> configs = new HashMap<>();
@@ -811,10 +810,9 @@ public class ScheduledJobs {
                         ScheduledTaskVO.class);
                 String[] hourAndMinute = taskConfiguration.getTime().split(":");
              
-
                 if (Integer.valueOf(hourAndMinute[0]) == now.hourOfDay().get()
                             && Integer.valueOf(hourAndMinute[1]) == now.minuteOfHour().get()) {
-
+                  
                     List<ClosureAssignments> usersToNotify ;
                     if (entry.getKey() == 0) {
                          usersToNotify = closureService.getActionDueClosureForPlatform(
@@ -825,59 +823,11 @@ public class ScheduledJobs {
                     } 
 
                         if (usersToNotify != null && !usersToNotify.isEmpty()) {
-                            for (ClosureAssignments closureAssignment : usersToNotify) {
-                                GrantClosure closure = closureService.getClosureById(closureAssignment.getClosure().getId());
-
-                                List<ClosureAssignments> closureAssignments = closureService
-                                        .getAssignmentsForClosure(closure);
-                                        closureAssignments.removeIf(u -> userService.getUserById(u.getAssignment())
-                                        .getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE));
-                                String[] ccList = new String[closureAssignments.size()];
-
-                                if (!closureAssignments.isEmpty()) {
-                                    List<User> uList = new ArrayList<>();
-                                    for (ClosureAssignments ass : closureAssignments) {
-                                        uList.add(userService.getUserById(ass.getAssignment()));
-                                    }
-                                    uList.removeIf(User::isDeleted);
-                                    ccList = uList.stream().map(User::getEmailId).collect(Collectors.toList())
-                                            .toArray(new String[closureAssignments.size()]);
-                                }
-                                for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minutesLapsed = Minutes.minutesBetween(
-                                            new DateTime(closure.getMovedOn(), DateTimeZone.forID(timezone)), now)
-                                            .getMinutes();
-                                    if (Minutes.minutesBetween(
-                                            new DateTime(closure.getMovedOn(), DateTimeZone.forID(timezone)), now)
-                                            .getMinutes() > afterNoOfHour) {
-                                        User user = userService.getUserById(closureAssignment.getAssignment());
-                                        String[] messageMetadata = closureService.buildEmailNotificationContent(closure,
-                                                user,
-                                                taskConfiguration.getSubjectReport(),
-                                                taskConfiguration.getMessageReport(), "", "", "", "", "", "", "", "",
-                                                "",
-                                                buildLink(environment, true,
-                                                        user.getOrganization().getCode().toLowerCase()),
-                                                null, minutesLapsed / (24 * 60), null, null);
-                                        emailSevice
-                                                .sendMail(new String[]{!user.isDeleted() ? user.getEmailId() : null},
-                                                        ccList, messageMetadata[0], messageMetadata[1],
-                                                        new String[]{appConfigService
-                                                                .getAppConfigForGranterOrg(
-                                                                        closure.getGrant().getGrantorOrganization()
-                                                                                .getId(),
-                                                                        AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                                                                .getConfigValue()
-                                                                .replace(RELEASE_VERSION, releaseService
-                                                                .getCurrentRelease().getVersion()).replace(TENANT,closure.getGrant()
-                                                                .getGrantorOrganization().getName())});
-                                    }
-                                }
-
-                            }
+                           
+                            buildAndSendEmailClosureDueAlerts(usersToNotify ,  taskConfiguration,  now);
+                          
                         }
                     }
-                
 
             } catch (IOException e) {
                 logger.error(e.getMessage(),e);
@@ -885,5 +835,56 @@ public class ScheduledJobs {
         }
     }
 
+private void buildAndSendEmailClosureDueAlerts( List<ClosureAssignments> usersToNotify , ScheduledTaskVO taskConfiguration, DateTime now){
+    for (ClosureAssignments closureAssignment : usersToNotify) {
+        GrantClosure closure = closureService.getClosureById(closureAssignment.getClosure().getId());
+        List<ClosureAssignments> closureAssignments = closureService
+                .getAssignmentsForClosure(closure);
+                closureAssignments.removeIf(u -> userService.getUserById(u.getAssignment())
+                .getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE));
+        String[] ccList = new String[closureAssignments.size()];
+
+        if (!closureAssignments.isEmpty()) {
+            List<User> uList = new ArrayList<>();
+            for (ClosureAssignments ass : closureAssignments) {
+                uList.add(userService.getUserById(ass.getAssignment()));
+            }
+            uList.removeIf(User::isDeleted);
+            ccList = uList.stream().map(User::getEmailId).collect(Collectors.toList())
+                    .toArray(new String[closureAssignments.size()]);
+        }
+        for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
+            int minutesLapsed = Minutes.minutesBetween(
+                    new DateTime(closure.getMovedOn(), DateTimeZone.forID(timezone)), now)
+                    .getMinutes();
+            if (Minutes.minutesBetween(
+                    new DateTime(closure.getMovedOn(), DateTimeZone.forID(timezone)), now)
+                    .getMinutes() > afterNoOfHour) {
+                User user = userService.getUserById(closureAssignment.getAssignment());
+                String[] messageMetadata = closureService.buildEmailNotificationContent(closure,
+                        user,
+                        taskConfiguration.getSubjectClosure(),
+                        taskConfiguration.getMessageClosure(), "", "", "", "", "", "", "", "",
+                        "",
+                        buildLink(environment, true,
+                                user.getOrganization().getCode().toLowerCase()),
+                        null, minutesLapsed / (24 * 60), null, null);
+                emailSevice
+                        .sendMail(new String[]{!user.isDeleted() ? user.getEmailId() : null},
+                                ccList, messageMetadata[0], messageMetadata[1],
+                                new String[]{appConfigService
+                                        .getAppConfigForGranterOrg(
+                                                closure.getGrant().getGrantorOrganization()
+                                                        .getId(),
+                                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                        .getConfigValue()
+                                        .replace(RELEASE_VERSION, releaseService
+                                        .getCurrentRelease().getVersion()).replace(TENANT,closure.getGrant()
+                                        .getGrantorOrganization().getName())});
+            }
+        }
+
+    }
+}
 
 }
