@@ -130,7 +130,7 @@ public class GrantClosureController {
     @Autowired
     private UserRoleService userRoleService;
     @Autowired
-    private CommonEmailSevice commonEmailSevice;
+    private CommonEmailService commonEmailService;
     @Autowired
     private ReleaseService releaseService;
     @Autowired
@@ -1948,7 +1948,7 @@ public class GrantClosureController {
                     appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.CLOSURE_INVITE_MESSAGE).getConfigValue(),
                     url);
-            commonEmailSevice.sendMail(new String[]{(granteeUser != null && !granteeUser.isDeleted()) ? granteeUser.getEmailId() : null},
+            commonEmailService.sendMail(new String[]{(granteeUser != null && !granteeUser.isDeleted()) ? granteeUser.getEmailId() : null},
                     null, notifications[0], notifications[1],
                     new String[]{appConfigService
                             .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
@@ -1982,7 +1982,7 @@ public class GrantClosureController {
             .collect(Collectors.toList());
     ccUsers.removeIf(User::isDeleted);
 
-    commonEmailSevice
+    commonEmailService
             .sendMail(
                     toUsers.stream().map(User::getEmailId).collect(Collectors.toList())
                             .toArray(new String[toUsers.size()]),
@@ -2116,7 +2116,7 @@ public class GrantClosureController {
                             ? PLEASE_REVIEW
                             : STRNOSPACE,
                     null, null, null, null, null);
-            commonEmailSevice
+            commonEmailService
                     .sendMail(new String[]{!currentOwner.isDeleted() ? currentOwner.getEmailId() : null},
                             usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
@@ -2192,7 +2192,7 @@ public class GrantClosureController {
                             ? PLEASE_REVIEW
                             : STRNOSPACE,
                     null, null, null, null, null);
-            commonEmailSevice
+            commonEmailService
                     .sendMail(new String[]{!currentOwner.isDeleted() ? currentOwner.getEmailId() : null},
                             usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
@@ -2268,7 +2268,7 @@ public class GrantClosureController {
                                 ? PLEASE_REVIEW
                                 : STRNOSPACE,
                         null, null, null, null, null);
-                commonEmailSevice
+                commonEmailService
                         .sendMail(new String[]{!granteeUser.isDeleted() ? granteeUser.getEmailId() : null},
                                 usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                         .toArray(new String[usersToNotify.size()]),

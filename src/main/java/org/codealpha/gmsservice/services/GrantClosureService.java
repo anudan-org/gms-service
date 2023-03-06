@@ -506,13 +506,8 @@ public class GrantClosureService {
                     StandardCharsets.UTF_8.toString())
                     + R + code + EMAIL_TYPE_CLOSURE;
         } catch (Exception e) {
-            granteeUrl = link;
+            granterUrl = link;
             try {
-
-                granteeUrl = granteeUrl + HOME_ACTION_LOGIN_ORG
-                        + URLEncoder.encode(finalClosure.getGrant().getGrantorOrganization().getName(),
-                        StandardCharsets.UTF_8.toString())
-                        + R + code + EMAIL_TYPE_CLOSURE;
                 granterUrl = granterUrl + HOME_ACTION_LOGIN_ORG
                         + URLEncoder.encode(finalClosure.getGrant().getGrantorOrganization().getName(),
                         StandardCharsets.UTF_8.toString())

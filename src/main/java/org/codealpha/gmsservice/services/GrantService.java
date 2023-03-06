@@ -169,7 +169,7 @@ public class GrantService {
     @Autowired
     private WorkflowStatusTransitionService workflowStatusTransitionService;
     @Autowired
-    private CommonEmailSevice commonEmailSevice;
+    private CommonEmailService commonEmailService;
     @Autowired
     private ReleaseService releaseService;
     @Autowired
@@ -1291,7 +1291,7 @@ public class GrantService {
         if (!toStatus.getInternalStatus().equalsIgnoreCase(CLOSED)) {
             final User currentOwnerFinal = currentOwner;
             usersToNotify.removeIf(u -> u.getId().longValue() == currentOwnerFinal.getId() || u.isDeleted());
-            commonEmailSevice
+            commonEmailService
                     .sendMail(!currentOwner.isDeleted() ? new String[]{currentOwner.getEmailId()} : null,
                             usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
@@ -1321,7 +1321,7 @@ public class GrantService {
             usersToNotify.removeIf(u -> u.getId().longValue() == activeStateOwner.getId().longValue() || u.isDeleted());
 
             try {
-                commonEmailSevice
+                commonEmailService
                         .sendMail(!activeStateOwner.isDeleted() ? new String[]{activeStateOwner.getEmailId()} : null,
                                 usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                         .toArray(new String[usersToNotify.size()]),

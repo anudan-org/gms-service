@@ -99,7 +99,7 @@ public class GranterController {
 	@Autowired
 	private AppConfigService appConfigService;
 	@Autowired
-	private CommonEmailSevice commonEmailSevice;
+	private CommonEmailService commonEmailService;
 	@Autowired
 	private ReleaseService releaseService;
 	@Autowired
@@ -195,7 +195,7 @@ public class GranterController {
 		userRole.setUser(granterUser);
 		userRole = userRoleService.saveUserRole(userRole);
 
-		organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailSevice, releaseService,
+		organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailService, releaseService,
 				userService.getUserById(userId), org, granterUser, Arrays.asList(userRole));
 
 

@@ -19,7 +19,7 @@ import java.io.UnsupportedEncodingException;
 
 @Component
 @ComponentScan
-public class CommonEmailSevice {
+public class CommonEmailService {
 
   @Autowired
   private JavaMailSender mailSender;

@@ -61,7 +61,7 @@ public class DisbursementsController {
         @Autowired
         AppConfigService appConfigService;
         @Autowired
-        CommonEmailSevice commonEmailSevice;
+        CommonEmailService commonEmailService;
         @Autowired
         NotificationsService notificationsService;
         @Autowired
@@ -284,7 +284,7 @@ public class DisbursementsController {
                         List<User> ccUsers = currentAssignments.values().stream()
                                         .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
                         ccUsers.removeIf(User::isDeleted);
-                        commonEmailSevice.sendMail(
+                        commonEmailService.sendMail(
                                         toUsers.stream().map(User::getEmailId).collect(Collectors.toList())
                                                         .toArray(new String[toUsers.size()]),
                                         ccUsers.stream().map(User::getEmailId).collect(Collectors.toList())
@@ -472,7 +472,7 @@ public class DisbursementsController {
                         usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue()
                                         || u.isDeleted());
 
-                        commonEmailSevice.sendMail(
+                        commonEmailService.sendMail(
                                         new String[] { (finalCurrentOwner!=null && !finalCurrentOwner.isDeleted()) ? finalCurrentOwner.getEmailId()
                                                         : null },
                                         usersToNotify.stream().map(User::getEmailId)
@@ -501,7 +501,7 @@ public class DisbursementsController {
                         usersToNotify.removeIf(u -> u.getId().longValue() == activeStatusOwner.getId().longValue()
                                         || u.isDeleted());
 
-                        commonEmailSevice.sendMail(
+                        commonEmailService.sendMail(
                                         new String[] { !activeStatusOwner.isDeleted() ? activeStatusOwner.getEmailId()
                                                         : null },
                                         usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())

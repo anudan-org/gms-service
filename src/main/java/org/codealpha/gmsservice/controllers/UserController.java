@@ -70,7 +70,7 @@ public class UserController {
     @Autowired
     private OrganizationService organizationService;
     @Autowired
-    private CommonEmailSevice commonEmailSevice;
+    private CommonEmailService commonEmailService;
     @Autowired
     private UserService userService;
     @Autowired
@@ -146,7 +146,7 @@ public class UserController {
                     + "/grantee/verification?emailId=" + user.getEmailId() + "&code="
                     + RandomStringUtils.random(127, 0, 0, true, true, null, new SecureRandom());
 
-            commonEmailSevice.sendMail(new String[]{user.getEmailId()}, null, "Anudan.org - Verification Link",
+            commonEmailService.sendMail(new String[]{user.getEmailId()}, null, "Anudan.org - Verification Link",
                     verificationLink, null);
         } else {
             newUser.setActive(true);
