@@ -130,7 +130,7 @@ public class GrantClosureController {
     @Autowired
     private UserRoleService userRoleService;
     @Autowired
-    private CommonEmailSevice commonEmailSevice;
+    private CommonEmailService commonEmailService;
     @Autowired
     private ReleaseService releaseService;
     @Autowired
@@ -194,6 +194,55 @@ public class GrantClosureController {
         }
         return closures;
     }
+
+    @GetMapping("/pendingclosures")
+    public List<GrantClosure> getPendingDetailedClosuresForUser(@PathVariable("userId")Long userId){
+            List<GrantClosure> closures = closureService.getDetailedActionDueClosuresForUser(userId);
+            for (GrantClosure closure : closures) {
+                closureToReturn(closure, userId);
+            }
+            return closures;
+    }
+
+    @PostMapping("/{closureId}/covernote")
+    @ApiOperation("Create covernote content from template")
+    public GrantClosure addCovernote(@RequestBody GrantClosureDTO closureToSave,
+                                            @PathVariable("closureId") Long closureId,
+                                           @PathVariable("userId") Long userId,
+                                            @RequestHeader("X-TENANT-CODE") String tenantCode) {
+
+                AppConfig appConfig = appConfigService.getAppConfigForGranterOrg(
+                organizationService.findOrganizationByTenantCode(tenantCode).getId(), AppConfiguration.GRANTCLOSURE_COVER_NOTE);
+                String covernoteContent ="Template Not Found";
+                if (appConfig != null ) {
+                covernoteContent = appConfig.getConfigValue();
+                } 
+                //replace variables with grant, grantee names.
+                Grant grant = grantService.getById(closureToSave.getGrant().getId());
+                String grantName= grant.getName();
+                String granteeName = grant.getOrganization().getName();
+                Date startDate = new Date();
+                Date endDate = new Date();
+                try {
+                startDate = new SimpleDateFormat("yyyy-MM-dd").parse(grant.getStDate());
+                endDate = new SimpleDateFormat("yyyy-MM-dd").parse(grant.getEnDate());
+                
+                } catch (Exception e){
+                    logger.info("date conversion falied");
+                }
+                String startDateString = new SimpleDateFormat(DD_MMM_YYYY).format(startDate);
+                String endDateString = new SimpleDateFormat(DD_MMM_YYYY).format(endDate); 
+                covernoteContent = covernoteContent.replace("%GRANT_NAME%", grantName);
+                covernoteContent = covernoteContent.replace("%START_DATE%", startDateString);
+                covernoteContent = covernoteContent.replace("%END_DATE%", endDateString);
+                covernoteContent = covernoteContent.replace("%GRANTEE_NAME%",granteeName );
+                
+                closureToSave.setCovernoteContent(covernoteContent);
+            GrantClosure closure = saveClosure(closureId, closureToSave, userId, tenantCode);
+            closure = closureToReturn(closure, userId);
+            return closure;
+            }
+     
 
     @GetMapping("/templates")
     @ApiOperation("Get all published closure templates for tenant")
@@ -1018,7 +1067,6 @@ public class GrantClosureController {
         determineCanManage(savedClosure, userId);
 
         grantService.saveGrant(closureToSave.getGrant());
-        
         if (savedClosure.isCanManage()) {
             closure = processClosure(modelMapper.map(closureToSave, GrantClosure.class), tenantOrg, user);
             if (closure != null) {
@@ -1045,6 +1093,8 @@ public class GrantClosureController {
         closure.setRefundReason(closureToSave.getRefundReason());
         closure.setActualSpent(closureToSave.getActualSpent());
         closure.setInterestEarned(closureToSave.getInterestEarned());
+        closure.setCovernoteAttributes(closureToSave.getCovernoteAttributes());
+        closure.setCovernoteContent(closureToSave.getCovernoteContent());
         
         closure.setUpdatedAt(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
         closure.setUpdatedBy(user.getId());
@@ -1083,7 +1133,7 @@ public class GrantClosureController {
         processStringAttributes(user, closure, closureToSave, tenantOrg);
 
         closure = closureService.saveClosure(closure);
-
+    
         return closure;
     }
 
@@ -1898,7 +1948,7 @@ public class GrantClosureController {
                     appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
                             AppConfiguration.CLOSURE_INVITE_MESSAGE).getConfigValue(),
                     url);
-            commonEmailSevice.sendMail(new String[]{(granteeUser != null && !granteeUser.isDeleted()) ? granteeUser.getEmailId() : null},
+            commonEmailService.sendMail(new String[]{(granteeUser != null && !granteeUser.isDeleted()) ? granteeUser.getEmailId() : null},
                     null, notifications[0], notifications[1],
                     new String[]{appConfigService
                             .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
@@ -1932,7 +1982,7 @@ public class GrantClosureController {
             .collect(Collectors.toList());
     ccUsers.removeIf(User::isDeleted);
 
-    commonEmailSevice
+    commonEmailService
             .sendMail(
                     toUsers.stream().map(User::getEmailId).collect(Collectors.toList())
                             .toArray(new String[toUsers.size()]),
@@ -2066,7 +2116,7 @@ public class GrantClosureController {
                             ? PLEASE_REVIEW
                             : STRNOSPACE,
                     null, null, null, null, null);
-            commonEmailSevice
+            commonEmailService
                     .sendMail(new String[]{!currentOwner.isDeleted() ? currentOwner.getEmailId() : null},
                             usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
@@ -2142,7 +2192,7 @@ public class GrantClosureController {
                             ? PLEASE_REVIEW
                             : STRNOSPACE,
                     null, null, null, null, null);
-            commonEmailSevice
+            commonEmailService
                     .sendMail(new String[]{!currentOwner.isDeleted() ? currentOwner.getEmailId() : null},
                             usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
@@ -2218,7 +2268,7 @@ public class GrantClosureController {
                                 ? PLEASE_REVIEW
                                 : STRNOSPACE,
                         null, null, null, null, null);
-                commonEmailSevice
+                commonEmailService
                         .sendMail(new String[]{!granteeUser.isDeleted() ? granteeUser.getEmailId() : null},
                                 usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                         .toArray(new String[usersToNotify.size()]),
@@ -2293,6 +2343,18 @@ public class GrantClosureController {
                 grantService.moveToNewState(gn, userId, grant.getId(), grant.getGrantStatus().getId(), optionalClosedStatus.get().getId(), tenantCode);
             }
         }
+        
+        //added by RK to remove the remaining reports in Draft status
+        if (closure.getStatus().getInternalStatus().equals(CLOSED)) {
+           
+            List<Report> draftReports = getDraftReprotsByGrant(closure.getGrant());
+            for (Report draftReport: draftReports) {
+            reportService.deleteReport(draftReport);
+            }
+        }
+
+
+
         return closure;
     }
 
@@ -2485,6 +2547,23 @@ public class GrantClosureController {
 
         return new ResponseEntity<>(new ClosureWarnings(disbursementsInProgress, reportsInProgress, grantInAmendment), HttpStatus.OK);
     }
+
+    private List<Report> getDraftReprotsByGrant(Grant grant) {
+
+        List<WorkflowStatus> reportWfDraftStatuses = workflowStatusService.findByWorkflow(
+            workflowService.findWorkflowByGrantTypeAndObject(grant.getGrantTypeId(), REPORT))
+            .stream().filter(s -> s.getInternalStatus().equalsIgnoreCase(DRAFT)).collect(Collectors.toList());
+       
+        List<Report> reportsDraft = new ArrayList<>();
+        for (WorkflowStatus status : reportWfDraftStatuses) {
+            reportsDraft.addAll(reportService.findReportsByStatusForGrant(status, grant));
+        }
+
+        return reportsDraft;
+
+    }
+   
+
 
     @PutMapping("/{closureId}/actualRefund")
     public ActualRefund addActualRefund(@PathVariable("userId") Long userId,

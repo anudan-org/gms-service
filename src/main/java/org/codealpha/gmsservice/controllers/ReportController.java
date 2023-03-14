@@ -108,7 +108,7 @@ public class ReportController {
     @Autowired
     private AppConfigService appConfigService;
     @Autowired
-    private CommonEmailSevice commonEmailSevice;
+    private CommonEmailService commonEmailService;
     @Autowired
     private NotificationsService notificationsService;
     @Autowired
@@ -1226,7 +1226,7 @@ public class ReportController {
                         appConfigService.getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
                                 AppConfiguration.REPORT_INVITE_MESSAGE).getConfigValue(),
                         url);
-                commonEmailSevice.sendMail(new String[]{!granteeUser.isDeleted() ? granteeUser.getEmailId() : null},
+                commonEmailService.sendMail(new String[]{!granteeUser.isDeleted() ? granteeUser.getEmailId() : null},
                         null, notifications[0], notifications[1],
                         new String[]{appConfigService
                                 .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
@@ -1260,7 +1260,7 @@ public class ReportController {
                     .collect(Collectors.toList());
             ccUsers.removeIf(User::isDeleted);
 
-            commonEmailSevice
+            commonEmailService
                     .sendMail(
                             toUsers.stream().map(User::getEmailId).collect(Collectors.toList())
                                     .toArray(new String[toUsers.size()]),
@@ -1418,7 +1418,7 @@ public class ReportController {
                             ? PLEASE_REVIEW
                             : "",
                     null, null, null, null, null);
-            commonEmailSevice
+            commonEmailService
                     .sendMail(new String[]{!currentOwner.isDeleted() ? currentOwner.getEmailId() : null},
                             usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
@@ -1494,7 +1494,7 @@ public class ReportController {
                             ? PLEASE_REVIEW
                             : "",
                     null, null, null, null, null);
-            commonEmailSevice
+            commonEmailService
                     .sendMail(new String[]{!currentOwner.isDeleted() ? currentOwner.getEmailId() : null},
                             usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
@@ -1570,7 +1570,7 @@ public class ReportController {
                                 ? PLEASE_REVIEW
                                 : "",
                         null, null, null, null, null);
-                commonEmailSevice
+                commonEmailService
                         .sendMail(new String[]{!granteeUser.isDeleted() ? granteeUser.getEmailId() : null},
                                 usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                         .toArray(new String[usersToNotify.size()]),

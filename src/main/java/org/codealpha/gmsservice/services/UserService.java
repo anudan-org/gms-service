@@ -31,7 +31,7 @@ public class UserService {
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
-    private CommonEmailSevice commonEmailSevice;
+    private CommonEmailService commonEmailService;
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
@@ -121,7 +121,7 @@ public class UserService {
             mailMessage = mailMessage.replace("%RESET_LINK%", url);
             mailMessage = mailMessage.replace("%USER_NAME%", user.getFirstName());
             mailMessage = mailMessage.replace("%ORGANIZATION%", user.getOrganization().getName());
-            commonEmailSevice.sendMail(new String[] { !user.isDeleted() ? user.getEmailId() : null }, null, mailSubject,
+            commonEmailService.sendMail(new String[] { !user.isDeleted() ? user.getEmailId() : null }, null, mailSubject,
                     mailMessage, new String[] { mailFooter });
 
         } catch (Exception e) {

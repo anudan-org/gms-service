@@ -99,7 +99,7 @@ public class GranterController {
 	@Autowired
 	private AppConfigService appConfigService;
 	@Autowired
-	private CommonEmailSevice commonEmailSevice;
+	private CommonEmailService commonEmailService;
 	@Autowired
 	private ReleaseService releaseService;
 	@Autowired
@@ -195,7 +195,7 @@ public class GranterController {
 		userRole.setUser(granterUser);
 		userRole = userRoleService.saveUserRole(userRole);
 
-		organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailSevice, releaseService,
+		organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailService, releaseService,
 				userService.getUserById(userId), org, granterUser, Arrays.asList(userRole));
 
 
@@ -299,9 +299,13 @@ public class GranterController {
 	private void buildWorkflowsBasedOnTempOrg(Organization org,String refOrgCode) {
 
 		Organization tempOrg = organizationService.findOrganizationByTenantCode(refOrgCode);
-		Workflow tempGrantWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg.getId(), "GRANT");
-		Workflow tempReportWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg.getId(), "REPORT");
-		Workflow tempDisbursementWorkflow = workflowService.findDefaultByGranterAndObject(tempOrg.getId(), "DISBURSEMENT");
+		//change done with new approach to consider grant type mapping table.
+		// need to include closure workflows
+		// need to get entries into grant types.
+		// need to check if it is insertinto grant type org with workflow and type.
+		Workflow tempGrantWorkflow = workflowService.findWorkflowByGrantTypeAndObject(tempOrg.getId(), "GRANT");
+		Workflow tempReportWorkflow = workflowService.findWorkflowByGrantTypeAndObject(tempOrg.getId(), "REPORT");
+		Workflow tempDisbursementWorkflow = workflowService.findWorkflowByGrantTypeAndObject(tempOrg.getId(), "DISBURSEMENT");
 		List<WorkflowStatus> tempGrantStatuses = workflowStatusService
 				.getTenantWorkflowStatuses(WorkflowObject.GRANT.name(), tempOrg.getId());
 		List<WorkflowStatus> tempReportStatuses = workflowStatusService

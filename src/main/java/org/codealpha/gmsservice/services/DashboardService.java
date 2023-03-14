@@ -163,6 +163,8 @@ public class DashboardService {
         return total;
     }
 
+   
+
     private Double getAllLinkedGrantsDisbursementsTotalForGrantee(Grant byId) {
         List<Disbursement> approvedDisbursements = disbursementRepository
                 .getClosedDisbursementByGrantAndStatusesForGrantee(byId.getId());
@@ -265,6 +267,37 @@ public class DashboardService {
         return disbursedAmount;
     }
 
+
+    public Double getPlannedFundFromOthersForGranter(Long granterId, String status) {
+        Double plannedFundOthers = 0d;
+
+        List<Grant> activeGrants = grantRepository.findGrantsByStatus(granterId, status);
+        if (activeGrants != null && !activeGrants.isEmpty()) {
+            for (Grant ag : activeGrants) {
+                plannedFundOthers += disbursementService.getPlannedFundFromOthersByGrant(ag);
+            }
+
+        }
+
+        return plannedFundOthers;
+    }
+
+    
+    public Double getActualFundFromOthersForGranter(Long granterId, String status) {
+        Double actualFundOthers = 0d;
+
+        List<Grant> activeGrants = grantRepository.findGrantsByStatus(granterId, status);
+        if (activeGrants != null && !activeGrants.isEmpty()) {
+            for (Grant ag : activeGrants) {
+                actualFundOthers += disbursementService.getActualFundFromOthersByGrant(ag);
+            }
+
+        }
+
+        return actualFundOthers;
+    }
+
+
     public Double getActiveGrantDisbursedAmountForGrantee(Long granteeId, String status) {
         Double disbursedAmount = 0d;
 
@@ -277,6 +310,33 @@ public class DashboardService {
 
         return disbursedAmount;
     }
+
+    public Double getGrantPlannedFundOthersForGrantee(Long granteeId, String status) {
+        Double plannedFundOthers = 0d;
+
+        List<Grant> activeGrants = grantRepository.findGrantsByStatusForGrantee(granteeId, status);
+        if (activeGrants != null && !activeGrants.isEmpty()) {
+            for (Grant ag : activeGrants) {
+                plannedFundOthers += disbursementService.getPlannedFundFromOthersByGrant(ag);
+            }
+        }
+
+        return plannedFundOthers;
+    }
+
+    public Double getGrantActualFundOthersForGrantee(Long granteeId, String status) {
+        Double plannedFundOthers = 0d;
+
+        List<Grant> activeGrants = grantRepository.findGrantsByStatusForGrantee(granteeId, status);
+        if (activeGrants != null && !activeGrants.isEmpty()) {
+            for (Grant ag : activeGrants) {
+                plannedFundOthers += disbursementService.getActualFundFromOthersByGrant(ag);
+            }
+        }
+
+        return plannedFundOthers;
+    }
+
 
     public List<GranterReportStatus> getReportStatusSummaryForGranterAndStatus(Long granterId, String status) {
         return granterReportStatusRepository.getReportStatusesForGranter(granterId, status);

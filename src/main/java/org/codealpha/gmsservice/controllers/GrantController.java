@@ -144,7 +144,7 @@ public class GrantController {
     private GrantClosureService grantClosureService;
 
     @Autowired
-    private CommonEmailSevice commonEmailSevice;
+    private CommonEmailService commonEmailService;
     @Autowired
     private WorkflowService workflowService;
     @Autowired
@@ -611,7 +611,7 @@ public class GrantController {
                 "", null, null, null, null);
 
 
-        commonEmailSevice
+        commonEmailService
                 .sendMail((prevOwner != null && !prevOwner.isDeleted()) ? new String[]{prevOwner.getEmailId()} : null,
                         ccList.stream().map(User::getEmailId).collect(Collectors.toList())
                                 .toArray(new String[ccList.size()]),
@@ -1212,7 +1212,7 @@ public class GrantController {
                     .collect(Collectors.toList());
             ccUsers.removeIf(User::isDeleted);
             ccUsers.removeIf(Objects::isNull);
-            commonEmailSevice
+            commonEmailService
                     .sendMail(
                             toUsers.stream().map(User::getEmailId).collect(Collectors.toList())
                                     .toArray(new String[newAssignments.size()]),
@@ -1796,7 +1796,7 @@ public class GrantController {
                                 AppConfiguration.GRANT_INVITE_MESSAGE).getConfigValue(),
                         url);
 
-                commonEmailSevice.sendMail(!granteeUser.isDeleted() ? new String[]{granteeUser.getEmailId()} : null,
+                commonEmailService.sendMail(!granteeUser.isDeleted() ? new String[]{granteeUser.getEmailId()} : null,
                         null, notifications[0], notifications[1],
                         new String[]{appConfigService
                                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),

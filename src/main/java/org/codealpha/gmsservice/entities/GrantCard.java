@@ -28,22 +28,22 @@ import java.util.List;
 )
 @NamedNativeQuery(
         name="LISTINPROGRESSGRANTS",
-        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=a.id and state_id=a.grant_status_id) current_assignment,approved_reports_for_grant(a.id) approved_reports_for_grant, disbursed_amount_for_grant(a.id) approved_disbursements_total, project_documents_for_grant(a.id) project_documents_count,get_owner_grant(A.id) owner_id,get_owner_grant_name(A.id) owner_name from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (B.anchor=true and B.assignments=:userId) or (B.assignments=:userId and B.state_id=A.grant_status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 ) or (C.internal_status='REVIEW') ) order by A.updated_at desc",
+        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=a.id and state_id=a.grant_status_id) current_assignment,approved_reports_for_grant(a.id) approved_reports_for_grant, disbursed_amount_for_grant(a.id) approved_disbursements_total, project_documents_for_grant(a.id) project_documents_count,get_owner_grant(A.id) owner_id,get_owner_grant_name(A.id) owner_name, planned_fund_from_others(A.id) planned_fund_others, actual_fund_from_others(A.id) actual_fund_others from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (B.anchor=true and B.assignments=:userId) or (B.assignments=:userId and B.state_id=A.grant_status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 ) or (C.internal_status='REVIEW') ) order by A.updated_at desc",
         resultSetMapping = "GRANTSLIST"
 )
 @NamedNativeQuery(
         name="LISTACTIVEGRANTS",
-        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,approved_reports_for_grant(A.id) approved_reports_for_grant, disbursed_amount_for_grant(A.id) approved_disbursements_total, project_documents_for_grant(A.id) project_documents_count,get_owner_grant(A.id) owner_id,get_owner_grant_name(A.id) owner_name from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (C.internal_status='ACTIVE') ) order by A.updated_at desc",
+        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,approved_reports_for_grant(A.id) approved_reports_for_grant, disbursed_amount_for_grant(A.id) approved_disbursements_total, project_documents_for_grant(A.id) project_documents_count,get_owner_grant(A.id) owner_id,get_owner_grant_name(A.id) owner_name, planned_fund_from_others(A.id) planned_fund_others, actual_fund_from_others(A.id) actual_fund_others from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (C.internal_status='ACTIVE') ) order by A.updated_at desc",
         resultSetMapping = "GRANTSLIST"
 )
 @NamedNativeQuery(
         name="LISTCLOSEDGRANTS",
-        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,approved_reports_for_grant(A.id) approved_reports_for_grant, disbursed_amount_for_grant(A.id) approved_disbursements_total, project_documents_for_grant(A.id) project_documents_count,get_owner_grant(A.id) owner_id,get_owner_grant_name(A.id) owner_name from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (C.internal_status='CLOSED') ) order by A.updated_at desc",
+        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,approved_reports_for_grant(A.id) approved_reports_for_grant, disbursed_amount_for_grant(A.id) approved_disbursements_total, project_documents_for_grant(A.id) project_documents_count,get_owner_grant(A.id) owner_id,get_owner_grant_name(A.id) owner_name, planned_fund_from_others(A.id) planned_fund_others, actual_fund_from_others(A.id) actual_fund_others from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (C.internal_status='CLOSED') ) order by A.updated_at desc",
         resultSetMapping = "GRANTSLIST"
 )
 @NamedNativeQuery(
         name="LISTNONADMINGRANTS",
-        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,approved_reports_for_grant(A.id) approved_reports_for_grant, disbursed_amount_for_grant(A.id) approved_disbursements_total, project_documents_for_grant(A.id) project_documents_count,get_owner_grant(A.id) owner_id,get_owner_grant_name(A.id) owner_name from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (B.anchor=true and B.assignments=:userId) or (B.assignments=:userId and B.state_id=A.grant_status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 and :userId = any (array(select assignments from grant_assignments where grant_id=A.id))) or (C.internal_status='REVIEW' and :userId = any( array(select assignments from grant_assignments where grant_id=A.id))) or (C.internal_status='ACTIVE' or C.internal_status='CLOSED' ) ) order by A.updated_at desc",
+        query = "select distinct A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,approved_reports_for_grant(A.id) approved_reports_for_grant, disbursed_amount_for_grant(A.id) approved_disbursements_total, project_documents_for_grant(A.id) project_documents_count,get_owner_grant(A.id) owner_id,get_owner_grant_name(A.id) owner_name, planned_fund_from_others(A.id) planned_fund_others, actual_fund_from_others(A.id) actual_fund_others from grants A inner join grant_assignments B on B.grant_id=A.id inner join workflow_statuses C on C.id=A.grant_status_id where A.grantor_org_id=:granterId and A.deleted=false and ( (B.anchor=true and B.assignments=:userId) or (B.assignments=:userId and B.state_id=A.grant_status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_history where id=A.id)>0 and :userId = any (array(select assignments from grant_assignments where grant_id=A.id))) or (C.internal_status='REVIEW' and :userId = any( array(select assignments from grant_assignments where grant_id=A.id))) or (C.internal_status='ACTIVE' or C.internal_status='CLOSED' ) ) order by A.updated_at desc",
         resultSetMapping = "GRANTSLIST"
 )
 public class GrantCard {
@@ -220,6 +220,10 @@ public class GrantCard {
   private String ownerId;
   @Column
   private boolean closureInProgress;
+  @Column
+  private Double plannedFundOthers = 0d;
+  @Column
+  private Double actualFundOthers = 0d;
 
 
   public boolean isClosureInProgress() {
@@ -636,6 +640,22 @@ public class GrantCard {
 
   public void setGrantTags(List<GrantTagCard> grantTags) {
     this.grantTags = grantTags;
+  }
+
+  public Double getPlannedFundOthers() {
+    return plannedFundOthers;
+  }
+
+  public void setPlannedFundOthers(Double plannedFundOthers) {
+    this.plannedFundOthers = plannedFundOthers;
+  }
+
+  public Double getActualFundOthers() {
+    return actualFundOthers;
+  }
+
+  public void setActualFundOthers(Double actualFundOthers) {
+    this.actualFundOthers = actualFundOthers;
   }
 
 

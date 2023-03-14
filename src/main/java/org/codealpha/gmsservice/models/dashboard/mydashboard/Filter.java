@@ -41,6 +41,11 @@ public class Filter {
     private Long committedAmount;
     @JsonProperty("details")
     private List<Detail> details = null;
+    @JsonProperty("plannedFundOthers")
+    private Long plannedFundOthers;
+    @JsonProperty("actualFundOthers")
+    private Long actualFundOthers;
+
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
@@ -113,6 +118,27 @@ public class Filter {
     public void setDisbursedAmount(Long disbursedAmount) {
         this.disbursedAmount = disbursedAmount;
     }
+
+    @JsonProperty("plannedFundOthers")
+    public Long getPlannedFundOthers() {
+        return plannedFundOthers;
+    }
+
+    @JsonProperty("plannedFundOthers")
+    public void setPlannedFundOthers(Long plannedFundOthers) {
+        this.plannedFundOthers = plannedFundOthers;
+    }
+
+    @JsonProperty("actualFundOthers")
+    public Long getActualFundOthers() {
+        return actualFundOthers;
+    }
+
+    @JsonProperty("actualFundOthers")
+    public void setActualFundOthers(Long actualFundOthers) {
+        this.actualFundOthers = actualFundOthers;
+    }
+
 
     @JsonProperty("committedAmount")
     public Long getCommittedAmount() {
