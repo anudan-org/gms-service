@@ -124,5 +124,12 @@ public interface DisbursementRepository extends CrudRepository<Disbursement, Lon
     List<Disbursement> getClosedDisbursementByGrantAndStatusesForGrantee(Long id);
 
     @Query(value="select disbursed_amount_for_grant(id) from grants where id =?1",nativeQuery = true)
-    Long getAcutalDisbursementAmountByGrant(Long grantId);
+    Double getAcutalDisbursementAmountByGrant(Long grantId);
+
+    @Query(value="select planned_fund_from_others(id) from grants where id =?1",nativeQuery = true)
+    Double getPlannedFundFromOthersByGrant(Long grantId);
+
+    @Query(value="select actual_fund_from_others(id) from grants where id =?1",nativeQuery = true)
+    Double getActualFundFromOthersByGrant(Long grantId);
+
 }

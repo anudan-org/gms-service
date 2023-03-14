@@ -15,6 +15,8 @@ public class ScheduledTaskVO {
     private ReportDueConfiguration configuration;
     private String configurationDescription;
     private String sql;
+    private String messageClosure;
+    private String subjectClosure;
 
     public String getMessageReport() {
         return messageReport;
@@ -119,5 +121,21 @@ public class ScheduledTaskVO {
     public void setSubjectDisbursement(String subjectDisbursement) {
         this.subjectDisbursement = subjectDisbursement;
     }
+
+    public String getSubjectClosure() {
+        return subjectClosure;
+    }
+    public void setSubjectClosure(String subjectClosure) {
+        this.subjectClosure = subjectClosure;
+    }
+
+    public void setMessageClosure(String messageClosure) {
+        this.messageClosure = messageClosure;
+    }
+
+    public String getMessageClosure() {
+        return messageClosure;
+    }
+
 
 }

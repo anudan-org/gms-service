@@ -506,14 +506,8 @@ public class GrantClosureService {
                     StandardCharsets.UTF_8.toString())
                     + R + code + EMAIL_TYPE_CLOSURE;
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            granteeUrl = link;
+            granterUrl = link;
             try {
-
-                granteeUrl = granteeUrl + HOME_ACTION_LOGIN_ORG
-                        + URLEncoder.encode(finalClosure.getGrant().getGrantorOrganization().getName(),
-                        StandardCharsets.UTF_8.toString())
-                        + R + code + EMAIL_TYPE_CLOSURE;
                 granterUrl = granterUrl + HOME_ACTION_LOGIN_ORG
                         + URLEncoder.encode(finalClosure.getGrant().getGrantorOrganization().getName(),
                         StandardCharsets.UTF_8.toString())
@@ -607,6 +601,8 @@ public class GrantClosureService {
         plainClosure.setGrantRefundReason(closure.getRefundReason());
         plainClosure.setActualSpent(closure.getActualSpent());
         plainClosure.setInterestEarned(closure.getInterestEarned());
+        plainClosure.setCovernoteAttributes(closure.getCovernoteAttributes());
+        plainClosure.setCovernoteContent(closure.getCovernoteContent());
         
         if(snapshot!=null) {
             plainClosure.setGrantRefundAmount(snapshot.getGrantRefundAmount());
@@ -800,5 +796,14 @@ public class GrantClosureService {
     public List<GrantClosure> getDetailedUpComingDraftClosures(Long userId) {
         return grantClosureRepository.getDetailedUpComingDraftClosures(userId);
     }
+
+    public List<ClosureAssignments> getActionDueClosureForPlatform(List<Long> granterIds) {
+        return closureAssignmentRepository.getActionDueClosuresForPlatform(granterIds);
+    }
+
+    public List<ClosureAssignments> getActionDueClosuresForGranterOrg(Long granterId) {
+        return closureAssignmentRepository.getActionDueClosuresForGranterOrg(granterId);
+    }
+
 
 }

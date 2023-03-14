@@ -233,6 +233,10 @@ public class Grant {
   @Column
   private Boolean closureInProgress = false;
   
+  @Transient
+  private Double plannedFundOthers = 0d;
+  @Transient
+  private Double actualFundOthers = 0d;
 
   public Boolean getClosureInProgress() {
     return closureInProgress;
@@ -713,4 +717,22 @@ public class Grant {
   public void setOngoingDisbursementNote(String ongoingDisbursementNote) {
     this.ongoingDisbursementNote = ongoingDisbursementNote;
   }
+
+  public Double getPlannedFundOthers() {
+    return plannedFundOthers;
+  }
+
+  public void setPlannedFundOthers(Double plannedFundOthers) {
+    this.plannedFundOthers = plannedFundOthers;
+  }
+
+  public Double getActualFundOthers() {
+    return actualFundOthers;
+  }
+
+  public void setActualFundOthers(Double actualFundOthers) {
+    this.actualFundOthers = actualFundOthers;
+  }
+
+  
 }

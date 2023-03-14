@@ -64,7 +64,7 @@ public class OrganizationService {
 	}
 
 	public void buildInviteUrlAndSendMail(UserService userService, AppConfigService appConfigService,
-			CommonEmailSevice commonEmailSevice, ReleaseService releaseService, User adminUser, Organization org,
+			CommonEmailService commonEmailService, ReleaseService releaseService, User adminUser, Organization org,
 			User user, List<UserRole> userRoles) {
 		UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath().build();
 		String host = null;
@@ -96,7 +96,7 @@ public class OrganizationService {
 						.getAppConfigForGranterOrg(user.getOrganization().getId(), AppConfiguration.INVITE_MESSAGE)
 						.getConfigValue(),
 				url);
-		commonEmailSevice.sendMail(new String[] { !user.isDeleted() ? user.getEmailId() : null }, null,
+		commonEmailService.sendMail(new String[] { !user.isDeleted() ? user.getEmailId() : null }, null,
 				notifications[0], notifications[1],
 				new String[] { appConfigService
 						.getAppConfigForGranterOrg(user.getOrganization().getId(),

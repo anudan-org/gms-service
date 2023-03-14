@@ -15,6 +15,7 @@ import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -168,7 +169,7 @@ public class GrantService {
     @Autowired
     private WorkflowStatusTransitionService workflowStatusTransitionService;
     @Autowired
-    private CommonEmailSevice commonEmailSevice;
+    private CommonEmailService commonEmailService;
     @Autowired
     private ReleaseService releaseService;
     @Autowired
@@ -180,6 +181,10 @@ public class GrantService {
     @Autowired
     private ActualRefundRepository actualRefundRepository;
 
+           
+	@Autowired
+	private ModelMapper modelMapper;
+    
     public GrantService() {
         //Adding for sonar
     }
@@ -716,6 +721,9 @@ public class GrantService {
         grant.setApprovedDisbursementsTotal(
                 approvedActualDisbursements.stream().mapToDouble(ActualDisbursement::getActualAmount).sum());
 
+        grant.setPlannedFundOthers(disbursementService.getPlannedFundFromOthersByGrant(grant));
+        grant.setActualFundOthers(disbursementService.getActualFundFromOthersByGrant(grant));
+
         List<WorkflowStatus> reportApprovedStatus = workflowStatusService
                 .getTenantWorkflowStatuses(REPORT, grant.getGrantorOrganization().getId()).stream()
                 .filter(s -> s.getInternalStatus().equalsIgnoreCase(CLOSED)).collect(Collectors.toList());
@@ -1025,6 +1033,13 @@ public class GrantService {
         return grantRepository.getDisbursedAmountByUserAndStatus(userId, status);
     }
 
+    public Long getPlannedFundOthersByUserAndStatus(Long userId, String status) {
+        return grantRepository.getPlannedFundOthersByUserAndStatus(userId, status);
+    }
+    public Long getActualFundOthersByUserAndStatus(Long userId, String status) {
+        return grantRepository.getActualFundOthersByUserAndStatus(userId, status);
+    }
+
     public Long getGranteeOrgsCountByUserAndStatus(Long userId, String status) {
         return grantRepository.getGranteeOrgsCountByUserAndStatus(userId, status);
     }
@@ -1276,7 +1291,7 @@ public class GrantService {
         if (!toStatus.getInternalStatus().equalsIgnoreCase(CLOSED)) {
             final User currentOwnerFinal = currentOwner;
             usersToNotify.removeIf(u -> u.getId().longValue() == currentOwnerFinal.getId() || u.isDeleted());
-            commonEmailSevice
+            commonEmailService
                     .sendMail(!currentOwner.isDeleted() ? new String[]{currentOwner.getEmailId()} : null,
                             usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                     .toArray(new String[usersToNotify.size()]),
@@ -1306,7 +1321,7 @@ public class GrantService {
             usersToNotify.removeIf(u -> u.getId().longValue() == activeStateOwner.getId().longValue() || u.isDeleted());
 
             try {
-                commonEmailSevice
+                commonEmailService
                         .sendMail(!activeStateOwner.isDeleted() ? new String[]{activeStateOwner.getEmailId()} : null,
                                 usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                         .toArray(new String[usersToNotify.size()]),
@@ -1545,10 +1560,11 @@ public class GrantService {
 
     private Organization processNewGranteeOrgIfPresent(Grant grantToSave) {
         Organization newGrantee = null;
+ 
         if (grantToSave.getOrganization() != null) {
             if (grantToSave.getOrganization().getId() < 0) {
                 newGrantee = grantToSave.getOrganization();
-                newGrantee = granteeService.saveGrantee((Grantee)newGrantee);
+                newGrantee = granteeService.saveGrantee(modelMapper.map(newGrantee, Grantee.class));     
                 Role role = new Role();
                 role.setCreatedBy("System");
                 role.setCreatedAt(DateTime.now().toDate());

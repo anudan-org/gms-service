@@ -19,7 +19,7 @@ public class NotificationsService{
   	return notificationsRepository.findByUserIdAndReadOrderByPostedOnDesc(userId, read);
   }
 public List<Notifications> getAllUserNotifications(Long userId){
-  	return notificationsRepository.findByUserIdOrderByPostedOnDesc(userId);
+  	return notificationsRepository.findTop15ByUserIdOrderByPostedOnDesc(userId);
   }
 
   public Notifications saveNotification (String[] message, Long userId, Long id,String notificationFor){

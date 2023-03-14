@@ -38,7 +38,26 @@ public class GrantClosureDTO {
     private String refundReason;
      private Double actualSpent;
     private Double interestEarned;
+    private String covernoteAttributes;
+    private String covernoteContent;
+
     private List<ClosureDocument> closureDocuments;
+
+    public String getCovernoteAttributes() {
+        return covernoteAttributes;
+    }
+
+    public void setCovernoteAttributes(String covernoteAttributes) {
+        this.covernoteAttributes = covernoteAttributes;
+    }
+
+    public String getCovernoteContent() {
+        return covernoteContent;
+    }
+
+    public void setCovernoteContent(String covernoteContent) {
+        this.covernoteContent = covernoteContent;
+    }
 
     public Long getOwnerId() {
         return ownerId;

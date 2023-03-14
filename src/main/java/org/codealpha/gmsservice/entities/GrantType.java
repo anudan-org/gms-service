@@ -17,6 +17,9 @@ public class GrantType {
     private Long granterId;
     @Column
     private String colorCode;
+    @Column
+    private boolean closureCovernote;
+    
 
     public Long getId() {
         return id;
@@ -65,4 +68,13 @@ public class GrantType {
     public void setColorCode(String colorCode) {
         this.colorCode = colorCode;
     }
+
+    public boolean isClosureCovernote() {
+        return closureCovernote;
+    }
+
+    public void setClosureCovernote(boolean closureCovernote) {
+        this.closureCovernote = closureCovernote;
+    }
+    
 }

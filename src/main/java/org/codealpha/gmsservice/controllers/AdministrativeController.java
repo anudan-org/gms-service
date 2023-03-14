@@ -74,7 +74,7 @@ public class AdministrativeController {
     @Autowired
     public AppConfigService appConfigService;
     @Autowired
-    public CommonEmailSevice commonEmailSevice;
+    public CommonEmailService commonEmailService;
     @Autowired
     private ReportService reportService;
     @Autowired
@@ -421,7 +421,7 @@ public class AdministrativeController {
 
         user.setUserRoles(userRoles);
 
-        organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailSevice, releaseService,
+        organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailService, releaseService,
                 adminUser, org, user, userRoles);
         return user;
     }
@@ -693,7 +693,7 @@ public class AdministrativeController {
         Organization org = adminUser.getOrganization();
         User userToReinvite = userService.getUserById(newUserId);
 
-        organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailSevice, releaseService,
+        organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailService, releaseService,
                 adminUser, org, userToReinvite, userToReinvite.getUserRoles());
         return userToReinvite;
     }

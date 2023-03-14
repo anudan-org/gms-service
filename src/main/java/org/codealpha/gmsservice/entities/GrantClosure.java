@@ -86,6 +86,27 @@ public class GrantClosure {
     @OneToMany(mappedBy = "closure")
     private List<ClosureDocument> closureDocuments;
 
+    @Column
+    private String covernoteAttributes;
+    @Column
+    private String covernoteContent;
+
+    public String getCovernoteAttributes() {
+        return covernoteAttributes;
+    }
+
+    public void setCovernoteAttributes(String covernoteAttributes) {
+        this.covernoteAttributes = covernoteAttributes;
+    }
+
+    public String getCovernoteContent() {
+        return covernoteContent;
+    }
+
+    public void setCovernoteContent(String covernoteContent) {
+        this.covernoteContent = covernoteContent;
+    }
+
     public Long getOwnerId() {
         return ownerId;
     }

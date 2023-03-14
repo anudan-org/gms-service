@@ -53,7 +53,7 @@ public class ScheduledJobs {
     private OrganizationService organizationService;
 
     @Autowired
-    private CommonEmailSevice emailSevice;
+    private CommonEmailService emailService;
     @Autowired
     private UserService userService;
     @Autowired
@@ -72,6 +72,8 @@ public class ScheduledJobs {
     private HygieneCheckService hygieneCheckService;
     @Autowired
     DataSource dataSource;
+    @Autowired
+    private GrantClosureService closureService;
 
     @Scheduled(cron = "0 * * * * *")
     public void dueReportsChecker() {
@@ -168,7 +170,7 @@ public class ScheduledJobs {
                 taskConfiguration.getSubjectReport(), taskConfiguration.getMessageReport(), "", "", "", "", "", "", "",
                 "", "", link, owner, null, null, null);
 
-        emailSevice.sendMail(new String[]{!granteeToNotify.isDeleted() ? granteeToNotify.getEmailId() : null},
+        emailService.sendMail(new String[]{!granteeToNotify.isDeleted() ? granteeToNotify.getEmailId() : null},
                 otherUsersToNotify.toArray(new String[]{}), messageMetadata[0], messageMetadata[1],
                 new String[]{appConfigService
                         .getAppConfigForGranterOrg(report.getGrant().getGrantorOrganization().getId(),
@@ -258,7 +260,7 @@ public class ScheduledJobs {
                                             .toArray(new String[reportAssignments.size()]);
                                 }
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minuetsLapsed = Minutes.minutesBetween(
+                                    int minutesLapsed = Minutes.minutesBetween(
                                             new DateTime(report.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes();
                                     if (Minutes.minutesBetween(
@@ -272,8 +274,8 @@ public class ScheduledJobs {
                                                 "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
-                                                null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice
+                                                null, minutesLapsed / (24 * 60), null, null);
+                                        emailService
                                                 .sendMail(new String[]{!user.isDeleted() ? user.getEmailId() : null},
                                                         ccList, messageMetadata[0], messageMetadata[1],
                                                         new String[]{appConfigService
@@ -316,7 +318,7 @@ public class ScheduledJobs {
                                             .toArray(new String[reportAssignments.size()]);
                                 }
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minuetsLapsed = Minutes.minutesBetween(
+                                    int minutesLapsed = Minutes.minutesBetween(
                                             new DateTime(report.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes();
                                     if (Minutes.minutesBetween(
@@ -330,8 +332,8 @@ public class ScheduledJobs {
                                                 "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
-                                                null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice
+                                                null, minutesLapsed / (24 * 60), null, null);
+                                        emailService
                                                 .sendMail(new String[]{!user.isDeleted() ? user.getEmailId() : null},
                                                         ccList, messageMetadata[0], messageMetadata[1],
                                                         new String[]{appConfigService
@@ -407,7 +409,7 @@ public class ScheduledJobs {
                                             .toArray(new String[grantAssignments.size()]);
                                 }
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minuetsLapsed = Minutes
+                                    int minutesLapsed = Minutes
                                             .minutesBetween(
                                                     new DateTime(grant.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes();
@@ -422,8 +424,8 @@ public class ScheduledJobs {
                                                 taskConfiguration.getMessageGrant(), "", "", "", "", "", "", "", "", "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
-                                                null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice.sendMail(
+                                                null, minutesLapsed / (24 * 60), null, null);
+                                        emailService.sendMail(
                                                 new String[]{!user.isDeleted() ? user.getEmailId() : null}, ccList,
                                                 messageMetadata[0], messageMetadata[1],
                                                 new String[]{appConfigService
@@ -462,7 +464,7 @@ public class ScheduledJobs {
                                             .toArray(new String[grantAssignments.size()]);
                                 }
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minuetsLapsed = Minutes
+                                    int minutesLapsed = Minutes
                                             .minutesBetween(
                                                     new DateTime(grant.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes();
@@ -477,8 +479,8 @@ public class ScheduledJobs {
                                                 taskConfiguration.getMessageGrant(), "", "", "", "", "", "", "", "", "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
-                                                null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice.sendMail(
+                                                null, minutesLapsed / (24 * 60), null, null);
+                                        emailService.sendMail(
                                                 new String[]{!user.isDeleted() ? user.getEmailId() : null}, ccList,
                                                 messageMetadata[0], messageMetadata[1],
                                                 new String[]{appConfigService
@@ -553,7 +555,7 @@ public class ScheduledJobs {
                                             .toArray(new String[disbursementAssignments.size()]);
                                 }
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minuetsLapsed = Minutes.minutesBetween(
+                                    int minutesLapsed = Minutes.minutesBetween(
                                             new DateTime(disbursement.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes();
                                     if (Minutes.minutesBetween(
@@ -566,8 +568,8 @@ public class ScheduledJobs {
                                                 "", "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
-                                                null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice.sendMail(
+                                                null, minutesLapsed / (24 * 60), null, null);
+                                        emailService.sendMail(
                                                 new String[]{!user.isDeleted() ? user.getEmailId() : null}, ccList,
                                                 messageMetadata[0], messageMetadata[1],
                                                 new String[]{appConfigService
@@ -609,7 +611,7 @@ public class ScheduledJobs {
                                             .toArray(new String[disbursementAssignments.size()]);
                                 }
                                 for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
-                                    int minuetsLapsed = Minutes.minutesBetween(
+                                    int minutesLapsed = Minutes.minutesBetween(
                                             new DateTime(disbursement.getMovedOn(), DateTimeZone.forID(timezone)), now)
                                             .getMinutes();
                                     if (Minutes.minutesBetween(
@@ -621,8 +623,8 @@ public class ScheduledJobs {
                                                 taskConfiguration.getMessageDisbursement(), "", "", "", "", "", "", "", "", "",
                                                 buildLink(environment, true,
                                                         user.getOrganization().getCode().toLowerCase()),
-                                                null, minuetsLapsed / (24 * 60), null, null);
-                                        emailSevice.sendMail(
+                                                null, minutesLapsed / (24 * 60), null, null);
+                                        emailService.sendMail(
                                                 new String[]{!user.isDeleted() ? user.getEmailId() : null}, ccList,
                                                 messageMetadata[0], messageMetadata[1],
                                                 new String[]{appConfigService
@@ -647,6 +649,8 @@ public class ScheduledJobs {
             }
         }
     }
+
+  
 
     @Scheduled(cron = "0 * * * * *")
     public void readAndStoreReleaseVersion() {
@@ -730,7 +734,7 @@ public class ScheduledJobs {
                 AppConfiguration.DISABLED_USERS_IN_WORKFLOW_EMAIL_TEMPLATE).getConfigValue();
         mailMessage = mailMessage.replace("%ENTITY_TYPE%", entity.getEntityType()).replace("%ENTITY_NAME%", entity.getEntityName());
 
-        emailSevice.sendMail(toList, ccList, mailSubject, mailMessage, new String[]{appConfigService
+        emailService.sendMail(toList, ccList, mailSubject, mailMessage, new String[]{appConfigService
                 .getAppConfigForGranterOrg(grant.getGrantorOrganization().getId(),
                         AppConfiguration.PLATFORM_EMAIL_FOOTER)
                 .getConfigValue().replace(RELEASE_VERSION,
@@ -764,7 +768,7 @@ public class ScheduledJobs {
                         msg = msg.replace("%SUMMARY%",result.getString("summary"));
                         String[] toEmails = result.getString("emails_to").split(",");
                         long grantorOrg = result.getLong("grantor_org_id");
-                        emailSevice.sendMail(toEmails,null,check.getSubject(),msg,
+                        emailService.sendMail(toEmails,null,check.getSubject(),msg,
                                 new String[]{appConfigService
                                         .getAppConfigForGranterOrg(grantorOrg,
                                                 AppConfiguration.PLATFORM_EMAIL_FOOTER)
@@ -779,4 +783,108 @@ public class ScheduledJobs {
             }
         }
     }
+
+    @Scheduled(cron = "0 * * * * *")
+    public void closureActionDueChecker() {
+        DateTime now = DateTime.now();
+        List<Granter> granters = granterService.getAllGranters();
+
+        Map<Long, AppConfig> configs = new HashMap<>();
+
+        for (Granter granter : granters) {
+            AppConfig config = appConfigService.getSpecialAppConfigForGranterOrg(granter.getId(),
+                    AppConfiguration.ACTION_DUE_REPORTS_REMINDER_SETTINGS);
+            configs.put(config.getId(), config);
+        }
+        
+        Map<Long, AppConfig> grantIdsToSkip = new HashMap<>();
+        configs.keySet().forEach(c -> grantIdsToSkip.put(c, configs.get(c)));
+
+      
+        for (Map.Entry<Long, AppConfig> entry : configs.entrySet()) {
+           
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+            try {
+                ScheduledTaskVO taskConfiguration = mapper.readValue(entry.getValue().getConfigValue(),
+                        ScheduledTaskVO.class);
+                String[] hourAndMinute = taskConfiguration.getTime().split(":");
+             
+                if (Integer.valueOf(hourAndMinute[0]) == now.hourOfDay().get()
+                            && Integer.valueOf(hourAndMinute[1]) == now.minuteOfHour().get()) {
+                  
+                    List<ClosureAssignments> usersToNotify ;
+                    if (entry.getKey() == 0) {
+                         usersToNotify = closureService.getActionDueClosureForPlatform(
+                                grantIdsToSkip.keySet().stream().collect(Collectors.toList()));
+                    }
+                    else {
+                         usersToNotify = closureService.getActionDueClosuresForGranterOrg(entry.getKey());
+                    } 
+
+                        if (usersToNotify != null && !usersToNotify.isEmpty()) {
+                           
+                            buildAndSendEmailClosureDueAlerts(usersToNotify ,  taskConfiguration,  now);
+                          
+                        }
+                    }
+
+            } catch (IOException e) {
+                logger.error(e.getMessage(),e);
+            }
+        }
+    }
+
+private void buildAndSendEmailClosureDueAlerts( List<ClosureAssignments> usersToNotify , ScheduledTaskVO taskConfiguration, DateTime now){
+    for (ClosureAssignments closureAssignment : usersToNotify) {
+        GrantClosure closure = closureService.getClosureById(closureAssignment.getClosure().getId());
+        List<ClosureAssignments> closureAssignments = closureService
+                .getAssignmentsForClosure(closure);
+                closureAssignments.removeIf(u -> userService.getUserById(u.getAssignment())
+                .getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE));
+        String[] ccList = new String[closureAssignments.size()];
+
+        if (!closureAssignments.isEmpty()) {
+            List<User> uList = new ArrayList<>();
+            for (ClosureAssignments ass : closureAssignments) {
+                uList.add(userService.getUserById(ass.getAssignment()));
+            }
+            uList.removeIf(User::isDeleted);
+            ccList = uList.stream().map(User::getEmailId).collect(Collectors.toList())
+                    .toArray(new String[closureAssignments.size()]);
+        }
+        for (int afterNoOfHour : taskConfiguration.getConfiguration().getAfterNoOfHours()) {
+            int minutesLapsed = Minutes.minutesBetween(
+                    new DateTime(closure.getMovedOn(), DateTimeZone.forID(timezone)), now)
+                    .getMinutes();
+            if (Minutes.minutesBetween(
+                    new DateTime(closure.getMovedOn(), DateTimeZone.forID(timezone)), now)
+                    .getMinutes() > afterNoOfHour) {
+                User user = userService.getUserById(closureAssignment.getAssignment());
+                String[] messageMetadata = closureService.buildEmailNotificationContent(closure,
+                        user,
+                        taskConfiguration.getSubjectClosure(),
+                        taskConfiguration.getMessageClosure(), "", "", "", "", "", "", "", "",
+                        "",
+                        buildLink(environment, true,
+                                user.getOrganization().getCode().toLowerCase()),
+                        null, minutesLapsed / (24 * 60), null, null);
+                emailService
+                        .sendMail(new String[]{!user.isDeleted() ? user.getEmailId() : null},
+                                ccList, messageMetadata[0], messageMetadata[1],
+                                new String[]{appConfigService
+                                        .getAppConfigForGranterOrg(
+                                                closure.getGrant().getGrantorOrganization()
+                                                        .getId(),
+                                                AppConfiguration.PLATFORM_EMAIL_FOOTER)
+                                        .getConfigValue()
+                                        .replace(RELEASE_VERSION, releaseService
+                                        .getCurrentRelease().getVersion()).replace(TENANT,closure.getGrant()
+                                        .getGrantorOrganization().getName())});
+            }
+        }
+
+    }
+}
+
 }
