@@ -212,7 +212,7 @@ public class GranterController {
 		for (GrantType refGrantType : refGrantTypes) {
 
 			GrantType grantType = createGrantTypeBasedOnRefOrg(org, refGrantType);
-			buildWorkflowsBasedOnTempOrg(org, grantType, refOrgCode, refGrantType);
+			buildWorkflowsBasedOnTempOrg(org, grantType, refGrantType);
 		}
 
 		buildDefaultTemplates(org, organizationService.findOrganizationByTenantCode(refOrgCode));
