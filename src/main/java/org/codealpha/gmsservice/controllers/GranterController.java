@@ -373,7 +373,7 @@ public class GranterController {
 	}
 
 
-	private void buildWorkflowsBasedOnTempOrg(Organization org, GrantType grantType, String refOrgCode, GrantType refGrantType) {
+	private void buildWorkflowsBasedOnTempOrg(Organization org, GrantType grantType, GrantType refGrantType) {
        
 		Workflow tempGrantWorkflow = workflowService.findWorkflowByGrantTypeAndObject(refGrantType.getId(),  "GRANT");
 		Workflow tempReportWorkflow = workflowService.findWorkflowByGrantTypeAndObject(refGrantType.getId(), "REPORT");
