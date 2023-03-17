@@ -362,7 +362,7 @@ public class GrantClosureService {
         return newTemplate;
     }
 
-    private GranterClosureSectionAttribute saveClosureTemplateSectionAttribute(GranterClosureSectionAttribute newAttribute) {
+    public GranterClosureSectionAttribute saveClosureTemplateSectionAttribute(GranterClosureSectionAttribute newAttribute) {
         return granterClosureSectionAttributeRepository.save(newAttribute);
     }
 
@@ -370,7 +370,7 @@ public class GrantClosureService {
         return closureSpecificSectionAttributeRepository.findBySection(currentSection);
     }
 
-    private GranterClosureSection saveClosureTemplateSection(GranterClosureSection newSection) {
+    public GranterClosureSection saveClosureTemplateSection(GranterClosureSection newSection) {
         return granterClosureSectionRepository.save(newSection);
 
     }

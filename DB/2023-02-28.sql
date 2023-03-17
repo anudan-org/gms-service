@@ -5,7 +5,8 @@ ALTER TABLE grant_closure ADD covernote_content text NULL;
 alter table grant_types add column closure_covernote boolean default false;
 
 
-
+ update grant_types set closure_covernote=true where id in ( 1,2,3);
+ 
 
 INSERT INTO public.messages
 (id, message, subject)
@@ -120,12 +121,24 @@ Dear <b><span id="id7"></span></b>,
 
 This is with reference to your project titled <span style="font-weight:600;color:darkgray;" >"%GRANT_NAME%"</span> supported by the Collectives for Integrated Livelihood Initiatives (CInI) under Sustain Plus Initiative, approved via grant letter. The project duration was <span style="font-weight:600;color:darkgray;">%START_DATE%</span> to <span style="font-weight:600;color:darkgray;">%END_DATE%</span>. 
 
-CInI has reviewed the progress reports (Narrative and Financial) as well as the Project end report shared by <span style="font-weight:600;color:darkgray;">%GRANTEE_NAME%</span> and found them satisfactory. As all the relevant documents have been received by the CInI, we formally close the Grant.
+CInI has reviewed the progress reports (Narrative and Financial) as well as the Project end report shared by <span style="font-weight:600;color:darkgray;">%GRANTEE_NAME%</span> and <b><span id="id12"></span></b>. As all the relevant documents have been received by the CInI, we formally close the Grant.
 
-CInI reserves their right to communicate to you on submission of the audited statement of accounts for the year ended <b><span id="id8"></span></b>, in case of any discrepancies. 
+CInI reserves their right to monitor the impact of program interventions periodically and also reserves right to conduct audit and scrutiny of the books of accounts based on requirement.
+
+<b><span id="id13"></span></b>
 
 With best wishes,
 																Yours Sincerely,
 																<b><span id="id9"></span></b>
 																<b><span id="id10"></span></b>
 ', 11, 'Closure Cover Letter Template', false, NULL, NULL);
+
+//about action due reminders with href of urls
+UPDATE public.app_config
+SET config_name='ACTION_DUE_REPORTS_REMINDER_SETTINGS', config_value='{"messageReport":"<p>The Report approval workflow for <a class=''go-to-report-class'' href=%GRANTER_REPORT_LINK%>%REPORT_NAME%</a> for <b>%GRANT_NAME%</b> requires your action.</p><p>This has been in your queue for %NO_DAYS% day(s)</p> <p> Please log on to Anudan to progress the workflow. </p><p><i>This is a system generated reminder for %TENANT%. Please ignore this reminder if you have already actioned the workflow.</i></p>","messageGrant":"<p>The Grant workflow for <a class=''go-to-grant-class''   href=%GRANT_LINK%>%GRANT_NAME%</a> requires your action.</p><p>This has been in your queue for %NO_DAYS% day(s)</p><p> Please log on to Anudan to progress the workflow. </p><p><i>This is a system generated reminder for %TENANT%. Please ignore this reminder if you have already actioned the workflow.</i></p>","messageDisbursement":"<p>The Disbursement approval workflow for Approval Request for <a class=''go-to-disbursement-class'' href=%DISBURSEMENT_LINK%>%GRANT_NAME%</a> requires your action.</p><p>This has been in your queue for %NO_DAYS% day(s)</p><p> Please log on to Anudan to progress the workflow. </p><p><i>This is a system generated reminder for %TENANT%. Please ignore this reminder if you have already actioned the workflow.</i></p>","messageClosure":"<p>The Grant Closure approval workflow for Approval Request for <a class=''go-to-closure-class'' href=%GRANTER_CLOSURE_LINK%>%GRANT_NAME%</a> requires your action.</p><p>This has been in your queue for %NO_DAYS% day(s)</p><p> Please log on to Anudan to progress the workflow. </p><p><i>This is a system generated reminder for %TENANT%. Please ignore this reminder if you have already actioned the workflow.</i></p>","messageDescription":"Description for message","subjectReport":"Alert | Workflow delays | Action required","subjectGrant":"Alert | Workflow delays | Action required","subjectDisbursement":"Alert | Workflow delays | Action required","subjectClosure":"Alert | Workflow delays | Action required","subjectDescription":"Description for reminder notification subject","time":"05:00","timeDescription":"Description for time","configuration":{"daysBefore":[0],"afterNoOfHours":[5760]},"configurationDescription":"Description for configuration","sql":""}', description='Action pending reminder configuration for Granter users', configurable=true, "key"=NULL, "type"=NULL
+WHERE id=25;
+
+//about action due reminders with href of urls
+UPDATE public.org_config
+SET config_name='ACTION_DUE_REPORTS_REMINDER_SETTINGS', config_value='{"messageReport":"<p>The Report approval workflow for <a class=''go-to-report-class'' href=%GRANTER_REPORT_LINK%>%REPORT_NAME%</a> for <b>%GRANT_NAME%</b> requires your action.</p><p>This has been in your queue for %NO_DAYS% day(s)</p> <p> Please log on to Anudan to progress the workflow. </p><p><i>This is a system generated reminder for %TENANT%. Please ignore this reminder if you have already actioned the workflow.</i></p>","messageGrant":"<p>The Grant workflow for <a class=''go-to-grant-class'' href=%GRANT_LINK%>%GRANT_NAME%</a> requires your action.</p><p>This has been in your queue for %NO_DAYS% day(s)</p><p> Please log on to Anudan to progress the workflow. </p><p><i>This is a system generated reminder for %TENANT%. Please ignore this reminder if you have already actioned the workflow.</i></p>","messageDisbursement":"<p>The Disbursement approval workflow for Approval Request for <a class=''go-to-disbursement-class'' href=%DISBURSEMENT_LINK%>%GRANT_NAME%</a> requires your action.</p><p>This has been in your queue for %NO_DAYS% day(s)</p><p> Please log on to Anudan to progress the workflow. </p><p><i>This is a system generated reminder for %TENANT%. Please ignore this reminder if you have already actioned the workflow.</i></p>","messageClosure":"<p>The Grant Closure approval workflow for Approval Request for <a class=''go-to-closure-class'' href=%GRANTER_CLOSURE_LINK%>%GRANT_NAME%</a> requires your action.</p><p>This has been in your queue for %NO_DAYS% day(s)</p><p> Please log on to Anudan to progress the workflow. </p><p><i>This is a system generated reminder for %TENANT%. Please ignore this reminder if you have already actioned the workflow.</i></p>","messageDescription":"Description for message","subjectReport":"Alert | Workflow delays | Action required","subjectGrant":"Alert | Workflow delays | Action required","subjectDisbursement":"Alert | Workflow delays | Action required","subjectClosure":"Alert | Workflow delays | Action required","subjectDescription":"Description for reminder notification subject","time":"14:41","timeDescription":"Description for time","configuration":{"daysBefore":[0],"afterNoOfHours":[2880]},"configurationDescription":"Description for configuration","sql":""}', granter_id=11, description='Action pending reminder configuration for Granter users', configurable=true, "key"=NULL, "type"=NULL
+WHERE id=7;

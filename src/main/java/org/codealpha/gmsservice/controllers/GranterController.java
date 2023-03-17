@@ -45,6 +45,8 @@ public class GranterController {
 	public static final String DEFAULT = "Default ";
 	public static final String GRANT_WORKFLOW = " Grant workflow";
 	public static final String ANUDAN_DEFAULT_REPORT_TEMPLATE = "Anudan Default Report Template";
+	public static final String ANUDAN_DEFAULT_CLOSURE_TEMPLATE = "Anudan Default Closure Template";
+
 	@Autowired
 	private GranterRepository granterRepository;
 
@@ -53,6 +55,9 @@ public class GranterController {
 
 	@Autowired
 	private WorkflowStatusService workflowStatusService;
+
+	@Autowired
+	private GrantTypeWorkflowMappingService grantTypeWorkflowMappingService;
 
 	@Autowired
 	private WorkflowService workflowService;
@@ -66,12 +71,7 @@ public class GranterController {
 	@Autowired
 	private WorkflowStatusTransitionService workflowStatusTransitionService;
 
-	@Autowired
-	private GrantSectionService grantSectionService;
-
-	@Autowired
-	private GrantSectionAttributeService grantSectionAttributeService;
-
+	
 	@Autowired
 	private UserRoleService userRoleService;
 
@@ -94,6 +94,12 @@ public class GranterController {
 	private GranterReportTemplateService granterReportTemplateService;
 
 	@Autowired
+	private ReportService reportService;
+
+	@Autowired
+	private GrantClosureService closureService;
+
+	@Autowired
 	private OrganizationService organizationService;
 
 	@Autowired
@@ -104,6 +110,8 @@ public class GranterController {
 	private ReleaseService releaseService;
 	@Autowired
 	private ModelMapper modelMapper;
+	@Autowired
+	private GrantTypeService grantTypeService;
 
 	@Value("${spring.upload-file-location}")
 	private String uploadLocation;
@@ -128,11 +136,11 @@ public class GranterController {
 
 	}
 
-	@PostMapping(value = "/user/{userId}/onboard/{grantName}/slug/{tenantSlug}/granterUser/{granterUserEmail}/{refOrgCode}", consumes = {
+	@PostMapping(value = "/user/{userId}/onboard/{granterName}/slug/{tenantSlug}/granterUser/{granterUserEmail}/{refOrgCode}", consumes = {
 			"multipart/form-data" })
 	@ApiOperation(value = "Onboard new granter with basic details", notes = "Currently harcoded users and roles for the newly created Granter is implemented. This feature will be enhanced in the future")
 	public Organization onBoardGranter(
-			@ApiParam(name = "granterName", value = "Name of new granter being onboarded") @PathVariable("grantName") String granterName,
+			@ApiParam(name = "granterName", value = "Name of new granter being onboarded") @PathVariable("granterName") String granterName,
 			@ApiParam(name = "slug", value = "Name of granter slug. This will be used to create the Tenant Code as well us the subdomain") @PathVariable("tenantSlug") String slug,
 			@ApiParam(name = "image", value = "Uploaded image file to be used as granter's logo") @RequestParam(value = "file") MultipartFile image,
 			@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
@@ -195,20 +203,46 @@ public class GranterController {
 		userRole.setUser(granterUser);
 		userRole = userRoleService.saveUserRole(userRole);
 
-		organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailService, releaseService,
-				userService.getUserById(userId), org, granterUser, Arrays.asList(userRole));
+		
+		Organization refOrg = organizationService.findOrganizationByTenantCode(refOrgCode);
+		
+		List<GrantType> refGrantTypes = grantTypeService.findGrantTypesForTenant(refOrg.getId());
 
+	
+		for (GrantType refGrantType : refGrantTypes) {
 
-		buildWorkflowsBasedOnTempOrg(org,refOrgCode);
+			GrantType grantType = createGrantTypeBasedOnRefOrg(org, refOrgCode, refGrantType);
+			buildWorkflowsBasedOnTempOrg(org, grantType, refOrgCode, refGrantType);
+		}
+
 		buildDefaultTemplates(org, organizationService.findOrganizationByTenantCode(refOrgCode));
 
+		organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailService, releaseService,
+		userService.getUserById(userId), org, granterUser, Arrays.asList(userRole));
+
 		return org;
+	}
+
+	private GrantType createGrantTypeBasedOnRefOrg(Organization org, String refOrgCode, GrantType refGrantType){
+
+		GrantType gt = new GrantType();
+		gt.setColorCode(refGrantType.getColorCode());
+		gt.setDescription(refGrantType.getDescription());
+		gt.setGranterId(org.getId());
+		gt.setInternal(refGrantType.isInternal());
+		gt.setName(refGrantType.getName());
+		gt.setClosureCovernote(refGrantType.isClosureCovernote());
+		gt = grantTypeService.save(gt);
+		return gt;
+
 	}
 
 	private void buildDefaultTemplates(Organization org, Organization referenceOrg) {
 
 		buildDefaultGrantTemplate(org, referenceOrg);
 		buildDefaultReportTemplate(org, referenceOrg);
+		buildDefaultClosureTemplate(org,referenceOrg);
+		
 	}
 
 	private void buildDefaultGrantTemplate(Organization org, Organization referenceOrg) {
@@ -276,7 +310,7 @@ public class GranterController {
 			templateSection.setGranter((Granter) org);
 			templateSection.setSectionName(section.getSectionName());
 			templateSection.setSectionOrder(sectionOrder++);
-			templateSection = grantService.saveReportTemplateSection(templateSection);
+			templateSection = reportService.saveReportTemplateSection(templateSection);
 
 			if (section.getAttributes() != null && !section.getAttributes().isEmpty()) {
 				int attributeOrder = 1;
@@ -289,29 +323,74 @@ public class GranterController {
 					templateSectionAttribute.setGranter((Granter) org);
 					templateSectionAttribute.setRequired(false);
 					templateSectionAttribute.setSection(templateSection);
-					grantService
+					reportService
 							.saveReportTemplateSectionAttribute(templateSectionAttribute);
 				}
 			}
 		}
 	}
 
-	private void buildWorkflowsBasedOnTempOrg(Organization org,String refOrgCode) {
+	private void buildDefaultClosureTemplate(Organization org, Organization referenceOrg) {
+		Optional<GranterClosureTemplate> granterClosureTemplate = closureService
+				.findByGranterIdAndPublishedStatusAndPrivateStatus(referenceOrg.getId(), true, false).stream()
+				.filter(GranterClosureTemplate::getDefaultTemplate).findFirst();
+		List<GranterClosureSection> defaultSections = granterClosureTemplate.isPresent()?granterClosureTemplate.get().getSections():new ArrayList<>();
+		GranterClosureTemplate defaultTemplate = new GranterClosureTemplate();
+		defaultTemplate.setDefaultTemplate(true);
+		defaultTemplate.setDescription(ANUDAN_DEFAULT_CLOSURE_TEMPLATE);
+		defaultTemplate.setGranterId(org.getId());
+		defaultTemplate.setName(ANUDAN_DEFAULT_CLOSURE_TEMPLATE);
+		defaultTemplate.setPrivateToClosure(false);
+		defaultTemplate.setPublished(true);
+		defaultTemplate = closureService.saveClosureTemplate(defaultTemplate);
 
+		int sectionOrder = 1;
+		for (GranterClosureSection section : defaultSections) {
+			GranterClosureSection templateSection = new GranterClosureSection();
+			templateSection.setDeletable(true);
+			templateSection.setClosureTemplate(defaultTemplate);
+
+			templateSection.setGranter((Granter) org);
+			templateSection.setSectionName(section.getSectionName());
+			templateSection.setSectionOrder(sectionOrder++);
+			templateSection = closureService.saveClosureTemplateSection(templateSection);
+
+			if (section.getAttributes() != null && !section.getAttributes().isEmpty()) {
+				int attributeOrder = 1;
+				for (GranterClosureSectionAttribute attribute : section.getAttributes()) {
+					GranterClosureSectionAttribute templateSectionAttribute = new GranterClosureSectionAttribute();
+					templateSectionAttribute.setAttributeOrder(attributeOrder++);
+					templateSectionAttribute.setDeletable(true);
+					templateSectionAttribute.setFieldName(attribute.getFieldName());
+					templateSectionAttribute.setFieldType(attribute.getFieldType());
+					templateSectionAttribute.setGranter((Granter) org);
+					templateSectionAttribute.setRequired(false);
+					templateSectionAttribute.setSection(templateSection);
+					closureService.saveClosureTemplateSectionAttribute(templateSectionAttribute);
+				}
+			}
+		}
+	}
+
+
+	private void buildWorkflowsBasedOnTempOrg(Organization org, GrantType grantType, String refOrgCode, GrantType refGrantType) {
+       
 		Organization tempOrg = organizationService.findOrganizationByTenantCode(refOrgCode);
 		//change done with new approach to consider grant type mapping table.
 		// need to include closure workflows
-		// need to get entries into grant types.
 		// need to check if it is insertinto grant type org with workflow and type.
-		Workflow tempGrantWorkflow = workflowService.findWorkflowByGrantTypeAndObject(tempOrg.getId(), "GRANT");
-		Workflow tempReportWorkflow = workflowService.findWorkflowByGrantTypeAndObject(tempOrg.getId(), "REPORT");
-		Workflow tempDisbursementWorkflow = workflowService.findWorkflowByGrantTypeAndObject(tempOrg.getId(), "DISBURSEMENT");
-		List<WorkflowStatus> tempGrantStatuses = workflowStatusService
-				.getTenantWorkflowStatuses(WorkflowObject.GRANT.name(), tempOrg.getId());
-		List<WorkflowStatus> tempReportStatuses = workflowStatusService
-				.getTenantWorkflowStatuses(WorkflowObject.REPORT.name(), tempOrg.getId());
-		List<WorkflowStatus> tempDisbursementStatuses = workflowStatusService
-				.getTenantWorkflowStatuses(WorkflowObject.DISBURSEMENT.name(), tempOrg.getId());
+		Workflow tempGrantWorkflow = workflowService.findWorkflowByGrantTypeAndObject(refGrantType.getId(),  "GRANT");
+		Workflow tempReportWorkflow = workflowService.findWorkflowByGrantTypeAndObject(refGrantType.getId(), "REPORT");
+		Workflow tempDisbursementWorkflow = workflowService.findWorkflowByGrantTypeAndObject(refGrantType.getId(), "DISBURSEMENT");
+		Workflow tempGrantClosureWorkflow = workflowService.findWorkflowByGrantTypeAndObject(refGrantType.getId(), "GRANTCLOSURE");
+	
+		List<WorkflowStatus> tempGrantStatuses = workflowStatusService.findByWorkflow(tempGrantWorkflow);
+		List<WorkflowStatus> tempReportStatuses = workflowStatusService.findByWorkflow(tempReportWorkflow);
+		List<WorkflowStatus> tempDisbursementStatuses = workflowStatusService.findByWorkflow(tempDisbursementWorkflow);
+		List<WorkflowStatus> tempClosureStatuses = workflowStatusService.findByWorkflow(tempGrantClosureWorkflow);
+
+
+				
 		List<WorkflowStatusTransition> tempGrantTransitions = workflowStatusTransitionService
 				.getStatusTransitionsForWorkflow(tempGrantWorkflow);
 		List<WorkflowStatusTransition> tempReportTransitions = workflowStatusTransitionService
@@ -319,13 +398,32 @@ public class GranterController {
 		List<WorkflowStatusTransition> tempDisbursementTransitions = workflowStatusTransitionService
 				.getStatusTransitionsForWorkflow(tempDisbursementWorkflow);
 
-		generateGrantWorkflow(org, tempGrantStatuses, tempGrantTransitions);
-		generateReportWorkflow(org, tempReportStatuses, tempReportTransitions);
-		generateDisbursementWorkflow(org, tempDisbursementStatuses, tempDisbursementTransitions);
+		List<WorkflowStatusTransition> tempClosureTransitions = workflowStatusTransitionService
+				.getStatusTransitionsForWorkflow(tempGrantClosureWorkflow);
+		
+		Workflow grantWorkflow = generateGrantWorkflow(org, tempGrantStatuses, tempGrantTransitions);
+		createGrantTypeWorkflowMapping(grantWorkflow, grantType);
+
+		Workflow reportWorkflow = generateReportWorkflow(org, tempReportStatuses, tempReportTransitions);
+		createGrantTypeWorkflowMapping(reportWorkflow, grantType);
+
+		Workflow disbursementWorkflow = generateDisbursementWorkflow(org, tempDisbursementStatuses, tempDisbursementTransitions);
+		createGrantTypeWorkflowMapping(disbursementWorkflow, grantType);
+
+		Workflow grantClosureWorkflow = generateClosureWorkflow(org, tempClosureStatuses, tempClosureTransitions);
+		createGrantTypeWorkflowMapping(grantClosureWorkflow, grantType);
 
 	}
 
-	private void generateGrantWorkflow(Organization org, List<WorkflowStatus> tempGrantStatuses,
+	private void createGrantTypeWorkflowMapping(Workflow grantWorkflow, GrantType grantType){
+        GrantTypeWorkflowMapping gtm = new GrantTypeWorkflowMapping();
+                        gtm.setGrantTypeId(grantType.getId());
+                        gtm.set_default(true);
+                        gtm.setWorkflowId(grantWorkflow.getId());
+                        grantTypeWorkflowMappingService.save(gtm);
+	}
+
+	private Workflow generateGrantWorkflow(Organization org, List<WorkflowStatus> tempGrantStatuses,
 			List<WorkflowStatusTransition> tempGrantTransitions) {
 		Workflow grantWorkflow = new Workflow();
 		grantWorkflow.setCreatedAt(DateTime.now().toDate());
@@ -374,9 +472,10 @@ public class GranterController {
 			transition.setWorkflow(grantWorkflow);
 			workflowStatusTransitionService.saveStatusTransition(transition);
 		}
+		return grantWorkflow;
 	}
 
-	private void generateReportWorkflow(Organization org, List<WorkflowStatus> tempReportStatuses,
+	private Workflow generateReportWorkflow(Organization org, List<WorkflowStatus> tempReportStatuses,
 			List<WorkflowStatusTransition> tempReportTransitions) {
 		Workflow reportWorkflow = new Workflow();
 		reportWorkflow.setCreatedAt(DateTime.now().toDate());
@@ -426,9 +525,10 @@ public class GranterController {
 			transition.setWorkflow(reportWorkflow);
 			workflowStatusTransitionService.saveStatusTransition(transition);
 		}
+		return reportWorkflow;
 	}
 
-	private void generateDisbursementWorkflow(Organization org, List<WorkflowStatus> tempDisbursementStatuses,
+	private Workflow generateDisbursementWorkflow(Organization org, List<WorkflowStatus> tempDisbursementStatuses,
 			List<WorkflowStatusTransition> tempDisbursementTransitions) {
 		Workflow disbursementWorkflow = new Workflow();
 		disbursementWorkflow.setCreatedAt(DateTime.now().toDate());
@@ -478,6 +578,61 @@ public class GranterController {
 			transition.setWorkflow(disbursementWorkflow);
 			workflowStatusTransitionService.saveStatusTransition(transition);
 		}
+		return disbursementWorkflow;
 	}
+
+	private Workflow generateClosureWorkflow(Organization org, List<WorkflowStatus> tempClosureStatuses,
+	List<WorkflowStatusTransition> tempClosureTransitions) {
+Workflow closureWorkflow = new Workflow();
+closureWorkflow.setCreatedAt(DateTime.now().toDate());
+closureWorkflow.setCreatedBy(SYSTEM);
+closureWorkflow.setDescription(DEFAULT + org.getName() + " Closure workflow");
+closureWorkflow.setGranter(org);
+closureWorkflow.setName(DEFAULT + org.getName() + " Closure workflow");
+closureWorkflow.setObject(WorkflowObject.GRANTCLOSURE);
+closureWorkflow = workflowService.saveWorkflow(closureWorkflow);
+
+List<WorkflowStatus> closureStatuses = new ArrayList<>();
+for (WorkflowStatus tempStatus : tempClosureStatuses) {
+	WorkflowStatus status = new WorkflowStatus();
+	status.setCreatedAt(DateTime.now().toDate());
+	status.setCreatedBy(SYSTEM);
+	status.setDisplayName(tempStatus.getDisplayName());
+	status.setInitial(tempStatus.isInitial());
+	status.setInternalStatus(tempStatus.getInternalStatus());
+	status.setName(tempStatus.getName());
+	status.setTerminal(tempStatus.getTerminal());
+	status.setWorkflow(closureWorkflow);
+	status = workflowStatusService.saveWorkflowStatus(status);
+	closureStatuses.add(status);
+}
+
+for (WorkflowStatusTransition tempTransition : tempClosureTransitions) {
+
+	WorkflowStatusTransition transition = new WorkflowStatusTransition();
+	transition.setAction(tempTransition.getAction());
+	transition.setCreatedAt(DateTime.now().toDate());
+	transition.setCreatedBy(SYSTEM);
+	WorkflowStatus fromStatus = tempClosureStatuses.stream()
+			.filter(st -> st.getId().longValue() == tempTransition.getFromState().getId()).findFirst().orElse(null);
+	WorkflowStatus toStatus = tempClosureStatuses.stream()
+			.filter(st -> st.getId().longValue() == tempTransition.getToState().getId()).findFirst().orElse(null);
+	if(fromStatus!=null) {
+		transition.setFromState(closureStatuses.stream()
+				.filter(s -> s.getName().equalsIgnoreCase(fromStatus.getName())).findFirst().orElse(null));
+
+	}
+	if(toStatus!=null) {
+		transition.setToState(closureStatuses.stream().filter(s -> s.getName().equalsIgnoreCase(toStatus.getName()))
+				.findFirst().orElse(null));
+	}
+	transition.setNoteRequired(true);
+	transition.setSeqOrder(tempTransition.getSeqOrder());
+	transition.setWorkflow(closureWorkflow);
+	workflowStatusTransitionService.saveStatusTransition(transition);
+}
+return closureWorkflow;
+}
+
 
 }
