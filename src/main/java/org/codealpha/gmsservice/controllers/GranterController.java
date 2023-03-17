@@ -211,7 +211,7 @@ public class GranterController {
 	
 		for (GrantType refGrantType : refGrantTypes) {
 
-			GrantType grantType = createGrantTypeBasedOnRefOrg(org, refOrgCode, refGrantType);
+			GrantType grantType = createGrantTypeBasedOnRefOrg(org, refGrantType);
 			buildWorkflowsBasedOnTempOrg(org, grantType, refOrgCode, refGrantType);
 		}
 
@@ -223,7 +223,7 @@ public class GranterController {
 		return org;
 	}
 
-	private GrantType createGrantTypeBasedOnRefOrg(Organization org, String refOrgCode, GrantType refGrantType){
+	private GrantType createGrantTypeBasedOnRefOrg(Organization org,  GrantType refGrantType){
 
 		GrantType gt = new GrantType();
 		gt.setColorCode(refGrantType.getColorCode());
@@ -375,10 +375,6 @@ public class GranterController {
 
 	private void buildWorkflowsBasedOnTempOrg(Organization org, GrantType grantType, String refOrgCode, GrantType refGrantType) {
        
-		Organization tempOrg = organizationService.findOrganizationByTenantCode(refOrgCode);
-		//change done with new approach to consider grant type mapping table.
-		// need to include closure workflows
-		// need to check if it is insertinto grant type org with workflow and type.
 		Workflow tempGrantWorkflow = workflowService.findWorkflowByGrantTypeAndObject(refGrantType.getId(),  "GRANT");
 		Workflow tempReportWorkflow = workflowService.findWorkflowByGrantTypeAndObject(refGrantType.getId(), "REPORT");
 		Workflow tempDisbursementWorkflow = workflowService.findWorkflowByGrantTypeAndObject(refGrantType.getId(), "DISBURSEMENT");
