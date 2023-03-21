@@ -466,6 +466,8 @@ public class GranterController {
 			transition.setNoteRequired(true);
 			transition.setSeqOrder(tempTransition.getSeqOrder());
 			transition.setWorkflow(grantWorkflow);
+			transition.setForwardDirection(tempTransition.getForwardDirection());
+			transition.setAllowTransitionOnValidationWarning(tempTransition.getAllowTransitionOnValidationWarning());
 			workflowStatusTransitionService.saveStatusTransition(transition);
 		}
 		return grantWorkflow;
@@ -519,6 +521,9 @@ public class GranterController {
 			transition.setNoteRequired(true);
 			transition.setSeqOrder(tempTransition.getSeqOrder());
 			transition.setWorkflow(reportWorkflow);
+			transition.setForwardDirection(tempTransition.getForwardDirection());
+			transition.setAllowTransitionOnValidationWarning(tempTransition.getAllowTransitionOnValidationWarning());
+		
 			workflowStatusTransitionService.saveStatusTransition(transition);
 		}
 		return reportWorkflow;
@@ -572,6 +577,9 @@ public class GranterController {
 			transition.setNoteRequired(true);
 			transition.setSeqOrder(tempTransition.getSeqOrder());
 			transition.setWorkflow(disbursementWorkflow);
+			transition.setForwardDirection(tempTransition.getForwardDirection());
+			transition.setAllowTransitionOnValidationWarning(tempTransition.getAllowTransitionOnValidationWarning());
+		
 			workflowStatusTransitionService.saveStatusTransition(transition);
 		}
 		return disbursementWorkflow;
@@ -625,6 +633,9 @@ for (WorkflowStatusTransition tempTransition : tempClosureTransitions) {
 	transition.setNoteRequired(true);
 	transition.setSeqOrder(tempTransition.getSeqOrder());
 	transition.setWorkflow(closureWorkflow);
+	transition.setForwardDirection(tempTransition.getForwardDirection());
+	transition.setAllowTransitionOnValidationWarning(tempTransition.getAllowTransitionOnValidationWarning());
+
 	workflowStatusTransitionService.saveStatusTransition(transition);
 }
 return closureWorkflow;
