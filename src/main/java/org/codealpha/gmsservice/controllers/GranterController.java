@@ -154,25 +154,27 @@ public class GranterController {
 		org.setName(granterName);
 		org.setOrganizationType("GRANTER");
 		org = granterService.createGranter((Granter) org, image);
-
-		File file = new File(SECURE_SITES_TXT);
+		
 		try{
-
+		File file = new File(SECURE_SITES_TXT);
+		
 			Files.write(file.toPath(),System.lineSeparator().concat(slug.toLowerCase()).concat(".").getBytes(), StandardOpenOption.APPEND);
 		} catch (IOException e) {
-			logger.error(e.getMessage(),e);
+			logger.error(e.getMessage());
 		}
-
+		try {
 		String filePath = uploadLocation + slug.toUpperCase() + "/logo/";
 		File dir = new File(filePath);
 		dir.mkdirs();
 		File fileToCreate = new File(dir, "logo.png");
-		try(FileOutputStream fos = new FileOutputStream(fileToCreate)) {
+
+		FileOutputStream fos = new FileOutputStream(fileToCreate); 
 
 			image.getOriginalFilename();
 			fos.write(image.getBytes());
+			fos.close();
 		} catch (IOException e) {
-			logger.error(e.getMessage(),e);
+			logger.error(e.getMessage());
 		}
 
 		User granterUser = new User();
@@ -204,8 +206,7 @@ public class GranterController {
 		userRole = userRoleService.saveUserRole(userRole);
 
 		
-		Organization refOrg = organizationService.findOrganizationByTenantCode(refOrgCode);
-		
+		Organization refOrg = organizationService.findOrganizationByTenantCode(refOrgCode.toUpperCase());
 		List<GrantType> refGrantTypes = grantTypeService.findGrantTypesForTenant(refOrg.getId());
 
 	
@@ -215,7 +216,7 @@ public class GranterController {
 			buildWorkflowsBasedOnTempOrg(org, grantType, refGrantType);
 		}
 
-		buildDefaultTemplates(org, organizationService.findOrganizationByTenantCode(refOrgCode));
+		buildDefaultTemplates(org, refOrg);
 
 		organizationService.buildInviteUrlAndSendMail(userService, appConfigService, commonEmailService, releaseService,
 		userService.getUserById(userId), org, granterUser, Arrays.asList(userRole));
@@ -640,6 +641,20 @@ for (WorkflowStatusTransition tempTransition : tempClosureTransitions) {
 }
 return closureWorkflow;
 }
+
+@GetMapping(value="/{userId}/getAllGranters")
+public List<Granter> getGranterOrgs(@RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("userId") Long userId) {
+	
+	Organization org = organizationService.findOrganizationByTenantCode(tenantCode);
+	if (org.getOrganizationType().equalsIgnoreCase("PLATFORM")
+	 && userService.getUserById(userId).getOrganization().getOrganizationType().equals("PLATFORM")) {
+			return granterService.getAllGranters();
+   
+		} else {
+			return null;
+		}
+}
+
 
 
 }

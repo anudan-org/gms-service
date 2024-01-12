@@ -42,7 +42,7 @@ public class GmsServiceApplication {
         mailSender.setPort(587);
 
         mailSender.setUsername("donotreply@anudan.org");
-        mailSender.setPassword("Social@123");
+        mailSender.setPassword("gyhg endz pvip ngsc");
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
