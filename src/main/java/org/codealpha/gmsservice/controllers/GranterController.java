@@ -28,6 +28,7 @@ import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -162,21 +163,29 @@ public class GranterController {
 		} catch (IOException e) {
 			logger.error(e.getMessage());
 		}
+		FileOutputStream fos = null;
 		try {
 		String filePath = uploadLocation + slug.toUpperCase() + "/logo/";
 		File dir = new File(filePath);
 		dir.mkdirs();
 		File fileToCreate = new File(dir, "logo.png");
 
-		FileOutputStream fos = new FileOutputStream(fileToCreate); 
+		 fos = new FileOutputStream(fileToCreate); 
 
 			image.getOriginalFilename();
 			fos.write(image.getBytes());
 			fos.close();
 		} catch (IOException e) {
 			logger.error(e.getMessage());
+		} finally {
+			if (fos != null) {
+				try {
+					fos.close();
+				} catch (IOException e) {
+					logger.error("Error closing FileOutputStream: " + e.getMessage());
+				}
+			}
 		}
-
 		User granterUser = new User();
 		granterUser.setActive(false);
 		granterUser.setCreatedAt(DateTime.now().toDate());
@@ -651,7 +660,7 @@ public List<Granter> getGranterOrgs(@RequestHeader("X-TENANT-CODE") String tenan
 			return granterService.getAllGranters();
    
 		} else {
-			return null;
+			return Collections.emptyList(); 
 		}
 }
 
