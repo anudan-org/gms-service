@@ -1,8 +1,7 @@
 package org.codealpha.gmsservice.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.codealpha.gmsservice.entities.*;
 
 import java.util.List;
@@ -10,44 +9,44 @@ import java.util.List;
 /**
  * @author Developer code-alpha.org
  **/
-@ApiModel("User Interface Configuration and Application data for tenant")
+@Schema(description="User Interface Configuration and Application data for tenant")
 public class UIConfig {
 
-	@ApiModelProperty("Tenant's logo URL")
+	@Schema(description = "Tenant's logo URL")
 	private String logoUrl;
 
-	@ApiModelProperty("Basic header styling")
+	@Schema(description ="Basic header styling")
 	private String navbarColor;
 
-	@ApiModelProperty("Tenant code that uniquely identifies tenant")
+	@Schema(description ="Tenant code that uniquely identifies tenant")
 	private String tenantCode;
 
-	@ApiModelProperty("Basic styling for header text")
+	@Schema(description ="Basic styling for header text")
 	private String navbarTextColor;
 
 	@JsonIgnore
 	private List<GrantSection> defaultSections;
 
-	@ApiModelProperty("Initial status of new grant for tenant")
+	@Schema(description ="Initial status of new grant for tenant")
 	private WorkflowStatus grantInitialStatus;
 	@JsonIgnore
 	private WorkflowStatus submissionInitialStatus;
-	@ApiModelProperty("Grantee organizations associated with tenant")
+	@Schema(description ="Grantee organizations associated with tenant")
 	private List<Organization> granteeOrgs;
-	@ApiModelProperty("Tenant grant workflow and statuses")
+	@Schema(description ="Tenant grant workflow and statuses")
 	private List<WorkflowStatus> workflowStatuses;
-	@ApiModelProperty("Tenant report workflow and statuses")
+	@Schema(description ="Tenant report workflow and statuses")
 	private List<WorkflowStatus> reportWorkflowStatuses;
 	private List<WorkflowStatus> closureWorkflowStatuses;
-	@ApiModelProperty("Tenant grant workflow state transitions")
+	@Schema(description ="Tenant grant workflow state transitions")
 	private List<WorkflowTransitionModel> transitions;
-	@ApiModelProperty("Tenant report workflow state transitions")
+	@Schema(description ="Tenant report workflow state transitions")
 	private List<WorkflowTransitionModel> reportTransitions;
-	@ApiModelProperty("Tenant users")
+	@Schema(description ="Tenant users")
 	private List<User> tenantUsers;
-	@ApiModelProperty("Days before opening Report for publishing")
+	@Schema(description ="Days before opening Report for publishing")
 	private Integer daysBeforePublishingReport;
-	@ApiModelProperty("Template Library of organization")
+	@Schema(description ="Template Library of organization")
 	private List<TemplateLibrary> templateLibrary;
 
 	public String getLogoUrl() {

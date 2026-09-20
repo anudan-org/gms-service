@@ -29,8 +29,17 @@ public class DisbursementService {
     private DisbursementAssignmentRepository disbursementAssignmentRepository;
     @Autowired
     private WorkflowPermissionRepository workflowPermissionRepository;
+    // @Autowired
+    // private GrantService grantService;
     @Autowired
-    private GrantService grantService;
+    private GrantRepository grantRepository;
+    @Autowired
+    private GrantAssignmentRepository grantAssignmentRepository;
+    @Autowired
+    private GrantSpecificSectionRepository grantSpecificSectionRepository;
+    @Autowired
+    private GrantTagRepository grantTagRepository;
+
     @Autowired
     private WorkflowPermissionService workflowPermissionService;
     @Autowired
@@ -104,7 +113,8 @@ public class DisbursementService {
                 assignment.setStateId(status.getId());
 
                 if(Boolean.TRUE.equals(status.getTerminal())){
-                    Optional<GrantAssignments> grantAssignment = grantService.getGrantWorkflowAssignments(disbursementToSave.getGrant()).stream().filter(ass -> ass.getStateId().longValue() == finalDisbursement.getGrant().getGrantStatus().getId().longValue()).findFirst();
+                    // Optional<GrantAssignments> grantAssignment = grantService.getGrantWorkflowAssignments(disbursementToSave.getGrant()).stream().filter(ass -> ass.getStateId().longValue() == finalDisbursement.getGrant().getGrantStatus().getId().longValue()).findFirst();
+                    Optional<GrantAssignments> grantAssignment =grantAssignmentRepository.findByGrantId(disbursementToSave.getGrant().getId()).stream().filter(ass -> ass.getStateId().longValue() == finalDisbursement.getGrant().getGrantStatus().getId().longValue()).findFirst();
                     if(grantAssignment.isPresent()) {
                         GrantAssignments activeStateOwner = grantAssignment.get();
                         assignment.setOwner(activeStateOwner.getAssignments());
@@ -149,10 +159,24 @@ public class DisbursementService {
         }
         disbursement.setAssignments(disbursementAssignments);
 
+        Grant amendGrant = null;
+        if (disbursement.getGrant().getAmendGrantId() != null) {
+          amendGrant = grantRepository.findDetailedById(disbursement.getGrant().getAmendGrantId()).orElse(null);
+        }
+
+
+        // GrantVO vo = new GrantVO().build(disbursement.getGrant(),
+        //         grantService.getGrantSections(disbursement.getGrant()), workflowPermissionService,
+        //         userService.getUserById(userId),
+        //         userService,grantService);
+        // GrantVO.build is revised for migration
+
         GrantVO vo = new GrantVO().build(disbursement.getGrant(),
-                grantService.getGrantSections(disbursement.getGrant()), workflowPermissionService,
+                grantSpecificSectionRepository.findByGranterAndGrantId((Granter) disbursement.getGrant().getGrantorOrganization(),
+                        disbursement.getGrant().getId()),
+                workflowPermissionService,       
                 userService.getUserById(userId),
-                userService,grantService);
+                userService,amendGrant);
 
         disbursement.getGrant().setGrantDetails(vo.getGrantDetails());
         if (disbursement.getNoteAddedBy() != null) {
@@ -177,7 +201,8 @@ public class DisbursementService {
         List<ActualDisbursement> approvedActualDisbursements = getApprovedActualDisbursements(disbursement, statusIds,false);
         disbursement.setApprovedActualsDibursements(approvedActualDisbursements);
 
-        List<GrantTag> grantTags = grantService.getTagsForGrant(disbursement.getGrant().getId());
+        // List<GrantTag> grantTags = grantService.getTagsForGrant(disbursement.getGrant().getId());
+        List<GrantTag> grantTags = grantTagRepository.getTagsForGrant(disbursement.getGrant().getId());
 
         disbursement.getGrant().setGrantTags(grantTags);
 
@@ -193,7 +218,11 @@ public class DisbursementService {
     private List<Disbursement> getDisbursementsForGrant(Grant grant, List<Long> statusIds) {
         List<Disbursement> disbursements = getDibursementsForGrantByStatuses(grant.getId(),statusIds);
         if(grant.getOrigGrantId()!=null){
-                disbursements.addAll(getDisbursementsForGrant(grantService.getById(grant.getOrigGrantId()), statusIds));
+              //  disbursements.addAll(getDisbursementsForGrant(grantService.getById(grant.getOrigGrantId()), statusIds));
+              Grant origGrant = grantRepository.findDetailedById(grant.getOrigGrantId()).orElse(null);
+              if (origGrant != null) {
+                  disbursements.addAll(getDisbursementsForGrant(origGrant, statusIds));
+              }
         }
         return disbursements;
     }   
@@ -343,6 +372,15 @@ public class DisbursementService {
         return new String[] { subject, message };
     }
 
+    /** Renders "Unassigned" instead of throwing when a state has no owner yet (owner id null/0) or the id doesn't resolve to a real user. */
+    private String ownerDisplayName(Long userId) {
+        if (userId == null || userId == 0) {
+            return "Unassigned";
+        }
+        User owner = userService.getUserById(userId);
+        return owner == null ? "Unassigned" : (owner.getFirstName() + " " + owner.getLastName());
+    }
+
     private String getAssignmentsTable(Map<Long, Long> assignments, List<DisbursementAssignment> newAssignments) {
         if (assignments == null) {
             return "";
@@ -353,19 +391,18 @@ public class DisbursementService {
         String[] table = {
                 "<table width='100%' border='1' cellpadding='2' cellspacing='0'><tr><td><b>Review State</b></td><td><b>Current State Owners</b></td><td><b>Previous State Owners</b></td></tr>" };
         newAssignments.forEach(a -> {
-            Long prevAss = assignments.keySet().stream().filter(b -> b.longValue() == a.getStateId().longValue()).findFirst().get();
+            Long prevAss = assignments.keySet().stream().filter(b -> b.longValue() == a.getStateId().longValue()).findFirst().orElse(null);
 
             table[0] = table[0].concat("<tr>").concat("<td width='30%'>")
                     .concat(workflowStatusRepository.findById(a.getStateId()).get().getName()).concat(TD)
                     .concat("<td>")
-                    .concat(userService.getUserById(a.getOwner()).getFirstName().concat(" ")
-                            .concat(userService.getUserById(a.getOwner()).getLastName()))
+                    .concat(ownerDisplayName(a.getOwner()))
                     .concat(TD)
 
                     .concat("<td>")
-                    .concat(userService.getUserById(assignments.get(prevAss)).getFirstName().concat(" ")
-                            .concat(userService.getUserById(assignments.get(prevAss)).getLastName()).concat(TD)
-                            .concat("</tr>"));
+                    .concat(ownerDisplayName(prevAss == null ? null : assignments.get(prevAss)))
+                    .concat(TD)
+                    .concat("</tr>");
         });
 
         table[0] = table[0].concat("</table>");

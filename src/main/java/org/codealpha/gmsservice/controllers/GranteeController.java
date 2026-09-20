@@ -11,14 +11,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import springfox.documentation.annotations.ApiIgnore;
+
+import io.swagger.v3.oas.annotations.Hidden;
 
 /**
  * @author Developer code-alpha.org
  **/
 @RestController
-@RequestMapping(value = "/grantee", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-@ApiIgnore
+@RequestMapping(value = "/grantee", produces = MediaType.APPLICATION_JSON_VALUE)
+@Hidden
 public class GranteeController {
 
 	@Autowired

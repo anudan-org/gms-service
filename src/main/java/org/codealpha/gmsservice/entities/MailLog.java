@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity(name = "mail_logs")
@@ -23,6 +23,9 @@ public class MailLog {
     private String subject;
     @Column
     private Boolean status;
+
+    public MailLog() {
+    }
 
     public Long getId() {
         return id;

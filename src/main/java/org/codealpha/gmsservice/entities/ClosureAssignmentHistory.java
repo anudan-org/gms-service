@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
@@ -12,7 +12,7 @@ public class ClosureAssignmentHistory {
     @Column
     private Long id;
 
-    @Column
+    @Column(name = "closure_id")
     private Long grantId;
 
     @Column

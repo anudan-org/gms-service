@@ -1,13 +1,13 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.Report;
+import java.util.Map;
 
 public class ReportSectionInfo {
     private Long sectionId;
     private String sectionName;
-    private Report report;
+    private Map<String, Object> report;
 
-    public ReportSectionInfo(Long id, String name, Report report) {
+    public ReportSectionInfo(Long id, String name, Map<String, Object> report) {
         this.sectionId = id;
         this.sectionName = name;
         this.report = report;
@@ -29,11 +29,11 @@ public class ReportSectionInfo {
         this.sectionName = sectionName;
     }
 
-    public Report getReport() {
+    public Map<String, Object> getReport() {
         return report;
     }
 
-    public void setReport(Report report) {
+    public void setReport(Map<String, Object> report) {
         this.report = report;
     }
 }

@@ -1,12 +1,12 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.GrantClosure;
+import java.util.Map;
 
 public class ClosureDocInfo {
     private Long attachmentId;
-    private GrantClosure closure;
+    private Map<String, Object> closure;
 
-    public ClosureDocInfo(Long attachmentId, GrantClosure closure) {
+    public ClosureDocInfo(Long attachmentId, Map<String, Object> closure) {
         this.attachmentId = attachmentId;
         this.closure = closure;
     }
@@ -19,11 +19,11 @@ public class ClosureDocInfo {
         this.attachmentId = attachmentId;
     }
 
-    public GrantClosure getClosure() {
+    public Map<String, Object> getClosure() {
         return closure;
     }
 
-    public void setClosure(GrantClosure closure) {
+    public void setClosure(Map<String, Object> closure) {
         this.closure = closure;
     }
 }

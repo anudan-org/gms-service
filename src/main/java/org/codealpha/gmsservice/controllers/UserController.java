@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.controllers;
 
-import io.swagger.annotations.ApiParam;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
@@ -32,9 +33,10 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.transaction.Transactional;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -105,6 +107,10 @@ public class UserController {
     private GrantTypeWorkflowMappingService grantTypeWorkflowMappingService;
     @Autowired
     private GrantTypeService grantTypeService;
+    @Autowired
+    private WorkflowStatusService workflowStatusService;
+    @Autowired
+    private ObjectMapper objectMapper;
     @org.springframework.beans.factory.annotation.Value("${spring.upload-file-location}")
     private String uploadLocation;
 
@@ -113,7 +119,7 @@ public class UserController {
         return userService.getUserById(id);
     }
 
-    @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Transactional
     public User create(@RequestBody UserVO user, @RequestHeader("X-TENANT-CODE") String tenantCode,
                        HttpServletResponse response, HttpServletRequest request) {
@@ -179,10 +185,10 @@ public class UserController {
         userService.save(user);
     }
 
-    @PutMapping(value = "/{userId}", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public User update(@ApiParam(name = "user", value = "User details") @RequestBody UserVO user,
-                       @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId,
-                       @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+    @PutMapping(value = "/{userId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public User update(@Parameter(name = "user", description = "User details") @RequestBody UserVO user,
+                       @Parameter(name = "userId", description = "Unique identifier of user") @PathVariable("userId") Long userId,
+                       @Parameter(name = "X-TENANT-CODE", description = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
         // BCryptPasswordEncoder a = new BCryptPasswordEncoder
         dashboardValidator.validate(userId, tenantCode);
         if (userService.getUserById(userId).getOrganization().getId().longValue() != user.getOrganization().getId()) {
@@ -212,10 +218,27 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/dashboard")
-    public ResponseEntity<DashboardService> getDashbaord(@RequestHeader("X-TENANT-CODE") String tenantCode,
-                                                         @PathVariable("userId") Long userId,
-                                                         @RequestParam(value = "forStatus",required = false,defaultValue = "inprogress")String forStatus) {
+    public ResponseEntity<?> getDashbaord(@RequestHeader("X-TENANT-CODE") String tenantCode,
+                                          @PathVariable("userId") Long userId,
+                                          @RequestParam(value = "forStatus",required = false,defaultValue = "inprogress")String forStatus) {
+        return getDashboardInternalV3(tenantCode, userId, forStatus);
+    }
 
+    @GetMapping("/{userId}/dashboard/v2")
+    public ResponseEntity<DashboardService> getDashbaordV2(@RequestHeader("X-TENANT-CODE") String tenantCode,
+                                                           @PathVariable("userId") Long userId,
+                                                           @RequestParam(value = "forStatus", required = false, defaultValue = "inprogress") String forStatus) {
+        return getDashboardInternal(tenantCode, userId, forStatus, false);
+    }
+
+    @GetMapping("/{userId}/dashboard/v3")
+    public ResponseEntity<Map<String, Object>> getDashbaordV3(@RequestHeader("X-TENANT-CODE") String tenantCode,
+                                                              @PathVariable("userId") Long userId,
+                                                              @RequestParam(value = "forStatus", required = false, defaultValue = "inprogress") String forStatus) {
+        return getDashboardInternalV3(tenantCode, userId, forStatus);
+    }
+
+    private ResponseEntity<DashboardService> getDashboardInternal(String tenantCode, Long userId, String forStatus, boolean useV3) {
         dashboardValidator.validate(userId, tenantCode);
         User user = userService.getUserById(userId);
         Organization userOrg = user.getOrganization();
@@ -224,13 +247,76 @@ public class UserController {
         List<GrantCard> grants = null;
         if (GRANTEE.equalsIgnoreCase(userOrg.getType())) {
             grants = granteeService.getGrantCardsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getUserRoles());
-            return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
+            return new ResponseEntity<>(useV3 ? dashboardService.buildV3(user, grants, tenantOrg)
+                    : dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
         } else if (GRANTER.equalsIgnoreCase(userOrg.getType())) {
             grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId(), forStatus);
-            return new ResponseEntity<>(dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
+            return new ResponseEntity<>(useV3 ? dashboardService.buildV3(user, grants, tenantOrg)
+                    : dashboardService.build(user, grants, tenantOrg), HttpStatus.OK);
         }
 
         return new ResponseEntity<>(new DashboardService(), HttpStatus.OK);
+    }
+
+    private ResponseEntity<Map<String, Object>> getDashboardInternalV3(String tenantCode, Long userId, String forStatus) {
+        dashboardValidator.validate(userId, tenantCode);
+        User user = userService.getUserById(userId);
+        Organization userOrg = user.getOrganization();
+        Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
+
+        List<GrantCard> grants = null;
+        if (GRANTEE.equalsIgnoreCase(userOrg.getType())) {
+            grants = granteeService.getGrantCardsOfGranteeForGrantor(userOrg.getId(), tenantOrg, user.getUserRoles());
+        } else if (GRANTER.equalsIgnoreCase(userOrg.getType())) {
+            grants = granterService.getGrantsOfGranterForGrantor(userOrg.getId(), tenantOrg, user.getId(), forStatus);
+        }
+
+        DashboardService response = grants == null ? new DashboardService() : dashboardService.buildV3(user, grants, tenantOrg);
+        Map<String, Object> responseMap = objectMapper.convertValue(response, new TypeReference<>() {});
+        return new ResponseEntity<>(pruneNullKeysRecursively(responseMap), HttpStatus.OK);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> pruneNullKeysRecursively(Map<String, Object> source) {
+        Object pruned = pruneNullNode(source);
+        if (pruned instanceof Map) {
+            return (Map<String, Object>) pruned;
+        }
+        return new LinkedHashMap<>();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object pruneNullNode(Object node) {
+        if (node == null) {
+            return null;
+        }
+
+        if (node instanceof Map<?, ?> rawMap) {
+            Map<String, Object> cleaned = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+                if (entry.getKey() == null) {
+                    continue;
+                }
+                Object cleanedValue = pruneNullNode(entry.getValue());
+                if (cleanedValue != null) {
+                    cleaned.put(String.valueOf(entry.getKey()), cleanedValue);
+                }
+            }
+            return cleaned;
+        }
+
+        if (node instanceof List<?> rawList) {
+            List<Object> cleaned = new ArrayList<>();
+            for (Object item : rawList) {
+                Object cleanedItem = pruneNullNode(item);
+                if (cleanedItem != null) {
+                    cleaned.add(cleanedItem);
+                }
+            }
+            return cleaned;
+        }
+
+        return node;
     }
 
     @GetMapping("/{userId}/dashboard/in-progress")
@@ -1032,7 +1118,11 @@ public class UserController {
 
     @GetMapping("/{userId}/dashboard/mysummary/upcomingdraftclosures")
     public List<GrantClosure> getUpcomingDetailedClosuresForUser(@PathVariable("userId")Long userId){
-        return grantClosureService.getDetailedUpComingDraftClosures(userId);
+        List<GrantClosure> closures = grantClosureService.getDetailedUpComingDraftClosures(userId);
+        for (GrantClosure closure : closures) {
+            hydrateUpcomingDraftClosure(closure);
+        }
+        return closures;
     }
     
 
@@ -1057,6 +1147,39 @@ public class UserController {
             disbursementService.disbursementToReturn(disbursement,userId);
         }
         return disbursements;
+    }
+
+    private void hydrateUpcomingDraftClosure(GrantClosure closure) {
+        if (closure == null) {
+            return;
+        }
+
+        if (closure.getTemplate() != null && closure.getTemplate().getId() != null) {
+            closure.setTemplate(grantClosureService.findByTemplateId(closure.getTemplate().getId()));
+        }
+
+        if (closure.getGrant() != null) {
+            Grant grant = closure.getGrant();
+            List<GrantStringAttribute> grantStringAttributes = new ArrayList<>();
+            List<GrantSpecificSection> grantSections = grantService.getGrantSections(grant);
+            if (grantSections != null) {
+                for (GrantSpecificSection section : grantSections) {
+                    List<GrantSpecificSectionAttribute> sectionAttributes = grantService.getAttributesBySection(section);
+                    if (sectionAttributes == null) {
+                        continue;
+                    }
+                    for (GrantSpecificSectionAttribute sectionAttribute : sectionAttributes) {
+                        GrantStringAttribute grantStringAttribute = grantService
+                                .findGrantStringBySectionAttribueAndGrant(section, sectionAttribute, grant);
+                        if (grantStringAttribute != null) {
+                            grantStringAttributes.add(grantStringAttribute);
+                        }
+                    }
+                }
+            }
+            grant.setStringAttributes(grantStringAttributes);
+            grant.setGrantTags(grantService.getTagsForGrant(grant.getId()));
+        }
     }
 
 

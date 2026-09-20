@@ -1,9 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.Table;
+import jakarta.persistence.*;
 
 /**
  * @author Developer code-alpha.org

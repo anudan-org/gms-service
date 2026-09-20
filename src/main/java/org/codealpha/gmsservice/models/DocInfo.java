@@ -1,12 +1,12 @@
 package org.codealpha.gmsservice.models;
 
-import org.codealpha.gmsservice.entities.Grant;
+import java.util.Map;
 
 public class DocInfo {
     private Long attachmentId;
-    private Grant grant;
+    private Map<String, Object> grant;
 
-    public DocInfo(Long attachmentId, Grant grant) {
+    public DocInfo(Long attachmentId, Map<String, Object> grant) {
         this.attachmentId = attachmentId;
         this.grant = grant;
     }
@@ -19,11 +19,11 @@ public class DocInfo {
         this.attachmentId = attachmentId;
     }
 
-    public Grant getGrant() {
+    public Map<String, Object> getGrant() {
         return grant;
     }
 
-    public void setGrant(Grant grant) {
+    public void setGrant(Map<String, Object> grant) {
         this.grant = grant;
     }
 }

@@ -1,7 +1,6 @@
 package org.codealpha.gmsservice.controllers;
 
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+
 import org.codealpha.gmsservice.constants.WorkflowObject;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.GranterDTO;
@@ -18,7 +17,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import springfox.documentation.annotations.ApiIgnore;
+
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,7 +38,7 @@ import java.util.Optional;
  * @author Developer code-alpha.org
  **/
 @RestController
-@RequestMapping(value = "/granter", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+@RequestMapping(value = "/granter", produces = MediaType.APPLICATION_JSON_VALUE)
 public class GranterController {
 
 	private static final Logger logger = LoggerFactory.getLogger(GranterController.class);
@@ -118,7 +120,7 @@ public class GranterController {
 	private String uploadLocation;
 
 	@PostMapping(value = "/")
-	@ApiIgnore
+	@Hidden
 	public void create(@RequestBody GranterDTO granter) {
 
 		granter.setCreatedAt(DateTime.now().toDate());
@@ -128,7 +130,7 @@ public class GranterController {
 	}
 
 	@PostMapping("/{granterId}/rfps/")
-	@ApiIgnore
+	@Hidden
 	public Rfp createRfp(@PathVariable(name = "granterId") Long organizationId, @RequestBody RfpDTO rfp) {
 
 		rfp.setCreatedAt(LocalDateTime.now());
@@ -139,13 +141,13 @@ public class GranterController {
 
 	@PostMapping(value = "/user/{userId}/onboard/{granterName}/slug/{tenantSlug}/granterUser/{granterUserEmail}/{refOrgCode}", consumes = {
 			"multipart/form-data" })
-	@ApiOperation(value = "Onboard new granter with basic details", notes = "Currently harcoded users and roles for the newly created Granter is implemented. This feature will be enhanced in the future")
+	@Operation(summary = "Onboard new granter with basic details", description = "Currently harcoded users and roles for the newly created Granter is implemented. This feature will be enhanced in the future")
 	public Organization onBoardGranter(
-			@ApiParam(name = "granterName", value = "Name of new granter being onboarded") @PathVariable("granterName") String granterName,
-			@ApiParam(name = "slug", value = "Name of granter slug. This will be used to create the Tenant Code as well us the subdomain") @PathVariable("tenantSlug") String slug,
-			@ApiParam(name = "image", value = "Uploaded image file to be used as granter's logo") @RequestParam(value = "file") MultipartFile image,
-			@ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
-			@ApiParam(name = "userEmail", value = "Email Id of primary admin of Granter organization to whom email invite will be sent") @PathVariable("granterUserEmail") String userEmail,
+			@Parameter(name = "granterName", description  = "Name of new granter being onboarded") @PathVariable("granterName") String granterName,
+			@Parameter(name = "slug", description = "Name of granter slug. This will be used to create the Tenant Code as well us the subdomain") @PathVariable("tenantSlug") String slug,
+			@Parameter(name = "image", description = "Uploaded image file to be used as granter's logo") @RequestParam(value = "file") MultipartFile image,
+			@Parameter(name = "userId", description = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+			@Parameter(name = "userEmail", description = "Email Id of primary admin of Granter organization to whom email invite will be sent") @PathVariable("granterUserEmail") String userEmail,
 			@PathVariable("refOrgCode") String refOrgCode) {
 
 		Organization org = new Granter();

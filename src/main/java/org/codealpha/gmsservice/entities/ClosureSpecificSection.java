@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.List;
 
 @Entity(name = "closure_specific_sections")

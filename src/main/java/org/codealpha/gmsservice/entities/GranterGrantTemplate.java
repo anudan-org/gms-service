@@ -1,8 +1,9 @@
 package org.codealpha.gmsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.List;
 
 @Entity(name = "granter_grant_templates")
@@ -16,7 +17,7 @@ public class GranterGrantTemplate {
     private String name;
     @Column(columnDefinition = "text")
     private String description;
-    @OneToMany(mappedBy = "grantTemplate",fetch = FetchType.LAZY,cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "grantTemplate",fetch = FetchType.EAGER,cascade = CascadeType.ALL,orphanRemoval = true)
     @JsonManagedReference
     private List<GranterGrantSection> sections;
 

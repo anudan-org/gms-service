@@ -4,12 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
 import org.codealpha.gmsservice.repositories.*;
+import org.codealpha.gmsservice.security.JwtKeyUtil;
+import org.codealpha.gmsservice.security.JwtSecrets;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import javax.crypto.SecretKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +21,9 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.servlet.ServletContext;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.ServletContext;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -47,7 +49,6 @@ public class ReportService {
     public static final String GRANT_NAME = "%GRANT_NAME%";
     public static final String REPORT_NAME = "%REPORT_NAME%";
     public static final String TD_CLOSE = "</td>";
-    private static final String SECRET = "78yughvdbfv87ny4w87rbshfiv8aw4tr87awvyeruvbhdkjfhbity834t";
     @Autowired
     private ReportRepository reportRepository;
 
@@ -102,10 +103,20 @@ public class ReportService {
     private String timezone;
     @Autowired
     private WorkflowStatusService workflowStatusService;
+    // @Autowired
+    // private GrantService grantService;
     @Autowired
-    private GrantService grantService;
+    private GrantRepository grantRepository;
     @Autowired
-    private DisbursementService disbursementService;
+    private GrantSpecificSectionRepository grantSpecificSectionRepository;
+    @Autowired
+    private GrantTagRepository grantTagRepository;
+    // @Autowired
+    // private DisbursementService disbursementService;
+    @Autowired
+    private DisbursementRepository disbursementRepository;
+    @Autowired
+    private ActualDisbursementRepository actualDisbursementRepository;
     @Autowired
     private WorkflowPermissionService workflowPermissionService;
     @Autowired
@@ -429,8 +440,13 @@ public class ReportService {
         secureEntity.setTemplateLibraryIds(tLibraryIds);
 
         try {
-            return Jwts.builder().setSubject(new ObjectMapper().writeValueAsString(secureEntity))
-                    .signWith(SignatureAlgorithm.HS512, SECRET).compact();
+            // OLD (deprecated): return Jwts.builder().setSubject(new ObjectMapper().writeValueAsString(secureEntity))
+            //         .signWith(SignatureAlgorithm.HS512, SECRET).compact();
+            SecretKey key = JwtKeyUtil.hs512Key(JwtSecrets.reportCode());
+            return Jwts.builder()
+                    .subject(new ObjectMapper().writeValueAsString(secureEntity))
+                    .signWith(key)
+                    .compact();
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(),e);
         }
@@ -438,7 +454,15 @@ public class ReportService {
     }
 
     public SecureReportEntity unBuildGrantHashCode(Report grant) {
-        String grantSecureCode = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(grant.getSecurityCode()).getBody()
+        // OLD (deprecated in jjwt 0.12.x):
+        // String grantSecureCode = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(grant.getSecurityCode()).getBody()
+        //         .getSubject();
+        SecretKey key = JwtKeyUtil.hs512Key(JwtSecrets.reportCode());
+        String grantSecureCode = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(grant.getSecurityCode())
+                .getPayload()
                 .getSubject();
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -728,8 +752,13 @@ public class ReportService {
     public Long getApprovedReportsActualSumForGrant(Long grantId, String attributeName) {
         Long totals = reportRepository.getApprovedReportsActualSumForGrantAndAttribute(grantId, attributeName);
         totals = totals==null?0:totals;
-        if(grantService.getById(grantId).getOrigGrantId()!=null){
-            totals += getApprovedReportsActualSumForGrant(grantService.getById(grantId).getOrigGrantId(),attributeName);
+        // if(grantService.getById(grantId).getOrigGrantId()!=null){
+        //     totals += getApprovedReportsActualSumForGrant(grantService.getById(grantId).getOrigGrantId(),attributeName);
+        // } removed the ciruclar dependency to grantervice, instead calling grantrepository
+
+        Grant grant = grantRepository.findDetailedById(grantId).orElse(null);
+        if(grant != null && grant.getOrigGrantId()!=null){
+            totals += getApprovedReportsActualSumForGrant(grant.getOrigGrantId(),attributeName);
         }
         return totals;
     }
@@ -766,18 +795,13 @@ public class ReportService {
     }
 
     public GranterReportTemplate createNewReportTemplateFromExisiting(Report report) {
-        GranterReportTemplate currentReportTemplate = findByTemplateId(report.getTemplate().getId());
         GranterReportTemplate newTemplate = null;
-        if (!currentReportTemplate.isPublished()) {
-            deleteReportTemplate(currentReportTemplate);
-        }
         newTemplate = new GranterReportTemplate();
         newTemplate.setName("Custom Template");
         newTemplate.setGranterId(report.getGrant().getGrantorOrganization().getId());
         newTemplate.setPublished(false);
         newTemplate = saveReportTemplate(newTemplate);
 
-        List<GranterReportSection> newSections = new ArrayList<>();
         for (ReportSpecificSection currentSection : getReportSections(report)) {
             GranterReportSection newSection = new GranterReportSection();
             newSection.setSectionOrder(currentSection.getSectionOrder());
@@ -787,7 +811,6 @@ public class ReportService {
             newSection.setDeletable(currentSection.getDeletable());
 
             newSection = saveReportTemplateSection(newSection);
-            newSections.add(newSection);
 
             currentSection.setReportTemplateId(newTemplate.getId());
             currentSection = saveSection(currentSection);
@@ -827,9 +850,6 @@ public class ReportService {
 
             }
         }
-
-        newTemplate.setSections(newSections);
-        newTemplate = saveReportTemplate(newTemplate);
 
         report.setTemplate(newTemplate);
         saveReport(report);
@@ -1058,9 +1078,23 @@ public class ReportService {
 
         report.setGranteeUsers(userService.getAllGranteeUsers(report.getGrant().getOrganization()));
 
-        GrantVO grantVO = new GrantVO().build(report.getGrant(), grantService.getGrantSections(report.getGrant()),
-                workflowPermissionService, userService.getUserById(userId),
-                userService, grantService);
+        // GrantVO grantVO = new GrantVO().build(report.getGrant(), grantService.getGrantSections(report.getGrant()),
+        //         workflowPermissionService, userService.getUserById(userId),
+        //         userService, grantService);
+        // passing amendgrant to GrantVO.build, instead of grant service.
+
+        Grant amendGrant = null;
+        if (report.getGrant().getAmendGrantId() != null) {
+          amendGrant = grantRepository
+                     .findById(report.getGrant().getAmendGrantId())
+                     .orElse(null);
+        }
+
+        GrantVO grantVO = new GrantVO().build(report.getGrant(), 
+        grantSpecificSectionRepository.findByGranterAndGrantId((Granter) report.getGrant().getGrantorOrganization(),
+                report.getGrant().getId()),
+            workflowPermissionService, userService.getUserById(userId),
+            userService, amendGrant);
 
         ObjectMapper mapper = new ObjectMapper();
         report.getGrant().setGrantDetails(grantVO.getGrantDetails());
@@ -1092,7 +1126,10 @@ public class ReportService {
         report.setSecurityCode(buildHashCode(report));
         report.setFlowAuthorities(getFlowAuthority(report, userId));
 
-        List<GrantTag> grantTags = grantService.getTagsForGrant(report.getGrant().getId());
+        // List<GrantTag> grantTags = grantService.getTagsForGrant(report.getGrant().getId());
+        // removed the circular dependency to grantservice, instead calling the granttagrepository directly here .
+        List<GrantTag> grantTags = grantTagRepository.getTagsForGrant(report.getGrant().getId());
+        
 
         report.getGrant().setGrantTags(grantTags);
         return report;
@@ -1135,8 +1172,9 @@ public class ReportService {
                             if (closedDisbursements != null) {
                                 closedDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
                                 closedDisbursements.forEach(cd -> {
-                                    List<ActualDisbursement> ads = disbursementService
-                                            .getActualDisbursementsForDisbursement(cd);
+                                    // List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
+                                    List<ActualDisbursement> ads = actualDisbursementRepository.findByDisbursementId(cd.getId());
+
                                     if (ads != null && !ads.isEmpty()) {
                                         finalActualDisbursements.addAll(ads);
                                     }
@@ -1154,8 +1192,8 @@ public class ReportService {
                                 if (draftDisbursements != null) {
                                     draftDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
                                     draftDisbursements.forEach(cd -> {
-                                        List<ActualDisbursement> ads = disbursementService
-                                                .getActualDisbursementsForDisbursement(cd);
+                                   //     List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
+                                        List<ActualDisbursement> ads = actualDisbursementRepository.findByDisbursementId(cd.getId());
                                         if (ads != null && !ads.isEmpty()) {
                                             finalActualDisbursements.addAll(ads);
                                         }
@@ -1177,13 +1215,24 @@ public class ReportService {
                                     td.setSaved(ad.getSaved());
                                     td.setActualDisbursementId(ad.getId());
                                     td.setDisbursementId(ad.getDisbursementId());
-                                    Long repId = disbursementService.getDisbursementById(ad.getDisbursementId()).getReportId();
+                                    //Long repId = disbursementService.getDisbursementById(ad.getDisbursementId()).getReportId();
+                                    Long repId = disbursementRepository.findByDisbursementId(ad.getDisbursementId()).getReportId();
+
                                     td.setReportId(repId);
-                                    if (disbursementService.getDisbursementById(ad.getDisbursementId())
+                                    // if (disbursementService.getDisbursementById(ad.getDisbursementId())
+                                    //         .isGranteeEntry()) {
+                                    //     td.setEnteredByGrantee(true);
+                                    // }
+                                    if (disbursementRepository.findByDisbursementId(ad.getDisbursementId())
                                             .isGranteeEntry()) {
                                         td.setEnteredByGrantee(true);
                                     }
-                                    if (currentUser.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE) && td.isEnteredByGrantee() && report.getId().longValue() != repId.longValue() && !disbursementService.getDisbursementById(ad.getDisbursementId()).getStatus().getInternalStatus().equalsIgnoreCase(CLOSED)) {
+                                    // if (currentUser.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE) && td.isEnteredByGrantee() && report.getId().longValue() != repId.longValue() 
+                                    //     && !disbursementService.getDisbursementById(ad.getDisbursementId()).getStatus().getInternalStatus().equalsIgnoreCase(CLOSED)) {
+                                    //     td.setShowForGrantee(false);
+                                    // }
+                                    if (currentUser.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE) && td.isEnteredByGrantee() && report.getId().longValue() != repId.longValue() 
+                                        && !disbursementRepository.findByDisbursementId(ad.getDisbursementId()).getStatus().getInternalStatus().equalsIgnoreCase(CLOSED)) {
                                         td.setShowForGrantee(false);
                                     }
 
@@ -1235,8 +1284,8 @@ public class ReportService {
                                 if (closedDisbursements != null) {
                                     closedDisbursements.forEach(cd -> {
 
-                                        List<ActualDisbursement> ads = disbursementService
-                                                .getActualDisbursementsForDisbursement(cd);
+                                        //List<ActualDisbursement> ads = disbursementService.getActualDisbursementsForDisbursement(cd);
+                                        List<ActualDisbursement> ads = actualDisbursementRepository.findByDisbursementId(cd.getId());
                                         if (ads != null && !ads.isEmpty()) {
                                             finalActualDisbursements.addAll(ads);
                                         }
@@ -1256,8 +1305,14 @@ public class ReportService {
                                     td.setSaved(ad.getStatus());
                                     td.setActualDisbursementId(ad.getId());
                                     td.setDisbursementId(ad.getDisbursementId());
-                                    td.setReportId(disbursementService.getDisbursementById(ad.getDisbursementId()).getReportId());
-                                    if (disbursementService.getDisbursementById(ad.getDisbursementId())
+//                                  td.setReportId(disbursementRepository.findByDisbursementId(ad.getDisbursementId()).getReportId());
+                                    td.setReportId(disbursementRepository.findByDisbursementId(ad.getDisbursementId()).getReportId());
+                                    
+                                    // if (disbursementService.getDisbursementById(ad.getDisbursementId())
+                                    //         .isGranteeEntry()) {
+                                    //     td.setEnteredByGrantee(true);
+                                    // }
+                                      if (disbursementRepository.findByDisbursementId(ad.getDisbursementId())
                                             .isGranteeEntry()) {
                                         td.setEnteredByGrantee(true);
                                     }
@@ -1307,9 +1362,18 @@ public class ReportService {
 
     private List<Disbursement> getDisbursementsByStatusIds(Grant grant, List<Long> statusIds) {
 
-        List<Disbursement> closedDisbursements = disbursementService.getDibursementsForGrantByStatuses(grant.getId(), statusIds);
-        if (grant.getOrigGrantId() != null) {
-            closedDisbursements.addAll(getDisbursementsByStatusIds(grantService.getById(grant.getOrigGrantId()), statusIds));
+        // List<Disbursement> closedDisbursements = disbursementService.getDibursementsForGrantByStatuses(grant.getId(), statusIds);
+        List<Disbursement> closedDisbursements = disbursementRepository.getDisbursementByGrantAndStatuses(grant.getId(), statusIds);
+
+        // if (grant.getOrigGrantId() != null) {
+        //     closedDisbursements.addAll(getDisbursementsByStatusIds(grantService.getById(grant.getOrigGrantId()), statusIds));
+        // }
+        // removed the circular dependency to grantservice, instead calling the grantrepository directly here .
+         if (grant.getOrigGrantId() != null) {
+            Grant origGrant = grantRepository.findDetailedById(grant.getOrigGrantId()).orElse(null);
+            if (origGrant != null) {
+                closedDisbursements.addAll(getDisbursementsByStatusIds(origGrant, statusIds));
+            }
         }
         return closedDisbursements;
     }

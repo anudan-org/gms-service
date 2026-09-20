@@ -3,8 +3,8 @@ package org.codealpha.gmsservice.models;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Transient;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Transient;
 import java.time.LocalDateTime;
 import java.util.Date;
 

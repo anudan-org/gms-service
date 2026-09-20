@@ -8,6 +8,30 @@ import java.util.Date;
 import java.util.List;
 
 public interface GrantClosureRepository extends CrudRepository<GrantClosure, Long> {
+    String CLOSURE_SUMMARY_SELECT = "select distinct " +
+            " a.id as \"closureId\", a.updated_at as \"updatedAt\", get_owner_closure(a.id) as \"ownerId\", get_owner_closure_name(a.id) as \"ownerName\", " +
+            " a.status_id as \"statusId\", ws.name as \"statusName\", ws.internal_status as \"statusInternalStatus\", " +
+            " a.reason as \"reasonId\", cr.reason as \"reasonText\", a.deleted as \"deleted\", " +
+            " g.id as \"grantId\", g.reference_no as \"grantReferenceNo\", g.name as \"grantName\", g.amount as \"grantAmount\", " +
+            " g.start_date as \"grantStartDate\", g.end_date as \"grantEndDate\", g.grant_type_id as \"grantTypeId\", " +
+            " g.closure_in_progress as \"closureInProgress\", g.amend_grant_id as \"amendGrantId\", g.orig_grant_id as \"origGrantId\", " +
+            " disbursed_amount_for_grant(g.id) as \"approvedDisbursementsTotal\", " +
+            " approved_reports_for_grant(g.id) as \"approvedReportsForGrant\", " +
+            " project_documents_for_grant(g.id) as \"projectDocumentsCount\", " +
+            " planned_fund_from_others(g.id) as \"plannedFundOthers\", " +
+            " actual_fund_from_others(g.id) as \"actualFundOthers\", " +
+            " g.grant_status_id as \"grantStatusId\", gws.name as \"grantStatusName\", gws.internal_status as \"grantStatusInternalStatus\", " +
+            " o.id as \"organizationId\", o.name as \"organizationName\", o.code as \"organizationCode\", " +
+            " go.id as \"grantorOrgId\", go.name as \"grantorOrgName\", go.code as \"grantorOrgCode\" " +
+            " from grant_closure a " +
+            " inner join grants g on g.id=a.grant_id " +
+            " inner join workflow_statuses ws on ws.id=a.status_id " +
+            " inner join workflow_statuses gws on gws.id=g.grant_status_id " +
+            " inner join organizations o on o.id=g.organization_id " +
+            " inner join organizations go on go.id=g.grantor_org_id " +
+            " left join closure_reasons cr on cr.id=a.reason " +
+            " inner join closure_assignments b on b.closure_id=a.id ";
+
     @Query(value = "select distinct A.id, A.reason, A.template_id, A.grant_id, A.moved_on, A.create_by, A.created_at, A.updated_by, A.updated_at, A.status_id, A.note_added_by, A.note, A.deleted, A.closure_detail, A.linked_approved_reports, A.description, A.note_added,get_owner_closure(A.id) owner_id,get_owner_closure_name(A.id) owner_name, A.refund_amount, A.refund_reason, A.actual_spent, A.interest_earned, A.covernote_attributes, A.covernote_content from grant_closure A inner join grants Z on Z.id=A.grant_id inner join closure_assignments B on B.closure_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.anchor=true and B.assignment = ?1) or (B.assignment=?1 and B.state_id=A.status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_closure_history where id=A.id)>0 and ?1 = any (array(select assignment from closure_assignments where closure_id=A.id))) or (C.internal_status='REVIEW' and ?1 = any( array(select assignment from closure_assignments where closure_id=A.id))) or (C.internal_status='ACTIVE' ) ) and Z.organization_id=?2 and Z.deleted=false and A.deleted=false order by A.updated_at desc", nativeQuery = true)
     List<GrantClosure> findAllAssignedClosuresForGranteeUser(Long id, Long granteeOrgId, String status);
 
@@ -70,7 +94,13 @@ public interface GrantClosureRepository extends CrudRepository<GrantClosure, Lon
     @Query(value="select *,get_owner_closure(id) owner_id,get_owner_closure_name(id) owner_name from grant_closure where grant_id=? and deleted=false",nativeQuery = true)
     List<GrantClosure> getClosuresByGrant(Long grantId);
 
-    @Query(value = "select A.*,get_owner_closure(A.id) owner_id,get_owner_closure_name(A.id) owner_name from grant_closure A inner join workflow_statuses B on B.id=A.status_id where ( (B.internal_status='DRAFT' and (select count(*) from grant_closure_history where id=A.id) >0   ) or B.internal_status!='DRAFT') and A.id=?1  and A.deleted=false", nativeQuery = true)
+    // Previous query kept for reference. It fails on Hibernate 6 because A.* already includes
+    // owner_id/owner_name columns, and the computed aliases below duplicate them:
+    // select A.*,get_owner_closure(A.id) owner_id,get_owner_closure_name(A.id) owner_name
+    // from grant_closure A inner join workflow_statuses B on B.id=A.status_id
+    // where ( (B.internal_status='DRAFT' and (select count(*) from grant_closure_history where id=A.id) >0   ) or B.internal_status!='DRAFT')
+    // and A.id=?1  and A.deleted=false
+    @Query(value = "select A.id, A.reason, A.template_id, A.grant_id, A.moved_on, A.create_by, A.created_at, A.updated_by, A.updated_at, A.status_id, A.note_added_by, A.note, A.deleted, A.closure_detail, A.linked_approved_reports, A.description, A.note_added, A.owner_id, A.owner_name, A.refund_amount, A.refund_reason, A.actual_spent, A.interest_earned, A.covernote_attributes, A.covernote_content from grant_closure A inner join workflow_statuses B on B.id=A.status_id where ( (B.internal_status='DRAFT' and (select count(*) from grant_closure_history where id=A.id) >0   ) or B.internal_status!='DRAFT') and A.id=?1  and A.deleted=false", nativeQuery = true)
     List<GrantClosure> findClosuresThatMovedAtleastOnce(Long reportId);
 
     @Query(value = "select  A.*,get_owner_closure(A.id) owner_id,get_owner_closure_name(A.id) owner_name from grant_closure A inner join grants Z on Z.id=A.grant_id inner join closure_assignments B on B.closure_id=A.id inner join workflow_statuses C on C.id=A.status_id where ( (B.anchor=true and B.assignment = ?1) or (B.assignment=?1 and B.state_id=A.status_id) or (C.internal_status='DRAFT' and (select count(*) from grant_closure_history where id=A.id)>0 and ?1 = any (array(select assignment from closure_assignments where closure_id=A.id))) or (C.internal_status='REVIEW' and ?1 = any( array(select assignment from closure_assignments where closure_id=A.id))) or (C.internal_status='ACTIVE' or C.internal_status='CLOSED' ) ) and Z.grantor_org_id=?2 and Z.deleted=false and (C.internal_status !='ACTIVE' and C.internal_status !='REVIEW' and C.internal_status !='CLOSED')  and A.deleted=false order by A.grant_id,A.end_date asc", nativeQuery = true)
@@ -154,8 +184,15 @@ public interface GrantClosureRepository extends CrudRepository<GrantClosure, Lon
     Long getUpcomingClosuresDisbursementAmount(Long userId);
 
 
-    @Query(value = "select A.*,get_owner_closure(A.id) owner_id,get_owner_closure_name(A.id) owner_name from grant_closure A where A.id=?1",nativeQuery = true)
+    // Previous query kept for reference. It fails on Hibernate 6 because A.* already includes
+    // owner_id/owner_name columns, and the computed aliases below duplicate them:
+    // select A.*,get_owner_closure(A.id) owner_id,get_owner_closure_name(A.id) owner_name
+    // from grant_closure A where A.id=?1
+    @Query(value = "select A.id, A.reason, A.template_id, A.grant_id, A.moved_on, A.create_by, A.created_at, A.updated_by, A.updated_at, A.status_id, A.note_added_by, A.note, A.deleted, A.closure_detail, A.linked_approved_reports, A.description, A.note_added, A.owner_id, A.owner_name, A.refund_amount, A.refund_reason, A.actual_spent, A.interest_earned, A.covernote_attributes, A.covernote_content from grant_closure A where A.id=?1",nativeQuery = true)
     public GrantClosure findByClosureId(Long closureId);
+
+    @Query(value = "select reason from grant_closure where id=?1", nativeQuery = true)
+    Long findReasonIdByClosureId(Long closureId);
 
     @Query(value = "select * from grant_closure where grant_id=?1",nativeQuery = true)
     List<GrantClosure> findByGrant(Long grantId);
@@ -176,6 +213,26 @@ public interface GrantClosureRepository extends CrudRepository<GrantClosure, Lon
    " where b.assignment=?1 and c.internal_status!='CLOSED' and a.deleted=false",nativeQuery = true)
 Long getActionDueClsouresForUser(Long userId);
 
+    @Query(value = CLOSURE_SUMMARY_SELECT +
+            " where ( (b.anchor=true and b.assignment = ?1) or (b.assignment=?1 and b.state_id=a.status_id) " +
+            " or (ws.internal_status='DRAFT' and (select count(*) from grant_closure_history where id=a.id)>0 and ?1 = any (array(select assignment from closure_assignments where closure_id=a.id))) " +
+            " or (ws.internal_status='REVIEW' and ?1 = any( array(select assignment from closure_assignments where closure_id=a.id))) " +
+            " ) and g.grantor_org_id=?2 and g.deleted=false and a.deleted=false and ws.internal_status!='CLOSED' ", nativeQuery = true)
+    List<ClosureSummaryRow> findClosureSummaryForGranterUser(Long userId, Long granterOrgId);
+
+    @Query(value = CLOSURE_SUMMARY_SELECT +
+            " where ( (b.anchor=true and b.assignment = ?1) or (b.assignment=?1 and b.state_id=a.status_id) " +
+            " or (ws.internal_status='DRAFT' and (select count(*) from grant_closure_history where id=a.id)>0 and ?1 = any (array(select assignment from closure_assignments where closure_id=a.id))) " +
+            " or (ws.internal_status='REVIEW') or (ws.internal_status='ACTIVE' or ws.internal_status='CLOSED') ) " +
+            " and g.grantor_org_id=?2 and g.deleted=false and a.deleted=false and ws.internal_status!='CLOSED' ", nativeQuery = true)
+    List<ClosureSummaryRow> findClosureSummaryForAdminUser(Long userId, Long granterOrgId);
+
+    @Query(value = CLOSURE_SUMMARY_SELECT +
+            " where ( (b.anchor=true and b.assignment = ?1) or (b.assignment=?1 and b.state_id=a.status_id) " +
+            " or (ws.internal_status='DRAFT' and (select count(*) from grant_closure_history where id=a.id)>0 and ?1 = any (array(select assignment from closure_assignments where closure_id=a.id))) " +
+            " or (ws.internal_status='REVIEW' and ?1 = any( array(select assignment from closure_assignments where closure_id=a.id))) " +
+            " or (ws.internal_status='ACTIVE') ) and g.organization_id=?2 and g.deleted=false and a.deleted=false ", nativeQuery = true)
+    List<ClosureSummaryRow> findClosureSummaryForGranteeUser(Long userId, Long granteeOrgId);
 
 
    

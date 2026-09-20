@@ -1,1 +1,0 @@
-update workflow_statuses set internal_status='REVIEW' where internal_status='DRAFT' and initial=false;

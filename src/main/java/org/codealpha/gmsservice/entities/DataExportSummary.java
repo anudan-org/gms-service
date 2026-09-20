@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity(name = "data_extract_logs")
@@ -16,6 +16,9 @@ public class DataExportSummary {
     private Date extractRequestedOn;
     @Column
     private Integer recordsRetrieved;
+
+    public DataExportSummary() {
+    }
 
     public DataExportSummary(String summaryFor, String extractRequestBy, Date extractRequestedOn, Integer recordsRetrieved) {
         this.summaryFor = summaryFor;

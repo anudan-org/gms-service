@@ -2,7 +2,7 @@ package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity(name = "granter_report_section_attributes")
 public class GranterReportSectionAttribute {

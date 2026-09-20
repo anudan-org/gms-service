@@ -1,16 +1,31 @@
 package org.codealpha.gmsservice.repositories;
 
 import org.codealpha.gmsservice.entities.Grant;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Developer code-alpha.org
  **/
 public interface GrantRepository extends CrudRepository<Grant, Long> {
+
+    @EntityGraph(attributePaths = {
+            "organization",
+            "grantorOrganization",
+            "grantStatus",
+            "stringAttributes",
+            "stringAttributes.section",
+            "stringAttributes.section.granter",
+            "stringAttributes.sectionAttribute",
+            "stringAttributes.sectionAttribute.granter"
+    })
+    @Query("select g from Grant g where g.id = ?1 and g.deleted = false")
+    Optional<Grant> findDetailedById(Long id);
 
     @Query(value = "select A.*,(select assignments from grant_assignments where grant_id=A.id and state_id=A.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants A inner join organizations B on A.grantor_org_id = B.id inner join workflows w on B.id = w.granter_id inner join workflow_statuses ws on w.id = ws.workflow_id inner join workflow_state_permissions wsp on ws.id = wsp.workflow_status_id where B.id =?2 and A.organization_id =?1 and wsp.role_id in (?3) and A.grant_status_id = ws.id and A.deleted=false", nativeQuery = true)
     public List<Grant> findGrantsOfGranteeForTenantOrg(Long granteeOrgId, Long grantorOrgId, List<Long> roleIds);
@@ -74,6 +89,16 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
     @Query(value = "select a.*,(select assignments from grant_assignments where grant_id=a.id and state_id=a.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants a where grantor_org_id=?1",nativeQuery = true)
     List<Grant> getAllGrantsForGranter(Long granterId);
 
+    @Query(value = "select g.*,\n" +
+            " (select assignments from grant_assignments where grant_id=g.id and state_id=g.grant_status_id) current_assignment,\n" +
+            " approved_reports_for_grant(g.id) approved_reports_for_grant,\n" +
+            " disbursed_amount_for_grant(g.id) approved_disbursements_total,\n" +
+            " project_documents_for_grant(g.id) project_documents_count,\n" +
+            " planned_fund_from_others(g.id) planned_fund_others,\n" +
+            " actual_fund_from_others(g.id) actual_fund_others\n" +
+            " from grants g where g.id in (?1) and g.deleted=false", nativeQuery = true)
+    List<Grant> findSummaryByIds(List<Long> grantIds);
+
     @Query(value = "select g.*,(select assignments from grant_assignments where grant_id=g.id and state_id=g.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants g inner join workflow_statuses w on w.id=g.grant_status_id where g.grantor_org_id=?1 and w.internal_status=?2 and (case when 'CLOSED'=?2 then g.amend_grant_id is null else true end) and g.deleted=false",nativeQuery = true)
     List<Grant> findGrantsByStatus(Long granterId,String status);
 
@@ -93,8 +118,8 @@ public interface GrantRepository extends CrudRepository<Grant, Long> {
             "\t\t\twhere ga.assignments=?1 and w.internal_status=?2 and g.deleted=false",nativeQuery = true)
     List<Grant> findGrantsByStatusForUser(Long userId,String status);
 
-    @Query(value = "select g.*,(select assignments from grant_assignments where grant_id=g.id and state_id=g.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants g where g.id=?1 and deleted=false",nativeQuery = true)
-    Grant getById(Long id);
+//    @Query(value = "select g.*,(select assignments from grant_assignments where grant_id=g.id and state_id=g.grant_status_id) current_assignment,0 approved_reports_for_grant, 0 approved_disbursements_total, 0 project_documents_count from grants g where g.id=?1 and deleted=false",nativeQuery = true)
+//    Grant getById(Long id);
 
     @Query(value = "select * from grants where orig_grant_id=?1",nativeQuery = true)
     Grant getByOrigGrantId(Long grantId);

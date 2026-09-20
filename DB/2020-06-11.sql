@@ -1,1 +1,0 @@
-update workflow_status_transitions set seq_order=0 where id=75;

@@ -1,8 +1,11 @@
 package org.codealpha.gmsservice.entities.dashboard;
 
-import javax.persistence.*;
+import org.springframework.data.annotation.Immutable;
+import jakarta.persistence.*;
 
-@Entity(name = "granter_report_statuses")
+@Entity
+@Table(name = "granter_report_statuses")
+@Immutable
 @Cacheable(value = false)
 public class GranterReportSummaryStatus {
 

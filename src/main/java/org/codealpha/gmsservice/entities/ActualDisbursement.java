@@ -1,7 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity(name = "actual_disbursements")

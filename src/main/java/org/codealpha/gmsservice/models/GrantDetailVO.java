@@ -41,6 +41,7 @@ public class GrantDetailVO {
       sectionVO.setName(sec.getSectionName());
       sectionVO.setOrder(sec.getSectionOrder());
       sectionVO.setSystemGenerated(sec.getSystemGenerated());
+      sectionVO.setAttributes(new ArrayList<>());
 
 
       if (!sections.contains(sectionVO)) {

@@ -4,6 +4,7 @@ public class TemplateMetaData {
     private String description;
     private boolean publish;
     private boolean privateToGrant;
+    private GrantDTO grant;
 
     public String getDescription() {
 
@@ -28,5 +29,13 @@ public class TemplateMetaData {
 
     public void setPrivateToGrant(boolean privateToGrant) {
         this.privateToGrant = privateToGrant;
+    }
+
+    public GrantDTO getGrant() {
+        return grant;
+    }
+
+    public void setGrant(GrantDTO grant) {
+        this.grant = grant;
     }
 }

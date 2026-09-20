@@ -83,6 +83,8 @@ public class DashboardService {
     private String timezone;
     @Autowired
     private GranteeReportStatusRepository granteeReportStatusRepository;
+    @Autowired
+    private SubmissionRepository submissionRepository; // CHANGED: fetch submissions without lazy init errors
 
     List<Tenant> tenants;
 
@@ -115,6 +117,9 @@ public class DashboardService {
                     List<GrantCard> grantList = tenant.getGrants();
 
 
+                    // CHANGED: hydrate submissions for dashboard response without lazy init errors
+                    grant.setSubmissions(submissionRepository.findByGrantId(grant.getId()));
+
                     if (grant.getOrigGrantId() != null
                             && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(ACTIVE)
                             && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(CLOSED)) {
@@ -129,6 +134,122 @@ public class DashboardService {
         }
 
         return this;
+    }
+
+    public DashboardService buildV3(User user, List<GrantCard> grants, Organization tenantOrg) {
+        List<String> tenantNames = new ArrayList<>();
+        if (!tenantNames.contains(tenantOrg.getCode())) {
+            tenantNames.add(tenantOrg.getCode());
+        }
+
+        tenants = new ArrayList<>();
+        for (String name : tenantNames) {
+            Tenant tenant = new Tenant();
+            tenant.setName(name);
+            tenant.setGrants(new ArrayList<>());
+            tenant.setGrantTemplates(granterGrantTemplateService
+                    .findByGranterIdAndPublishedStatusAndPrivateStatus(user.getOrganization().getId(), true, false));
+            if (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")) {
+                tenant.setTemplateLibrary(
+                        templateLibraryService.getTemplateLibraryForGranter((Granter) user.getOrganization()));
+            }
+            tenants.add(tenant);
+        }
+
+        List<Long> grantIds = grants == null ? new ArrayList<>()
+                : grants.stream().map(GrantCard::getId).filter(id -> id != null).toList();
+        Map<Long, List<Submission>> submissionsByGrant = new HashMap<>();
+        if (!grantIds.isEmpty()) {
+            List<Submission> submissions = submissionRepository.findByGrantIdInOrderBySubmitBy(grantIds);
+            if (submissions != null) {
+                for (Submission submission : submissions) {
+                    if (submission == null || submission.getGrant() == null || submission.getGrant().getId() == null) {
+                        continue;
+                    }
+                    submissionsByGrant
+                            .computeIfAbsent(submission.getGrant().getId(), k -> new ArrayList<>())
+                            .add(submission);
+                }
+            }
+        }
+
+        Map<Long, String> origGrantRefById = new HashMap<>();
+        List<Long> origGrantIds = grants == null ? new ArrayList<>()
+                : grants.stream()
+                .filter(g -> g != null
+                        && g.getOrigGrantId() != null
+                        && g.getGrantStatus() != null
+                        && g.getGrantStatus().getInternalStatus() != null
+                        && !g.getGrantStatus().getInternalStatus().equalsIgnoreCase(ACTIVE)
+                        && !g.getGrantStatus().getInternalStatus().equalsIgnoreCase(CLOSED))
+                .map(GrantCard::getOrigGrantId)
+                .distinct()
+                .toList();
+        if (!origGrantIds.isEmpty()) {
+            for (Grant grant : grantRepository.findAllById(origGrantIds)) {
+                if (grant != null && grant.getId() != null) {
+                    origGrantRefById.put(grant.getId(), grant.getReferenceNo());
+                }
+            }
+        }
+
+        for (GrantCard grant : grants) {
+            for (Tenant tenant : tenants) {
+                if ((user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTER")
+                        && tenant.getName().equalsIgnoreCase(grant.getGrantorOrganization().getCode()))
+                        || (user.getOrganization().getOrganizationType().equalsIgnoreCase("GRANTEE"))) {
+                    grant.setSubmissions(submissionsByGrant.getOrDefault(grant.getId(), new ArrayList<>()));
+                    if (grant.getOrigGrantId() != null
+                            && grant.getGrantStatus() != null
+                            && grant.getGrantStatus().getInternalStatus() != null
+                            && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(ACTIVE)
+                            && !grant.getGrantStatus().getInternalStatus().equalsIgnoreCase(CLOSED)) {
+                        grant.setOrigGrantRefNo(origGrantRefById.get(grant.getOrigGrantId()));
+                    }
+                    trimGrantCardForDashboardV3(grant);
+                    tenant.getGrants().add(grant);
+                }
+            }
+        }
+        return this;
+    }
+
+    private void trimGrantCardForDashboardV3(GrantCard grant) {
+        if (grant == null) {
+            return;
+        }
+        grant.setGrantorOrganization(minimalGranter(grant.getGrantorOrganization()));
+        grant.setWorkflowAssignment(minimalWorkflowAssignments(grant.getWorkflowAssignment()));
+    }
+
+    private Granter minimalGranter(Organization source) {
+        if (source == null) {
+            return null;
+        }
+        Granter granter = new Granter();
+        granter.setId(source.getId());
+        granter.setName(source.getName());
+        granter.setCode(source.getCode());
+        granter.setOrganizationType(source.getOrganizationType());
+        return granter;
+    }
+
+    private List<GrantAssignmentsCard> minimalWorkflowAssignments(List<GrantAssignmentsCard> source) {
+        if (source == null || source.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<GrantAssignmentsCard> trimmed = new ArrayList<>();
+        for (GrantAssignmentsCard assignment : source) {
+            if (assignment == null) {
+                continue;
+            }
+            GrantAssignmentsCard minimal = new GrantAssignmentsCard();
+            minimal.setId(assignment.getId());
+            minimal.setStateId(assignment.getStateId());
+            minimal.setAssignments(assignment.getAssignments());
+            trimmed.add(minimal);
+        }
+        return trimmed;
     }
 
     private Double getAllLinkedGrantsDisbursementsTotal(Grant byId, List<Long> statusIds) {

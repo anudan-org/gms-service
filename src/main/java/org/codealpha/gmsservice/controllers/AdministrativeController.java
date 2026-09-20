@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
@@ -27,11 +29,10 @@ import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import springfox.documentation.annotations.ApiIgnore;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -44,7 +45,7 @@ import java.util.zip.ZipOutputStream;
 
 @RestController
 @RequestMapping("/admin")
-@ApiIgnore
+@Hidden
 public class AdministrativeController {
 
     public static final String DISBURSEMENT = "DISBURSEMENT";
@@ -117,21 +118,21 @@ public class AdministrativeController {
     private static Logger logger = LoggerFactory.getLogger(AdministrativeController.class);
 
     @GetMapping("/workflow/grant/{grantId}/user/{userId}")
-    @ApiOperation(value = "Get workflow assignments for grant")
+    @Operation(summary = "Get workflow assignments for grant")
     public List<WorkflowTransitionModel> getGrantWorkflows(
-            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode,
-            @ApiParam(name = "grantId", value = "Unique identifier of grant") @PathVariable("grantId") Long grantId,
-            @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
+            @Parameter(name = "X-TENANT-CODE", description  = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @Parameter(name = "grantId", description = "Unique identifier of grant") @PathVariable("grantId") Long grantId,
+            @Parameter(name = "userId", description = "Unique identifier of user") @PathVariable("userId") Long userId) {
         WorkflowStatus grantStatus = workflowStatusService.findById(grantService.getById(grantId).getGrantStatus().getId());
         return workflowTransitionModelService.getWorkflowsByWorkflowStatusId(grantStatus.getWorkflow().getId());
     }
 
     @GetMapping("/workflow/report/{reportId}/user/{userId}")
-    @ApiOperation(value = "Get workflow assignments for report")
+    @Operation(summary = "Get workflow assignments for report")
     public List<WorkflowTransitionModel> getReportWorkflows(
-            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode,
-            @ApiParam(name = "reportId", value = "Unique identifier of Report") @PathVariable("reportId") Long reportId,
-            @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
+            @Parameter(name = "X-TENANT-CODE", description = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @Parameter(name = "reportId", description = "Unique identifier of Report") @PathVariable("reportId") Long reportId,
+            @Parameter(name = "userId", description = "Unique identifier of user") @PathVariable("userId") Long userId) {
 
         organizationService.findOrganizationByTenantCode(tenantCode);
 
@@ -153,11 +154,11 @@ public class AdministrativeController {
     }
 
     @GetMapping("/workflow/disbursement/{disbursementId}/user/{userId}")
-    @ApiOperation(value = "Get workflow assignments for disbursement")
+    @Operation(summary = "Get workflow assignments for disbursement")
     public List<WorkflowTransitionModel> getDisbursementWorkflows(
-            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode,
-            @ApiParam(name = "disbursementId", value = "Unique identifier of Disbursement") @PathVariable("disbursementId") Long disbursementId,
-            @ApiParam(name = "userId", value = "Unique identifier of user") @PathVariable("userId") Long userId) {
+            @Parameter(name = "X-TENANT-CODE", description = "Tenant code header") @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @Parameter(name = "disbursementId", description = "Unique identifier of Disbursement") @PathVariable("disbursementId") Long disbursementId,
+            @Parameter(name = "userId", description = "Unique identifier of user") @PathVariable("userId") Long userId) {
 
         organizationService.findOrganizationByTenantCode(tenantCode);
 
@@ -433,6 +434,15 @@ public class AdministrativeController {
         User userToDelete = userService.getUserById(userIdToDelete);
         userToDelete.setDeleted(true);
         userService.save(userToDelete);
+        // Clear the first-level cache before the fresh re-fetch below — without this, re-querying
+        // users (each eagerly joining the JOINED-inheritance Organization hierarchy) against the same
+        // persistence context as the just-saved entity intermittently threw "org.hibernate.
+        // AssertionFailure: null identifier (Organization)" ("unsafe use of the session"), since both
+        // the disable and the re-fetch touch the same Organization row through two different load
+        // paths within one request. No explicit flush needed/possible here — save() already committed
+        // via its own repository-level transaction, and this controller has no surrounding
+        // @Transactional for `entityManager.flush()` itself to run inside.
+        entityManager.clear();
 
         return getUsersForOrg(tenantCode, userId);
 
@@ -445,6 +455,8 @@ public class AdministrativeController {
         User userToUndelete = userService.getUserById(userIdToUndelete);
         userToUndelete.setDeleted(false);
         userService.save(userToUndelete);
+        // See deleteyUser above for why this clear() is needed before the re-fetch (and why there's no flush).
+        entityManager.clear();
 
         return getUsersForOrg(tenantCode, userId);
 

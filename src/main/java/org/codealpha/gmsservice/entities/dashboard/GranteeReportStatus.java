@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.entities.dashboard;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity(name = "grantee_report_statuses")
 @Cacheable(value = false)

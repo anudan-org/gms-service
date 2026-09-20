@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity(name = "hygiene_checks")
 public class HygieneCheck {

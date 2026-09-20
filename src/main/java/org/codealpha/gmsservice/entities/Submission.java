@@ -6,8 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import org.joda.time.DateTime;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.text.SimpleDateFormat;
+// import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 
@@ -198,6 +199,11 @@ public class Submission {
 
     this.submitDateStr = submitDateStr;
     submitBy = DateTime.parse(submitDateStr).toDate();
+    // try {
+    //   submitBy = new SimpleDateFormat("yyyy-MM-dd").parse(submitDateStr);
+    // } catch (ParseException e) {
+    //   e.printStackTrace();
+    // }
   }
 
   public WorkflowActionPermission getActionAuthorities() {

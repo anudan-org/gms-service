@@ -1,7 +1,7 @@
 package org.codealpha.gmsservice.controllers;
 
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.codealpha.gmsservice.entities.Granter;
 import org.codealpha.gmsservice.entities.Organization;
 import org.codealpha.gmsservice.entities.Release;
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -50,8 +50,10 @@ public class PublicController {
     private UserService userService;
 
     @GetMapping("/images/{tenant}/logo")
-    @ApiOperation(value = "Get tenant logo image for <img> tag 'src' property")
-    public void getLogoImage(HttpServletResponse servletResponse, @ApiParam(name = "tenant", value = "Tenant code") @PathVariable("tenant") String tenant) {
+    @Operation(summary = "Get tenant logo image for <img> tag 'src' property")
+    public void getLogoImage(HttpServletResponse servletResponse, 
+    @Parameter(name = "tenant", description = "Tenant code")
+    @PathVariable("tenant") String tenant) {
 
         Resource[] logoResources = new Resource[]{};
         try {
@@ -82,7 +84,7 @@ public class PublicController {
     }
 
     @GetMapping("/images/{tenant}/{granteeOrgId}/logo")
-    @ApiOperation(value = "Get grantee logo image for <img> tag 'src' property")
+    @Operation(summary = "Get grantee logo image for <img> tag 'src' property")
     public void getGranteeLogoImage(HttpServletResponse servletResponse, @PathVariable("granteeOrgId") Long granteeOrgId, @PathVariable("tenant") String tenant) {
 
         Resource image = resourceLoader.getResource(FILE + uploadLocation + "/GRANTEES/" + granteeOrgId + "/logo/logo.png");

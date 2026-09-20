@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.entities.dashboard;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity(name = "granter_grants_summary_disbursed")

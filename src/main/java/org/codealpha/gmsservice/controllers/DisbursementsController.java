@@ -1,7 +1,5 @@
 package org.codealpha.gmsservice.controllers;
 
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
@@ -24,7 +22,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -225,12 +225,12 @@ public class DisbursementsController {
         }
 
         @PostMapping("/{disbursementId}/assignment")
-        @ApiOperation("Set owners for disbursement workflow states")
+        @Operation(summary="Set owners for disbursement workflow states")
         public Disbursement saveGrantAssignments(
-                        @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
-                        @ApiParam(name = "disbursementId", value = "Unique identifier of the disbursement") @PathVariable("disbursementId") Long disbursementId,
-                        @ApiParam(name = "assignmentModel", value = "Set assignment for disbursement per workflow state") @RequestBody DisbursementAssignmentModel assignmentModel,
-                        @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+                        @Parameter(name = "userId", description = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+                        @Parameter(name = "disbursementId", description = "Unique identifier of the disbursement") @PathVariable("disbursementId") Long disbursementId,
+                        @Parameter(name = "assignmentModel", description = "Set assignment for disbursement per workflow state") @RequestBody DisbursementAssignmentModel assignmentModel,
+                        @Parameter(name = "X-TENANT-CODE", description = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
                 Map<Long, Long> currentAssignments = new LinkedHashMap<>();
 
@@ -257,7 +257,6 @@ public class DisbursementsController {
                         assignment.setOwner(assignmentsVO.getAssignmentId());
                         assignment.setUpdatedBy(userId);
                         assignment.setAssignedOn(DateTime.now().withSecondOfMinute(0).withMillisOfSecond(0).toDate());
-
                         disbursementService.saveAssignmentForDisbursement(assignment);
                 }
 
@@ -278,11 +277,17 @@ public class DisbursementsController {
                                         "", "", "", "", "", "", "", "", "", "", null, null,
                                         currentAssignments, newAssignments);
                         List<User> toUsers = newAssignments.stream().map(DisbursementAssignment::getOwner)
-                                        .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
+                                        .filter(uid -> uid != null && uid != 0)
+                                        .map(uid -> userService.getUserById(uid))
+                                        .filter(Objects::nonNull)
+                                        .collect(Collectors.toList());
                         toUsers.removeIf(User::isDeleted);
 
                         List<User> ccUsers = currentAssignments.values().stream()
-                                        .map(uid -> userService.getUserById(uid)).collect(Collectors.toList());
+                                        .filter(uid -> uid != null && uid != 0)
+                                        .map(uid -> userService.getUserById(uid))
+                                        .filter(Objects::nonNull)
+                                        .collect(Collectors.toList());
                         ccUsers.removeIf(User::isDeleted);
                         commonEmailService.sendMail(
                                         toUsers.stream().map(User::getEmailId).collect(Collectors.toList())
@@ -300,10 +305,14 @@ public class DisbursementsController {
 
                         Map<Long, Long> cleanAsigneesList = new HashMap<>();
                         for (Long ass : currentAssignments.values()) {
-                                cleanAsigneesList.put(ass, ass);
+                                if (ass != null && ass != 0) {
+                                        cleanAsigneesList.put(ass, ass);
+                                }
                         }
                         for (DisbursementAssignment ass : newAssignments) {
-                                cleanAsigneesList.put(ass.getOwner(), ass.getOwner());
+                                if (ass.getOwner() != null && ass.getOwner() != 0) {
+                                        cleanAsigneesList.put(ass.getOwner(), ass.getOwner());
+                                }
                         }
                         final String[] finaNotifications = disbursementService.buildEmailNotificationContent(
                                         disbursement, userService.getUserById(userId),
@@ -351,13 +360,13 @@ public class DisbursementsController {
         }
 
         @PostMapping("/{disbursementId}/flow/{fromState}/{toState}")
-        @ApiOperation("Move disbursement through workflow")
+        @Operation(summary = "Move disbursement through workflow")
         public Disbursement moveDisbursementState(@RequestBody DisbursementWithNote disbursementWithNote,
-                                                  @ApiParam(name = "userId", value = "Unique identified of logged in user") @PathVariable("userId") Long userId,
-                                                  @ApiParam(name = "disbursementId", value = "Unique identifier of the disbursement") @PathVariable("disbursementId") Long disbursementId,
-                                                  @ApiParam(name = "fromStateId", value = "Unique identifier of the starting state of the disbursement in the workflow") @PathVariable("fromState") Long fromStateId,
-                                                  @ApiParam(name = "toStateId", value = "Unique identifier of the ending state of the disbursement in the workflow") @PathVariable("toState") Long toStateId,
-                                                  @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+                                                  @Parameter(name = "userId", description = "Unique identified of logged in user") @PathVariable("userId") Long userId,
+                                                  @Parameter(name = "disbursementId", description = "Unique identifier of the disbursement") @PathVariable("disbursementId") Long disbursementId,
+                                                  @Parameter(name = "fromStateId", description = "Unique identifier of the starting state of the disbursement in the workflow") @PathVariable("fromState") Long fromStateId,
+                                                  @Parameter(name = "toStateId", description = "Unique identifier of the ending state of the disbursement in the workflow") @PathVariable("toState") Long toStateId,
+                                                  @Parameter(name = "X-TENANT-CODE", description = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
                 saveDisbursement(tenantCode, userId, mapper.map(disbursementWithNote.getDisbursement(),DisbursementDTO.class));
 
@@ -395,8 +404,15 @@ public class DisbursementsController {
 
                 List<DisbursementAssignment> assigments = disbursementService.getDisbursementAssignments(disbursement);
                 assigments.forEach(ass -> {
-                        if (usersToNotify.stream().noneMatch(u -> u.getId().longValue() == ass.getOwner().longValue())) {
-                                usersToNotify.add(userService.getUserById(ass.getOwner()));
+                        if (ass.getOwner() == null || ass.getOwner() == 0) {
+                                return;
+                        }
+                        User owner = userService.getUserById(ass.getOwner());
+                        if (owner == null) {
+                                return;
+                        }
+                        if (usersToNotify.stream().noneMatch(u -> u.getId().longValue() == owner.getId().longValue())) {
+                                usersToNotify.add(owner);
                         }
                 });
 
@@ -469,7 +485,7 @@ public class DisbursementsController {
                                 "", null, null, null, null);
                 final User finalCurrentOwner = currentOwner;
                 if (!toStatus.getInternalStatus().equalsIgnoreCase(CLOSED)) {
-                        usersToNotify.removeIf(u -> u.getId().longValue() == finalCurrentOwner.getId().longValue()
+                        usersToNotify.removeIf(u -> (finalCurrentOwner != null && u.getId().longValue() == finalCurrentOwner.getId().longValue())
                                         || u.isDeleted());
 
                         commonEmailService.sendMail(
@@ -498,11 +514,11 @@ public class DisbursementsController {
                                 .filter(ass -> ass.getStateId().longValue() == activeStatus.getId().longValue())
                                 .findFirst();
                         User activeStatusOwner = userService.getUserById(first.isPresent()?first.get().getOwner():null);
-                        usersToNotify.removeIf(u -> u.getId().longValue() == activeStatusOwner.getId().longValue()
+                        usersToNotify.removeIf(u -> (activeStatusOwner != null && u.getId().longValue() == activeStatusOwner.getId().longValue())
                                         || u.isDeleted());
 
                         commonEmailService.sendMail(
-                                        new String[] { !activeStatusOwner.isDeleted() ? activeStatusOwner.getEmailId()
+                                        new String[] { (activeStatusOwner != null && !activeStatusOwner.isDeleted()) ? activeStatusOwner.getEmailId()
                                                         : null },
                                         usersToNotify.stream().map(User::getEmailId).collect(Collectors.toList())
                                                         .toArray(new String[usersToNotify.size()]),
@@ -516,7 +532,7 @@ public class DisbursementsController {
                                                 .getGrantorOrganization().getName()) });
                         usersToNotify.stream().forEach(u -> notificationsService.saveNotification(notificationContent,
                                         u.getId(), finalDisbursement.getId(), DISBURSEMENT));
-                        notificationsService.saveNotification(notificationContent, activeStatusOwner.getId(),
+                        notificationsService.saveNotification(notificationContent, activeStatusOwner != null ? activeStatusOwner.getId() : 0l,
                                         finalDisbursement.getId(), DISBURSEMENT);
 
                 }
@@ -544,7 +560,7 @@ public class DisbursementsController {
                 snapshot.setFromStateId(fromStateId);
                 snapshot.setToStateId(toStateId);
                 snapshot.setAssignedToId(currentUser==null?null:currentUser.getId());
-                snapshot.setMovedBy(previousUser.getId());
+                snapshot.setMovedBy(previousUser==null?null:previousUser.getId());
                 snapshot.setMovedOn(disbursement.getMovedOn());
 
                 disbursementSnapshotService.saveSnapShot(snapshot);
@@ -704,9 +720,9 @@ public class DisbursementsController {
         public List<DisbursementDocument> saveUploadedFiles(
 
                 @PathVariable("userId") Long userId,
-                @ApiParam(name = "grantId", value = "Unique identifier of the grant") @PathVariable("disbursementId") Long disbursementId,
+                @Parameter(name = "grantId", description = "Unique identifier of the grant") @PathVariable("disbursementId") Long disbursementId,
                 @RequestParam("file") MultipartFile[] files,
-                @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+                @Parameter(name = "X-TENANT-CODE", description = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
 
                 Disbursement disbursement = disbursementService.getDisbursementById(disbursementId);
@@ -791,7 +807,7 @@ public class DisbursementsController {
         }
 
         @GetMapping("/{disbursementId}/file/{fileId}")
-        @ApiOperation(value = "Get file for download")
+        @Operation(summary = "Get file for download")
         public ResponseEntity<Resource> getFileForDownload(HttpServletResponse servletResponse,
                                                            @RequestHeader("X-TENANT-CODE") String tenantCode, @PathVariable("disbursementId") Long disbursementId,
                                                            @PathVariable("fileId") Long fileId) {

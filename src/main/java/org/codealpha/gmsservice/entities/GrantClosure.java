@@ -6,7 +6,7 @@ import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.ClosureAssignmentsVO;
 import org.codealpha.gmsservice.models.ClosureDetailVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 import java.util.List;
 
@@ -41,6 +41,7 @@ public class GrantClosure {
     @Transient
     private List<ClosureAssignmentsVO> workflowAssignment;
     @Transient
+    @JsonProperty("closureDetails")
     private ClosureDetailVO closureDetails;
     @OneToMany(mappedBy = "closure", fetch = FetchType.EAGER)
     @JsonProperty("stringAttribute")
@@ -50,6 +51,7 @@ public class GrantClosure {
     @Transient
     private boolean forGranteeUse;
     @Transient
+    @JsonProperty("currentAssignment")
     private List<AssignedTo> currentAssignment;
     @Column
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -57,6 +59,7 @@ public class GrantClosure {
     @Transient
     private User noteAddedByUser;
     @Transient
+    @JsonProperty("granteeUsers")
     private List<User> granteeUsers;
     @Transient
     private List<WorkFlowPermission> flowAuthorities;
@@ -166,6 +169,7 @@ public class GrantClosure {
         this.flowAuthorities = flowAuthorities;
     }
 
+    @JsonProperty("granteeUsers")
     public List<User> getGranteeUsers() {
         return granteeUsers;
     }
@@ -190,6 +194,7 @@ public class GrantClosure {
         this.noteAddedBy = noteAddedBy;
     }
 
+    @JsonProperty("currentAssignment")
     public List<AssignedTo> getCurrentAssignment() {
         return currentAssignment;
     }
@@ -270,6 +275,7 @@ public class GrantClosure {
         this.workflowAssignment = workflowAssignment;
     }
 
+    @JsonProperty("closureDetails")
     public ClosureDetailVO getClosureDetails() {
         return closureDetails;
     }

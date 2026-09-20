@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity(name = "workflow_validations")
 public class WorkflowValidation {

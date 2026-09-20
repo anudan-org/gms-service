@@ -14,5 +14,5 @@ public interface GrantSpecificSectionRepository extends CrudRepository<GrantSpec
     List<GrantSpecificSection> findByGranterAndGrantId(Granter granter,Long grantId);
 
     @Query(value = "select max(section_order)+1 from grant_specific_sections where granter_id=?1 and grant_template_id=?2",nativeQuery = true)
-    public int getNextSectionOrder(Long granterId, Long templateId);
+    Integer getNextSectionOrder(Long granterId, Long templateId);
 }

@@ -26,7 +26,7 @@ public class DashboardValidator {
         User user = null;
         if (!"ANUDAN".equalsIgnoreCase(tenantCode)) {
             tenant = organizationRepository.findByCode(authTokens[1]);
-            user = userRepository.findByEmailIdAndOrganization(authTokens[0], tenant);
+            user = userRepository.findByEmailAndOrg(authTokens[0], tenant.getId());
             try {
                 _validateUser(userId, user);
                 _validateTenant(tenantCode, tenant);

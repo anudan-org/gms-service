@@ -1,8 +1,11 @@
 package org.codealpha.gmsservice.controllers;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.Configuration;
@@ -18,10 +21,10 @@ import org.springframework.http.MediaType;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import springfox.documentation.annotations.ApiIgnore;
+//import springfox.documentation.annotations.ApiIgnore;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -31,7 +34,7 @@ import java.net.URLDecoder;
  **/
 @RestController
 @RequestMapping(value = "/app")
-@Api(value = "Application Configuration", tags = {"Application Configuration"})
+@Tag(name = "Application Configuration", description = "Endpoints for managing app settings")
 public class ApplicationController {
 
     public static final String REPORT = "REPORT";
@@ -81,7 +84,7 @@ public class ApplicationController {
     @Autowired
     private WorkflowTransitionModelService workflowTransitionModelService;
 
-    @Value("${spring.profiles.active}")
+    @Value("${spring.profiles.active:dev}")
     private String environment;
 
     @Autowired private AppConfigService appConfigService;
@@ -90,8 +93,9 @@ public class ApplicationController {
     @Autowired private GrantClosureService closureService;
 
     @GetMapping(value = {"/config/user/{userId}/{host}", "/config"})
-    @ApiOperation(value = "Application Configuration for tenant and Anudan platform.",notes = "Publicly available application configuration for tenant.\nIf host is passed then tenant specific configuration is retrieved. If tenant is not passed then Anudan platform level configuration is retrieved.",response = UIConfig.class)
-    public UIConfig config(@ApiParam(name="host",value = "Sub-domain of tenant in url. <Blank> for Anudan platform") @PathVariable(name = "host", required = false) String host,
+    //@Operation(summary = "Application Configuration for tenant and Anudan platform.", description = "Publicly available application configuration for tenant.\nIf host is passed then tenant specific configuration is retrieved. If tenant is not passed then Anudan platform level configuration is retrieved.", response = UIConfig.class)
+    @Operation(summary = "Application Configuration for tenant and Anudan platform.", description = "Publicly available application configuration for tenant.\nIf host is passed then tenant specific configuration is retrieved. If tenant is not passed then Anudan platform level configuration is retrieved.")
+    public UIConfig config(@Parameter(name="host",description  = "Sub-domain of tenant in url. <Blank> for Anudan platform") @PathVariable(name = "host", required = false) String host,
                            HttpServletRequest request,@PathVariable("userId") Long userId) {
 
         UIConfig config;
@@ -147,7 +151,7 @@ public class ApplicationController {
 
 
     @GetMapping("/grants/{grantId}/kpi-templates/{fileName}")
-    @ApiIgnore
+    @Hidden
     public void getTemplate(@PathVariable("grantId") Long grantId,@PathVariable("fileName") String fileName,
                             HttpServletResponse servletResponse) {
 
@@ -189,7 +193,7 @@ public class ApplicationController {
 
 
     @GetMapping("/grants/{grantId}/kpi-documents/{fileName}")
-    @ApiIgnore
+    @Hidden
     public void getKpiDataDoc(@PathVariable("grantId") Long grantId, @PathVariable("fileName") String fileName, HttpServletResponse servletResponse) {
 
         Resource file = resourceLoader
@@ -229,9 +233,9 @@ public class ApplicationController {
     }
 
     @GetMapping("/grants/{grantId}/file/{fileId}")
-    @ApiOperation("Download template library document")
-    public void getGrantFile(@ApiParam(name="grantId",value="Unique identifier of the selected grant")@PathVariable("grantId") Long grantId,
-                             @ApiParam(name="fileId",value="Unique identifier of file to be downloaded")@PathVariable("fileId") Long fileId,
+    @Operation(description = "Download template library document")
+    public void getGrantFile(@Parameter(name="grantId",description ="Unique identifier of the selected grant")@PathVariable("grantId") Long grantId,
+                             @Parameter(name="fileId",description="Unique identifier of file to be downloaded")@PathVariable("fileId") Long fileId,
                              HttpServletResponse servletResponse) {
 
         TemplateLibrary templateLibrary = templateLibraryService.getTemplateLibraryDocumentById(fileId);

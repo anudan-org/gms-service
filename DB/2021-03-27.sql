@@ -1,1 +1,0 @@
-alter table data_export_config add column params text;

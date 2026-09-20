@@ -6,7 +6,7 @@ import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.ClosureAssignmentsVO;
 import org.codealpha.gmsservice.models.ClosureDetailVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 import java.util.List;
 
@@ -42,9 +42,20 @@ public class GrantClosureHistory {
     private List<ClosureAssignmentsVO> workflowAssignment;
     @Transient
     private ClosureDetailVO closureDetails;
-    @OneToMany(mappedBy = "closure", fetch = FetchType.EAGER)
+    // @OneToMany(mappedBy = "closure", fetch = FetchType.EAGER)
+    // @JsonProperty("stringAttribute")
+    // private List<ClosureStringAttribute> stringAttributes;
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(
+        name = "closure_id",              // column in GrantStringAttribute table
+        referencedColumnName = "id"     // column in GrantHistory table (original grant id)
+    )
     @JsonProperty("stringAttribute")
     private List<ClosureStringAttribute> stringAttributes;
+    
+
+
     @Transient
     private boolean canManage;
     @Transient

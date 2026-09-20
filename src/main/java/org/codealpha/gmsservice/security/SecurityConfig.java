@@ -2,52 +2,82 @@ package org.codealpha.gmsservice.security;
 
 import org.codealpha.gmsservice.repositories.OrganizationRepository;
 import org.codealpha.gmsservice.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import javax.transaction.Transactional;
-
 @Configuration
-@Transactional
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+@EnableWebSecurity
+public class SecurityConfig {
 
-  @Autowired
-  private AuthProvider authProvider;
-  @Autowired
-  private UserRepository userRepository;
-  @Autowired
-  private OrganizationRepository organizationRepository;
+  private final AuthProvider authProvider;
+  private final UserRepository userRepository;
+  private final OrganizationRepository organizationRepository;
 
-  @Override
-  protected void configure(HttpSecurity http) throws Exception {
-    http.csrf().disable().authorizeRequests().antMatchers("/public/images/**/logo").permitAll()
-        .antMatchers("/public/tenant/**").permitAll().antMatchers("/users/").permitAll()
+  public SecurityConfig(AuthProvider authProvider,
+                        UserRepository userRepository,
+                        OrganizationRepository organizationRepository) {
+    this.authProvider = authProvider;
+    this.userRepository = userRepository;
+    this.organizationRepository = organizationRepository;
+  }
 
-        .and().authorizeRequests().anyRequest().authenticated().and()
+  @Bean
+  public AuthenticationManager authenticationManager() {
+    // Equivalent to auth.authenticationProvider(authProvider);
+    return new ProviderManager(authProvider);
+  }
+
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+    AuthenticationManager authManager = authenticationManager();
+
+    http
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/public/release").permitAll()
+            .requestMatchers("/users/check").permitAll()
+            .requestMatchers("/users/forgot/**").permitAll()
+            .requestMatchers("/users/set-password").permitAll()
+            .requestMatchers("/user/*/grant/resolve").permitAll()
+            .requestMatchers("/public/images/*/logo").permitAll()
+            .requestMatchers("/public/tenant/**").permitAll()
+            .requestMatchers("/public/**").permitAll()
+            .requestMatchers("/v2/api-docs").permitAll()
+            .requestMatchers("/public/grants/*/file/**").permitAll()
+            .requestMatchers("/configuration/ui").permitAll()
+            .requestMatchers("/swagger-resources/**").permitAll()
+            .requestMatchers("/configuration/**").permitAll()
+            .requestMatchers("/swagger-ui.html").permitAll()
+            .requestMatchers("/users/").permitAll()
+            .anyRequest().authenticated()
+        )
+
+        // Filters (same order as legacy)
         .addFilterBefore(
-            new JWTLoginFilter("/authenticate", authenticationManager(), userRepository, organizationRepository),
-            UsernamePasswordAuthenticationFilter.class)
+            new JWTLoginFilter("/authenticate", authManager, userRepository, organizationRepository),
+            UsernamePasswordAuthenticationFilter.class
+        )
         .addFilterBefore(new ExceptionHandlingFilter(), JWTLoginFilter.class)
-        .addFilterAfter(new JWTAuthenticationFilter(userRepository, organizationRepository),
-            UsernamePasswordAuthenticationFilter.class);
+        .addFilterAfter(
+            new JWTAuthenticationFilter(userRepository, organizationRepository),
+            UsernamePasswordAuthenticationFilter.class
+        );
 
+    return http.build();
   }
 
-  @Override
-  public void configure(WebSecurity web) throws Exception {
-    web.ignoring().antMatchers("/public/release", "/users/check", "/users/forgot/**", "/users/set-password",
-        "/user/**/grant/resolve", "/users/", "/public/**", "/v2/api-docs", "/public/grants/**/file/**",
-        "/configuration/ui", "/swagger-resources/**", "/configuration/**", "/swagger-ui.html", "/webjars/**");
+  @Bean
+  public WebSecurityCustomizer webSecurityCustomizer() {
+    return (web) -> web.ignoring().requestMatchers(
+        "/webjars/**"
+    );
   }
-
-  @Override
-  protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-    auth.authenticationProvider(authProvider);
-  }
-
 }

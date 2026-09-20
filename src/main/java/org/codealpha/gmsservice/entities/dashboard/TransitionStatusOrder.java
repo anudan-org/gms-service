@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.entities.dashboard;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 public class TransitionStatusOrder {

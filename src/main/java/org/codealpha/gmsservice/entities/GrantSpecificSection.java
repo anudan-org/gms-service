@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity(name = "grant_specific_sections")
 public class GrantSpecificSection {

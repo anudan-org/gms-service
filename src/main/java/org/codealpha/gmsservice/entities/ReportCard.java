@@ -2,17 +2,21 @@ package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.ReportAssignmentsVO;
 import org.codealpha.gmsservice.models.ReportDetailVO;
+import org.springframework.data.annotation.Immutable;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-@Entity(name = "reports")
+@Entity
+@Table(name = "reports")
+@Immutable
 public class ReportCard {
 
     public static final String YYYY_MM_DD = "yyyy-MM-dd";
@@ -58,7 +62,7 @@ public class ReportCard {
     @JoinColumn(referencedColumnName = "id")
     private Grant grant;
     @Transient
-    @ApiModelProperty(name = "securityCode", value = "Secure code for report")
+    @Schema(name = "securityCode", description = "Secure code for report")
     private String securityCode;
     @Transient
     private List<User> granteeUsers;
@@ -66,24 +70,24 @@ public class ReportCard {
     private String linkedApprovedReports;
 
     @Column(columnDefinition = "text")
-    @ApiModelProperty(name = "note", value = "Current note associated with the grant", dataType = "String")
+    @Schema(name = "note", description = "Current note associated with the grant", type = "String")
     private String note;
 
     @Column
-    @ApiModelProperty(name = "noteAdded", value = "Date when current note was associated with the grant", dataType = "Date")
+    @Schema(name = "noteAdded", description = "Date when current note was associated with the grant", type = "Date")
     private Date noteAdded;
 
     @Column
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @ApiModelProperty(name = "noteAddedBy", value = "Email id of the user who added the current note", dataType = "String")
+    @Schema(name = "noteAddedBy", description = "Email id of the user who added the current note", type = "String")
     private Long noteAddedBy;
 
     @Transient
-    @ApiModelProperty(name = "noteAddedByUser", value = "User who added the current note", dataType = "User")
+    @Schema(name = "noteAddedByUser", description = "User who added the current note", type = "User")
     private User noteAddedByUser;
 
     @Transient
-    @ApiModelProperty(name = "currentAssignment", value = "Current owner of grant based on grant status", dataType = "List<AssignedTo>")
+    @Schema(name = "currentAssignment", description = "Current owner of grant based on grant status", type = "List<AssignedTo>")
     private List<AssignedTo> currentAssignment;
     @Column
     private boolean canManage;

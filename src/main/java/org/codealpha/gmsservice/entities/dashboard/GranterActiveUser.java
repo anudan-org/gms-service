@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.entities.dashboard;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity(name = "granter_active_users")
 public class GranterActiveUser {

@@ -1,1 +1,0 @@
-alter table reports add column template_id bigint;

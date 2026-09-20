@@ -10,6 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -77,6 +81,8 @@ public class GrantClosureService {
     private ActualRefundRepository actualRefundRepository;
     @Autowired
     private ClosureDocumentRepository closureDocumentRepository;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public List<GranterClosureTemplate> findTemplatesAndPublishedStatusAndPrivateStatus(Long grantId, boolean isPublished, boolean isPrivate) {
         return granterClosureTemplateRepository.findByGranterIdAndPublishedAndPrivateToClosure(grantId, isPublished,
@@ -90,7 +96,17 @@ public class GrantClosureService {
     public GranterClosureTemplate findByTemplateId(Long templateId) {
         Optional<GranterClosureTemplate> optionalGranterClosureTemplate = granterClosureTemplateRepository.findById(templateId);
         if(optionalGranterClosureTemplate.isPresent()){
-            return optionalGranterClosureTemplate.get();
+            GranterClosureTemplate template = optionalGranterClosureTemplate.get();
+            List<GranterClosureSection> sections = template.getSections();
+            if (sections != null) {
+                sections.size();
+                for (GranterClosureSection section : sections) {
+                    if (section.getAttributes() != null) {
+                        section.getAttributes().size();
+                    }
+                }
+            }
+            return template;
         }
         return null;
     }
@@ -237,8 +253,23 @@ public class GrantClosureService {
         return grantClosureRepository.save(closure);
     }
 
+    @Transactional
+    public GrantClosure reloadClosure(Long closureId) {
+        entityManager.flush();
+        entityManager.clear();
+        return getClosureById(closureId);
+    }
+
     public GrantClosure getClosureById(Long closureId) {
-        return grantClosureRepository.findByClosureId(closureId);
+        GrantClosure closure = grantClosureRepository.findByClosureId(closureId);
+        if (closure != null && closure.getReason() == null) {
+            Long reasonId = grantClosureRepository.findReasonIdByClosureId(closureId);
+            if (reasonId != null) {
+                Optional<ClosureReason> optionalReason = closureReasonRepository.findById(reasonId);
+                optionalReason.ifPresent(closure::setReason);
+            }
+        }
+        return closure;
     }
 
     public ClosureSpecificSection getClosureSpecificSectionById(Long id) {
@@ -292,9 +323,6 @@ public class GrantClosureService {
     public GranterClosureTemplate createNewClosureTemplateFromExisiting(GrantClosure closure) {
         GranterClosureTemplate currentClosureTemplate = findByTemplateId(closure.getTemplate().getId());
         GranterClosureTemplate newTemplate = null;
-        if (!currentClosureTemplate.isPublished()) {
-            deleteClosureTemplate(currentClosureTemplate);
-        }
         newTemplate = new GranterClosureTemplate();
         newTemplate.setName("Custom Template");
         newTemplate.setGranterId(closure.getGrant().getGrantorOrganization().getId());
@@ -353,9 +381,6 @@ public class GrantClosureService {
 
             }
         }
-
-        newTemplate.setSections(newSections);
-        newTemplate = saveClosureTemplate(newTemplate);
 
         closure.setTemplate(newTemplate);
         saveClosure(closure);
@@ -425,6 +450,28 @@ public class GrantClosureService {
 
     public void deleteStringAttributeAttachments(List<ClosureStringAttributeAttachments> attachments) {
         closureStringAttributeAttachmentsRepository.deleteAll(attachments);
+    }
+
+    @Transactional
+    public ClosureStringAttribute reloadClosureStringAttribute(Long attributeId) {
+        entityManager.flush();
+        entityManager.clear();
+        return findClosureStringAttributeById(attributeId);
+    }
+
+    @Transactional
+    public int hardDeleteStringAttributeAttachmentById(Long attachmentId) {
+        int deleted = closureStringAttributeAttachmentsRepository.hardDeleteById(attachmentId);
+        entityManager.flush();
+        return deleted;
+    }
+
+    @Transactional
+    public int hardDeleteStringAttributeAttachmentsByFileKey(Long stringAttributeId, String name, String type, String location) {
+        int deleted = closureStringAttributeAttachmentsRepository
+                .hardDeleteByFileKey(stringAttributeId, name, type, location);
+        entityManager.flush();
+        return deleted;
     }
 
     public ClosureStringAttribute findClosureStringAttributeById(Long attributeId) {
@@ -759,6 +806,10 @@ public class GrantClosureService {
 
     public ClosureDocument saveClosureDocument(ClosureDocument doc){
         return closureDocumentRepository.save(doc);
+    }
+
+    public List<ClosureDocument> getClosureDocuments(Long closureId) {
+        return closureDocumentRepository.findByClosureId(closureId);
     }
 
     public ClosureDocument getClosureDocumentById(Long attachmentId) {

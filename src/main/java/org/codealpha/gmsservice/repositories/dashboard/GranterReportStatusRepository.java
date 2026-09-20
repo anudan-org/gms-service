@@ -4,7 +4,7 @@ import org.codealpha.gmsservice.entities.dashboard.GranterReportStatus;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
-import javax.persistence.Cacheable;
+import jakarta.persistence.Cacheable;
 import java.util.List;
 @Cacheable(value = false)
 public interface GranterReportStatusRepository extends CrudRepository<GranterReportStatus,Long> {

@@ -10,4 +10,7 @@ public interface GrantHistoryRepository extends CrudRepository<GrantHistory,Long
 
     @Query(value = "select * from grant_history where id=?1 and (note is not null or note!='') order by seqid desc",nativeQuery = true)
     public List<GrantHistory> findByGrantId(Long grantId);
+
+    @Query(value = "select count(*) from grant_history where id=?1", nativeQuery = true)
+    long countByGrantId(Long grantId);
 }

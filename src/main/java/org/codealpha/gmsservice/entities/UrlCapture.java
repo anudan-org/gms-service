@@ -1,6 +1,6 @@
 package org.codealpha.gmsservice.entities;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 public class UrlCapture {
@@ -10,6 +10,9 @@ public class UrlCapture {
     private String url;
     @Column(columnDefinition = "text")
     private String method;
+
+    public UrlCapture() {
+    }
 
     public UrlCapture(String servletPath, String method) {
         this.url = servletPath;

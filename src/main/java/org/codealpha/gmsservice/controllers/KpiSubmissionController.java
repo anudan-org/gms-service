@@ -15,22 +15,22 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import springfox.documentation.annotations.ApiIgnore;
 
-import javax.servlet.http.HttpServletResponse;
+import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @RestController
 @RequestMapping("/submission/{submissionId}/kpi/{kpiId}")
-@ApiIgnore
+@Hidden
 public class KpiSubmissionController {
 
   private static Logger logger = LoggerFactory.getLogger(KpiSubmissionController.class);
 
   @Autowired
   private ResourceLoader resourceLoader;
-  @Autowired
-  private GrantDocumentDataService grantDocumentDataService;
+  // @Autowired
+  // private GrantDocumentDataService grantDocumentDataService;
   @Autowired
   private DocKpiDataDocumentService docKpiDataDocumentService;
 

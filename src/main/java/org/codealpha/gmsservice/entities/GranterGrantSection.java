@@ -2,7 +2,7 @@ package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.List;
 
 @Entity(name = "granter_grant_sections")
@@ -25,7 +25,7 @@ public class GranterGrantSection {
   @JsonBackReference
   private GranterGrantTemplate grantTemplate;
 
-  @OneToMany(mappedBy = "section",fetch = FetchType.LAZY,cascade = CascadeType.ALL,orphanRemoval = true)
+  @OneToMany(mappedBy = "section",fetch = FetchType.EAGER,cascade = CascadeType.ALL,orphanRemoval = true)
   private List<GranterGrantSectionAttribute> attributes;
 
   public Long getId() {

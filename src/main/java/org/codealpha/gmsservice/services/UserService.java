@@ -47,7 +47,7 @@ public class UserService {
     }
 
     public User getUserByEmailAndTenant(String email, String tenant) {
-        User user = userRepository.findByEmailIdAndOrganization(email, organizationRepository.findByCode(tenant));
+        User user = userRepository.findByEmailAndOrg(email, organizationRepository.findByCode(tenant).getId());
         if (user == null) {
             throw new UserNotFoundException();
         }

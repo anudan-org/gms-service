@@ -2,9 +2,10 @@ package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
-@Entity(name = "grant_tags")
+@Entity
+@Table(name = "grant_tags") //migration change
 public class GrantTagCard {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -7,7 +7,7 @@ import org.codealpha.gmsservice.models.AssignedTo;
 import org.codealpha.gmsservice.models.GrantAssignmentsVO;
 import org.codealpha.gmsservice.models.GrantDetailVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -35,16 +35,30 @@ public class GrantHistory {
   @JoinColumn(name = "grantor_org_id")
   private Granter grantorOrganization;
 
-  @OneToMany(mappedBy = "grant")
+  // @OneToMany(mappedBy = "grant")
+  @OneToMany(fetch = FetchType.EAGER)
+  @JoinColumn(
+      name = "grant_id",             // column in GrantKpi table
+      referencedColumnName = "id"     // column in GrantHistory table (original grant id)
+  )
   @JsonProperty("kpis")
-  @OrderBy("kpiType ASC")
   private List<GrantKpi> kpis;
 
-  @OneToMany(mappedBy = "grant")
+  // @OneToMany(mappedBy = "grant")
+  @OneToMany(fetch = FetchType.EAGER)
+  @JoinColumn(
+      name = "grant_id",              // column in GrantStringAttribute table
+      referencedColumnName = "id"     // column in GrantHistory table (original grant id)
+  )
   @JsonProperty("stringAttribute")
   private List<GrantStringAttribute> stringAttributes;
 
-  @OneToMany(mappedBy = "grant")
+  // @OneToMany(mappedBy = "grant")
+  @OneToMany(fetch = FetchType.EAGER)
+  @JoinColumn(
+      name = "grant_id",              // column in GrantDocumentAttributes table
+      referencedColumnName = "id"     // column in GrantHistory table (original grant id)
+  )
   @JsonProperty("docAttribute")
   private List<GrantDocumentAttributes> documentAttributes;
 
@@ -115,8 +129,13 @@ public class GrantHistory {
   @Column
   private Date movedOn;
 
-  @OneToMany(mappedBy = "grant", cascade = CascadeType.ALL)
+  // @OneToMany(mappedBy = "grant", cascade = CascadeType.ALL)
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @OrderBy("submitBy ASC")
+  @JoinColumn(
+      name = "grant_id",              // column in GrantDocumentAttributes table
+      referencedColumnName = "id"     // column in GrantHistory table (original grant id)
+  )
   @JsonManagedReference
   private List<Submission> submissions;
 

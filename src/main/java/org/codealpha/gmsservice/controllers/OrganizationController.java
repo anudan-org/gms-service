@@ -13,10 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import springfox.documentation.annotations.ApiIgnore;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.constraints.NotNull;
+import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.NotNull;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,8 +25,8 @@ import java.io.IOException;
  * @author Developer code-alpha.org
  **/
 @RestController
-@RequestMapping(value = "/organizations", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-@ApiIgnore
+@RequestMapping(value = "/organizations", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+@Hidden
 public class OrganizationController {
 
 	private static final Logger logger = LoggerFactory.getLogger(OrganizationController.class);
@@ -59,7 +59,7 @@ public class OrganizationController {
 	@PostMapping(value="/logo",consumes = {"multipart/form-data" })
 	public void saveOrganizationLogo(@RequestParam("file") MultipartFile image,
 									 @RequestHeader("X-TENANT-CODE") String tenantCode, HttpServletRequest request){
-		String filePath = uploadLocation + tenantCode + "/logo/";
+		String filePath = uploadLocation + "/" + tenantCode + "/logo/";
 		File dir = new File(filePath);
 		dir.mkdirs();
 
@@ -76,7 +76,7 @@ public class OrganizationController {
 	@PostMapping(value="/{orgId}/logo",consumes = {"multipart/form-data" })
 	public void saveGranteeOrganizationLogo(@RequestParam("file") MultipartFile image,@PathVariable("orgId")Long granteeOrgId,
 									 @RequestHeader("X-TENANT-CODE") String tenantCode){
-		String filePath = uploadLocation + "GRANTEES/"+granteeOrgId + "/logo/";
+		String filePath = uploadLocation + "/GRANTEES/"+granteeOrgId + "/logo/";
 		File dir = new File(filePath);
 		dir.mkdirs();
 

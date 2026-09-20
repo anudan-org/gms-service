@@ -5,14 +5,24 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codealpha.gmsservice.constants.AppConfiguration;
 import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.models.*;
+import org.codealpha.gmsservice.repositories.ClosureAssignmentRepository;
+import org.codealpha.gmsservice.repositories.ClosureReasonRepository;
+import org.codealpha.gmsservice.repositories.ClosureAssignmentSummaryRow;
+import org.codealpha.gmsservice.repositories.ClosureSummaryRow;
+import org.codealpha.gmsservice.repositories.GrantRepository;
+import org.codealpha.gmsservice.repositories.GrantTagRepository;
+import org.codealpha.gmsservice.repositories.GrantTagSummaryRow;
+import org.codealpha.gmsservice.repositories.OrganizationRepository;
+import org.codealpha.gmsservice.repositories.WorkflowStatusRepository;
+import org.codealpha.gmsservice.repositories.GrantClosureRepository;
 import org.codealpha.gmsservice.services.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -32,7 +42,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -90,6 +100,9 @@ public class GrantClosureController {
     public static final String TABLE = "table";
     public static final String PROJECT_FUNDS = "Project Funds";
     public static final String PROJECT_REFUND_DETAILS = "Project Refund Details";
+    private static final String DEFAULT_CLOSURE_INVITE_SUBJECT = "Grant closure review requested for %GRANT_NAME%";
+    private static final String DEFAULT_CLOSURE_INVITE_MESSAGE = "Please review the grant closure for %GRANT_NAME% under %TENANT_NAME%.<br/><br/><a href=\"%LINK%\">Open closure</a>";
+    private static final String DEFAULT_EMAIL_FOOTER = "%TENANT% | Release %RELEASE_VERSION%";
 
     @Autowired
     private WorkflowStatusService workflowStatusService;
@@ -139,16 +152,30 @@ public class GrantClosureController {
     private ClosureSnapshotService closureSnapshotService;
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private GrantRepository grantRepository;
+    @Autowired
+    private GrantTagRepository grantTagRepository;
+    @Autowired
+    private ClosureAssignmentRepository closureAssignmentRepository;
+    @Autowired
+    private WorkflowStatusRepository workflowStatusRepository;
+    @Autowired
+    private ClosureReasonRepository closureReasonRepository;
+    @Autowired
+    private OrganizationRepository organizationRepository;
+    @Autowired
+    private GrantClosureRepository grantClosureRepository;
 
     @GetMapping("/{closureId}")
-    public GrantClosure getClosure(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,
+    public Map<String, Object> getClosure(@PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode,
                                    @PathVariable("closureId") Long closureId) {
 
         GrantClosure closure = closureService.getClosureById(closureId);
 
         closure = closureToReturn(closure, userId);
         checkAndReturnHistoricalCLosure(userId, closure);
-        return closure;
+        return buildClosureResponseMap(closure);
     }
 
     @DeleteMapping("/{closureId}")
@@ -169,7 +196,23 @@ public class GrantClosureController {
     }
 
     @GetMapping(FILE_SEPARATOR)
-    public List<GrantClosure> getGrantClosuresForUser(
+    public List<Map<String, Object>> getGrantClosuresForUser(
+            @PathVariable("userId") Long userId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode
+    ) {
+        return getGrantClosuresForUserV3(userId);
+    }
+
+    @GetMapping("/v2")
+    public List<Map<String, Object>> getGrantClosuresForUserV2Route(
+            @PathVariable("userId") Long userId,
+            @RequestHeader("X-TENANT-CODE") String tenantCode
+    ) {
+        return getGrantClosuresForUserV2(userId);
+    }
+
+    @GetMapping("/legacy")
+    public List<Map<String, Object>> getGrantClosuresForUserLegacy(
             @PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode
     ) {
@@ -187,26 +230,437 @@ public class GrantClosureController {
             }
 
         }
+        List<Map<String, Object>> response = new ArrayList<>();
+        for (GrantClosure closure : closures) {
+            response.add(buildClosureSummaryResponseMap(closureToReturn(closure, userId)));
+        }
+        return response;
+    }
 
+    private List<Map<String, Object>> getGrantClosuresForUserV2(Long userId) {
+        User user = userService.getUserById(userId);
+        if (user == null || user.getOrganization() == null) {
+            return new ArrayList<>();
+        }
+
+        List<GrantClosure> closures = fetchClosuresForUserV2(userId, user);
+        if (closures == null || closures.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Long> closureIds = closures.stream().map(GrantClosure::getId).filter(Objects::nonNull).toList();
+        List<Long> grantIds = closures.stream()
+                .map(GrantClosure::getGrant)
+                .filter(Objects::nonNull)
+                .map(Grant::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, List<ClosureAssignments>> assignmentsByClosure = closureAssignmentRepository
+                .findByClosureIdIn(closureIds)
+                .stream()
+                .filter(ass -> ass != null && ass.getClosure() != null && ass.getClosure().getId() != null)
+                .collect(Collectors.groupingBy(ass -> ass.getClosure().getId()));
+
+        Map<Long, Grant> grantsById = grantRepository.findSummaryByIds(grantIds)
+                .stream()
+                .collect(Collectors.toMap(Grant::getId, g -> g, (a, b) -> a));
+
+        Map<Long, List<GrantTag>> tagsByGrantId = grantTagRepository.findByGrantIdIn(grantIds)
+                .stream()
+                .filter(tag -> tag != null && tag.getGrant() != null && tag.getGrant().getId() != null)
+                .collect(Collectors.groupingBy(tag -> tag.getGrant().getId()));
+
+        Set<Long> workflowStatusIds = new HashSet<>();
+        closures.forEach(c -> {
+            if (c.getStatus() != null && c.getStatus().getId() != null) {
+                workflowStatusIds.add(c.getStatus().getId());
+            }
+            Grant grant = grantsById.get(c.getGrant() == null ? null : c.getGrant().getId());
+            if (grant != null && grant.getGrantStatus() != null && grant.getGrantStatus().getId() != null) {
+                workflowStatusIds.add(grant.getGrantStatus().getId());
+            }
+        });
+        Map<Long, WorkflowStatus> statusesById = new HashMap<>();
+        workflowStatusRepository.findAllById(workflowStatusIds).forEach(ws -> statusesById.put(ws.getId(), ws));
+
+        Set<Long> orgIds = new HashSet<>();
+        grantsById.values().forEach(g -> {
+            if (g.getOrganization() != null && g.getOrganization().getId() != null) {
+                orgIds.add(g.getOrganization().getId());
+            }
+            if (g.getGrantorOrganization() != null && g.getGrantorOrganization().getId() != null) {
+                orgIds.add(g.getGrantorOrganization().getId());
+            }
+        });
+        Map<Long, Organization> organizationsById = new HashMap<>();
+        organizationRepository.findAllById(orgIds).forEach(org -> organizationsById.put(org.getId(), org));
+
+        Set<Long> reasonIds = closures.stream()
+                .map(GrantClosure::getReason)
+                .filter(Objects::nonNull)
+                .map(ClosureReason::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, ClosureReason> reasonsById = new HashMap<>();
+        closureReasonRepository.findAllById(reasonIds).forEach(reason -> reasonsById.put(reason.getId(), reason));
+
+        List<Map<String, Object>> response = new ArrayList<>();
+        String userOrgType = user.getOrganization().getOrganizationType();
 
         for (GrantClosure closure : closures) {
-            closureToReturn(closure, userId);
+            Map<String, Object> closureMap = new LinkedHashMap<>();
+            closureMap.put("id", closure.getId());
+            closureMap.put("ownerId", closure.getOwnerId());
+            closureMap.put("ownerName", closure.getOwnerName());
+            closureMap.put("deleted", closure.isDeleted());
+
+            WorkflowStatus closureStatus = closure.getStatus() == null ? null : statusesById.get(closure.getStatus().getId());
+            Map<String, Object> closureStatusMap = new LinkedHashMap<>();
+            if (closureStatus != null) {
+                closureStatusMap.put("id", closureStatus.getId());
+                closureStatusMap.put("name", closureStatus.getName());
+                closureStatusMap.put("internalStatus", closureStatus.getInternalStatus());
+            } else {
+                closureStatusMap.put("id", null);
+                closureStatusMap.put("name", null);
+                closureStatusMap.put("internalStatus", null);
+            }
+            closureMap.put("status", closureStatusMap);
+
+            ClosureReason reason = closure.getReason() == null ? null : reasonsById.get(closure.getReason().getId());
+            Map<String, Object> reasonMap = new LinkedHashMap<>();
+            reasonMap.put("id", reason == null ? null : reason.getId());
+            reasonMap.put("reason", reason == null ? null : reason.getReason());
+            closureMap.put("reason", reasonMap);
+
+            List<ClosureAssignments> assignments = assignmentsByClosure.getOrDefault(closure.getId(), Collections.emptyList());
+            List<Map<String, Object>> wfAssignments = new ArrayList<>();
+            for (ClosureAssignments assignment : assignments) {
+                if (assignment == null) {
+                    continue;
+                }
+                Map<String, Object> wfMap = new LinkedHashMap<>();
+                wfMap.put("id", assignment.getId());
+                wfMap.put("stateId", assignment.getStateId());
+                wfMap.put("assignmentId", assignment.getAssignment());
+                wfAssignments.add(wfMap);
+            }
+            closureMap.put("workflowAssignment", wfAssignments);
+
+            boolean canManage = assignments.stream()
+                    .anyMatch(ass -> ass != null
+                            && ass.getAssignment() != null
+                            && ass.getStateId() != null
+                            && closureStatus != null
+                            && ass.getAssignment().longValue() == userId.longValue()
+                            && ass.getStateId().longValue() == closureStatus.getId().longValue());
+            if (!canManage && closureStatus != null && ACTIVE.equalsIgnoreCase(closureStatus.getInternalStatus())
+                    && GRANTEE.equalsIgnoreCase(userOrgType)) {
+                canManage = true;
+            }
+            closureMap.put("canManage", canManage);
+
+            Grant summaryGrant = closure.getGrant() == null ? null : grantsById.get(closure.getGrant().getId());
+            closureMap.put("grant", buildGrantSummaryForClosureV2(summaryGrant, tagsByGrantId, statusesById, organizationsById));
+
+            response.add(closureMap);
         }
-        return closures;
+
+        return response;
+    }
+
+    private List<Map<String, Object>> getGrantClosuresForUserV3(Long userId) {
+        User user = userService.getUserById(userId);
+        if (user == null || user.getOrganization() == null || user.getOrganization().getOrganizationType() == null) {
+            return new ArrayList<>();
+        }
+
+        List<ClosureSummaryRow> rows = fetchClosureSummaryRowsForUserV3(userId, user);
+        if (rows == null || rows.isEmpty()) {
+            return new ArrayList<>();
+        }
+        rows = rows.stream()
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(
+                        ClosureSummaryRow::getUpdatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
+        Map<Long, ClosureSummaryRow> uniqueByClosureId = new LinkedHashMap<>();
+        for (ClosureSummaryRow row : rows) {
+            if (row != null && row.getClosureId() != null && !uniqueByClosureId.containsKey(row.getClosureId())) {
+                uniqueByClosureId.put(row.getClosureId(), row);
+            }
+        }
+        rows = new ArrayList<>(uniqueByClosureId.values());
+
+        List<Long> closureIds = rows.stream().map(ClosureSummaryRow::getClosureId).filter(Objects::nonNull).distinct().toList();
+        List<Long> grantIds = rows.stream().map(ClosureSummaryRow::getGrantId).filter(Objects::nonNull).distinct().toList();
+
+        Map<Long, List<ClosureAssignmentSummaryRow>> assignmentsByClosure = closureIds.isEmpty()
+                ? new HashMap<>()
+                : closureAssignmentRepository.findSummaryByClosureIdIn(closureIds).stream()
+                        .filter(a -> a != null && a.getClosureId() != null)
+                        .collect(Collectors.groupingBy(ClosureAssignmentSummaryRow::getClosureId));
+
+        Map<Long, List<GrantTagSummaryRow>> tagsByGrantId = grantIds.isEmpty()
+                ? new HashMap<>()
+                : grantTagRepository.findSummaryByGrantIdIn(grantIds).stream()
+                        .filter(t -> t != null && t.getGrantId() != null)
+                        .collect(Collectors.groupingBy(GrantTagSummaryRow::getGrantId));
+
+        String userOrgType = user.getOrganization().getOrganizationType();
+        List<Map<String, Object>> response = new ArrayList<>();
+
+        for (ClosureSummaryRow row : rows) {
+            if (row == null) {
+                continue;
+            }
+            Map<String, Object> closureMap = new LinkedHashMap<>();
+            closureMap.put("id", row.getClosureId());
+            closureMap.put("ownerId", row.getOwnerId());
+            closureMap.put("ownerName", row.getOwnerName());
+            closureMap.put("deleted", row.getDeleted() != null ? row.getDeleted() : false);
+            closureMap.put("disabledByAmendment", false);
+
+            Map<String, Object> statusMap = new LinkedHashMap<>();
+            statusMap.put("id", row.getStatusId());
+            statusMap.put("name", row.getStatusName());
+            statusMap.put("internalStatus", row.getStatusInternalStatus());
+            closureMap.put("status", statusMap);
+
+            Map<String, Object> reasonMap = new LinkedHashMap<>();
+            reasonMap.put("id", row.getReasonId());
+            reasonMap.put("reason", row.getReasonText());
+            closureMap.put("reason", reasonMap);
+
+            List<Map<String, Object>> wfAssignments = new ArrayList<>();
+            List<ClosureAssignmentSummaryRow> assignmentRows = assignmentsByClosure.getOrDefault(row.getClosureId(), Collections.emptyList());
+            for (ClosureAssignmentSummaryRow assignmentRow : assignmentRows) {
+                if (assignmentRow == null) {
+                    continue;
+                }
+                Map<String, Object> wfMap = new LinkedHashMap<>();
+                wfMap.put("id", assignmentRow.getId());
+                wfMap.put("stateId", assignmentRow.getStateId());
+                wfMap.put("assignmentId", assignmentRow.getAssignmentId());
+                wfAssignments.add(wfMap);
+            }
+            closureMap.put("workflowAssignment", wfAssignments);
+
+            boolean canManage = assignmentRows.stream().anyMatch(a ->
+                    a != null
+                            && a.getAssignmentId() != null
+                            && a.getStateId() != null
+                            && row.getStatusId() != null
+                            && a.getAssignmentId().longValue() == userId.longValue()
+                            && a.getStateId().longValue() == row.getStatusId().longValue()
+            );
+            if (!canManage && ACTIVE.equalsIgnoreCase(row.getStatusInternalStatus()) && GRANTEE.equalsIgnoreCase(userOrgType)) {
+                canManage = true;
+            }
+            closureMap.put("canManage", canManage);
+
+            closureMap.put("grant", buildGrantSummaryForClosureV3(row, tagsByGrantId));
+            response.add(closureMap);
+        }
+
+        return response;
+    }
+
+    private List<ClosureSummaryRow> fetchClosureSummaryRowsForUserV3(Long userId, User user) {
+        Organization organization = user.getOrganization();
+        if (GRANTEE.equalsIgnoreCase(organization.getOrganizationType())) {
+            return grantClosureRepository.findClosureSummaryForGranteeUser(userId, organization.getId());
+        }
+        if (GRANTER.equalsIgnoreCase(organization.getOrganizationType())) {
+            boolean isAdmin = user.getUserRoles() != null
+                    && user.getUserRoles().stream().anyMatch(a ->
+                    a != null && a.getRole() != null && a.getRole().getName() != null
+                            && a.getRole().getName().equalsIgnoreCase("Admin"));
+            return isAdmin
+                    ? grantClosureRepository.findClosureSummaryForAdminUser(userId, organization.getId())
+                    : grantClosureRepository.findClosureSummaryForGranterUser(userId, organization.getId());
+        }
+        return new ArrayList<>();
+    }
+
+    private Map<String, Object> buildGrantSummaryForClosureV3(
+            ClosureSummaryRow row,
+            Map<Long, List<GrantTagSummaryRow>> tagsByGrantId
+    ) {
+        Map<String, Object> grantMap = new LinkedHashMap<>();
+        grantMap.put("id", row.getGrantId());
+        grantMap.put("referenceNo", row.getGrantReferenceNo());
+        grantMap.put("name", row.getGrantName());
+        grantMap.put("amount", row.getGrantAmount());
+        grantMap.put("approvedDisbursementsTotal", row.getApprovedDisbursementsTotal());
+        grantMap.put("approvedReportsForGrant", row.getApprovedReportsForGrant() != null ? row.getApprovedReportsForGrant() : 0);
+        grantMap.put("projectDocumentsCount", row.getProjectDocumentsCount() != null ? row.getProjectDocumentsCount() : 0);
+        grantMap.put("plannedFundOthers", row.getPlannedFundOthers() != null ? row.getPlannedFundOthers() : 0d);
+        grantMap.put("actualFundOthers", row.getActualFundOthers() != null ? row.getActualFundOthers() : 0d);
+        grantMap.put("startDate", row.getGrantStartDate());
+        grantMap.put("endDate", row.getGrantEndDate());
+        grantMap.put("grantTypeId", row.getGrantTypeId());
+        grantMap.put("closureInProgress", row.getClosureInProgress());
+        grantMap.put("amendGrantId", row.getAmendGrantId());
+        grantMap.put("origGrantId", row.getOrigGrantId());
+
+        Map<String, Object> grantStatusMap = new LinkedHashMap<>();
+        grantStatusMap.put("id", row.getGrantStatusId());
+        grantStatusMap.put("name", row.getGrantStatusName());
+        grantStatusMap.put("internalStatus", row.getGrantStatusInternalStatus());
+        grantMap.put("grantStatus", grantStatusMap);
+
+        Map<String, Object> orgMap = new LinkedHashMap<>();
+        orgMap.put("id", row.getOrganizationId());
+        orgMap.put("name", row.getOrganizationName());
+        orgMap.put("code", row.getOrganizationCode());
+        grantMap.put("organization", orgMap);
+
+        Map<String, Object> grantorMap = new LinkedHashMap<>();
+        grantorMap.put("id", row.getGrantorOrgId());
+        grantorMap.put("name", row.getGrantorOrgName());
+        grantorMap.put("code", row.getGrantorOrgCode());
+        grantMap.put("grantorOrganization", grantorMap);
+
+        List<Map<String, Object>> tags = new ArrayList<>();
+        for (GrantTagSummaryRow tag : tagsByGrantId.getOrDefault(row.getGrantId(), Collections.emptyList())) {
+            if (tag == null) {
+                continue;
+            }
+            Map<String, Object> tagMap = new LinkedHashMap<>();
+            tagMap.put("id", tag.getId());
+            tagMap.put("grantId", tag.getGrantId());
+            tagMap.put("orgTagId", tag.getOrgTagId());
+            tags.add(tagMap);
+        }
+        grantMap.put("grantTags", tags);
+
+        return grantMap;
+    }
+
+    private List<GrantClosure> fetchClosuresForUserV2(Long userId, User user) {
+        Organization userOrg = user.getOrganization();
+        if (userOrg == null || userOrg.getOrganizationType() == null) {
+            return new ArrayList<>();
+        }
+
+        if (GRANTEE.equalsIgnoreCase(userOrg.getOrganizationType())) {
+            return closureService.getClosuresForGranteeUser(userId);
+        }
+
+        if (GRANTER.equalsIgnoreCase(userOrg.getOrganizationType())) {
+            boolean isAdmin = user.getUserRoles() != null
+                    && user.getUserRoles().stream()
+                    .anyMatch(a -> a != null
+                            && a.getRole() != null
+                            && a.getRole().getName() != null
+                            && a.getRole().getName().equalsIgnoreCase("Admin"));
+            return isAdmin ? closureService.getClosuresForAdminUser(userId) : closureService.getClosuresForUser(userId);
+        }
+
+        return new ArrayList<>();
+    }
+
+    private Map<String, Object> buildGrantSummaryForClosureV2(
+            Grant grant,
+            Map<Long, List<GrantTag>> tagsByGrantId,
+            Map<Long, WorkflowStatus> statusesById,
+            Map<Long, Organization> organizationsById
+    ) {
+        Map<String, Object> grantMap = new LinkedHashMap<>();
+        if (grant == null) {
+            grantMap.put("grantTags", new ArrayList<>());
+            return grantMap;
+        }
+
+        grantMap.put("id", grant.getId());
+        grantMap.put("referenceNo", grant.getReferenceNo());
+        grantMap.put("name", grant.getName());
+        grantMap.put("amount", grant.getAmount());
+        grantMap.put("approvedDisbursementsTotal", grant.getApprovedDisbursementsTotal());
+        grantMap.put("approvedReportsForGrant", grant.getApprovedReportsForGrant());
+        grantMap.put("projectDocumentsCount", grant.getProjectDocumentsCount());
+        grantMap.put("plannedFundOthers", grant.getPlannedFundOthers());
+        grantMap.put("actualFundOthers", grant.getActualFundOthers());
+        grantMap.put("startDate", grant.getStartDate());
+        grantMap.put("endDate", grant.getEndDate());
+        grantMap.put("grantTypeId", grant.getGrantTypeId());
+        grantMap.put("closureInProgress", grant.getClosureInProgress());
+        grantMap.put("amendGrantId", grant.getAmendGrantId());
+        grantMap.put("origGrantId", grant.getOrigGrantId());
+        grantMap.put("ownerName", grant.getUpdatedBy());
+
+        WorkflowStatus grantStatus = grant.getGrantStatus() == null ? null : statusesById.get(grant.getGrantStatus().getId());
+        Map<String, Object> grantStatusMap = new LinkedHashMap<>();
+        if (grantStatus != null) {
+            grantStatusMap.put("id", grantStatus.getId());
+            grantStatusMap.put("name", grantStatus.getName());
+            grantStatusMap.put("internalStatus", grantStatus.getInternalStatus());
+        } else {
+            grantStatusMap.put("id", null);
+            grantStatusMap.put("name", null);
+            grantStatusMap.put("internalStatus", null);
+        }
+        grantMap.put("grantStatus", grantStatusMap);
+
+        Organization organization = grant.getOrganization() == null ? null : organizationsById.get(grant.getOrganization().getId());
+        Map<String, Object> organizationMap = new LinkedHashMap<>();
+        if (organization != null) {
+            organizationMap.put("id", organization.getId());
+            organizationMap.put("name", organization.getName());
+            organizationMap.put("code", organization.getCode());
+        } else {
+            organizationMap.put("id", null);
+            organizationMap.put("name", null);
+            organizationMap.put("code", null);
+        }
+        grantMap.put("organization", organizationMap);
+
+        Organization grantor = grant.getGrantorOrganization() == null ? null : organizationsById.get(grant.getGrantorOrganization().getId());
+        Map<String, Object> grantorMap = new LinkedHashMap<>();
+        if (grantor != null) {
+            grantorMap.put("id", grantor.getId());
+            grantorMap.put("name", grantor.getName());
+            grantorMap.put("code", grantor.getCode());
+        } else {
+            grantorMap.put("id", null);
+            grantorMap.put("name", null);
+            grantorMap.put("code", null);
+        }
+        grantMap.put("grantorOrganization", grantorMap);
+
+        List<Map<String, Object>> tags = new ArrayList<>();
+        for (GrantTag tag : tagsByGrantId.getOrDefault(grant.getId(), Collections.emptyList())) {
+            if (tag == null) {
+                continue;
+            }
+            Map<String, Object> tagMap = new LinkedHashMap<>();
+            tagMap.put("id", tag.getId());
+            tagMap.put("grantId", tag.getGrant() == null ? null : tag.getGrant().getId());
+            tagMap.put("orgTagId", tag.getOrgTagId());
+            tags.add(tagMap);
+        }
+        grantMap.put("grantTags", tags);
+
+        return grantMap;
     }
 
     @GetMapping("/pendingclosures")
-    public List<GrantClosure> getPendingDetailedClosuresForUser(@PathVariable("userId")Long userId){
+    public List<Map<String, Object>> getPendingDetailedClosuresForUser(@PathVariable("userId")Long userId){
             List<GrantClosure> closures = closureService.getDetailedActionDueClosuresForUser(userId);
+            List<Map<String, Object>> response = new ArrayList<>();
             for (GrantClosure closure : closures) {
-                closureToReturn(closure, userId);
+                response.add(buildClosureResponseMap(closureToReturn(closure, userId)));
             }
-            return closures;
+            return response;
     }
 
     @PostMapping("/{closureId}/covernote")
-    @ApiOperation("Create covernote content from template")
-    public GrantClosure addCovernote(@RequestBody GrantClosureDTO closureToSave,
+    @Operation(summary="Create covernote content from template")
+    public Map<String, Object> addCovernote(@RequestBody GrantClosureDTO closureToSave,
                                             @PathVariable("closureId") Long closureId,
                                            @PathVariable("userId") Long userId,
                                             @RequestHeader("X-TENANT-CODE") String tenantCode) {
@@ -238,27 +692,27 @@ public class GrantClosureController {
                 covernoteContent = covernoteContent.replace("%GRANTEE_NAME%",granteeName );
                 
                 closureToSave.setCovernoteContent(covernoteContent);
-            GrantClosure closure = saveClosure(closureId, closureToSave, userId, tenantCode);
+            GrantClosure closure = persistClosure(closureId, closureToSave, userId, tenantCode);
             closure = closureToReturn(closure, userId);
-            return closure;
+            return buildClosureResponseMap(closure);
             }
      
 
     @GetMapping("/templates")
-    @ApiOperation("Get all published closure templates for tenant")
+    @Operation(summary="Get all published closure templates for tenant")
     public List<GranterClosureTemplate> getTenantPublishedClosureTemplates(
-            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode,
+            @Parameter(name = "X-TENANT-CODE", description  = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode,
             @PathVariable("userId") Long userId) {
         return closureService.findTemplatesAndPublishedStatusAndPrivateStatus(
                 organizationService.findOrganizationByTenantCode(tenantCode).getId(), true, false);
     }
 
     @GetMapping("/{grantId}/{templateId}")
-    public GrantClosure createClosure(
-            @ApiParam(name = "grantId", value = "Unique identifier for the selected grant") @PathVariable("grantId") Long grantId,
-            @ApiParam(name = "templateId", value = "Unique identifier for the selected template") @PathVariable("templateId") Long templateId,
+    public Map<String, Object> createClosure(
+            @Parameter(name = "grantId", description  = "Unique identifier for the selected grant") @PathVariable("grantId") Long grantId,
+            @Parameter(name = "templateId", description = "Unique identifier for the selected template") @PathVariable("templateId") Long templateId,
             @PathVariable("userId") Long userId,
-            @ApiParam(name = "X-TENANT-CODE", value = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
+            @Parameter(name = "X-TENANT-CODE", description  = "Tenant code") @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         Organization granterOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         GranterClosureTemplate closureTemplate = closureService.findByTemplateId(templateId);
@@ -493,7 +947,7 @@ public class GrantClosureController {
         }
 
         closure = closureToReturn(closure, userId);
-        return closure;
+        return buildClosureResponseMap(closure);
     }
 
     private String getType(int i) {
@@ -509,9 +963,18 @@ public class GrantClosureController {
 
     private List<Map<DatePeriod, PeriodAttribWithLabel>> getPeriodsWithAttributes(Grant grant, Long userId) {
 
+        Grant amendGrant = null;
+        if (grant.getAmendGrantId() != null) {
+          amendGrant = grantService.getById(grant.getAmendGrantId());
+        }
+
+        // GrantVO grantVO = new GrantVO().build(grant, grantService.getGrantSections(grant),
+        //         workflowPermissionService, userService.getUserById(userId),
+        //         userService, grantService);
+        // GrantVO.build is revised for migration
         GrantVO grantVO = new GrantVO().build(grant, grantService.getGrantSections(grant),
                 workflowPermissionService, userService.getUserById(userId),
-                userService, grantService);
+                userService, amendGrant);
         grant.setGrantDetails(grantVO.getGrantDetails());
 
         List<Map<DatePeriod, PeriodAttribWithLabel>> periodsWithAttributes = new ArrayList<>();
@@ -658,7 +1121,12 @@ public class GrantClosureController {
     }
 
     private GrantClosure closureToReturn(GrantClosure closure, Long userId) {
+        closure = ensureClosureStatus(closure);
+        if (closure.getTemplate() != null) {
+            closure.setTemplate(closureService.findByTemplateId(closure.getTemplate().getId()));
+        }
         closure.setStringAttributes(closureService.getStringAttributesForClosure(closure));
+        closure.setClosureDocuments(closureService.getClosureDocuments(closure.getId()));
 
         List<ClosureAssignmentsVO> workflowAssignments = new ArrayList<>();
         for (ClosureAssignments assignment : closureService.getAssignmentsForClosure(closure)) {
@@ -679,15 +1147,12 @@ public class GrantClosureController {
         }
         closure.setWorkflowAssignment(workflowAssignments);
         List<ClosureAssignments> closureAssignments = determineCanManage(closure, userId);
+        closure.setCurrentAssignment(new ArrayList<>());
 
         setGranteeUse(closure, userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE));
 
         if (closureAssignments != null) {
             for (ClosureAssignments assignment : closureAssignments) {
-                if (closure.getCurrentAssignment() == null) {
-                    List<AssignedTo> assignedToList = new ArrayList<>();
-                    closure.setCurrentAssignment(assignedToList);
-                }
                 AssignedTo newAssignedTo = new AssignedTo();
                 if (assignment.getAssignment() != null && assignment.getAssignment() > 0) {
                     newAssignedTo.setUser(userService.getUserById(assignment.getAssignment()));
@@ -698,7 +1163,18 @@ public class GrantClosureController {
 
         GrantClosureVO closureVO = new GrantClosureVO().build(closure, closureService.getClosureSections(closure), userService,
                 reportService);
-        closure.setClosureDetails(closureVO.getClosureDetails());
+        ClosureDetailVO details = closureVO.getClosureDetails();
+        if (details == null) {
+            details = new ClosureDetailVO().buildStringAttributes(
+                    closureService.getClosureSections(closure),
+                    closure.getStringAttributes(),
+                    closure.getGrant() == null ? 0 : closure.getGrant().getId(),
+                    reportService);
+        }
+        if (details.getSections() == null) {
+            details.setSections(new ArrayList<>());
+        }
+        closure.setClosureDetails(details);
 
         showDisbursementsForClosure(closure, userService.getUserById(userId));
 
@@ -717,11 +1193,22 @@ public class GrantClosureController {
             }
         }
 
-        closure.setGranteeUsers(userService.getAllGranteeUsers(closure.getGrant().getOrganization()));
+        List<User> granteeUsers = userService.getAllGranteeUsers(closure.getGrant().getOrganization());
+        closure.setGranteeUsers(granteeUsers != null ? granteeUsers : new ArrayList<>());
 
+        Grant amendGrant = null;
+        if (closure.getGrant().getAmendGrantId() != null) {
+          amendGrant = grantService.getById(closure.getGrant().getAmendGrantId());
+        }
+
+        // GrantVO grantVO = new GrantVO().build(closure.getGrant(), grantService.getGrantSections(closure.getGrant()),
+        //         workflowPermissionService, userService.getUserById(userId),
+        //         userService, grantService);
+        // GrantVO.build is revised for migration
+        
         GrantVO grantVO = new GrantVO().build(closure.getGrant(), grantService.getGrantSections(closure.getGrant()),
-                workflowPermissionService, userService.getUserById(userId),
-                userService, grantService);
+        workflowPermissionService, userService.getUserById(userId),
+        userService, amendGrant);       
 
         ObjectMapper mapper = new ObjectMapper();
         closure.getGrant().setGrantDetails(grantVO.getGrantDetails());
@@ -762,6 +1249,16 @@ public class GrantClosureController {
 
         closure.setGrant(grantService.grantToReturn(userId, closure.getGrant()));
 
+        // logger.info(
+        //         "closureToReturn closureId={} closureDetailsPresent={} closureDetailSections={} currentAssignmentCount={} granteeUsersCount={}",
+        //         closure.getId(),
+        //         closure.getClosureDetails() != null,
+        //         closure.getClosureDetails() == null || closure.getClosureDetails().getSections() == null
+        //                 ? null
+        //                 : closure.getClosureDetails().getSections().size(),
+        //         closure.getCurrentAssignment() == null ? null : closure.getCurrentAssignment().size(),
+        //         closure.getGranteeUsers() == null ? null : closure.getGranteeUsers().size());
+
         return closure;
     }
 
@@ -769,13 +1266,512 @@ public class GrantClosureController {
         closure.setForGranteeUse(flag);
     }
 
+    private Map<String, Object> buildClosureResponseMap(GrantClosure closure) {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> response = mapper.convertValue(closure, new TypeReference<Map<String, Object>>() {
+        });
+        response.put("id", closure.getId());
+        response.put("reason", buildReasonResponseMap(closure.getReason(), mapper));
+        response.put("template", mapper.convertValue(closure.getTemplate(), new TypeReference<Map<String, Object>>() {
+        }));
+        response.put("grant", mapper.convertValue(closure.getGrant(), new TypeReference<Map<String, Object>>() {
+        }));
+        response.put("createBy", closure.getCreateBy());
+        response.put("createdAt", closure.getCreatedAt());
+        response.put("updatedBy", closure.getUpdatedBy());
+        response.put("updatedAt", closure.getUpdatedAt());
+        response.put("status", mapper.convertValue(closure.getStatus(), new TypeReference<Map<String, Object>>() {
+        }));
+        response.put("workflowAssignment", listOfMapsOrEmpty(mapper, closure.getWorkflowAssignment()));
+        response.put("closureDetails", closureDetailsMapOrEmpty(mapper, closure.getClosureDetails()));
+        response.put("canManage", closure.isCanManage());
+        response.put("forGranteeUse", closure.isForGranteeUse());
+        response.put("currentAssignment", listOfMapsOrEmpty(mapper, closure.getCurrentAssignment()));
+        response.put("granteeUsers", listOfMapsOrEmpty(mapper, closure.getGranteeUsers()));
+        response.put("flowAuthorities", listOfMapsOrEmpty(mapper, closure.getFlowAuthorities()));
+        response.put("deleted", closure.isDeleted());
+        response.put("closureDetail", closure.getClosureDetail());
+        response.put("linkedApprovedReports", closure.getLinkedApprovedReports());
+        response.remove("covernoteAttributes");
+        response.remove("covernoteContent");
+        if (closure.getCovernoteContent() != null && !closure.getCovernoteContent().trim().isEmpty()) {
+            response.put("covernoteContent", closure.getCovernoteContent());
+            if (closure.getCovernoteAttributes() != null && !closure.getCovernoteAttributes().trim().isEmpty()) {
+                response.put("covernoteAttributes", closure.getCovernoteAttributes());
+            }
+        }
+        response.put("closureDocuments", listOfMapsOrEmpty(mapper, closure.getClosureDocuments()));
+        response.put("stringAttribute", listOfMapsOrEmpty(mapper, closure.getStringAttributes()));
+        enrichUsersWithLegacyFields(asListOfMaps(response.get("granteeUsers")));
+        enrichCurrentAssignments(asListOfMaps(response.get("currentAssignment")));
+        enrichGrantWithLegacyFields(asMap(response.get("grant")), closure.getGrant(), mapper);
+        pruneClosureResponseMap(response);
+        return response;
+    }
+
+    private Map<String, Object> buildClosureSummaryResponseMap(GrantClosure closure) {
+        Map<String, Object> response = buildClosureResponseMap(closure);
+        pruneClosureSummaryResponseMap(response);
+        return response;
+    }
+
+    private Map<String, Object> buildReasonResponseMap(ClosureReason reason, ObjectMapper mapper) {
+        if (reason == null) {
+            Map<String, Object> emptyReason = new LinkedHashMap<>();
+            emptyReason.put("id", null);
+            emptyReason.put("reason", null);
+            return emptyReason;
+        }
+        return mapper.convertValue(reason, new TypeReference<Map<String, Object>>() {
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> asMap(Object value) {
+        return value instanceof Map ? (Map<String, Object>) value : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> asListOfMaps(Object value) {
+        return value instanceof List ? (List<Map<String, Object>>) value : null;
+    }
+
+    private List<Map<String, Object>> listOfMapsOrEmpty(ObjectMapper mapper, Object value) {
+        if (value == null) {
+            return new ArrayList<>();
+        }
+        List<Map<String, Object>> converted = mapper.convertValue(value, new TypeReference<List<Map<String, Object>>>() {
+        });
+        return converted != null ? converted : new ArrayList<>();
+    }
+
+    private Map<String, Object> closureDetailsMapOrEmpty(ObjectMapper mapper, ClosureDetailVO closureDetails) {
+        Map<String, Object> detailsMap = closureDetails == null
+                ? new LinkedHashMap<>()
+                : mapper.convertValue(closureDetails, new TypeReference<Map<String, Object>>() {
+                });
+        if (detailsMap == null) {
+            detailsMap = new LinkedHashMap<>();
+        }
+        Object sections = detailsMap.get("sections");
+        if (!(sections instanceof List)) {
+            detailsMap.put("sections", new ArrayList<>());
+        }
+        return detailsMap;
+    }
+
+    private void enrichGrantWithLegacyFields(Map<String, Object> grantMap, Grant grant, ObjectMapper mapper) {
+        if (grantMap == null || grant == null) {
+            return;
+        }
+        grantMap.put("approvedReportsDisbursements",
+                mapper.convertValue(grant.getApprovedReportsDisbursements(), new TypeReference<List<Map<String, Object>>>() {
+                }));
+        grantMap.put("origGrantId", grant.getOrigGrantId());
+    }
+
+    private void enrichCurrentAssignments(List<Map<String, Object>> assignments) {
+        if (assignments == null) {
+            return;
+        }
+        for (Map<String, Object> assignmentMap : assignments) {
+            if (assignmentMap == null) {
+                continue;
+            }
+            enrichUserWithLegacyFields(asMap(assignmentMap.get("user")));
+        }
+    }
+
+    private void enrichUsersWithLegacyFields(List<Map<String, Object>> users) {
+        if (users == null) {
+            return;
+        }
+        for (Map<String, Object> userMap : users) {
+            enrichUserWithLegacyFields(userMap);
+        }
+    }
+
+    private void enrichUserWithLegacyFields(Map<String, Object> userMap) {
+        if (userMap == null) {
+            return;
+        }
+        userMap.putIfAbsent("admin", false);
+        List<Map<String, Object>> userRoles = asListOfMaps(userMap.get("userRoles"));
+        if (userRoles == null) {
+            return;
+        }
+        for (Map<String, Object> userRoleMap : userRoles) {
+            if (userRoleMap == null) {
+                continue;
+            }
+            Map<String, Object> roleMap = asMap(userRoleMap.get("role"));
+            if (roleMap == null) {
+                continue;
+            }
+            roleMap.putIfAbsent("hasUsers", false);
+            roleMap.putIfAbsent("linkedUsers", 0);
+        }
+    }
+
+    private void pruneClosureResponseMap(Map<String, Object> response) {
+        pruneReason(asMap(response.get("reason")));
+        pruneStatus(asMap(response.get("status")));
+        pruneWorkflowAssignments(asListOfMaps(response.get("workflowAssignment")));
+        pruneUsers(asListOfMaps(response.get("currentAssignment")), "user");
+        pruneUsers(asListOfMaps(response.get("granteeUsers")), null);
+        pruneNoteUser(asMap(response.get("noteAddedByUser")));
+        pruneTemplate(asMap(response.get("template")));
+        pruneStringAttributes(asListOfMaps(response.get("stringAttribute")));
+        pruneClosureDetails(asMap(response.get("closureDetails")));
+        pruneGrant(asMap(response.get("grant")));
+    }
+
+    private void pruneClosureSummaryResponseMap(Map<String, Object> response) {
+        if (response == null) {
+            return;
+        }
+        response.remove("template");
+        response.remove("closureDetails");
+        response.remove("currentAssignment");
+        response.remove("granteeUsers");
+        response.remove("flowAuthorities");
+        response.remove("closureDocuments");
+        response.remove("stringAttribute");
+        response.remove("linkedApprovedReports");
+        response.remove("closureDetail");
+        response.remove("noteAddedByUser");
+        response.remove("noteAddedBy");
+        response.remove("noteAdded");
+        keepOnlySummaryWorkflowAssignment(response);
+
+        Map<String, Object> grantMap = asMap(response.get("grant"));
+        if (grantMap == null) {
+            return;
+        }
+        grantMap.remove("grantTemplate");
+        grantMap.remove("grantDetails");
+        grantMap.remove("workflowAssignments");
+        grantMap.remove("workflowAssignment");
+        grantMap.remove("flowAuthorities");
+        grantMap.remove("stringAttribute");
+        grantMap.remove("currentAssignment");
+        grantMap.remove("granteeUsers");
+        grantMap.remove("submissions");
+        grantMap.remove("approvedReportsDisbursements");
+        grantMap.remove("closureTemplates");
+        grantMap.remove("actualRefunds");
+        grantMap.remove("noteAddedByUser");
+        grantMap.remove("noteAddedBy");
+        grantMap.remove("noteAdded");
+    }
+
+    private void keepOnlySummaryWorkflowAssignment(Map<String, Object> response) {
+        List<Map<String, Object>> workflowAssignments = asListOfMaps(response.get("workflowAssignment"));
+        if (workflowAssignments == null) {
+            response.put("workflowAssignment", new ArrayList<>());
+            return;
+        }
+        for (Map<String, Object> assignment : workflowAssignments) {
+            if (assignment == null) {
+                continue;
+            }
+            assignment.keySet().retainAll(Set.of("assignmentId", "stateId", "id"));
+        }
+    }
+
+    private void pruneReason(Map<String, Object> reasonMap) {
+        if (reasonMap == null) {
+            return;
+        }
+        reasonMap.remove("createdAt");
+        reasonMap.remove("createdBy");
+        reasonMap.remove("updatedAt");
+        reasonMap.remove("updatedBy");
+    }
+
+    private void pruneStatus(Map<String, Object> statusMap) {
+        if (statusMap == null) {
+            return;
+        }
+        statusMap.remove("updatedAt");
+        statusMap.remove("updatedBy");
+        statusMap.remove("verb");
+    }
+
+    private void pruneWorkflowAssignments(List<Map<String, Object>> assignments) {
+        if (assignments == null) {
+            return;
+        }
+        for (Map<String, Object> assignmentMap : assignments) {
+            if (assignmentMap == null) {
+                continue;
+            }
+            assignmentMap.remove("customAssignments");
+            pruneStatus(asMap(assignmentMap.get("stateName")));
+            pruneUsers(asListOfMaps(List.of(assignmentMap)), "assignmentUser");
+        }
+    }
+
+    private void pruneUsers(List<Map<String, Object>> userContainers, String nestedUserKey) {
+        if (userContainers == null) {
+            return;
+        }
+        for (Map<String, Object> container : userContainers) {
+            if (container == null) {
+                continue;
+            }
+            Map<String, Object> userMap = nestedUserKey == null ? container : asMap(container.get(nestedUserKey));
+            if (userMap == null) {
+                continue;
+            }
+            pruneUser(userMap);
+        }
+    }
+
+    private void pruneUser(Map<String, Object> userMap) {
+        Map<String, Object> organizationMap = asMap(userMap.get("organization"));
+        if (organizationMap != null) {
+            organizationMap.remove("updatedAt");
+            organizationMap.remove("updatedBy");
+        }
+        List<Map<String, Object>> userRoles = asListOfMaps(userMap.get("userRoles"));
+        if (userRoles == null) {
+            return;
+        }
+        for (Map<String, Object> userRoleMap : userRoles) {
+            if (userRoleMap == null) {
+                continue;
+            }
+            Map<String, Object> roleMap = asMap(userRoleMap.get("role"));
+            if (roleMap == null) {
+                continue;
+            }
+            Map<String, Object> roleOrg = asMap(roleMap.get("organization"));
+            if (roleOrg != null) {
+                roleOrg.remove("updatedAt");
+                roleOrg.remove("updatedBy");
+            }
+            roleMap.remove("updatedAt");
+            roleMap.remove("updatedBy");
+        }
+    }
+
+    private void pruneNoteUser(Map<String, Object> noteUserMap) {
+        if (noteUserMap != null) {
+            pruneUser(noteUserMap);
+        }
+    }
+
+    private void pruneTemplate(Map<String, Object> templateMap) {
+        if (templateMap == null) {
+            return;
+        }
+        List<Map<String, Object>> sections = asListOfMaps(templateMap.get("sections"));
+        pruneSectionTemplates(sections);
+    }
+
+    private void pruneSectionTemplates(List<Map<String, Object>> sections) {
+        if (sections == null) {
+            return;
+        }
+        for (Map<String, Object> sectionMap : sections) {
+            if (sectionMap == null) {
+                continue;
+            }
+            pruneGranter(asMap(sectionMap.get("granter")));
+            List<Map<String, Object>> attributes = asListOfMaps(sectionMap.get("attributes"));
+            if (attributes == null) {
+                continue;
+            }
+            for (Map<String, Object> attributeMap : attributes) {
+                if (attributeMap == null) {
+                    continue;
+                }
+                pruneGranter(asMap(attributeMap.get("granter")));
+            }
+        }
+    }
+
+    private void pruneGranter(Map<String, Object> granterMap) {
+        if (granterMap == null) {
+            return;
+        }
+        granterMap.remove("updatedAt");
+        granterMap.remove("updatedBy");
+    }
+
+    private void pruneStringAttributes(List<Map<String, Object>> stringAttributes) {
+        if (stringAttributes == null) {
+            return;
+        }
+        for (Map<String, Object> stringAttribute : stringAttributes) {
+            if (stringAttribute == null) {
+                continue;
+            }
+            List<Map<String, Object>> attachments = asListOfMaps(stringAttribute.get("attachments"));
+            if (attachments != null) {
+                for (Map<String, Object> attachment : attachments) {
+                    if (attachment == null) {
+                        continue;
+                    }
+                    attachment.remove("updatedBy");
+                    attachment.remove("updatedOn");
+                }
+            }
+            Map<String, Object> attributeDetails = asMap(stringAttribute.get("attributeDetails"));
+            if (attributeDetails != null) {
+                pruneGranter(asMap(attributeDetails.get("granter")));
+            }
+            Map<String, Object> sectionDetails = asMap(stringAttribute.get("sectionDetails"));
+            if (sectionDetails != null) {
+                pruneGranter(asMap(sectionDetails.get("granter")));
+                List<Map<String, Object>> attributes = asListOfMaps(sectionDetails.get("attributes"));
+                if (attributes != null) {
+                    for (Map<String, Object> attribute : attributes) {
+                        if (attribute == null) {
+                            continue;
+                        }
+                        pruneGranter(asMap(attribute.get("granter")));
+                    }
+                }
+            }
+        }
+    }
+
+    private void pruneClosureDetails(Map<String, Object> closureDetailsMap) {
+        if (closureDetailsMap == null) {
+            return;
+        }
+        pruneSectionDetails(asListOfMaps(closureDetailsMap.get("sections")), false);
+    }
+
+    private void pruneGrant(Map<String, Object> grantMap) {
+        if (grantMap == null) {
+            return;
+        }
+        Map<String, Object> grantorOrganization = asMap(grantMap.get("grantorOrganization"));
+        if (grantorOrganization != null) {
+            grantorOrganization.remove("updatedAt");
+            grantorOrganization.remove("updatedBy");
+        }
+        Map<String, Object> organization = asMap(grantMap.get("organization"));
+        if (organization != null) {
+            organization.remove("updatedAt");
+            organization.remove("updatedBy");
+        }
+        pruneStatus(asMap(grantMap.get("grantStatus")));
+        pruneNoteUser(asMap(grantMap.get("noteAddedByUser")));
+        pruneSectionTemplates(asListOfMaps(asMap(grantMap.get("grantTemplate")) == null ? null : asMap(grantMap.get("grantTemplate")).get("sections")));
+        pruneStringAttributes(asListOfMaps(grantMap.get("stringAttribute")));
+        pruneGrantWorkflowAssignments(asListOfMaps(grantMap.get("workflowAssignments")));
+        pruneGrantWorkflowHistory(asListOfMaps(grantMap.get("workflowAssignment")));
+        pruneGrantDetails(asMap(grantMap.get("grantDetails")));
+        List<Map<String, Object>> actualRefunds = asListOfMaps(grantMap.get("actualRefunds"));
+        if (actualRefunds != null) {
+            for (Map<String, Object> refund : actualRefunds) {
+                if (refund != null) {
+                    refund.remove("refundDateStr");
+                }
+            }
+        }
+    }
+
+    private void pruneGrantWorkflowAssignments(List<Map<String, Object>> assignments) {
+        if (assignments == null) {
+            return;
+        }
+        for (Map<String, Object> assignmentMap : assignments) {
+            if (assignmentMap == null) {
+                continue;
+            }
+            pruneUsers(asListOfMaps(List.of(assignmentMap)), "assignmentUser");
+            pruneStatus(asMap(assignmentMap.get("stateName")));
+            List<Map<String, Object>> history = asListOfMaps(assignmentMap.get("history"));
+            if (history != null) {
+                for (Map<String, Object> historyMap : history) {
+                    if (historyMap == null) {
+                        continue;
+                    }
+                    pruneUsers(asListOfMaps(List.of(historyMap)), "assignmentUser");
+                    pruneUsers(asListOfMaps(List.of(historyMap)), "updatedByUser");
+                }
+            }
+        }
+    }
+
+    private void pruneGrantWorkflowHistory(List<Map<String, Object>> assignments) {
+        if (assignments == null) {
+            return;
+        }
+        for (Map<String, Object> assignmentMap : assignments) {
+            if (assignmentMap != null) {
+                assignmentMap.remove("history");
+            }
+        }
+    }
+
+    private void pruneGrantDetails(Map<String, Object> grantDetailsMap) {
+        if (grantDetailsMap == null) {
+            return;
+        }
+        pruneSectionDetails(asListOfMaps(grantDetailsMap.get("sections")), true);
+    }
+
+    private void pruneSectionDetails(List<Map<String, Object>> sections, boolean removeRefund) {
+        if (sections == null) {
+            return;
+        }
+        for (Map<String, Object> section : sections) {
+            if (section == null) {
+                continue;
+            }
+            if (removeRefund) {
+                section.remove("refund");
+            }
+            List<Map<String, Object>> attributes = asListOfMaps(section.get("attributes"));
+            if (attributes == null) {
+                continue;
+            }
+            for (Map<String, Object> attribute : attributes) {
+                if (attribute == null) {
+                    continue;
+                }
+                attribute.remove("docs");
+                if (removeRefund) {
+                    attribute.remove("actualTarget");
+                    attribute.remove("cumulativeActuals");
+                    attribute.remove("grantLevelTarget");
+                    List<Map<String, Object>> fieldTableValue = asListOfMaps(attribute.get("fieldTableValue"));
+                    if (fieldTableValue != null) {
+                        for (Map<String, Object> row : fieldTableValue) {
+                            if (row == null) {
+                                continue;
+                            }
+                            row.remove("actualDisbursementId");
+                            row.remove("disbursementId");
+                            row.remove("reportId");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private List<ClosureAssignments> determineCanManage(GrantClosure closure, Long userId) {
         List<ClosureAssignments> closureAssignments = closureService.getAssignmentsForClosure(closure);
-        boolean canManageFlag = (closureAssignments.stream()
-                .anyMatch(ass -> (ass.getAssignment() == null ? 0L : ass.getAssignment().longValue()) == userId
-                        .longValue() && ass.getStateId().longValue() == closure.getStatus().getId().longValue()))
+        if (closureAssignments == null) {
+            closureAssignments = new ArrayList<>();
+        }
 
-                || (closure.getStatus().getInternalStatus().equalsIgnoreCase(ACTIVE) && userService.getUserById(userId)
+        WorkflowStatus closureStatus = closure.getStatus();
+        Long closureStatusId = closureStatus != null ? closureStatus.getId() : null;
+        String closureInternalStatus = closureStatus != null ? closureStatus.getInternalStatus() : null;
+
+        boolean canManageFlag = (closureStatusId != null && closureAssignments.stream()
+                .anyMatch(ass -> (ass.getAssignment() == null ? 0L : ass.getAssignment().longValue()) == userId
+                        .longValue() && ass.getStateId() != null && ass.getStateId().longValue() == closureStatusId.longValue()))
+
+                || (ACTIVE.equalsIgnoreCase(closureInternalStatus) && userService.getUserById(userId)
                 .getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE));
         closure.setCanManage(canManageFlag);
 
@@ -783,6 +1779,7 @@ public class GrantClosureController {
     }
 
     private void showDisbursementsForClosure(GrantClosure closure, User currentUser) {
+        String closureInternalStatus = getClosureInternalStatus(closure);
         List<WorkflowStatus> workflowStatuses = workflowStatusService.getTenantWorkflowStatuses(DISBURSEMENTCAPS,
                 closure.getGrant().getGrantorOrganization().getId());
 
@@ -804,7 +1801,7 @@ public class GrantClosureController {
                     if (a.getFieldType().equalsIgnoreCase(DISBURSEMENT)) {
                         List<Disbursement> closedDisbursements = getDisbursementsByStatusIds(closure.getGrant(), closedStatusIds); //disbursementService
                         List<Disbursement> draftDisbursements = getDisbursementsByStatusIds(closure.getGrant(), draftStatusIds);
-                        if (!closure.getStatus().getInternalStatus().equalsIgnoreCase(CLOSED)) {
+                        if (!CLOSED.equalsIgnoreCase(closureInternalStatus)) {
                             List<TableData> tableDataList = new ArrayList<>();
                             if (closedDisbursements != null) {
                                 closedDisbursements.sort(Comparator.comparing(Disbursement::getCreatedAt));
@@ -823,7 +1820,7 @@ public class GrantClosureController {
                                 if (!currentUser.getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)) {
                                     draftDisbursements.removeIf(dd -> ((dd.getReportId() != null
                                             && dd.getReportId().longValue() != closure.getId().longValue() && dd.isGranteeEntry()) || (dd.getReportId() != null
-                                            && dd.getReportId().longValue() == closure.getId().longValue() && dd.isGranteeEntry() && closure.getStatus().getInternalStatus().equalsIgnoreCase(ACTIVE))));
+                                            && dd.getReportId().longValue() == closure.getId().longValue() && dd.isGranteeEntry() && ACTIVE.equalsIgnoreCase(closureInternalStatus))));
 
                                 }
                                 if (draftDisbursements != null) {
@@ -990,7 +1987,7 @@ public class GrantClosureController {
     }
 
     @PostMapping("/{closureId}/template/{templateId}/section/{sectionName}/{isRefund}")
-    @ApiOperation("Create new section in grant closure")
+    @Operation(summary="Create new section in grant closure")
     public ClosureSectionInfo createSection(@RequestBody GrantClosureDTO closureToSave,
                                             @PathVariable("closureId") Long closureId,
                                             @PathVariable("templateId") Long templateId,
@@ -999,7 +1996,7 @@ public class GrantClosureController {
                                             @PathVariable("isRefund") Boolean isRefund,
                                             @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
-        GrantClosure closure = saveClosure(closureId, closureToSave, userId, tenantCode);
+        GrantClosure closure = persistClosure(closureId, closureToSave, userId, tenantCode);
 
         ClosureSpecificSection specificSection = new ClosureSpecificSection();
         specificSection.setGranter((Granter) organizationService.findOrganizationByTenantCode(tenantCode));
@@ -1047,19 +2044,23 @@ public class GrantClosureController {
         }
 
         closure = closureToReturn(closure, userId);
-        return new ClosureSectionInfo(specificSection.getId(), specificSection.getSectionName(), closure);
+        return new ClosureSectionInfo(specificSection.getId(), specificSection.getSectionName(),
+                buildClosureResponseMap(closure));
 
     }
 
     @PutMapping("/{closureId}")
-    @ApiOperation("Save closure")
-    public GrantClosure saveClosure(
+    @Operation(summary="Save closure")
+    public Map<String, Object> saveClosure(
             @PathVariable("closureId") Long closureId,
             @RequestBody GrantClosureDTO closureToSave,
             @PathVariable("userId") Long userId,
             @RequestHeader("X-TENANT-CODE") String tenantCode) {
+        GrantClosure closure = persistClosure(closureId, closureToSave, userId, tenantCode);
+        return buildClosureResponseMap(closure);
+    }
 
-
+    private GrantClosure persistClosure(Long closureId, GrantClosureDTO closureToSave, Long userId, String tenantCode) {
         Organization tenantOrg = organizationService.findOrganizationByTenantCode(tenantCode);
         User user = userService.getUserById(userId);
         GrantClosure closure = null;
@@ -1081,13 +2082,12 @@ public class GrantClosureController {
         savedClosure = closureToReturn(savedClosure, userId);
         return savedClosure;
         }   
-   
     }
 
     private GrantClosure processClosure(GrantClosure closureToSave, Organization tenantOrg, User user) {
         GrantClosure closure = closureService.getClosureById(closureToSave.getId());
 
-        closure.setReason(processNewReasonIfPresent(closureToSave));
+        closure.setReason(processNewReasonIfPresent(closure, closureToSave, tenantOrg, user));
         closure.setDescription(closureToSave.getDescription());
         closure.setRefundAmount(closureToSave.getRefundAmount());
         closure.setRefundReason(closureToSave.getRefundReason());
@@ -1137,18 +2137,43 @@ public class GrantClosureController {
         return closure;
     }
 
-    private ClosureReason processNewReasonIfPresent(GrantClosure closureToSave) {
-        ClosureReason newReason = null;
-        if (closureToSave.getReason() != null) {
-            if (closureToSave.getReason().getId() <= 0) {
-                newReason = closureToSave.getReason();
-                newReason = closureService.saveReason(newReason);
-
-            } else {
-                newReason = closureToSave.getReason();
-            }
+    private ClosureReason processNewReasonIfPresent(GrantClosure existingClosure, GrantClosure closureToSave,
+                                                    Organization tenantOrg, User user) {
+        ClosureReason incomingReason = closureToSave.getReason();
+        if (incomingReason == null) {
+            return existingClosure.getReason();
         }
-        return newReason;
+
+        Long reasonId = incomingReason.getId();
+        String reasonText = incomingReason.getReason();
+        boolean hasReasonText = reasonText != null && !reasonText.isBlank();
+
+        // The client can send a placeholder object like { id: null, reason: null }.
+        // Treat that as "no change" when the closure already has a reason.
+        if (reasonId == null && !hasReasonText) {
+            return existingClosure.getReason();
+        }
+
+        if (reasonId != null && reasonId > 0) {
+            return incomingReason;
+        }
+
+        if (!hasReasonText) {
+            return null;
+        }
+
+        ClosureReason newReason = incomingReason;
+        newReason.setReason(reasonText.trim());
+        if (newReason.getOrganizationId() == null && tenantOrg != null) {
+            newReason.setOrganizationId(tenantOrg.getId());
+        }
+        if (newReason.getCreatedAt() == null) {
+            newReason.setCreatedAt(DateTime.now().toDate());
+        }
+        if (newReason.getCreatedBy() == null && user != null) {
+            newReason.setCreatedBy(user.getId());
+        }
+        return closureService.saveReason(newReason);
     }
 
     private void processStringAttributes(User user, GrantClosure closure, GrantClosure closureToSave, Organization tenant) {
@@ -1318,11 +2343,12 @@ public class GrantClosureController {
         }
 
         closure = closureToReturn(closure, userId);
-        return new ClosureFieldInfo(newSectionAttribute.getId(), stringAttribute.getId(), closure);
+        return new ClosureFieldInfo(newSectionAttribute.getId(), stringAttribute.getId(),
+                buildClosureResponseMap(closure));
     }
 
     @PutMapping("/{closureId}/template/{templateId}/section/{sectionId}")
-    public GrantClosure deleteSection(@RequestBody GrantClosureDTO closureToSave,
+    public Map<String, Object> deleteSection(@RequestBody GrantClosureDTO closureToSave,
                                       @PathVariable("closureId") Long closureId,
                                       @PathVariable("templateId") Long templateId,
                                       @PathVariable("sectionId") Long sectionId,
@@ -1367,13 +2393,14 @@ public class GrantClosureController {
             closureService.saveClosure(modelMapper.map(closureToSave, GrantClosure.class));
         }
 
-        closure = closureService.getClosureById(closureId);
+        closure = closureService.reloadClosure(closureId);
         if (closureService.checkIfClosureTemplateChanged(closure, section, null)) {
             GranterClosureTemplate newTemplate = closureService.createNewClosureTemplateFromExisiting(closure);
             newTemplate.getId();
         }
+        closure = closureService.reloadClosure(closureId);
         closure = closureToReturn(closure, userId);
-        return closure;
+        return buildClosureResponseMap(closure);
     }
 
     @PutMapping("/{closureId}/section/{sectionId}/field/{fieldId}")
@@ -1404,16 +2431,17 @@ public class GrantClosureController {
         }
 
         closure = closureToReturn(closure, userId);
-        return new ClosureFieldInfo(currentAttribute.getId(), stringAttribute.getId(), closure);
+        return new ClosureFieldInfo(currentAttribute.getId(), stringAttribute.getId(),
+                buildClosureResponseMap(closure));
     }
 
     @PutMapping("/{closureId}/template/{templateId}/{templateName}")
     public GrantClosure updateTemplateName(
-            @ApiParam(name = "userId", value = "Unique identifier of logged in user") @PathVariable("userId") Long userId,
-            @ApiParam(name = "closureId", value = "Unique identifier of the report") @PathVariable("closureId") Long closureId,
-            @ApiParam(name = "templateId", value = "Unique identfier of the grant template") @PathVariable("templateId") Long templateId,
-            @ApiParam(name = "templateName", value = "NName of the template to be saved") @PathVariable("templateName") String templateName,
-            @ApiParam(name = "templateDate", value = "Additional information about the template such as descriptio, publish or save as private") @RequestBody TemplateMetaData templateData) {
+            @Parameter(name = "userId", description =  "Unique identifier of logged in user") @PathVariable("userId") Long userId,
+            @Parameter(name = "closureId", description =  "Unique identifier of the report") @PathVariable("closureId") Long closureId,
+            @Parameter(name = "templateId", description = "Unique identfier of the grant template") @PathVariable("templateId") Long templateId,
+            @Parameter(name = "templateName", description  = "NName of the template to be saved") @PathVariable("templateName") String templateName,
+            @Parameter(name = "templateDate", description = "Additional information about the template such as descriptio, publish or save as private") @RequestBody TemplateMetaData templateData) {
 
         GranterClosureTemplate template = closureService.findByTemplateId(templateId);
         template.setName(templateName);
@@ -1489,7 +2517,7 @@ public class GrantClosureController {
         }
         GrantClosure closure = closureService.getClosureById(closureId);
         closure = closureToReturn(closure, userId);
-        return new ClosureDocInfo(attachment.getId(), closure);
+        return new ClosureDocInfo(attachment.getId(), buildClosureResponseMap(closure));
     }
 
     @PostMapping(value = "/{closureId}/section/{sectionId}/attribute/{attributeId}/upload", consumes = {
@@ -1578,7 +2606,7 @@ public class GrantClosureController {
         closure = closureService.getClosureById(closureId);
         closure = closureToReturn(closure, userId);
 
-        return new ClosureDocInfo(attachments.get(attachments.size() - 1).getId(), closure);
+        return new ClosureDocInfo(attachments.get(attachments.size() - 1).getId(), buildClosureResponseMap(closure));
     }
 
     @PostMapping(value = "/{closureId}/upload/docs", consumes = {
@@ -1748,7 +2776,7 @@ public class GrantClosureController {
     }
 
     @PostMapping("{closureId}/attribute/{attributeId}/attachment/{attachmentId}")
-    public GrantClosure deleteClosureStringAttributeAttachment(
+    public Map<String, Object> deleteClosureStringAttributeAttachment(
             @RequestBody GrantClosureDTO closureToSave,
             @PathVariable("closureId") Long closureId,
             @PathVariable("userId") Long userId,
@@ -1758,7 +2786,30 @@ public class GrantClosureController {
         saveClosure(closureId, closureToSave, userId, tenantCode);
         ClosureStringAttributeAttachments attch = closureService
                 .getStringAttributeAttachmentsByAttachmentId(attachmentId);
-        closureService.deleteStringAttributeAttachments(Arrays.asList(attch));
+        if (attch == null) {
+            GrantClosure closure = closureService.reloadClosure(closureId);
+            closure = closureToReturn(closure, userId);
+            return buildClosureResponseMap(closure);
+        }
+        ClosureStringAttribute ownerAttribute = attch.getClosureStringAttribute();
+        Long ownerAttributeId = ownerAttribute != null && ownerAttribute.getId() != null
+                ? ownerAttribute.getId()
+                : attributeId;
+        if (ownerAttribute == null) {
+            ownerAttribute = closureService.findClosureStringAttributeById(ownerAttributeId);
+        }
+
+        int deletedRows = 0;
+        if (ownerAttributeId != null) {
+            deletedRows = closureService.hardDeleteStringAttributeAttachmentsByFileKey(
+                    ownerAttributeId,
+                    attch.getName(),
+                    attch.getType(),
+                    attch.getLocation());
+        }
+        if (deletedRows <= 0) {
+            closureService.hardDeleteStringAttributeAttachmentById(attachmentId);
+        }
 
         File file = new File(attch.getLocation() + attch.getName() + "." + attch.getType());
         try {
@@ -1766,7 +2817,7 @@ public class GrantClosureController {
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
-        ClosureStringAttribute stringAttribute = closureService.findClosureStringAttributeById(attributeId);
+        ClosureStringAttribute stringAttribute = closureService.reloadClosureStringAttribute(ownerAttributeId);
         List<ClosureStringAttributeAttachments> stringAttributeAttachments = closureService
                 .getStringAttributeAttachmentsByStringAttribute(stringAttribute);
         ObjectMapper mapper = new ObjectMapper();
@@ -1777,14 +2828,14 @@ public class GrantClosureController {
             logger.error(e.getMessage(), e);
         }
 
-        GrantClosure closure = closureService.getClosureById(closureId);
+        GrantClosure closure = closureService.reloadClosure(closureId);
 
         closure = closureToReturn(closure, userId);
-        return closure;
+        return buildClosureResponseMap(closure);
     }
 
     @PostMapping("{closureId}/docs/delete/{attachmentId}")
-    public GrantClosure deleteGrantClosureDocument(
+    public Map<String, Object> deleteGrantClosureDocument(
             @RequestBody GrantClosureDTO closureToSave,
             @PathVariable("closureId") Long closureId,
             @PathVariable("userId") Long userId,
@@ -1802,21 +2853,21 @@ public class GrantClosureController {
             logger.error(e.getMessage(), e);
         }
 
-        GrantClosure closure = closureService.getClosureById(closureId);
+        GrantClosure closure = closureService.reloadClosure(closureId);
 
         closure = closureToReturn(closure, userId);
-        return closure;
+        return buildClosureResponseMap(closure);
     }
 
     @PostMapping("/{closureId}/section/{sectionId}/field/{fieldId}")
-    public GrantClosure deleteField(
+    public Map<String, Object> deleteField(
             @RequestBody GrantClosureDTO closureToSave,
             @PathVariable("userId") Long userId,
             @PathVariable("closureId") Long closureId,
             @PathVariable("sectionId") Long sectionId,
             @PathVariable("fieldId") Long fieldId,
             @RequestHeader("X-TENANT-CODE") String tenantCode) {
-        GrantClosure closure = saveClosure(closureId, closureToSave, userId, tenantCode);
+        GrantClosure closure = persistClosure(closureId, closureToSave, userId, tenantCode);
         grantService.saveGrant(closureToSave.getGrant());
 
         ClosureStringAttribute stringAttrib = closureService.getClosureStringByStringAttributeId(fieldId);
@@ -1838,19 +2889,20 @@ public class GrantClosureController {
         if (closureService.checkIfClosureTemplateChanged(closure, attribute.getSection(), null)) {
             closureService.createNewClosureTemplateFromExisiting(closure);
         }
+        closure = closureService.reloadClosure(closureId);
         closure = closureToReturn(closure, userId);
-        return closure;
+        return buildClosureResponseMap(closure);
     }
 
 
     @PostMapping("/{closureId}/assignment")
-    public GrantClosure saveClosureAssignments(
+    public Map<String, Object> saveClosureAssignments(
             @PathVariable("userId") Long userId,
             @PathVariable("closureId") Long closureId,
             @RequestBody ClosureAssignmentModel assignmentModel,
             @RequestHeader("X-TENANT-CODE") String tenantCode) {
         
-        GrantClosure closure = saveClosure(closureId, assignmentModel.getClosure(), userId, tenantCode);
+        GrantClosure closure = persistClosure(closureId, assignmentModel.getClosure(), userId, tenantCode);
 
         Map<Long, Long> currentAssignments = new LinkedHashMap<>();
         if (closureService.checkIfClosureMovedThroughWFAtleastOnce(closure.getId())) {
@@ -1893,8 +2945,9 @@ public class GrantClosureController {
         sendEmailwithNewAssignments(currentAssignments,closure,userId);
         }
 
+        closure = closureService.reloadClosure(closureId);
         closure = closureToReturn(closure, userId);
-        return closure;
+        return buildClosureResponseMap(closure);
     }
     private void sendEmailtoAssignees(String customAss ,ClosureAssignmentsVO assignmentsVO ,ClosureAssignments assignment,GrantClosure closure,String url ){
      
@@ -1937,23 +2990,21 @@ public class GrantClosureController {
                     userRoleService.saveUserRole(userRole);
                     url = new StringBuilder(url + "/home/?action=registration&org="
                             + URLEncoder.encode(closure.getGrant().getOrganization().getName(), UTF_8) + "&r=" + code
-                            + EMAIL + granteeUser.getEmailId() + "&type=report").toString();
+                            + EMAIL + granteeUser.getEmailId() + "&type=closure").toString();
                 }
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
             String[] notifications = closureService.buildClosureInvitationContent(closure,
-                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.CLOSURE_INVITE_SUBJECT).getConfigValue(),
-                    appConfigService.getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                            AppConfiguration.CLOSURE_INVITE_MESSAGE).getConfigValue(),
+                    getAppConfigValueOrDefault(closure.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.CLOSURE_INVITE_SUBJECT, DEFAULT_CLOSURE_INVITE_SUBJECT),
+                    getAppConfigValueOrDefault(closure.getGrant().getGrantorOrganization().getId(),
+                            AppConfiguration.CLOSURE_INVITE_MESSAGE, DEFAULT_CLOSURE_INVITE_MESSAGE),
                     url);
             commonEmailService.sendMail(new String[]{(granteeUser != null && !granteeUser.isDeleted()) ? granteeUser.getEmailId() : null},
                     null, notifications[0], notifications[1],
-                    new String[]{appConfigService
-                            .getAppConfigForGranterOrg(closure.getGrant().getGrantorOrganization().getId(),
-                                    AppConfiguration.PLATFORM_EMAIL_FOOTER)
-                            .getConfigValue()
+                    new String[]{getAppConfigValueOrDefault(closure.getGrant().getGrantorOrganization().getId(),
+                                    AppConfiguration.PLATFORM_EMAIL_FOOTER, DEFAULT_EMAIL_FOOTER)
                             .replace(RELEASE_VERSION, releaseService.getCurrentRelease().getVersion()).replace(TENANT, closure.getGrant()
                             .getGrantorOrganization().getName())});
 
@@ -1961,9 +3012,18 @@ public class GrantClosureController {
         }
 
         closureService.saveAssignmentForClosure(assignment);
-      
+       
     }
 
+    private String getAppConfigValueOrDefault(Long granterOrgId, AppConfiguration appConfiguration, String defaultValue) {
+        AppConfig appConfig = appConfigService.getAppConfigForGranterOrg(granterOrgId, appConfiguration);
+        if (appConfig == null || appConfig.getConfigValue() == null || appConfig.getConfigValue().trim().equalsIgnoreCase(STRNOSPACE)) {
+            logger.warn("Missing app configuration {} for granter organization {}. Using default value.", appConfiguration.name(), granterOrgId);
+            return defaultValue;
+        }
+        return appConfig.getConfigValue();
+    }
+    
     private void sendEmailwithNewAssignments(Map<Long, Long> currentAssignments ,GrantClosure closure,Long userId){
     List<ClosureAssignments> newAssignments = closureService.getAssignmentsForClosure(closure);
 
@@ -2345,7 +3405,7 @@ public class GrantClosureController {
         }
         
         //added by RK to remove the remaining reports in Draft status
-        if (closure.getStatus().getInternalStatus().equals(CLOSED)) {
+        if (CLOSED.equalsIgnoreCase(getClosureInternalStatus(closure))) {
            
             List<Report> draftReports = getDraftReprotsByGrant(closure.getGrant());
             for (Report draftReport: draftReports) {
@@ -2428,7 +3488,7 @@ public class GrantClosureController {
 
     private void checkAndReturnHistoricalCLosure(@PathVariable("userId") Long userId, GrantClosure closure) {
         if (userService.getUserById(userId).getOrganization().getOrganizationType().equalsIgnoreCase(GRANTEE)
-                && closure.getStatus().getInternalStatus().equalsIgnoreCase("REVIEW")) {
+                && "REVIEW".equalsIgnoreCase(getClosureInternalStatus(closure))) {
             try {
                 GrantClosureHistory historicReport = closureService.getSingleClosureHistoryByStatusAndClosureId(ACTIVE,
                         closure.getId());
@@ -2448,6 +3508,52 @@ public class GrantClosureController {
             @PathVariable("userId") Long userId) {
 
         return grantService.getClosureReasons(userService.getUserById(userId).getOrganization().getId());
+    }
+
+    private String getClosureInternalStatus(GrantClosure closure) {
+        return closure != null && closure.getStatus() != null ? closure.getStatus().getInternalStatus() : null;
+    }
+
+    private GrantClosure ensureClosureStatus(GrantClosure closure) {
+        if (closure == null || closure.getStatus() != null) {
+            return closure;
+        }
+
+        Long resolvedStatusId = null;
+        if (closure.getId() != null) {
+            ClosureSnapshot mostRecentSnapshot = closureSnapshotService.getMostRecentSnapshotByClosureId(closure.getId());
+            if (mostRecentSnapshot != null) {
+                resolvedStatusId = mostRecentSnapshot.getToStateId() != null
+                        ? mostRecentSnapshot.getToStateId()
+                        : mostRecentSnapshot.getStatusId();
+            }
+        }
+
+        List<ClosureAssignments> assignments = closureService.getAssignmentsForClosure(closure);
+        if (resolvedStatusId == null && assignments != null && !assignments.isEmpty()) {
+            if (closure.getOwnerId() != null) {
+                Optional<ClosureAssignments> ownerAssignment = assignments.stream()
+                        .filter(a -> a.getAssignment() != null && closure.getOwnerId().longValue() == a.getAssignment().longValue())
+                        .findFirst();
+                if (ownerAssignment.isPresent()) {
+                    resolvedStatusId = ownerAssignment.get().getStateId();
+                }
+            }
+            if (resolvedStatusId == null) {
+                Optional<ClosureAssignments> anchorAssignment = assignments.stream().filter(ClosureAssignments::isAnchor).findFirst();
+                if (anchorAssignment.isPresent()) {
+                    resolvedStatusId = anchorAssignment.get().getStateId();
+                }
+            }
+            if (resolvedStatusId == null) {
+                resolvedStatusId = assignments.get(0).getStateId();
+            }
+        }
+
+        if (resolvedStatusId != null) {
+            closure.setStatus(workflowStatusService.findById(resolvedStatusId));
+        }
+        return closure;
     }
 
     private void saveSnapShot(GrantClosure closure, Long fromStatusId, Long toStatusId, User currentUser, User previousUser) {
@@ -2487,7 +3593,7 @@ public class GrantClosureController {
     }
 
     @GetMapping("/{closureId}/history/")
-    public List<GrantClosureHistory> getClosureHistory(@PathVariable("closureId") Long closureId,
+    public List<Map<String, Object>> getClosureHistory(@PathVariable("closureId") Long closureId,
                                                        @PathVariable("userId") Long userId, @RequestHeader("X-TENANT-CODE") String tenantCode) {
 
         List<GrantClosureHistory> history = new ArrayList<>();
@@ -2513,7 +3619,52 @@ public class GrantClosureController {
             }
         }
 
-        return history;
+        List<Map<String, Object>> response = new ArrayList<>();
+        for (GrantClosureHistory historyEntry : history) {
+            response.add(buildClosureHistoryResponseMap(historyEntry));
+        }
+        return response;
+    }
+
+    private Map<String, Object> buildClosureHistoryResponseMap(GrantClosureHistory historyEntry) {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> response = mapper.convertValue(historyEntry, new TypeReference<Map<String, Object>>() {
+        });
+        response.put("id", historyEntry.getId());
+        response.put("reason", historyEntry.getReason());
+        response.put("status", mapper.convertValue(historyEntry.getStatus(), new TypeReference<Map<String, Object>>() {
+        }));
+        response.put("canManage", historyEntry.isCanManage());
+        response.put("forGranteeUse", historyEntry.isForGranteeUse());
+        response.put("noteAddedBy", historyEntry.getNoteAddedBy());
+        response.put("noteAddedByUser", historyEntry.getNoteAddedByUser() == null ? null
+                : mapper.convertValue(historyEntry.getNoteAddedByUser(), new TypeReference<Map<String, Object>>() {
+                }));
+        response.put("note", historyEntry.getNote());
+        response.put("description", historyEntry.getDescription());
+        response.put("noteAdded", historyEntry.getNoteAdded());
+        response.put("stringAttribute", listOfMapsOrEmpty(mapper, historyEntry.getStringAttributes()));
+
+        enrichUserWithLegacyFields(asMap(response.get("noteAddedByUser")));
+        pruneStatus(asMap(response.get("status")));
+        pruneNoteUser(asMap(response.get("noteAddedByUser")));
+
+        response.remove("seqid");
+        response.remove("template");
+        response.remove("grant");
+        response.remove("movedOn");
+        response.remove("createBy");
+        response.remove("createdAt");
+        response.remove("updatedBy");
+        response.remove("updatedAt");
+        response.remove("closureDetails");
+        response.remove("currentAssignment");
+        response.remove("granteeUsers");
+        response.remove("flowAuthorities");
+        response.remove("closureDetail");
+        response.remove("deleted");
+        response.remove("linkedApprovedReports");
+        return response;
     }
 
     @GetMapping("{grantId}/warnings")

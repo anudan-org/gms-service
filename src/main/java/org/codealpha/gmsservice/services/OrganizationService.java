@@ -60,7 +60,20 @@ public class OrganizationService {
 	}
 
 	public List<Organization> getAssociatedGranteesForTenant(Organization tenantOrg) {
-		return repository.getAssociatedGranteesForTenant(tenantOrg.getId());
+		List<Organization> organizations = repository.getAssociatedGranteesForTenant(tenantOrg.getId());
+		if (tenantOrg != null && "GRANTER".equalsIgnoreCase(tenantOrg.getOrganizationType())) {
+			boolean alreadyPresent = organizations.stream()
+					.anyMatch(org -> org.getId() != null && org.getId().equals(tenantOrg.getId()));
+			if (!alreadyPresent) {
+				organizations.add(tenantOrg);
+			}
+		}
+		organizations.sort((a, b) -> {
+			String left = a.getName() == null ? "" : a.getName();
+			String right = b.getName() == null ? "" : b.getName();
+			return left.compareToIgnoreCase(right);
+		});
+		return organizations;
 	}
 
 	public void buildInviteUrlAndSendMail(UserService userService, AppConfigService appConfigService,

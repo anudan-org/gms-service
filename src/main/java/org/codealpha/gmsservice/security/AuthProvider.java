@@ -50,12 +50,31 @@ public class AuthProvider implements AuthenticationProvider {
     String provider = authentication.getAuthorities().iterator().next().getAuthority();
     String username = authentication.getName();
     String password = authentication.getCredentials().toString();
-    String tenantCode = ((Map<String, String>) authentication.getDetails()).get("TOKEN");
-    String captcha = ((Map<String, String>) authentication.getDetails()).get("CAPTCHA");
+    //String tenantCode = ((Map<String, String>) authentication.getDetails()).get("TOKEN");
+   //String captcha = ((Map<String, String>) authentication.getDetails()).get("CAPTCHA");
+   //above has been changed to below to avoid ClassCastException
 
+    String tenantCode = null;
+    String captcha = null;  
+    Object detailsObj = authentication.getDetails();
+    if (detailsObj instanceof Map<?, ?> detailsMap) {
+        Object tokenObj = detailsMap.get("TOKEN");
+        if (tokenObj != null) {
+            tenantCode = tokenObj.toString();
+        }
+         Object captchaObj = detailsMap.get("CAPTCHA");
+        if (captchaObj != null) {
+            captcha = captchaObj.toString();
+        }
+    }
+   
+  //  System.out.println("AuthProvider details - tenantCode: " + tenantCode + ", captcha: " + captcha); 
     if (provider.equalsIgnoreCase(ANUDAN) && Boolean.TRUE.equals(useCaptcha)) {
-      UriComponentsBuilder builder = UriComponentsBuilder
-          .fromHttpUrl("https://www.google.com/recaptcha/api/siteverify");
+      // UriComponentsBuilder builder = UriComponentsBuilder
+      //     .fromHttpUrl("https://www.google.com/recaptcha/api/siteverify");
+      // above has been changed to below to avoid deprecation warning
+          UriComponentsBuilder builder = UriComponentsBuilder
+    .fromUriString("https://www.google.com/recaptcha/api/siteverify");
       LinkedMultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
 
       params.add("secret", reCaptchaKey);

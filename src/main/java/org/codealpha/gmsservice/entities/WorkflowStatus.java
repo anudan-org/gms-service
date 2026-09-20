@@ -2,7 +2,7 @@ package org.codealpha.gmsservice.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 import java.util.List;
 
@@ -29,7 +29,7 @@ public class WorkflowStatus {
   @JsonIgnore
   private Workflow workflow;
 
-  @OneToMany(mappedBy = "workflowStatus")
+  @OneToMany(mappedBy = "workflowStatus", fetch = FetchType.EAGER)  //added fetchType post migration.
   private List<WorkflowStatePermission> statePermissions;
 
   @Column

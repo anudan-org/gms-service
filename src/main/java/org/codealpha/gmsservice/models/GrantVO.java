@@ -1,6 +1,7 @@
 package org.codealpha.gmsservice.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.hibernate.Hibernate;
 import org.codealpha.gmsservice.constants.GrantStatus;
 import org.codealpha.gmsservice.entities.*;
 import org.codealpha.gmsservice.services.GrantService;
@@ -385,24 +386,81 @@ public class GrantVO {
         this.actualFundOthers = actualFundOthers;
     }
 
-    public GrantVO build(Grant grant, List<GrantSpecificSection> sections,
+    // public GrantVO build(Grant grant, List<GrantSpecificSection> sections,
+    //                      WorkflowPermissionService workflowPermissionService, User user,
+    //                      UserService userService, GrantService grantService) {
+    //     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
+    //     GrantVO vo = new GrantVO();
+    //     for (PropertyDescriptor descriptor : propertyDescriptors) {
+    //         if (!descriptor.getName().equalsIgnoreCase("class")) {
+    //             try {
+    //                 Object value = descriptor.getReadMethod().invoke(grant);
+    //                 PropertyDescriptor voPd = BeanUtils.getPropertyDescriptor(vo.getClass(), descriptor.getName());
+    //                 if (voPd!=null && voPd.getName().equalsIgnoreCase("stringAttributes")) {
+    //                     GrantDetailVO grantDetailVO = null;
+    //                     grantDetailVO = vo.getGrantDetails();
+    //                     if (grantDetailVO == null) {
+    //                         grantDetailVO = new GrantDetailVO();
+    //                     }
+    //                     grantDetailVO = grantDetailVO.buildStringAttributes(sections, (List<GrantStringAttribute>) value);
+    //                     vo.setGrantDetails(grantDetailVO);
+    //                 } else if (voPd!=null && (voPd.getName().equalsIgnoreCase("noteAddedBy")
+    //                         || voPd.getName().equalsIgnoreCase("noteAddedByUser"))) {
+    //                     vo.setNoteAddedBy(grant.getNoteAddedBy());
+    //                     if(grant.getNoteAddedBy()!=null) {
+    //                         vo.setNoteAddedByUser(
+    //                                 userService.getUserByEmailAndOrg(grant.getNoteAddedBy(), grant.getGrantorOrganization()));
+    //                     }
+
+    //                 } else if (voPd!=null && voPd.getName().equalsIgnoreCase("amendGrantId")) {
+    //                     if (grant.getAmendGrantId() != null) {
+    //                         Grant amendGrant = grantService.getById(grant.getAmendGrantId());
+    //                         if (amendGrant == null) {
+    //                             grant.setAmendGrantId(null);
+    //                         }
+    //                     }
+    //                 } else {
+    //                     if(voPd!=null) {
+    //                         voPd.getWriteMethod().invoke(vo, value);
+    //                     }
+    //                 }
+    //             } catch (Exception e) {
+    //                 logger.error(e.getMessage(), e);
+    //             }
+    //         }
+    //     }
+
+    //     Collections.sort(vo.getGrantDetails().getSections());
+    //     vo.setFlowAuthorities(
+    //             workflowPermissionService.getGrantFlowPermissions(vo.grantStatus.getId(), vo.getId()));
+    //     vo.setActionAuthorities(workflowPermissionService.getGrantActionPermissions(vo.getGrantorOrganization().getId(),
+    //             user.getUserRoles(), vo.getGrantStatus().getId(), user.getId(), grant.getId()));
+
+    //     return vo;
+    // }
+
+     public GrantVO build(Grant grant, List<GrantSpecificSection> sections,
                          WorkflowPermissionService workflowPermissionService, User user,
-                         UserService userService, GrantService grantService) {
+                         UserService userService, Grant amendGrant) {
+
         PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(grant.getClass());
         GrantVO vo = new GrantVO();
+        GrantDetailVO grantDetailVO = new GrantDetailVO();
+        grantDetailVO.buildStringAttributes(sections, null);
+        vo.setGrantDetails(grantDetailVO);
         for (PropertyDescriptor descriptor : propertyDescriptors) {
             if (!descriptor.getName().equalsIgnoreCase("class")) {
                 try {
-                    Object value = descriptor.getReadMethod().invoke(grant);
                     PropertyDescriptor voPd = BeanUtils.getPropertyDescriptor(vo.getClass(), descriptor.getName());
                     if (voPd!=null && voPd.getName().equalsIgnoreCase("stringAttributes")) {
-                        GrantDetailVO grantDetailVO = null;
                         grantDetailVO = vo.getGrantDetails();
                         if (grantDetailVO == null) {
                             grantDetailVO = new GrantDetailVO();
                         }
-                        grantDetailVO = grantDetailVO.buildStringAttributes(sections, (List<GrantStringAttribute>) value);
+                        if (Hibernate.isInitialized(grant.getStringAttributes()) && grant.getStringAttributes() != null) {
+                        grantDetailVO = grantDetailVO.buildStringAttributes(sections, grant.getStringAttributes());
                         vo.setGrantDetails(grantDetailVO);
+                        }
                     } else if (voPd!=null && (voPd.getName().equalsIgnoreCase("noteAddedBy")
                             || voPd.getName().equalsIgnoreCase("noteAddedByUser"))) {
                         vo.setNoteAddedBy(grant.getNoteAddedBy());
@@ -412,14 +470,22 @@ public class GrantVO {
                         }
 
                     } else if (voPd!=null && voPd.getName().equalsIgnoreCase("amendGrantId")) {
-                        if (grant.getAmendGrantId() != null) {
-                            Grant amendGrant = grantService.getById(grant.getAmendGrantId());
-                            if (amendGrant == null) {
-                                grant.setAmendGrantId(null);
+                        // if (grant.getAmendGrantId() != null) {
+                        //     Grant amendGrant = grantService.getById(grant.getAmendGrantId());
+                        //     if (amendGrant == null) {
+                        //         grant.setAmendGrantId(null);
+                        //     }
+                        // } 
+                        // removed the circular dependency to grantservice, instead passing amendgrant to this method directly. 
+                            if (amendGrant != null) {
+                                vo.setAmendGrantId(amendGrant.getId());
+                            } else {
+                                vo.setAmendGrantId(null);
                             }
-                        }
+
                     } else {
                         if(voPd!=null) {
+                            Object value = descriptor.getReadMethod().invoke(grant);
                             voPd.getWriteMethod().invoke(vo, value);
                         }
                     }
@@ -429,7 +495,9 @@ public class GrantVO {
             }
         }
 
-        Collections.sort(vo.getGrantDetails().getSections());
+        if (vo.getGrantDetails() != null && vo.getGrantDetails().getSections() != null) {
+            Collections.sort(vo.getGrantDetails().getSections());
+        }
         vo.setFlowAuthorities(
                 workflowPermissionService.getGrantFlowPermissions(vo.grantStatus.getId(), vo.getId()));
         vo.setActionAuthorities(workflowPermissionService.getGrantActionPermissions(vo.getGrantorOrganization().getId(),
@@ -437,6 +505,7 @@ public class GrantVO {
 
         return vo;
     }
+
 
     public Date getNoteAdded() {
         return noteAdded;

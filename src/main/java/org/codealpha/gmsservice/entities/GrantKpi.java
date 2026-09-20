@@ -5,7 +5,7 @@ import org.codealpha.gmsservice.constants.Frequency;
 import org.codealpha.gmsservice.constants.KpiReportingType;
 import org.codealpha.gmsservice.constants.KpiType;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 import java.util.List;
 

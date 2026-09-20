@@ -1,1 +1,0 @@
-alter table grants add column internal boolean default false;

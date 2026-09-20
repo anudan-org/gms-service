@@ -26,7 +26,7 @@ public class NotificationValidator {
         Organization tenant = organizationRepository.findByCode(authTokens[1]);
         User user = null;
         if (!"ANUDAN".equalsIgnoreCase(tenantCode)){
-            user = userRepository.findByEmailIdAndOrganization(authTokens[0], tenant);
+            user = userRepository.findByEmailAndOrg(authTokens[0], tenant.getId());
         }else if ("ANUDAN".equalsIgnoreCase(tenantCode)){
             user = userRepository.findById(userId).orElse(null);
         }

@@ -1,0 +1,19 @@
+# Production profile template. Adjust with environment-secret values before use.
+
+spring.datasource.url=CHANGE_ME
+spring.datasource.username=CHANGE_ME
+spring.datasource.password=CHANGE_ME
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+logging.level.org.springframework=INFO
+logging.level.org.codealpha.gmsservice=INFO
+
+spring.use-captcha=true
+spring.send-mail=true
+
+spring.upload-file-location=CHANGE_ME
+spring.preview-file-location=CHANGE_ME
+
+# Keep API docs disabled in production by default.
+springdoc.api-docs.enabled=false
+springdoc.swagger-ui.enabled=false

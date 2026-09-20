@@ -1,9 +1,7 @@
 package org.codealpha.gmsservice.entities;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Transient;
+import jakarta.persistence.*;
+
 
 @Entity
 public class WorkflowActionPermission {
