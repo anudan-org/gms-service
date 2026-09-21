@@ -632,7 +632,10 @@ public class AdministrativeController {
                     logger.error(e.getMessage(), e);
                 }
             } else {
-                existingConfig.setConfigValue(config.getConfigValue());
+                // The tenant's value belongs on its own override row. This used to set it on the shared
+                // platform default (existingConfig), which was never saved, so the override was stored
+                // with a null value and the tenant's setting came back blank.
+                orgConfig.setConfigValue(config.getConfigValue());
             }
 
             orgConfig = appConfigService.saveOrgConfig(orgConfig);
